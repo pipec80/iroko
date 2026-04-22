@@ -1,0 +1,21 @@
+{
+  "version": "0.2",
+  "ignorePaths": [".next/**", "node_modules/**", "pnpm-lock.yaml"],
+  "dictionaries": ["en_US", "es-es", "typescript", "node", "html", "css"],
+  "words": [
+    "supabase",
+    "nextjs",
+    "shadcn",
+    "turbopack",
+    "pnpm",
+    "lucide",
+    "sonner",
+    "clsx",
+    "autenticación",
+    "configuración",
+    "estándar",
+    "asíncrona",
+    "enrutamiento",
+    "validación"
+  ]
+}

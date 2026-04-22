@@ -18,12 +18,12 @@ Template vendible: el comprador solo enchufar su producto/servicio. Inspirado en
 
 ### Schema Separation (vs Makerkit todo en `public`)
 
-| Schema | Propósito | Expuesto vía API? |
-|---|---|---|
-| `public` | Profiles, accounts, memberships, invitations | ✅ PostgREST |
-| `billing` | Plans, subscriptions, invoices, payments | ❌ Solo RPCs |
-| `audit` | Logs inmutables | ❌ Solo admin |
-| `private` | Funciones SECURITY DEFINER | ❌ Nunca |
+| Schema    | Propósito                                    | Expuesto vía API? |
+| --------- | -------------------------------------------- | ----------------- |
+| `public`  | Profiles, accounts, memberships, invitations | ✅ PostgREST      |
+| `billing` | Plans, subscriptions, invoices, payments     | ❌ Solo RPCs      |
+| `audit`   | Logs inmutables                              | ❌ Solo admin     |
+| `private` | Funciones SECURITY DEFINER                   | ❌ Nunca          |
 
 > **Mejora vs Makerkit:** Billing aislado del API público previene exposición accidental de datos financieros.
 
@@ -31,22 +31,23 @@ Template vendible: el comprador solo enchufar su producto/servicio. Inspirado en
 
 Campos basados en [OpenID Connect Standard Claims](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims):
 
-| Campo DB | OIDC Claim | Tipo |
-|---|---|---|
-| `id` | `sub` | `uuid PK → auth.users` |
-| `given_name` | `given_name` | `text` |
-| `family_name` | `family_name` | `text` |
-| `display_name` | `name` | `text GENERATED` |
-| `avatar_url` | `picture` | `text` |
-| `locale` | `locale` | `text` (BCP47) |
-| `timezone` | `zoneinfo` | `text` (IANA) |
-| `phone_number` | `phone_number` | `text` |
+| Campo DB       | OIDC Claim     | Tipo                   |
+| -------------- | -------------- | ---------------------- |
+| `id`           | `sub`          | `uuid PK → auth.users` |
+| `given_name`   | `given_name`   | `text`                 |
+| `family_name`  | `family_name`  | `text`                 |
+| `display_name` | `name`         | `text GENERATED`       |
+| `avatar_url`   | `picture`      | `text`                 |
+| `locale`       | `locale`       | `text` (BCP47)         |
+| `timezone`     | `zoneinfo`     | `text` (IANA)          |
+| `phone_number` | `phone_number` | `text`                 |
 
 > **¿Por qué OIDC?** Compatibilidad directa con SSO (Cognito, Auth0, Okta, Google). Si migras proveedor de auth, los campos mapean 1:1.
 
 ### Slug: ¿Para qué sirve?
 
 Un `slug` es un identificador URL-safe único (`mi-empresa` en `/org/mi-empresa`). Se usa para:
+
 - URLs legibles: `/dashboard/org/acme-corp` vs `/dashboard/org/550e8400-e29b`
 - SEO-friendly
 - API endpoints: `GET /api/orgs/acme-corp`
@@ -54,13 +55,13 @@ Un `slug` es un identificador URL-safe único (`mi-empresa` en `/org/mi-empresa`
 
 ### `metadata jsonb` vs columnas explícitas
 
-| Aspecto | `metadata jsonb` | Columnas explícitas |
-|---|---|---|
-| **Queries** | Lento (full scan) | Rápido (índice B-tree) |
-| **Validación** | Runtime (app) | DB-level (NOT NULL, CHECK) |
-| **Indexación** | GIN (parcial) | B-tree (completo) |
-| **Esquema** | Flexible | Rígido |
-| **BI/Reporting** | Difícil | Directo |
+| Aspecto          | `metadata jsonb`  | Columnas explícitas        |
+| ---------------- | ----------------- | -------------------------- |
+| **Queries**      | Lento (full scan) | Rápido (índice B-tree)     |
+| **Validación**   | Runtime (app)     | DB-level (NOT NULL, CHECK) |
+| **Indexación**   | GIN (parcial)     | B-tree (completo)          |
+| **Esquema**      | Flexible          | Rígido                     |
+| **BI/Reporting** | Difícil           | Directo                    |
 
 **Decisión:** Columnas explícitas para todo campo conocido. `metadata jsonb` SOLO para extensiones del cliente (datos que no conocemos hoy). Siempre con `DEFAULT '{}'::jsonb`.
 
@@ -210,13 +211,13 @@ DECLARE
   account_id uuid;
 BEGIN
   INSERT INTO public.accounts (id, type, name, slug, created_by)
-  VALUES (NEW.id, 'personal', COALESCE(NEW.display_name, 'Personal'), 
+  VALUES (NEW.id, 'personal', COALESCE(NEW.display_name, 'Personal'),
           private.slugify(COALESCE(NEW.display_name, NEW.id::text)), NEW.id)
   RETURNING id INTO account_id;
-  
+
   INSERT INTO public.accounts_memberships (account_id, user_id, role)
   VALUES (account_id, NEW.id, 'owner');
-  
+
   RETURN NEW;
 END;
 $$;
@@ -467,9 +468,9 @@ $$;
 
 -- PROFILES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Profiles: lectura pública" ON public.profiles 
+CREATE POLICY "Profiles: lectura pública" ON public.profiles
   FOR SELECT USING (deleted_at IS NULL);
-CREATE POLICY "Profiles: update propio" ON public.profiles 
+CREATE POLICY "Profiles: update propio" ON public.profiles
   FOR UPDATE USING (id = (SELECT auth.uid()));
 
 -- ACCOUNTS
@@ -533,16 +534,16 @@ DECLARE
 BEGIN
   SELECT * INTO v_invitation FROM public.invitations
   WHERE token = p_token AND status = 'pending' AND expires_at > now();
-  
+
   IF NOT FOUND THEN RAISE EXCEPTION 'Invalid or expired invitation'; END IF;
-  
+
   INSERT INTO public.accounts_memberships (account_id, user_id, role, invited_by)
   VALUES (v_invitation.account_id, v_user_id, v_invitation.role, v_invitation.invited_by)
   ON CONFLICT DO NOTHING;
-  
+
   UPDATE public.invitations SET status = 'accepted', updated_at = now()
   WHERE id = v_invitation.id;
-  
+
   RETURN v_invitation.account_id;
 END;
 $$;
@@ -606,15 +607,16 @@ VALUES
 
 ## Scorecard de Calidad — Cómo Validamos
 
-| Área | Target | Cómo se verifica |
-|---|---|---|
-| **Modelado** | 9/10 | Revisar normalización, no hay redundancia, FKs correctas |
-| **Seguridad** | 9/10 | `get_advisors` security post-migración, RLS en TODAS las tablas |
-| **Escalabilidad** | 8/10 | Índices parciales, append-only con bigint identity |
-| **Extensibilidad** | 9/10 | `metadata jsonb` en puntos de extensión, schemas separados |
-| **Enterprise** | 9/10 | Audit append-only, soft delete, OIDC profiles, event sourcing |
+| Área               | Target | Cómo se verifica                                                |
+| ------------------ | ------ | --------------------------------------------------------------- |
+| **Modelado**       | 9/10   | Revisar normalización, no hay redundancia, FKs correctas        |
+| **Seguridad**      | 9/10   | `get_advisors` security post-migración, RLS en TODAS las tablas |
+| **Escalabilidad**  | 8/10   | Índices parciales, append-only con bigint identity              |
+| **Extensibilidad** | 9/10   | `metadata jsonb` en puntos de extensión, schemas separados      |
+| **Enterprise**     | 9/10   | Audit append-only, soft delete, OIDC profiles, event sourcing   |
 
 ### Verificación automatizada:
+
 1. `get_advisors(security)` → debe retornar 0 issues críticos
 2. `get_advisors(performance)` → validar índices
 3. Query: `SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT IN (SELECT tablename FROM pg_tables WHERE rowsecurity=true)` → debe dar 0 filas
