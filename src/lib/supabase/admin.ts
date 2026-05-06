@@ -1,19 +1,17 @@
-import { env } from "@/env"
-import type { Database } from "@/types/database"
-import { createClient } from "@supabase/supabase-js"
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+import { env } from '@/env';
+import type { Database } from '@/types/database';
 
 /**
- * Cliente ADMIN para uso exclusivo de Server Components o Route Handlers (Node.js runtime).
- * Utiliza SERVICE_ROLE para saltarse el RLS (Row Level Security).
- * Útil para auto-aprovisionar usuarios o modificar configuración global.
+ * Service-role client — bypasses RLS. Use ONLY in server-side code
+ * (webhooks, background jobs, admin tasks). Never expose to the client.
  */
-export const supabaseAdmin = createClient<Database>(
-  env.NEXT_PUBLIC_SUPABASE_URL,
-  env.SUPABASE_SERVICE_ROLE_KEY,
-  {
+export function createAdminClient() {
+  return createSupabaseClient<Database>(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
-  }
-)
+  });
+}

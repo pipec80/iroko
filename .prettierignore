@@ -1,0 +1,23 @@
+# Build outputs
+.next/
+out/
+dist/
+
+# Deps
+node_modules/
+
+# Docs / assets / reports — no son código fuente
+docs/
+public/
+
+# Auto-generados — no formatear manualmente
+src/types/database.ts
+pnpm-lock.yaml
+skills-lock.json
+
+# Tooling & Agents — no formatear
+.agent/
+.agents/
+.claude/
+.gemini/
+.next/

@@ -1,0 +1,16 @@
+<!doctype html>
+<html>
+  <body style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
+    <h2>Restablecer contraseña</h2>
+    <p>Haz clic para definir una nueva contraseña:</p>
+    <p>
+      <a
+        href="{{ .SiteURL }}/es/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/es/reset-password"
+        style="display:inline-block;background:#1f2937;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold"
+      >Restablecer contraseña</a>
+    </p>
+    <p style="color:#555;font-size:13px">
+      Si no solicitaste este cambio, ignora este correo.
+    </p>
+  </body>
+</html>

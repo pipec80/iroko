@@ -6,22 +6,991 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
-export interface Database {
-  public: {
+export type Database = {
+  audit: {
     Tables: {
-      [_ in never]: never
+      logs: {
+        Row: {
+          account_id: string | null
+          action: Database["audit"]["Enums"]["action_type"]
+          actor_id: string | null
+          actor_type: string | null
+          created_at: string | null
+          id: number
+          ip_address: unknown
+          new_data: Json | null
+          old_data: Json | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          action: Database["audit"]["Enums"]["action_type"]
+          actor_id?: string | null
+          actor_type?: string | null
+          created_at?: string | null
+          id?: never
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          action?: Database["audit"]["Enums"]["action_type"]
+          actor_id?: string | null
+          actor_type?: string | null
+          created_at?: string | null
+          id?: never
+          ip_address?: unknown
+          new_data?: Json | null
+          old_data?: Json | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      v_recent_activity: {
+        Row: {
+          account_id: string | null
+          action: Database["audit"]["Enums"]["action_type"] | null
+          actor_id: string | null
+          actor_name: string | null
+          actor_type: string | null
+          avatar_url: string | null
+          created_at: string | null
+          id: number | null
+          ip_address: unknown
+          new_data: Json | null
+          old_data: Json | null
+          resource_id: string | null
+          resource_type: string | null
+          user_agent: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
     }
     Enums: {
+      action_type:
+        | "create"
+        | "update"
+        | "delete"
+        | "login"
+        | "logout"
+        | "invite"
+        | "role_change"
+        | "subscription_change"
+        | "payment"
+        | "export"
+    }
+    CompositeTypes: {
       [_ in never]: never
+    }
+  }
+  billing: {
+    Tables: {
+      customers: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          external_id: string | null
+          id: string
+          provider: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          provider?: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          external_id?: string | null
+          id?: string
+          provider?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          event_type: string
+          external_event_id: string | null
+          id: number
+          payload: Json
+          processed_at: string | null
+          provider: string
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          event_type: string
+          external_event_id?: string | null
+          id?: never
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          event_type?: string
+          external_event_id?: string | null
+          id?: never
+          payload?: Json
+          processed_at?: string | null
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoice_line_items: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string
+          id: string
+          invoice_id: string
+          quantity: number | null
+          unit_price: number
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description: string
+          id?: string
+          invoice_id: string
+          quantity?: number | null
+          unit_price: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string
+          id?: string
+          invoice_id?: string
+          quantity?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoice_line_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount_paid: number | null
+          created_at: string | null
+          currency: string
+          customer_id: string
+          external_invoice_id: string | null
+          hosted_url: string | null
+          id: string
+          number: string | null
+          paid_at: string | null
+          pdf_url: string | null
+          period_end: string | null
+          period_start: string | null
+          status: Database["billing"]["Enums"]["invoice_status"] | null
+          subscription_id: string | null
+          subtotal: number | null
+          tax: number | null
+          total: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_paid?: number | null
+          created_at?: string | null
+          currency?: string
+          customer_id: string
+          external_invoice_id?: string | null
+          hosted_url?: string | null
+          id?: string
+          number?: string | null
+          paid_at?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: Database["billing"]["Enums"]["invoice_status"] | null
+          subscription_id?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_paid?: number | null
+          created_at?: string | null
+          currency?: string
+          customer_id?: string
+          external_invoice_id?: string | null
+          hosted_url?: string | null
+          id?: string
+          number?: string | null
+          paid_at?: string | null
+          pdf_url?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          status?: Database["billing"]["Enums"]["invoice_status"] | null
+          subscription_id?: string | null
+          subtotal?: number | null
+          tax?: number | null
+          total?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          brand: string | null
+          created_at: string | null
+          customer_id: string
+          exp_month: number | null
+          exp_year: number | null
+          external_id: string | null
+          id: string
+          is_default: boolean | null
+          last_four: string | null
+          provider: string
+          type: Database["billing"]["Enums"]["payment_method_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          brand?: string | null
+          created_at?: string | null
+          customer_id: string
+          exp_month?: number | null
+          exp_year?: number | null
+          external_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          provider?: string
+          type?: Database["billing"]["Enums"]["payment_method_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          brand?: string | null
+          created_at?: string | null
+          customer_id?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          external_id?: string | null
+          id?: string
+          is_default?: boolean | null
+          last_four?: string | null
+          provider?: string
+          type?: Database["billing"]["Enums"]["payment_method_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          created_at: string | null
+          currency: string
+          description: string | null
+          features: Json | null
+          id: string
+          interval: Database["billing"]["Enums"]["plan_interval"]
+          is_active: boolean | null
+          limits: Json | null
+          name: string
+          price: number
+          slug: string
+          sort_order: number | null
+          trial_days: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          interval?: Database["billing"]["Enums"]["plan_interval"]
+          is_active?: boolean | null
+          limits?: Json | null
+          name: string
+          price?: number
+          slug: string
+          sort_order?: number | null
+          trial_days?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string
+          description?: string | null
+          features?: Json | null
+          id?: string
+          interval?: Database["billing"]["Enums"]["plan_interval"]
+          is_active?: boolean | null
+          limits?: Json | null
+          name?: string
+          price?: number
+          slug?: string
+          sort_order?: number | null
+          trial_days?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscription_items: {
+        Row: {
+          created_at: string | null
+          currency: string | null
+          description: string
+          id: string
+          quantity: number | null
+          subscription_id: string
+          type: string
+          unit_price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          currency?: string | null
+          description: string
+          id?: string
+          quantity?: number | null
+          subscription_id: string
+          type?: string
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          currency?: string | null
+          description?: string
+          id?: string
+          quantity?: number | null
+          subscription_id?: string
+          type?: string
+          unit_price?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_items_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean | null
+          canceled_at: string | null
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          customer_id: string
+          external_subscription_id: string | null
+          id: string
+          metadata: Json | null
+          plan_id: string
+          provider: string
+          status: Database["billing"]["Enums"]["subscription_status"]
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer_id: string
+          external_subscription_id?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id: string
+          provider?: string
+          status?: Database["billing"]["Enums"]["subscription_status"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cancel_at_period_end?: boolean | null
+          canceled_at?: string | null
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          customer_id?: string
+          external_subscription_id?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id?: string
+          provider?: string
+          status?: Database["billing"]["Enums"]["subscription_status"]
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      v_mrr_by_plan: {
+        Row: {
+          active_count: number | null
+          currency: string | null
+          mrr_cents: number | null
+          plan_name: string | null
+          slug: string | null
+        }
+        Relationships: []
+      }
+    }
+    Functions: {
+      [_ in never]: never
+    }
+    Enums: {
+      invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible"
+      payment_method_type: "card" | "bank_transfer" | "wallet" | "other"
+      plan_interval: "month" | "year" | "one_time"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "canceled"
+        | "paused"
+        | "unpaid"
+        | "incomplete"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+  public: {
+    Tables: {
+      accounts: {
+        Row: {
+          billing_email: string | null
+          created_at: string | null
+          created_by: string
+          deleted_at: string | null
+          id: string
+          logo_url: string | null
+          metadata: Json | null
+          name: string
+          slug: string
+          type: Database["public"]["Enums"]["account_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          billing_email?: string | null
+          created_at?: string | null
+          created_by: string
+          deleted_at?: string | null
+          id?: string
+          logo_url?: string | null
+          metadata?: Json | null
+          name: string
+          slug: string
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          billing_email?: string | null
+          created_at?: string | null
+          created_by?: string
+          deleted_at?: string | null
+          id?: string
+          logo_url?: string | null
+          metadata?: Json | null
+          name?: string
+          slug?: string
+          type?: Database["public"]["Enums"]["account_type"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      accounts_memberships: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          invited_by: string | null
+          role: Database["public"]["Enums"]["membership_role"]
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["membership_role"]
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["membership_role"]
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounts_memberships_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_memberships_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accounts_memberships_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitations: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          email: string
+          expires_at: string | null
+          id: string
+          invited_by: string | null
+          role: Database["public"]["Enums"]["membership_role"]
+          status: Database["public"]["Enums"]["invitation_status"] | null
+          token: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          email: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["membership_role"]
+          status?: Database["public"]["Enums"]["invitation_status"] | null
+          token?: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          email?: string
+          expires_at?: string | null
+          id?: string
+          invited_by?: string | null
+          role?: Database["public"]["Enums"]["membership_role"]
+          status?: Database["public"]["Enums"]["invitation_status"] | null
+          token?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitations_invited_by_fkey"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          deleted_at: string | null
+          display_name: string | null
+          family_name: string | null
+          given_name: string | null
+          id: string
+          locale: string | null
+          metadata: Json | null
+          onboarding_completed: boolean | null
+          phone_number: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          display_name?: string | null
+          family_name?: string | null
+          given_name?: string | null
+          id: string
+          locale?: string | null
+          metadata?: Json | null
+          onboarding_completed?: boolean | null
+          phone_number?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          deleted_at?: string | null
+          display_name?: string | null
+          family_name?: string | null
+          given_name?: string | null
+          id?: string
+          locale?: string | null
+          metadata?: Json | null
+          onboarding_completed?: boolean | null
+          phone_number?: string | null
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      accept_invitation: { Args: { p_token: string }; Returns: string }
+      custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      get_account_subscription: {
+        Args: { p_account_id: string }
+        Returns: {
+          cancel_at_period_end: boolean
+          current_period_end: string
+          features: Json
+          plan_name: string
+          plan_slug: string
+          status: Database["billing"]["Enums"]["subscription_status"]
+        }[]
+      }
+      get_active_plans: {
+        Args: never
+        Returns: {
+          currency: string
+          description: string
+          features: Json
+          interval: Database["billing"]["Enums"]["plan_interval"]
+          limits: Json
+          name: string
+          price: number
+          slug: string
+          trial_days: number
+        }[]
+      }
+      get_my_accounts: {
+        Args: never
+        Returns: {
+          account_id: string
+          logo_url: string
+          name: string
+          role: Database["public"]["Enums"]["membership_role"]
+          slug: string
+          type: Database["public"]["Enums"]["account_type"]
+        }[]
+      }
+      list_my_sessions: {
+        Args: never
+        Returns: {
+          aal: string
+          created_at: string
+          id: string
+          ip: string
+          not_after: string
+          updated_at: string
+          user_agent: string
+        }[]
+      }
+      request_account_deletion: { Args: never; Returns: undefined }
+      revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
+      update_my_profile: {
+        Args: {
+          p_avatar_url?: string
+          p_family_name?: string
+          p_given_name?: string
+          p_locale?: string
+          p_phone_number?: string
+          p_timezone?: string
+        }
+        Returns: {
+          avatar_url: string | null
+          created_at: string | null
+          deleted_at: string | null
+          display_name: string | null
+          family_name: string | null
+          given_name: string | null
+          id: string
+          locale: string | null
+          metadata: Json | null
+          onboarding_completed: boolean | null
+          phone_number: string | null
+          timezone: string | null
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+    }
+    Enums: {
+      account_type: "personal" | "team"
+      invitation_status: "pending" | "accepted" | "revoked" | "expired"
+      membership_role: "owner" | "admin" | "member" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
     }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  audit: {
+    Enums: {
+      action_type: [
+        "create",
+        "update",
+        "delete",
+        "login",
+        "logout",
+        "invite",
+        "role_change",
+        "subscription_change",
+        "payment",
+        "export",
+      ],
+    },
+  },
+  billing: {
+    Enums: {
+      invoice_status: ["draft", "open", "paid", "void", "uncollectible"],
+      payment_method_type: ["card", "bank_transfer", "wallet", "other"],
+      plan_interval: ["month", "year", "one_time"],
+      subscription_status: [
+        "trialing",
+        "active",
+        "past_due",
+        "canceled",
+        "paused",
+        "unpaid",
+        "incomplete",
+      ],
+    },
+  },
+  public: {
+    Enums: {
+      account_type: ["personal", "team"],
+      invitation_status: ["pending", "accepted", "revoked", "expired"],
+      membership_role: ["owner", "admin", "member", "viewer"],
+    },
+  },
+} as const
+

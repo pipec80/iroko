@@ -1,0 +1,292 @@
+'use server';
+
+import { getLocale } from 'next-intl/server';
+import { revalidatePath } from 'next/cache';
+
+import { redirect } from '@/i18n/routing';
+import { logger } from '@/lib/logger';
+import { createClient } from '@/lib/supabase/server';
+import {
+  deleteAccountSchema,
+  updateEmailSchema,
+  updatePasswordFromSettingsSchema,
+  updateProfileSchema,
+  validateAvatarFile,
+} from '@/lib/validation/profile';
+
+export type SettingsActionState = {
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+  success?: string;
+};
+
+function flattenFieldErrors(
+  errors: Record<string, string[] | undefined>,
+): Record<string, string[]> {
+  const result: Record<string, string[]> = {};
+  for (const [key, value] of Object.entries(errors)) {
+    if (value && value.length > 0) result[key] = value;
+  }
+  return result;
+}
+
+async function requireUserId() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims.sub;
+  if (!userId) return { supabase, userId: null as null };
+  return { supabase, userId };
+}
+
+export async function updateProfileAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const parsed = updateProfileSchema.safeParse({
+    given_name: formData.get('given_name'),
+    family_name: formData.get('family_name'),
+    locale: formData.get('locale'),
+    timezone: formData.get('timezone'),
+    phone_number: formData.get('phone_number') || null,
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  const { error } = await supabase.rpc('update_my_profile', {
+    p_given_name: parsed.data.given_name,
+    p_family_name: parsed.data.family_name,
+    p_locale: parsed.data.locale,
+    p_timezone: parsed.data.timezone,
+    p_phone_number: parsed.data.phone_number || undefined,
+  });
+
+  if (error) {
+    logger.warn({ userId, action: 'settings.updateProfile', code: error.code }, 'Update failed');
+    return { error: error.code ?? 'update_failed' };
+  }
+
+  revalidatePath('/dashboard/settings');
+  return { success: 'profile_updated' };
+}
+
+export async function updateEmailAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const parsed = updateEmailSchema.safeParse({ email: formData.get('email') });
+  if (!parsed.success) {
+    return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  const { error } = await supabase.auth.updateUser({ email: parsed.data.email });
+  if (error) {
+    logger.warn(
+      { userId, action: 'settings.updateEmail', code: error.code },
+      'Email change failed',
+    );
+    return { error: error.code ?? 'update_email_failed' };
+  }
+
+  return { success: 'email_change_requested' };
+}
+
+export async function updatePasswordFromSettingsAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const parsed = updatePasswordFromSettingsSchema.safeParse({
+    current_password: formData.get('current_password'),
+    password: formData.get('password'),
+    confirm_password: formData.get('confirm_password'),
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  // Pass currentPassword so Supabase can enforce secure_password_change.
+  const { error } = await supabase.auth.updateUser({
+    password: parsed.data.password,
+    // @ts-expect-error supabase-js types miss this option in 2.x; supported server-side.
+    currentPassword: parsed.data.current_password,
+  });
+  if (error) {
+    logger.warn(
+      { userId, action: 'settings.updatePassword', code: error.code },
+      'Password change failed',
+    );
+    return { error: error.code ?? 'update_password_failed' };
+  }
+
+  return { success: 'password_updated' };
+}
+
+export async function uploadAvatarAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const file = formData.get('avatar');
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: 'no_file' };
+  }
+
+  const clientCheck = validateAvatarFile(file);
+  if (!clientCheck.ok) return { error: clientCheck.error };
+
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
+  const path = `${userId}/avatar-${Date.now()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+
+  if (uploadError) {
+    logger.warn(
+      { userId, action: 'settings.uploadAvatar', code: uploadError.message },
+      'Upload failed',
+    );
+    return { error: 'upload_failed' };
+  }
+
+  const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
+
+  const { error: rpcError } = await supabase.rpc('update_my_profile', {
+    p_avatar_url: urlData.publicUrl,
+  });
+  if (rpcError) {
+    logger.warn(
+      { userId, action: 'settings.updateAvatarUrl', code: rpcError.code },
+      'Set avatar URL failed',
+    );
+    return { error: rpcError.code ?? 'update_avatar_failed' };
+  }
+
+  revalidatePath('/dashboard/settings');
+  return { success: 'avatar_updated' };
+}
+
+export async function requestPasswordResetFromSettingsAction(
+  _prev: SettingsActionState,
+  _formData: FormData,
+): Promise<SettingsActionState> {
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  const { data: userData } = await supabase.auth.getUser();
+  const email = userData.user?.email;
+  if (!email) return { error: 'no_email_on_account' };
+
+  const locale = await getLocale();
+  const redirectTo = `${process.env.SITE_URL ?? 'http://localhost:3000'}/${locale}/auth/confirm?next=/${locale}/reset-password`;
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) {
+    logger.warn(
+      { userId, action: 'settings.requestReset', code: error.code },
+      'Reset link request failed',
+    );
+    return { error: error.code ?? 'reset_failed' };
+  }
+
+  return { success: 'reset_link_sent' };
+}
+
+export async function deleteAccountAction(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const parsed = deleteAccountSchema.safeParse({
+    confirmation: formData.get('confirmation'),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  const { error: rpcError } = await supabase.rpc('request_account_deletion');
+  if (rpcError) {
+    logger.error(
+      { userId, action: 'settings.deleteAccount', code: rpcError.code },
+      'Soft-delete failed',
+    );
+    return { error: rpcError.code ?? 'delete_failed' };
+  }
+
+  await supabase.auth.signOut();
+
+  const locale = await getLocale();
+  redirect({ href: '/login?deleted=1', locale });
+  return {};
+}
+
+export async function revokeSessionAction(sessionId: string): Promise<SettingsActionState> {
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  const { error } = await supabase.rpc('revoke_my_session', { p_session_id: sessionId });
+  if (error) {
+    logger.warn({ userId, action: 'settings.revokeSession', code: error.code }, 'Revoke failed');
+    return { error: error.code ?? 'revoke_failed' };
+  }
+
+  revalidatePath('/dashboard/settings');
+  return { success: 'session_revoked' };
+}
+
+export async function revokeAllOtherSessionsAction(): Promise<SettingsActionState> {
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  const { error } = await supabase.auth.signOut({ scope: 'others' });
+  if (error) {
+    logger.warn(
+      { userId, action: 'settings.signOutOthers', code: error.code },
+      'SignOut others failed',
+    );
+    return { error: error.code ?? 'sign_out_others_failed' };
+  }
+
+  revalidatePath('/dashboard/settings');
+  return { success: 'other_sessions_revoked' };
+}
+
+export type SessionRow = {
+  id: string;
+  created_at: string | null;
+  updated_at: string | null;
+  not_after: string | null;
+  user_agent: string | null;
+  ip: string | null;
+  aal: string | null;
+};
+
+export async function listMySessions(): Promise<SessionRow[]> {
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return [];
+
+  const { data, error } = await supabase.rpc('list_my_sessions');
+  if (error) {
+    logger.warn(
+      { userId, action: 'settings.listSessions', code: error.code },
+      'List sessions failed',
+    );
+    return [];
+  }
+  return (data ?? []) as SessionRow[];
+}

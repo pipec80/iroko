@@ -1,30 +1,32 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
-import { notFound } from "next/navigation";
-import { Providers } from "@/components/providers";
-import "../globals.css";
-import { routing } from "@/i18n/routing";
-import { setRequestLocale } from "next-intl/server";
+import type { Metadata } from 'next';
+import { Plus_Jakarta_Sans, IBM_Plex_Mono } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { Providers } from '@/components/providers';
+import '../globals.css';
+import { routing } from '@/i18n/routing';
+import { setRequestLocale } from 'next-intl/server';
+import { Suspense } from 'react';
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const jakartaSans = Plus_Jakarta_Sans({
+  variable: '--font-sans',
+  subsets: ['latin'],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const plexMono = IBM_Plex_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
 });
 
 export const metadata: Metadata = {
-  title: "SaaS Boilerplate",
-  description: "Enterprise SaaS Boilerplate with Next.js 16 and Supabase",
+  title: 'SaaS Boilerplate',
+  description: 'Enterprise SaaS Boilerplate with Next.js 16',
 };
 
 export default async function RootLayout({
@@ -35,27 +37,43 @@ export default async function RootLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  setRequestLocale(locale);
 
-  // Ensure the locale is supported
-  let messages;
-  try {
-    messages = await getMessages();
-  } catch {
+  // Validación rápida de locale
+  if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
     notFound();
   }
+
+  // Activa el soporte para renderizado estático
+  setRequestLocale(locale);
 
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      suppressHydrationWarning
-    >
-      <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider messages={messages}>
-          <Providers>{children}</Providers>
-        </NextIntlClientProvider>
+      className={`${jakartaSans.variable} ${plexMono.variable} h-full antialiased`}
+      suppressHydrationWarning>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        />
+      </head>
+      <body className="flex min-h-full flex-col">
+        <Suspense fallback={null}>
+          <I18nProvider locale={locale}>
+            <Providers>{children}</Providers>
+          </I18nProvider>
+        </Suspense>
       </body>
     </html>
+  );
+}
+
+// Componente interno para cargar mensajes sin bloquear el shell del HTML
+async function I18nProvider({ children, locale }: { children: React.ReactNode; locale: string }) {
+  const messages = await getMessages();
+  return (
+    <NextIntlClientProvider messages={messages} locale={locale}>
+      {children}
+    </NextIntlClientProvider>
   );
 }

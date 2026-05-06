@@ -1,0 +1,68 @@
+-- ============================================================================
+-- Migration 018: pg_cron Scheduled Jobs (Template)
+-- ============================================================================
+-- Requires pg_cron extension enabled in Supabase Dashboard:
+--   Database → Extensions → pg_cron → Enable
+--
+-- IMPORTANT: This migration is intentionally commented out.
+-- Uncomment and adjust schedules once pg_cron is enabled in your project.
+--
+-- To verify pg_cron is available:
+--   SELECT * FROM pg_available_extensions WHERE name = 'pg_cron';
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- Job 1: Hard-delete accounts soft-deleted more than 90 days ago
+-- Removes all cascading data (profiles, memberships, billing) via FK CASCADE.
+-- Schedule: daily at 03:00 UTC
+-- ---------------------------------------------------------------------------
+-- SELECT cron.schedule(
+--   'hard-delete-old-accounts',
+--   '0 3 * * *',
+--   $$
+--     DELETE FROM public.accounts
+--     WHERE deleted_at IS NOT NULL
+--       AND deleted_at < now() - interval '90 days';
+--   $$
+-- );
+
+-- ---------------------------------------------------------------------------
+-- Job 2: Cleanup expired invitations
+-- Removes invitations that were never accepted and have expired.
+-- Schedule: daily at 03:15 UTC
+-- ---------------------------------------------------------------------------
+-- SELECT cron.schedule(
+--   'cleanup-expired-invitations',
+--   '15 3 * * *',
+--   $$
+--     DELETE FROM public.invitations
+--     WHERE expires_at < now() - interval '30 days'
+--       AND accepted_at IS NULL;
+--   $$
+-- );
+
+-- ---------------------------------------------------------------------------
+-- Job 3: Archive processed billing events older than 1 year
+-- Moves rows to a cold-storage table to keep billing.events lean.
+-- Requires creating billing.events_archive first — uncomment when ready.
+-- Schedule: first day of each month at 04:00 UTC
+-- ---------------------------------------------------------------------------
+-- SELECT cron.schedule(
+--   'archive-old-billing-events',
+--   '0 4 1 * *',
+--   $$
+--     INSERT INTO billing.events_archive
+--       SELECT * FROM billing.events
+--       WHERE processed_at IS NOT NULL
+--         AND created_at < now() - interval '1 year';
+--
+--     DELETE FROM billing.events
+--       WHERE processed_at IS NOT NULL
+--         AND created_at < now() - interval '1 year';
+--   $$
+-- );
+
+-- ---------------------------------------------------------------------------
+-- Verify scheduled jobs (run manually after enabling):
+--   SELECT jobid, jobname, schedule, command FROM cron.job ORDER BY jobid;
+-- ---------------------------------------------------------------------------

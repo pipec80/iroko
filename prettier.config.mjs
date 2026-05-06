@@ -6,12 +6,12 @@ const config = {
   semi: true,
   singleQuote: true,
   tabWidth: 2,
-  trailingComma: "all",
+  trailingComma: 'all',
   printWidth: 100,
   bracketSameLine: true,
-  arrowParens: "always",
+  arrowParens: 'always',
   experimentalTernaries: true,
-  plugins: ["prettier-plugin-tailwindcss"],
-}
+  plugins: ['prettier-plugin-tailwindcss'],
+};
 
-export default config
+export default config;

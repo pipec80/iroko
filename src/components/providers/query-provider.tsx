@@ -1,11 +1,7 @@
-"use client";
+'use client';
 
-import {
-  isServer,
-  QueryClient,
-  QueryClientProvider,
-} from "@tanstack/react-query";
-import * as React from "react";
+import { isServer, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as React from 'react';
 
 function makeQueryClient() {
   return new QueryClient({
@@ -40,7 +36,5 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   // using suspense in SSR.
   const queryClient = getQueryClient();
 
-  return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }

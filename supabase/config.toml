@@ -1,0 +1,477 @@
+# ============================================================================
+# SaaS Boilerplate — Supabase Local Config
+# ============================================================================
+# Docs: https://supabase.com/docs/guides/local-development/cli/config
+#
+# FILOSOFIA DE ESTE CONFIG
+# ------------------------
+# 1. Local = lo mas realista posible: confirmacion email ON, MFA TOTP ON,
+#    SMS emulado con test_otp, password policy estricto.
+# 2. Lo que NO se puede emular local queda comentado con instrucciones:
+#    - OAuth providers reales (Google, GitHub, Azure): requieren Client ID/Secret
+#    - SMS provider real (Twilio, etc): requiere cuenta + costo por SMS
+#    - SMTP propio (Resend/Postmark/SES): local usa Inbucket
+# 3. Todas las keys comentadas requieren variables de entorno en .env.local
+#    para activarse — ver SUPABASE_AUTH_EXTERNAL_<PROVIDER>_SECRET
+#
+# IMPORTANTE: Tras cambios correr `pnpm supa:stop && pnpm supa:start`
+# Referencia: https://supabase.com/docs/guides/cli/config
+# ============================================================================
+
+project_id = "saas-boilerplate"
+
+# ============================================================================
+# API (PostgREST)
+# ============================================================================
+# SECURITY: Solo "public" expuesto via API REST. Los schemas billing/audit/
+# private NUNCA se exponen — se acceden via RPCs SECURITY DEFINER definidas
+# en migrations/20250505220014_public_rpcs.sql.
+# ============================================================================
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+# ============================================================================
+# Database (Postgres 17)
+# ============================================================================
+[db]
+port = 54322
+shadow_port = 54320
+health_timeout = "2m"
+major_version = 17
+
+[db.pooler]
+enabled = true
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+# Best practice: track commit timestamps para auditoria y replication.
+# Requiere restart de DB al cambiar.
+[db.settings]
+track_commit_timestamp = true
+
+# ============================================================================
+# Realtime
+# ============================================================================
+[realtime]
+enabled = true
+# IPv4 recomendado en Windows + Docker Desktop (IPv6 da problemas).
+ip_version = "IPv4"
+
+# ============================================================================
+# Studio (Dashboard local — http://127.0.0.1:54323)
+# ============================================================================
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+openai_api_key = "env(OPENAI_API_KEY)"
+
+# ============================================================================
+# Inbucket (Email testing local — http://127.0.0.1:54324)
+# ----------------------------------------------------------------------------
+# Todos los emails de Supabase Auth (signup, magic link, recovery, invite,
+# email_change, MFA enrolled, password changed, etc.) se capturan aqui.
+# NO se envian emails reales en local.
+# ============================================================================
+[inbucket]
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+admin_email = "noreply@saas-boilerplate.local"
+sender_name = "SaaS Boilerplate"
+
+# ============================================================================
+# Storage
+# ============================================================================
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+# Avatares de usuario (picture claim OIDC / upload en settings/profile)
+[storage.buckets.avatars]
+public = true
+file_size_limit = "2MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"]
+
+# Logos de accounts / orgs
+[storage.buckets.org-assets]
+public = true
+file_size_limit = "5MiB"
+allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"]
+
+[storage.s3_protocol]
+enabled = false
+
+[storage.analytics]
+enabled = false
+
+[storage.vector]
+enabled = false
+
+# ============================================================================
+# Auth (GoTrue)
+# ============================================================================
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+# Wildcards permitidos para previews. En prod agregar dominios reales.
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "http://localhost:3000/**",
+  "http://127.0.0.1:3000/**",
+]
+# JWT: 1h es el default recomendado. No bajar de 5 min (clock skew).
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+# Anonymous sign-ins: activar si se quiere soportar carts pre-signup.
+# Si se activa, AGREGAR CAPTCHA obligatorio (ver BEST_PRACTICES.md seccion 6).
+enable_anonymous_sign_ins = false
+# Manual linking: permite vincular identidades (Google + email) al mismo user.
+# Util para migracion anonymous -> permanent.
+enable_manual_linking = true
+# Password policy: longitud y caracteres requeridos.
+# Valores validos: "letters_digits", "lower_upper_letters_digits",
+# "lower_upper_letters_digits_symbols"
+minimum_password_length = 10
+password_requirements = "lower_upper_letters_digits"
+
+# ----------------------------------------------------------------------------
+# Rate limits (defaults sensatos para dev — en prod ajustar segun trafico)
+# ----------------------------------------------------------------------------
+[auth.rate_limit]
+email_sent = 30
+sms_sent = 30
+anonymous_users = 30
+token_refresh = 150
+sign_in_sign_ups = 30
+token_verifications = 30
+
+# ----------------------------------------------------------------------------
+# Email Auth
+# ----------------------------------------------------------------------------
+[auth.email]
+enable_signup = true
+# Double confirm: al cambiar email, pide confirmar en el viejo Y el nuevo.
+double_confirm_changes = true
+# LOCAL = true para probar flow real con Inbucket (emails en :54324).
+enable_confirmations = true
+# Obliga a ingresar password actual al cambiarlo.
+secure_password_change = true
+# Anti-spam: minimo entre requests de email al mismo user.
+max_frequency = "1m"
+# OTP de 6 digitos (rango valido: 6-10).
+otp_length = 6
+otp_expiry = 3600
+
+# ----------------------------------------------------------------------------
+# SMTP — Inbucket captura local. En prod usar Resend/Postmark/SES.
+# NO descomentar en local: Inbucket cubre todo el testing.
+# ----------------------------------------------------------------------------
+# [auth.email.smtp]
+# enabled = true
+# host = "smtp.resend.com"
+# port = 587
+# user = "resend"
+# pass = "env(RESEND_API_KEY)"
+# admin_email = "no-reply@retailanalytics.com"
+# sender_name = "Retail Analytics"
+
+# ----------------------------------------------------------------------------
+# Email templates custom — enlaces van DIRECTO a /auth/confirm de Next.js,
+# bypasseando el redirect de /auth/v1/verify de Supabase. Mas robusto con
+# email prefetchers (Gmail, Outlook Safe Links) y resuelve el 404 que aparece
+# cuando GOTRUE_MAILER_URLPATHS_CONFIRMATION=/verify en Kong local.
+# ----------------------------------------------------------------------------
+[auth.email.template.confirmation]
+subject = "Confirma tu cuenta"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.magic_link]
+subject = "Tu enlace magico para iniciar sesion"
+content_path = "./supabase/templates/magic_link.html"
+
+[auth.email.template.recovery]
+subject = "Restablece tu contrasena"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirma el cambio de email"
+content_path = "./supabase/templates/email_change.html"
+
+[auth.email.template.invite]
+subject = "Te invitaron a SaaS Boilerplate"
+content_path = "./supabase/templates/invite.html"
+
+# ----------------------------------------------------------------------------
+# Security notifications — avisar al user cuando cambian cosas sensibles.
+# ----------------------------------------------------------------------------
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Tu contrasena fue cambiada"
+
+[auth.email.notification.email_changed]
+enabled = true
+subject = "Tu email fue cambiado"
+
+[auth.email.notification.phone_changed]
+enabled = true
+subject = "Tu telefono fue cambiado"
+
+[auth.email.notification.mfa_factor_enrolled]
+enabled = true
+subject = "Un nuevo factor MFA fue agregado"
+
+[auth.email.notification.mfa_factor_unenrolled]
+enabled = true
+subject = "Un factor MFA fue removido"
+
+[auth.email.notification.identity_linked]
+enabled = true
+subject = "Una identidad fue vinculada a tu cuenta"
+
+[auth.email.notification.identity_unlinked]
+enabled = true
+subject = "Una identidad fue desvinculada de tu cuenta"
+
+# ----------------------------------------------------------------------------
+# SMS / Phone Auth
+# ----------------------------------------------------------------------------
+# IMPORTANTE sobre emulacion local:
+#   - Supabase NO tiene un provider SMS "dummy". Para que /auth/v1/otp
+#     acepte requests hay que tener Twilio (u otro) configurado SI O SI.
+#   - [auth.sms.test_otp] NO sustituye al provider: solo intercepta el
+#     verifyOtp() para que pase con un OTP predefinido SIN enviar SMS real.
+#   - Workflow recomendado para local:
+#       1. Crear cuenta gratis en Twilio trial (USD 15 de credito).
+#       2. Agregar TWILIO_* a .env.local.
+#       3. Descomentar [auth.sms.twilio] mas abajo.
+#       4. test_otp intercepta verificaciones de los numeros listados.
+#   - Si no necesitas testear phone en local, deja SMS apagado (actual).
+# ----------------------------------------------------------------------------
+[auth.sms]
+# OFF por defecto: no forzar setup de Twilio solo para levantar el proyecto.
+# Activa cuando descomientes un provider abajo.
+enable_signup = false
+enable_confirmations = false
+template = "Tu codigo SaaS Boilerplate es {{ .Code }}"
+max_frequency = "10s"
+
+# Numeros de prueba — solo aplican cuando un provider real esta configurado.
+# Formato: <phone_sin_plus> = "<otp_6_digitos>"
+# [auth.sms.test_otp]
+# 5491100000001 = "123456"
+# 5491100000002 = "123456"
+# 15555550100 = "111111"
+
+# ----------------------------------------------------------------------------
+# SMS Provider (Twilio) — REQUIERE cuenta y envia SMS reales.
+# Con Twilio trial + test_otp de arriba, puedes testear sin gastar creditos:
+# los numeros del test_otp NUNCA llegan a la API de Twilio.
+# ----------------------------------------------------------------------------
+# [auth.sms.twilio]
+# enabled = true
+# account_sid = "env(TWILIO_ACCOUNT_SID)"
+# message_service_sid = "env(TWILIO_MESSAGE_SERVICE_SID)"
+# auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+#
+# Alternativa: Twilio Verify (API dedicada para MFA, mejor rate limits)
+# [auth.sms.twilio_verify]
+# enabled = true
+# account_sid = "env(TWILIO_ACCOUNT_SID)"
+# message_service_sid = "env(TWILIO_VERIFY_SERVICE_SID)"
+# auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+#
+# Alternativas: MessageBird, Vonage, TextLocal — ver docs de Supabase.
+
+# ----------------------------------------------------------------------------
+# Sessions — control de duracion (SOC 2 / HIPAA / PCI-DSS compliant)
+# ----------------------------------------------------------------------------
+[auth.sessions]
+# Re-login forzado tras 7 dias.
+timebox = "168h"
+# Logout automatico por inactividad.
+inactivity_timeout = "2h"
+
+# ----------------------------------------------------------------------------
+# MFA (Multi-Factor Authentication)
+# ----------------------------------------------------------------------------
+[auth.mfa]
+# Max factores por user (TOTP apps + phone + webauthn combinados).
+max_enrolled_factors = 10
+
+# TOTP (Google Authenticator, 1Password, Authy) — FREE, activo.
+[auth.mfa.totp]
+enroll_enabled = true
+verify_enabled = true
+
+# Phone MFA — usa test_otp en local. En prod requiere Twilio (ver arriba).
+[auth.mfa.phone]
+enroll_enabled = true
+verify_enabled = true
+otp_length = 6
+max_frequency = "10s"
+
+# WebAuthn (passkeys, YubiKey, Touch ID, Windows Hello) — FREE, activo.
+[auth.mfa.web_authn]
+enroll_enabled = true
+verify_enabled = true
+
+# ============================================================================
+# OAuth Providers — REQUIEREN Client ID y Secret de cada provider.
+# NO se pueden emular local: los OAuth servers son externos.
+# Para activar en local:
+#   1. Crear OAuth App en el provider (Google Cloud Console, Azure Portal, etc)
+#   2. Redirect URI: http://127.0.0.1:54321/auth/v1/callback
+#   3. Agregar Client ID + Secret a .env.local
+#   4. Descomentar el bloque [auth.external.<provider>] correspondiente
+#   5. supabase stop && supabase start
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Google — Descomentar y configurar:
+# ----------------------------------------------------------------------------
+[auth.external.google]
+enabled = true
+client_id = "977414530520-v6mcr9hdtvmdtqdneea56ofs0vamt0rd.apps.googleusercontent.com"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = "http://127.0.0.1:54321/auth/v1/callback"
+skip_nonce_check = false
+
+# ----------------------------------------------------------------------------
+# Microsoft / Azure AD — Descomentar y configurar:
+# ----------------------------------------------------------------------------
+# [auth.external.azure]
+# enabled = true
+# client_id = "env(AZURE_CLIENT_ID)"
+# secret = "env(SUPABASE_AUTH_EXTERNAL_AZURE_SECRET)"
+# # Opcional: limitar a un tenant especifico (AD empresarial).
+# # url = "https://login.microsoftonline.com/<tenant-id>/v2.0"
+
+# ----------------------------------------------------------------------------
+# GitHub — Descomentar y configurar:
+# ----------------------------------------------------------------------------
+# [auth.external.github]
+# enabled = true
+# client_id = "env(GITHUB_CLIENT_ID)"
+# secret = "env(SUPABASE_AUTH_EXTERNAL_GITHUB_SECRET)"
+
+# ----------------------------------------------------------------------------
+# Otros providers soportados por Supabase — descomentar segun necesidad:
+# apple, bitbucket, discord, facebook, gitlab, kakao, keycloak,
+# linkedin_oidc, notion, twitch, twitter, slack_oidc, spotify, workos, zoom
+# ----------------------------------------------------------------------------
+# [auth.external.apple]
+# enabled = false
+# client_id = "env(APPLE_CLIENT_ID)"
+# secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
+
+# ============================================================================
+# Third-Party Auth — Integracion con otros providers JWT (enterprise).
+# Util para migrar de Firebase / Auth0 / Cognito a Supabase preservando users.
+# ============================================================================
+[auth.third_party.firebase]
+enabled = false
+# project_id = "my-firebase-project"
+
+[auth.third_party.auth0]
+enabled = false
+# tenant = "mytenant"
+# tenant_region = "us"
+
+[auth.third_party.aws_cognito]
+enabled = false
+# user_pool_id = "us-east-1_ABC123"
+# user_pool_region = "us-east-1"
+
+# ============================================================================
+# Auth Hooks — Customizacion de flows de auth.
+# Recomendado para prod: custom_access_token hook que inyecta account_id +
+# role en el JWT. Evita JOINs en RLS policies y acelera todas las queries.
+# Ver: docs/modules/auth/BEST_PRACTICES.md seccion 12.
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Custom Access Token — Inyecta app_metadata.account_id + app_metadata.role
+# al JWT. Implementado en migration 20250506040500_custom_access_token_hook.
+# Permite policies RLS "WHERE account_id = (auth.jwt()->'app_metadata'->>'account_id')"
+# sin JOIN a accounts_memberships.
+# ----------------------------------------------------------------------------
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
+# ----------------------------------------------------------------------------
+# Before User Created — Validar dominios corporativos, rate limit per-org, etc.
+# ----------------------------------------------------------------------------
+# [auth.hook.before_user_created]
+# enabled = true
+# uri = "pg-functions://postgres/public/before_user_created_hook"
+
+# ----------------------------------------------------------------------------
+# Send Email / SMS Hooks — Routear a provider custom (no el nativo).
+# Util si tu provider no esta soportado o si necesitas logica custom.
+# ----------------------------------------------------------------------------
+# [auth.hook.send_email]
+# enabled = true
+# uri = "http://host.docker.internal:54321/functions/v1/send-email"
+# secrets = "env(SEND_EMAIL_HOOK_SECRETS)"
+#
+# [auth.hook.send_sms]
+# enabled = true
+# uri = "http://host.docker.internal:54321/functions/v1/send-sms"
+# secrets = "env(SEND_SMS_HOOK_SECRETS)"
+
+# ----------------------------------------------------------------------------
+# MFA / Password Verification — Antifraude (Teams/Enterprise plan).
+# ----------------------------------------------------------------------------
+# [auth.hook.mfa_verification_attempt]
+# enabled = true
+# uri = "pg-functions://postgres/public/mfa_verification_attempt_hook"
+#
+# [auth.hook.password_verification_attempt]
+# enabled = true
+# uri = "pg-functions://postgres/public/password_verification_attempt_hook"
+
+# ============================================================================
+# OAuth Server — Permite que TU app sea OAuth provider para terceros.
+# Feature avanzado de B2B SaaS. Deshabilitado por defecto.
+# ============================================================================
+[auth.oauth_server]
+enabled = false
+
+# ============================================================================
+# Edge Functions (Deno)
+# ============================================================================
+[edge_runtime]
+enabled = true
+# "oneshot" = hot reload en dev. "per_worker" = load testing.
+policy = "oneshot"
+inspector_port = 8083
+deno_version = 2
+
+# ============================================================================
+# Analytics (Logflare) — DESHABILITADO en local.
+# Consume mucha RAM en Docker. En Supabase Cloud viene gratis.
+# ============================================================================
+[analytics]
+enabled = false
