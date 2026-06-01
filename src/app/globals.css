@@ -173,7 +173,7 @@
   --popover-foreground: var(--color-ink);
 
   /* ── Sidebar ── */
-  --sidebar: var(--color-bone);
+  --sidebar: var(--color-gray-100);
   --sidebar-foreground: var(--color-ink);
   --sidebar-primary: var(--color-poppy);
   --sidebar-primary-foreground: var(--color-paper);

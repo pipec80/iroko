@@ -93,7 +93,7 @@ export function AppSidebarClient({ orgs }: Props) {
         <button
           type="button"
           onClick={() => setIsOpen((v) => !v)}
-          className="border-border hover:bg-surface-3 flex w-full items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-colors">
+          className="border-border bg-background hover:bg-surface-2 flex w-full items-center gap-2.5 rounded-lg border px-3 py-2.5 transition-colors">
           {selectedOrg ?
             <>
               <div
