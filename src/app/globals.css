@@ -247,6 +247,13 @@
 }
 
 @layer base {
+  /* Primitive brand colors not in the @theme inline chain — @layer base prevents tree-shaking */
+  :root {
+    --color-bone: #f5ecda;
+    --color-gold: #d9a441;
+    --color-iron: #d92121;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }

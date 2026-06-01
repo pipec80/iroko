@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { User, Shield, Monitor } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 
@@ -62,21 +63,21 @@ export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
             value="profile"
             disabled={isPending}
             className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
-            <span className="material-symbols-outlined text-[20px]">person</span>
+            <User size={16} strokeWidth={1.75} />
             {t('profile')}
           </TabsTrigger>
           <TabsTrigger
             value="security"
             disabled={isPending}
             className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
-            <span className="material-symbols-outlined text-[20px]">security</span>
+            <Shield size={16} strokeWidth={1.75} />
             {t('security')}
           </TabsTrigger>
           <TabsTrigger
             value="sessions"
             disabled={isPending}
             className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
-            <span className="material-symbols-outlined text-[20px]">devices</span>
+            <Monitor size={16} strokeWidth={1.75} />
             {t('sessions')}
           </TabsTrigger>
         </TabsList>

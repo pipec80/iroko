@@ -69,7 +69,9 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
   const orgLabel = firstOrg?.name.toUpperCase() ?? 'IROKO';
 
   return (
-    <header className="bg-surface-1 border-border sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b px-4 lg:px-6">
+    <header
+      className="border-border sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b px-4 lg:px-6"
+      style={{ background: 'var(--sidebar)' }}>
       {/* Left: mobile menu + breadcrumb */}
       <div className="flex items-center gap-3">
         <div className="lg:hidden">

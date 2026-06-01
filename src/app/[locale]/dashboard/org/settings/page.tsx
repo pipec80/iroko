@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Settings, Shield, Plug, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { BillingTab } from '@/components/dashboard/org/billing-tab';
 
 const TABS = [
   { id: 'general', label: 'General', Icon: Settings },
@@ -69,9 +68,6 @@ export default function OrgSettingsPage() {
 function GeneralTab() {
   return (
     <div className="space-y-6">
-      {/* Billing */}
-      <BillingTab />
-
       {/* Org info */}
       <div
         className="border-border space-y-5 rounded-2xl border p-6"

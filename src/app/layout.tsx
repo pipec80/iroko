@@ -22,6 +22,10 @@ export const metadata: Metadata = {
   description: 'El tronco común para tus micro-SaaS.',
   metadataBase: new URL(process.env.SITE_URL || 'http://localhost:3000'),
   robots: { index: true, follow: true },
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5ecda' },
+    { media: '(prefers-color-scheme: dark)', color: '#0e1117' },
+  ],
   openGraph: {
     type: 'website',
     siteName: 'Iroko',
