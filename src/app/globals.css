@@ -1,194 +1,246 @@
 @import 'tailwindcss';
 @import 'shadcn/tailwind.css';
 
-/* Material Symbols Outlined Configuration */
-.material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 24px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  font-variation-settings:
-    'FILL' 0,
-    'wght' 400,
-    'GRAD' 0,
-    'opsz' 24;
-  -webkit-font-smoothing: antialiased;
-}
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* ── shadcn semantic → Tailwind utility mapping ── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* ── Iroko surfaces as Tailwind utilities ── */
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-elevated: var(--surface-elevated);
+
+  /* ── Font stacks ── */
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-  --color-surface-container-lowest: #ffffff;
-  --color-on-tertiary-container: #6e4227;
-  --color-on-tertiary-fixed: #321200;
-  --color-on-primary: #ffffff;
-  --color-surface-bright: #fdf9f2;
-  --color-secondary-fixed: #bdebed;
-  --color-surface-dim: #dddad3;
-  --color-surface-container-high: #ece8e1;
-  --color-secondary-fixed-dim: #a2cfd1;
-  --color-primary-fixed-dim: #9acfd8;
-  --color-on-surface-variant: #40484a;
-  --color-on-secondary-fixed-variant: #214d4f;
-  --color-surface-tint: #31666d;
-  --color-on-tertiary-fixed-variant: #673c21;
-  --color-surface-variant: #e6e2db;
-  --color-outline-variant: #bfc8c9;
-  --color-on-tertiary: #ffffff;
-  --color-primary-container: #92c7cf;
-  --color-on-error-container: #93000a;
-  --color-inverse-on-surface: #f4f0e9;
-  --color-surface-container: #f2ede6;
-  --color-surface: #fdf9f2;
-  --color-surface-container-low: #f7f3ec;
-  --color-primary-fixed: #b6ecf4;
-  --color-on-surface: #1c1c17;
-  --color-on-primary-fixed-variant: #134e55;
-  --color-primary: #31666d;
-  --color-on-primary-fixed: #001f23;
-  --color-background: #fdf9f2;
-  --color-surface-container-highest: #e6e2db;
-  --color-secondary: #3a6567;
-  --color-tertiary: #825336;
-  --color-on-secondary-container: #406b6d;
-  --color-error: #ba1a1a;
-  --color-inverse-surface: #31302c;
-  --color-error-container: #ffdad6;
-  --color-on-error: #ffffff;
-  --color-secondary-container: #bdebed;
-  --color-outline: #70797a;
-  --color-tertiary-fixed: #ffdbc9;
-  --color-tertiary-container: #eeb18e;
-  --color-tertiary-fixed-dim: #f7b996;
-  --color-on-secondary: #ffffff;
-  --color-on-background: #1c1c17;
-  --color-inverse-primary: #9acfd8;
-  --color-on-secondary-fixed: #002021;
-  --color-on-primary-container: #1c545b;
-
-  --font-headline: var(--font-sans);
   --font-display: var(--font-sans);
   --font-body: var(--font-sans);
-  --font-label: var(--font-sans);
+  --font-label: var(--font-mono);
+
+  /* ── Radii (Iroko canonical — precise, not soft) ── */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
+  --radius-2xl: 12px;
+  --radius-3xl: 12px;
+  --radius-4xl: 12px;
+  --radius-pill: 999px;
+  --radius: 0.375rem;
 }
 
 :root {
-  --background: #fdf9f2;
-  --foreground: #1c1c17;
-  --card: #f2ede6;
-  --card-foreground: #1c1c17;
-  --popover: #fdf9f2;
-  --popover-foreground: #1c1c17;
-  --primary: #31666d;
-  --primary-foreground: #ffffff;
-  --secondary: #3a6567;
-  --secondary-foreground: #ffffff;
-  --muted: #ece8e1;
-  --muted-foreground: #40484a;
-  --accent: #92c7cf;
-  --accent-foreground: #1c545b;
-  --destructive: #ba1a1a;
-  --destructive-foreground: #ffffff;
-  --border: #bfc8c9;
-  --input: #bfc8c9;
-  --ring: #31666d;
-  --chart-1: #31666d;
-  --chart-2: #3a6567;
-  --chart-3: #825336;
-  --chart-4: #ba1a1a;
-  --chart-5: #1c545b;
-  --radius: 0.5rem;
-  --sidebar: #fdf9f2;
-  --sidebar-foreground: #1c1c17;
-  --sidebar-primary: #31666d;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #ece8e1;
-  --sidebar-accent-foreground: #31666d;
-  --sidebar-border: #bfc8c9;
-  --sidebar-ring: #31666d;
+  /* ═══════════════════════════════════════════
+     IROKO · AUTOBOT PALETTE
+     Primary: Optimus red (#d92121)
+     Accent:  Optimus cobalt (#0047ab)
+     Surface: white + near-black ink
+     ═══════════════════════════════════════════ */
+
+  --color-poppy: #d92121;
+  --color-crimson: #b11226;
+  --color-poppy-soft: #ff3a3a;
+  --color-cobalt: #0047ab;
+  --color-cobalt-soft: #4682bf;
+  --color-cobalt-deep: #003782;
+  --color-silver: #a8a9ad;
+  --color-gray-300: #d3d3d3;
+  --color-ink: #0e1117;
+  --color-paper: #ffffff;
+
+  /* Neutral ramp */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f4f4f5;
+  --color-gray-200: #e8e9ec;
+  --color-gray-400: #a8a9ad;
+  --color-gray-500: #71717a;
+  --color-gray-600: #52525b;
+  --color-gray-700: #3a4252;
+  --color-gray-800: #27272a;
+  --color-gray-900: #161a21;
+
+  /* Washes — 10–16% alpha tints for badges, hover states */
+  --color-poppy-wash: rgba(217, 33, 33, 0.1);
+  --color-poppy-wash-2: rgba(217, 33, 33, 0.16);
+  --color-cobalt-wash: rgba(0, 71, 171, 0.1);
+  --color-cobalt-wash-2: rgba(0, 71, 171, 0.16);
+  --color-silver-wash: rgba(168, 169, 173, 0.16);
+
+  /* Semantic state colors */
+  --color-success: #1e8a4f;
+  --color-success-wash: rgba(30, 138, 79, 0.12);
+  --color-warning: #c47a00;
+  --color-warning-wash: rgba(196, 122, 0, 0.14);
+  --color-error: var(--color-poppy);
+  --color-error-wash: var(--color-poppy-wash);
+  --color-info: var(--color-cobalt);
+  --color-info-wash: var(--color-cobalt-wash);
+
+  /* ── Role tokens (light mode) ── */
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
+
+  --surface-1: var(--color-paper);
+  --surface-2: var(--color-gray-50);
+  --surface-3: var(--color-gray-100);
+  --surface-elevated: var(--color-paper);
+  --surface-inverse: var(--color-ink);
+
+  --text-primary: var(--color-ink);
+  --text-secondary: var(--color-gray-700);
+  --text-tertiary: var(--color-gray-500);
+  --text-on-primary: var(--color-paper);
+  --text-on-accent: var(--color-paper);
+  --text-on-ink: var(--color-paper);
+
+  --border: #e8e9ec;
+  --border-strong: #d3d3d3;
+  --border-on-ink: rgba(255, 255, 255, 0.12);
+  --ring: var(--color-poppy);
+  --input: #d3d3d3;
+
+  /* ── shadcn semantic aliases ── */
+  --primary: var(--color-poppy);
+  --primary-foreground: var(--color-paper);
+  --primary-hover: var(--color-crimson);
+  --secondary: var(--color-cobalt);
+  --secondary-foreground: var(--color-paper);
+  --muted: var(--color-gray-100);
+  --muted-foreground: var(--color-gray-700);
+  --accent: var(--color-poppy-wash);
+  --accent-foreground: var(--color-poppy);
+  --destructive: var(--color-poppy);
+  --card: var(--color-paper);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-paper);
+  --popover-foreground: var(--color-ink);
+
+  /* ── Sidebar ── */
+  --sidebar: var(--color-gray-50);
+  --sidebar-foreground: var(--color-ink);
+  --sidebar-primary: var(--color-poppy);
+  --sidebar-primary-foreground: var(--color-paper);
+  --sidebar-accent: var(--color-poppy-wash);
+  --sidebar-accent-foreground: var(--color-poppy);
+  --sidebar-border: #e8e9ec;
+  --sidebar-ring: var(--color-poppy);
+
+  /* ── Charts ── */
+  --chart-1: var(--color-poppy);
+  --chart-2: var(--color-cobalt);
+  --chart-3: var(--color-success);
+  --chart-4: var(--color-warning);
+  --chart-5: var(--color-cobalt-soft);
+
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(14, 17, 23, 0.05);
+  --shadow-md: 0 4px 12px -4px rgba(14, 17, 23, 0.08);
+  --shadow-lg: 0 10px 24px -8px rgba(14, 17, 23, 0.1);
+  --shadow-xl: 0 24px 48px -12px rgba(14, 17, 23, 0.14);
+  --shadow-poppy: 0 0 0 1px rgba(217, 33, 33, 0.35), 0 8px 24px -8px rgba(217, 33, 33, 0.32);
+  --shadow-cobalt: 0 0 0 1px rgba(0, 71, 171, 0.35), 0 6px 18px -8px rgba(0, 71, 171, 0.3);
+
+  /* ── Type scale ── */
+  --type-display-1: 700 clamp(48px, 5.5vw, 80px)/1 var(--font-sans);
+  --type-display-1-ls: -0.04em;
+  --type-display-2: 700 clamp(40px, 4.5vw, 56px)/1.02 var(--font-sans);
+  --type-display-2-ls: -0.035em;
+  --type-headline-1: 700 32px/1.1 var(--font-sans);
+  --type-headline-1-ls: -0.035em;
+  --type-headline-2: 700 24px/1.2 var(--font-sans);
+  --type-headline-2-ls: -0.025em;
+  --type-title-1: 600 18px/1.3 var(--font-sans);
+  --type-title-1-ls: -0.015em;
+  --type-title-2: 600 14px/1.4 var(--font-sans);
+  --type-title-2-ls: -0.005em;
+  --type-body-lg: 400 17px/1.6 var(--font-sans);
+  --type-body-md: 400 15px/1.6 var(--font-sans);
+  --type-body-sm: 400 13px/1.55 var(--font-sans);
+  --type-body-xs: 400 12px/1.5 var(--font-sans);
+  --type-label-lg: 600 11px/1.2 var(--font-mono);
+  --type-label-lg-ls: 0.22em;
+  --type-label-sm: 700 10px/1.2 var(--font-mono);
+  --type-label-sm-ls: 0.24em;
+  --type-label-xs: 700 9px/1.2 var(--font-mono);
+  --type-label-xs-ls: 0.26em;
+  --type-mono-display: 600 44px/1 var(--font-mono);
+  --type-mono-display-ls: -0.04em;
+  --type-mono-md: 500 14px/1.4 var(--font-mono);
+  --type-mono-md-ls: -0.01em;
 }
 
-.dark {
-  --background: #1c1c17;
-  --foreground: #fdf9f2;
-  --card: #31302c;
-  --card-foreground: #fdf9f2;
-  --popover: #1c1c17;
-  --popover-foreground: #fdf9f2;
-  --primary: #9acfd8;
-  --primary-foreground: #001f23;
-  --secondary: #a2cfd1;
-  --secondary-foreground: #002021;
-  --muted: #40484a;
-  --muted-foreground: #bfc8c9;
-  --accent: #134e55;
-  --accent-foreground: #b6ecf4;
-  --destructive: #ffdad6;
-  --destructive-foreground: #93000a;
-  --border: #40484a;
-  --input: #40484a;
-  --ring: #9acfd8;
-  --chart-1: #9acfd8;
-  --chart-2: #a2cfd1;
-  --chart-3: #f7b996;
-  --chart-4: #ffdad6;
-  --chart-5: #b6ecf4;
-  --sidebar: #1c1c17;
-  --sidebar-foreground: #fdf9f2;
-  --sidebar-primary: #9acfd8;
-  --sidebar-primary-foreground: #001f23;
-  --sidebar-accent: #40484a;
-  --sidebar-accent-foreground: #9acfd8;
-  --sidebar-border: #40484a;
-  --sidebar-ring: #9acfd8;
+/* ═══════════════════════════════════════════
+   DARK MODE — .dark (shadcn) or [data-theme="dark"] (Iroko)
+   ═══════════════════════════════════════════ */
+.dark,
+[data-theme='dark'] {
+  --background: var(--color-ink);
+  --foreground: #e6e8eb;
+
+  --surface-1: var(--color-ink);
+  --surface-2: #161a21;
+  --surface-3: #1c2028;
+  --surface-elevated: #161a21;
+
+  --text-primary: #e6e8eb;
+  --text-secondary: rgba(230, 232, 235, 0.72);
+  --text-tertiary: rgba(230, 232, 235, 0.5);
+
+  --border: rgba(230, 232, 235, 0.1);
+  --border-strong: rgba(230, 232, 235, 0.2);
+
+  /* Emissive red on dark — slightly lighter so it glows */
+  --primary: var(--color-poppy-soft);
+  --accent: rgba(217, 58, 58, 0.15);
+  --accent-foreground: var(--color-poppy-soft);
+
+  --card: #161a21;
+  --card-foreground: #e6e8eb;
+  --popover: #161a21;
+  --popover-foreground: #e6e8eb;
+  --muted: #1c2028;
+  --muted-foreground: rgba(230, 232, 235, 0.6);
+
+  --sidebar: #161a21;
+  --sidebar-foreground: #e6e8eb;
+  --sidebar-border: rgba(230, 232, 235, 0.1);
+
+  --input: rgba(230, 232, 235, 0.2);
 }
 
 @layer base {
@@ -204,17 +256,84 @@
 }
 
 @layer utilities {
+  /* Frosted glass — light surface */
   .glass {
-    background-color: rgba(230, 226, 219, 0.4);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba(255, 255, 255, 0.86);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
   }
 
-  .ghost-border {
-    border: 1px solid rgba(191, 200, 201, 0.2);
+  /* Frosted glass — dark surface */
+  .glass-dark {
+    background-color: rgba(14, 17, 23, 0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border-on-ink);
   }
 
-  .ambient-shadow {
-    box-shadow: 0 24px 48px -12px rgba(28, 84, 91, 0.15);
+  /* Dot-grid overlay (used on ink hero sections) */
+  .iroko-grid {
+    background-image:
+      linear-gradient(to right, var(--border) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* Decorative rule — subtle gradient fade */
+  .iroko-rule {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--border-strong) 20%,
+      var(--border-strong) 80%,
+      transparent
+    );
+  }
+
+  /* Decorative rule — poppy→cobalt gradient */
+  .iroko-rule--accent {
+    height: 1px;
+    border: 0;
+    background: linear-gradient(
+      to right,
+      transparent,
+      rgba(217, 33, 33, 0.35) 30%,
+      rgba(0, 71, 171, 0.35) 50%,
+      rgba(217, 33, 33, 0.35) 70%,
+      transparent
+    );
+  }
+
+  /* Brand wordmark treatment */
+  .wordmark {
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.005em;
+    line-height: 1;
+    font-feature-settings:
+      'ss01' on,
+      'ss02' on;
+  }
+
+  /* Mono eyebrow label */
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: var(--text-tertiary);
+  }
+
+  /* Glow rings */
+  .ring-poppy {
+    box-shadow: var(--shadow-poppy);
+  }
+  .ring-cobalt {
+    box-shadow: var(--shadow-cobalt);
   }
 }
