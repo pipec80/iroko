@@ -3,6 +3,40 @@ import { TrendingUp, TrendingDown, Zap, Activity, BarChart2, Clock } from 'lucid
 import { createClient } from '@/lib/supabase/server';
 import { cn } from '@/lib/utils';
 
+// Mock data: 30 days of activity (orders + activity units)
+const CHART_DATA = [
+  { day: 1, value: 42, label: '01 may' },
+  { day: 2, value: 58, label: '02 may' },
+  { day: 3, value: 71, label: '03 may' },
+  { day: 4, value: 65, label: '04 may' },
+  { day: 5, value: 80, label: '05 may' },
+  { day: 6, value: 55, label: '06 may' },
+  { day: 7, value: 67, label: '07 may' },
+  { day: 8, value: 73, label: '08 may' },
+  { day: 9, value: 88, label: '09 may' },
+  { day: 10, value: 76, label: '10 may' },
+  { day: 11, value: 62, label: '11 may' },
+  { day: 12, value: 84, label: '12 may' },
+  { day: 13, value: 91, label: '13 may' },
+  { day: 14, value: 79, label: '14 may' },
+  { day: 15, value: 68, label: '15 may' },
+  { day: 16, value: 85, label: '16 may' },
+  { day: 17, value: 72, label: '17 may' },
+  { day: 18, value: 61, label: '18 may' },
+  { day: 19, value: 78, label: '19 may' },
+  { day: 20, value: 94, label: '20 may' },
+  { day: 21, value: 83, label: '21 may' },
+  { day: 22, value: 70, label: '22 may' },
+  { day: 23, value: 87, label: '23 may' },
+  { day: 24, value: 65, label: '24 may' },
+  { day: 25, value: 76, label: '25 may' },
+  { day: 26, value: 88, label: '26 may' },
+  { day: 27, value: 92, label: '27 may' },
+  { day: 28, value: 81, label: '28 may' },
+  { day: 29, value: 74, label: '29 may' },
+  { day: 30, value: 100, label: '30 may' },
+];
+
 import type { Metadata } from 'next';
 
 export async function generateMetadata({
@@ -88,14 +122,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
               Últ. 30 días
             </span>
           </div>
-          <div
-            className="border-border flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed"
-            style={{ minHeight: 220 }}>
-            <BarChart2 className="text-muted-foreground size-8 opacity-20" strokeWidth={1.25} />
-            <span className="text-muted-foreground font-mono text-[10px] tracking-widest uppercase opacity-40">
-              {t('waiting_telemetry')}
-            </span>
-          </div>
+          <MiniBarChart data={CHART_DATA} />
         </div>
 
         {/* Activity feed */}
@@ -148,6 +175,64 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           color="var(--color-poppy)"
         />
       </div>
+    </div>
+  );
+}
+
+function MiniBarChart({ data }: { data: { day: number; value: number; label: string }[] }) {
+  const max = Math.max(...data.map((d) => d.value));
+  const chartH = 160;
+  const barW = 7;
+  const gap = 3;
+  const paddingX = 4;
+  const totalW = data.length * (barW + gap) - gap + paddingX * 2;
+
+  return (
+    <div className="w-full overflow-hidden rounded-xl" style={{ minHeight: chartH + 24 }}>
+      <svg
+        viewBox={`0 0 ${totalW} ${chartH + 24}`}
+        preserveAspectRatio="none"
+        className="w-full"
+        style={{ height: chartH + 24 }}>
+        {data.map((d, i) => {
+          const barH = Math.max(3, (d.value / max) * chartH);
+          const x = paddingX + i * (barW + gap);
+          const y = chartH - barH;
+          const isToday = i === data.length - 1;
+          const isWeekend = i % 7 === 5 || i % 7 === 6;
+          return (
+            <g key={d.day}>
+              <rect
+                x={x}
+                y={y}
+                width={barW}
+                height={barH}
+                rx={2}
+                style={{
+                  fill:
+                    isToday ? 'var(--color-poppy)'
+                    : isWeekend ? 'var(--color-cobalt-soft)'
+                    : 'var(--color-cobalt)',
+                  opacity: isToday ? 1 : 0.55,
+                }}
+              />
+              {(i === 0 || i === 14 || i === data.length - 1) && (
+                <text
+                  x={x + barW / 2}
+                  y={chartH + 16}
+                  textAnchor="middle"
+                  style={{
+                    fontSize: 8,
+                    fill: 'var(--color-gray-500)',
+                    fontFamily: 'var(--font-mono)',
+                  }}>
+                  {d.label}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }

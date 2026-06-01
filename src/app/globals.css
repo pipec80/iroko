@@ -82,9 +82,28 @@
   --color-gray-300: #d3d3d3;
   --color-ink: #0e1117;
   --color-paper: #ffffff;
+
+  /* Bone warm scale */
   --color-bone: #f5ecda;
+  --color-bone-2: #ede2c9;
+  --color-bone-3: #e3d6ba;
+  --color-bone-4: #d4c5a3;
+
+  /* Warm ink scale */
+  --color-earth: #3a2c1f;
+  --color-bark: #5a4232;
+  --color-clay: #8b6645;
+
+  /* Accent colors */
   --color-gold: #d9a441;
-  --color-iron: #d92121;
+  --color-gold-deep: #a87a1f;
+  --color-gold-soft: #ecc775;
+  --color-indigo: #3c4f73;
+
+  /* Iron — warm orange-red (distinct from poppy) */
+  --color-iron: #b8513a;
+  --color-iron-deep: #8a3b2a;
+  --color-iron-soft: #d97a5f;
 
   /* Neutral ramp */
   --color-gray-50: #fafafa;
@@ -247,11 +266,18 @@
 }
 
 @layer base {
-  /* Primitive brand colors not in the @theme inline chain — @layer base prevents tree-shaking */
+  /* Primitive brand colors anchored here — @layer base prevents Tailwind 4 tree-shaking */
   :root {
     --color-bone: #f5ecda;
+    --color-bone-2: #ede2c9;
+    --color-bone-3: #e3d6ba;
+    --color-bone-4: #d4c5a3;
     --color-gold: #d9a441;
-    --color-iron: #d92121;
+    --color-iron: #b8513a;
+    --color-earth: #3a2c1f;
+    --color-bark: #5a4232;
+    --color-clay: #8b6645;
+    --color-indigo: #3c4f73;
   }
 
   * {
