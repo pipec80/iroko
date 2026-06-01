@@ -538,7 +538,7 @@ export type Database = {
         Row: {
           billing_email: string | null
           created_at: string | null
-          created_by: string
+          created_by: string | null
           deleted_at: string | null
           id: string
           logo_url: string | null
@@ -551,7 +551,7 @@ export type Database = {
         Insert: {
           billing_email?: string | null
           created_at?: string | null
-          created_by: string
+          created_by?: string | null
           deleted_at?: string | null
           id?: string
           logo_url?: string | null
@@ -564,7 +564,7 @@ export type Database = {
         Update: {
           billing_email?: string | null
           created_at?: string | null
-          created_by?: string
+          created_by?: string | null
           deleted_at?: string | null
           id?: string
           logo_url?: string | null
@@ -632,6 +632,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      auth_recovery_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       invitations: {
         Row: {
@@ -741,7 +765,10 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      consume_recovery_code: { Args: { p_code: string }; Returns: boolean }
+      count_unused_recovery_codes: { Args: never; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      generate_recovery_codes: { Args: never; Returns: string[] }
       get_account_subscription: {
         Args: { p_account_id: string }
         Returns: {
@@ -778,6 +805,14 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"]
         }[]
       }
+      invite_members: {
+        Args: {
+          p_account_id: string
+          p_emails: string[]
+          p_role?: Database["public"]["Enums"]["membership_role"]
+        }
+        Returns: number
+      }
       list_my_sessions: {
         Args: never
         Returns: {
@@ -789,6 +824,24 @@ export type Database = {
           updated_at: string
           user_agent: string
         }[]
+      }
+      list_team_members: {
+        Args: { p_account_id: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          email: string
+          family_name: string
+          given_name: string
+          joined_at: string
+          role: string
+          status: string
+          user_id: string
+        }[]
+      }
+      remove_member: {
+        Args: { p_account_id: string; p_user_id: string }
+        Returns: boolean
       }
       request_account_deletion: { Args: never; Returns: undefined }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }

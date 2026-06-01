@@ -23,7 +23,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
               ecosistema financiero.
             </p>
             <div className="flex gap-4">
-              <button className="from-primary to-primary-container text-on-primary flex items-center gap-2 rounded-lg bg-gradient-to-r px-6 py-3 font-bold transition-opacity hover:opacity-90">
+              <button className="from-primary to-primary-container text-on-primary flex items-center gap-2 rounded-lg bg-linear-to-r px-6 py-3 font-bold transition-opacity hover:opacity-90">
                 Agendar Consultoría
                 <span
                   className="material-symbols-outlined text-sm"
@@ -75,7 +75,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
               <h3 className="font-headline text-on-surface mb-3 text-xl font-bold">
                 Mini-supermercados locales
               </h3>
-              <p className="text-on-surface-variant mb-8 flex-grow">
+              <p className="text-on-surface-variant mb-8 grow">
                 Visibilidad inmediata del flujo de caja diario, conciliación automática de TPVs y
                 control de inventario básico sin curva de aprendizaje.
               </p>
@@ -97,7 +97,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
             {/* Block 2 */}
             <div className="bg-surface-container-highest group hover:bg-surface-dim relative flex flex-col overflow-hidden rounded-xl p-8 transition-colors duration-300">
               {/* Subtle gradient accent for the middle tier */}
-              <div className="from-primary to-primary-container absolute top-0 left-0 h-1 w-full bg-gradient-to-r"></div>
+              <div className="from-primary to-primary-container absolute top-0 left-0 h-1 w-full bg-linear-to-r"></div>
               <div className="bg-surface-lowest text-primary mb-6 flex h-12 w-12 items-center justify-center rounded-full">
                 <span
                   className="material-symbols-outlined"
@@ -108,7 +108,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
               <h3 className="font-headline text-on-surface mb-3 text-xl font-bold">
                 Cadenas Regionales
               </h3>
-              <p className="text-on-surface-variant mb-8 flex-grow">
+              <p className="text-on-surface-variant mb-8 grow">
                 Gestión multi-sucursal con consolidación de datos en tiempo real. Estandarización de
                 procesos contables entre regiones.
               </p>
@@ -142,7 +142,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
                 <h3 className="font-headline mb-3 text-xl font-bold">
                   Enterprise &amp; Franquicias
                 </h3>
-                <p className="text-primary-fixed-dim mb-8 flex-grow">
+                <p className="text-primary-fixed-dim mb-8 grow">
                   Infraestructura de alta disponibilidad para miles de puntos de venta. APIs
                   robustas y control granular de permisos por franquiciado.
                 </p>
@@ -292,7 +292,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
         <p className="text-on-surface-variant mb-10 text-lg">
           Agende una sesión técnica con nuestros arquitectos de soluciones.
         </p>
-        <button className="from-primary to-primary-container text-on-primary hover:shadow-primary/20 rounded-xl bg-gradient-to-r px-8 py-4 text-lg font-bold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+        <button className="from-primary to-primary-container text-on-primary hover:shadow-primary/20 rounded-xl bg-linear-to-r px-8 py-4 text-lg font-bold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
           Agendar Consultoría Gratuita
         </button>
       </section>

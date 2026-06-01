@@ -6,7 +6,7 @@ import {
   revokeAllOtherSessionsAction,
   revokeSessionAction,
   type SessionRow,
-} from '@/app/[locale]/dashboard/settings/actions';
+} from '@/app/[locale]/dashboard/account/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 

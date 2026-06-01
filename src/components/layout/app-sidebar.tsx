@@ -15,7 +15,7 @@ export function AppSidebar() {
     { icon: 'query_stats', label: t('operations'), href: '/dashboard/operations' },
     { icon: 'group', label: t('team'), href: '/dashboard/team' },
     { icon: 'analytics', label: t('reports'), href: '/dashboard/reports' },
-    { icon: 'settings_suggest', label: t('settings'), href: '/dashboard/settings' },
+    { icon: 'settings_suggest', label: t('settings'), href: '/dashboard/org/settings' },
   ];
 
   return (

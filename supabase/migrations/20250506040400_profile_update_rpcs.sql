@@ -55,6 +55,8 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.update_my_profile(text, text, text, text, text, text)
   TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.update_my_profile(text, text, text, text, text, text)
+  FROM PUBLIC;
 
 COMMENT ON FUNCTION public.update_my_profile(text, text, text, text, text, text) IS
   'Self-update editable profile fields. SECURITY INVOKER so the RLS policy '
@@ -95,6 +97,7 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.request_account_deletion() TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.request_account_deletion() FROM PUBLIC;
 
 COMMENT ON FUNCTION public.request_account_deletion() IS
   'Marks the caller''s profile + personal account as soft-deleted. The '
@@ -142,6 +145,7 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.list_my_sessions() TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.list_my_sessions() FROM PUBLIC;
 
 COMMENT ON FUNCTION public.list_my_sessions() IS
   'Returns the caller''s active sessions from auth.sessions. SECURITY '
@@ -175,6 +179,7 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.revoke_my_session(uuid) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.revoke_my_session(uuid) FROM PUBLIC;
 
 COMMENT ON FUNCTION public.revoke_my_session(uuid) IS
   'Deletes one auth.sessions row if it belongs to the caller. SECURITY '

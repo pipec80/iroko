@@ -31,7 +31,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
             <button className="bg-surface-container border-outline-variant/20 text-on-surface hover:bg-surface-container-high mb-8 w-full rounded-xl border px-4 py-3 font-semibold transition-colors">
               Comenzar Gratis
             </button>
-            <ul className="flex-grow space-y-4">
+            <ul className="grow space-y-4">
               <li className="text-on-surface-variant flex items-start gap-3 text-sm">
                 <span
                   className="material-symbols-outlined text-primary shrink-0 text-[20px]"
@@ -72,7 +72,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
             <button className="bg-surface-container border-outline-variant/20 text-on-surface hover:bg-surface-container-high mb-8 w-full rounded-xl border px-4 py-3 font-semibold transition-colors">
               Comenzar Básico
             </button>
-            <ul className="flex-grow space-y-4">
+            <ul className="grow space-y-4">
               <li className="text-on-surface-variant flex items-start gap-3 text-sm">
                 <span
                   className="material-symbols-outlined text-primary shrink-0 text-[20px]"
@@ -116,7 +116,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
             <button className="bg-on-primary text-primary hover:bg-surface mb-8 w-full rounded-xl px-4 py-3 font-bold shadow-sm transition-colors">
               Comenzar Pro
             </button>
-            <ul className="flex-grow space-y-4">
+            <ul className="grow space-y-4">
               <li className="text-on-primary flex items-start gap-3 text-sm">
                 <span
                   className="material-symbols-outlined text-primary-fixed shrink-0 text-[20px]"
@@ -162,7 +162,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
             <button className="bg-surface-container border-outline-variant/20 text-on-surface hover:bg-surface-container-high mb-8 w-full rounded-xl border px-4 py-3 font-semibold transition-colors">
               Contactar Ventas
             </button>
-            <ul className="flex-grow space-y-4">
+            <ul className="grow space-y-4">
               <li className="text-on-surface-variant flex items-start gap-3 text-sm">
                 <span
                   className="material-symbols-outlined text-primary shrink-0 text-[20px]"

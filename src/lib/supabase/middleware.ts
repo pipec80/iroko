@@ -9,6 +9,16 @@ const PUBLIC_PATH_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-p
 
 const PROTECTED_PATH_PREFIXES = ['/dashboard'];
 
+const AUTH_ONLY_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password'];
+
+function isAuthOnly(pathWithoutLocale: string): boolean {
+  return AUTH_ONLY_PATHS.some((prefix) => pathWithoutLocale.startsWith(prefix));
+}
+
+function isRoot(pathWithoutLocale: string): boolean {
+  return pathWithoutLocale === '/' || pathWithoutLocale === '';
+}
+
 function extractLocaleAndPath(pathname: string): {
   locale: string;
   pathWithoutLocale: string;
@@ -95,6 +105,13 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.searchParams.set('next', request.nextUrl.pathname);
+    return NextResponse.redirect(url);
+  }
+
+  if (claims && (isRoot(pathWithoutLocale) || isAuthOnly(pathWithoutLocale))) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/dashboard`;
+    url.searchParams.delete('next');
     return NextResponse.redirect(url);
   }
 

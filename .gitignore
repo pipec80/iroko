@@ -68,3 +68,9 @@ supabase/functions/temp-func/
 docs/info.txt
 /docs/
 
+# scratch / herramientas locales (no pertenecen al repo)
+nuevo4.txt
+knip-output.txt
+skills-lock.json
+.antigravitycli/
+

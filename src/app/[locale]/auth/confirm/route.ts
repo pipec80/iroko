@@ -26,7 +26,7 @@ export async function GET(
   const next = safeRedirectPath(searchParams.get('next'), locale);
 
   if (!tokenHash || !type || !VALID_TYPES.includes(type)) {
-    return NextResponse.redirect(`${origin}/${locale}/login?error=invalid_confirmation`);
+    return NextResponse.redirect(`${origin}/${locale}/login?error=confirmation_failed`);
   }
 
   const supabase = await createClient();
@@ -37,7 +37,7 @@ export async function GET(
       { action: 'auth.confirm', type, code: error.code, message: error.message },
       'OTP verify failed',
     );
-    return NextResponse.redirect(`${origin}/${locale}/login?error=verify_failed`);
+    return NextResponse.redirect(`${origin}/${locale}/login?error=confirmation_failed`);
   }
 
   return NextResponse.redirect(`${origin}${next}`);

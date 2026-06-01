@@ -105,35 +105,13 @@ export function AppTopbarClient({ user, locale }: Props) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-outline-variant/10 my-1" />
 
-            <Link href="/dashboard/settings?tab=profile">
+            <Link href="/dashboard/account?tab=profile">
               <DropdownMenuItem className="focus:bg-surface-container-highest group cursor-pointer rounded-lg py-2.5">
                 <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary mr-3 text-[20px] transition-colors">
                   person
                 </span>
                 <span className="text-on-surface-variant group-hover:text-on-surface text-sm font-bold">
                   {t('profile')}
-                </span>
-              </DropdownMenuItem>
-            </Link>
-
-            <Link href="/dashboard/settings?tab=billing">
-              <DropdownMenuItem className="focus:bg-surface-container-highest group cursor-pointer rounded-lg py-2.5">
-                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary mr-3 text-[20px] transition-colors">
-                  card_membership
-                </span>
-                <span className="text-on-surface-variant group-hover:text-on-surface text-sm font-bold">
-                  {t('billing')}
-                </span>
-              </DropdownMenuItem>
-            </Link>
-
-            <Link href="/dashboard/settings?tab=security">
-              <DropdownMenuItem className="focus:bg-surface-container-highest group cursor-pointer rounded-lg py-2.5">
-                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary mr-3 text-[20px] transition-colors">
-                  admin_panel_settings
-                </span>
-                <span className="text-on-surface-variant group-hover:text-on-surface text-sm font-bold">
-                  {t('security')}
                 </span>
               </DropdownMenuItem>
             </Link>

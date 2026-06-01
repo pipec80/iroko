@@ -7,7 +7,6 @@ import { useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePathname, useRouter } from '@/i18n/routing';
 
-import { BillingTab } from './billing-tab';
 import { ProfileTab } from './profile-tab';
 import { SecurityTab } from './security-tab';
 
@@ -29,9 +28,9 @@ type Props = {
   sessionsSlot: React.ReactNode;
 };
 
-const VALID_TABS = ['profile', 'security', 'sessions', 'billing'] as const;
+const VALID_TABS = ['profile', 'security', 'sessions'] as const;
 
-export function SettingsTabs({ email, role, profile, sessionsSlot }: Props) {
+export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -53,55 +52,56 @@ export function SettingsTabs({ email, role, profile, sessionsSlot }: Props) {
   );
 
   return (
-    <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full">
-      <div className="bg-surface-container-low mb-8 inline-flex rounded-xl p-1 shadow-sm">
-        <TabsList className="gap-1 border-none bg-transparent">
+    <Tabs value={currentTab} onValueChange={handleTabChange} className="flex flex-col gap-6">
+      {/* Top Navigation */}
+      <div className="border-border w-full overflow-x-auto overflow-y-hidden border-b pb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <TabsList
+          variant="line"
+          className="flex h-auto w-max justify-start gap-6 bg-transparent p-0">
           <TabsTrigger
             value="profile"
             disabled={isPending}
-            className="data-[state=active]:bg-surface-container-highest data-[state=active]:text-primary flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all select-none data-[state=active]:shadow-none">
+            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
             <span className="material-symbols-outlined text-[20px]">person</span>
             {t('profile')}
           </TabsTrigger>
           <TabsTrigger
             value="security"
             disabled={isPending}
-            className="data-[state=active]:bg-surface-container-highest data-[state=active]:text-primary flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all select-none data-[state=active]:shadow-none">
+            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
             <span className="material-symbols-outlined text-[20px]">security</span>
             {t('security')}
           </TabsTrigger>
           <TabsTrigger
             value="sessions"
             disabled={isPending}
-            className="data-[state=active]:bg-surface-container-highest data-[state=active]:text-primary flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all select-none data-[state=active]:shadow-none">
+            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
             <span className="material-symbols-outlined text-[20px]">devices</span>
             {t('sessions')}
-          </TabsTrigger>
-          <TabsTrigger
-            value="billing"
-            disabled={isPending}
-            className="data-[state=active]:bg-surface-container-highest data-[state=active]:text-primary flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-bold transition-all select-none data-[state=active]:shadow-none">
-            <span className="material-symbols-outlined text-[20px]">card_membership</span>
-            {t('billing')}
           </TabsTrigger>
         </TabsList>
       </div>
 
-      <TabsContent value="profile" className="mt-0 focus-visible:outline-none">
-        <ProfileTab profile={profile} email={email} role={role} />
-      </TabsContent>
+      {/* Main Content Area */}
+      <div className="flex min-w-0 flex-col">
+        <TabsContent
+          value="profile"
+          className="animate-in fade-in slide-in-from-right-2 mt-0 duration-300 focus-visible:outline-none">
+          <ProfileTab profile={profile} email={email} role={role} />
+        </TabsContent>
 
-      <TabsContent value="security" className="mt-0 focus-visible:outline-none">
-        <SecurityTab />
-      </TabsContent>
+        <TabsContent
+          value="security"
+          className="animate-in fade-in slide-in-from-right-2 mt-0 duration-300 focus-visible:outline-none">
+          <SecurityTab />
+        </TabsContent>
 
-      <TabsContent value="sessions" className="mt-0 focus-visible:outline-none">
-        {sessionsSlot}
-      </TabsContent>
-
-      <TabsContent value="billing" className="mt-0 focus-visible:outline-none">
-        <BillingTab />
-      </TabsContent>
+        <TabsContent
+          value="sessions"
+          className="animate-in fade-in slide-in-from-right-2 mt-0 duration-300 focus-visible:outline-none">
+          {sessionsSlot}
+        </TabsContent>
+      </div>
     </Tabs>
   );
 }

@@ -18,6 +18,7 @@ export type SettingsActionState = {
   error?: string;
   fieldErrors?: Record<string, string[]>;
   success?: string;
+  codes?: string[];
 };
 
 function flattenFieldErrors(
@@ -147,12 +148,13 @@ export async function uploadAvatarAction(
   const { supabase, userId } = await requireUserId();
   if (!userId) return { error: 'not_authenticated' };
 
-  const ext = file.name.split('.').pop()?.toLowerCase() || 'png';
-  const path = `${userId}/avatar-${Date.now()}.${ext}`;
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+  const storagePath = `${userId}/avatar.${ext}`;
+  const dbPath = `avatars/${storagePath}`;
 
   const { error: uploadError } = await supabase.storage
     .from('avatars')
-    .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type });
+    .upload(storagePath, file, { cacheControl: '3600', upsert: true, contentType: file.type });
 
   if (uploadError) {
     logger.warn(
@@ -162,10 +164,8 @@ export async function uploadAvatarAction(
     return { error: 'upload_failed' };
   }
 
-  const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path);
-
   const { error: rpcError } = await supabase.rpc('update_my_profile', {
-    p_avatar_url: urlData.publicUrl,
+    p_avatar_url: dbPath,
   });
   if (rpcError) {
     logger.warn(
@@ -233,6 +233,27 @@ export async function deleteAccountAction(
   const locale = await getLocale();
   redirect({ href: '/login?deleted=1', locale });
   return {};
+}
+
+export async function generateRecoveryCodesAction(
+  _prev: SettingsActionState,
+  _formData: FormData,
+): Promise<SettingsActionState> {
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { error: 'not_authenticated' };
+
+  const { data, error } = await supabase.rpc('generate_recovery_codes');
+  if (error) {
+    logger.warn(
+      { userId, action: 'settings.generateRecoveryCodes', code: error.code },
+      'Recovery codes generation failed',
+    );
+    return { error: error.code ?? 'recovery_generate_failed' };
+  }
+
+  logger.info({ userId, action: 'recovery_codes_generated' }, 'Recovery codes generated');
+  revalidatePath('/dashboard/account');
+  return { success: 'recovery_codes_generated', codes: data ?? [] };
 }
 
 export async function revokeSessionAction(sessionId: string): Promise<SettingsActionState> {

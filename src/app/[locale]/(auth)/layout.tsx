@@ -16,7 +16,7 @@ export default async function AuthLayout({
       {/* Left pane - Branding & Hero (Premium Corporate Design) */}
       <div className="bg-accent/10 relative hidden flex-1 items-center justify-center overflow-hidden p-16 lg:flex">
         {/* Decorative Background Elements */}
-        <div className="from-primary absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] via-transparent to-transparent opacity-10" />
+        <div className="from-primary absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] via-transparent to-transparent opacity-10" />
         <div className="bg-primary absolute -bottom-32 -left-32 h-96 w-96 rounded-full opacity-20 mix-blend-multiply blur-3xl" />
 
         {/* Content Container */}
@@ -76,9 +76,9 @@ export default async function AuthLayout({
       </div>
 
       {/* Right pane - Auth Forms */}
-      <div className="bg-background relative flex flex-1 items-center justify-center px-8 py-12 lg:px-24">
+      <div className="bg-background flex flex-1 flex-col px-8 py-8 lg:px-24 lg:py-12">
         {/* Top Branding (Mobile & Desktop) */}
-        <div className="absolute top-8 left-8 sm:left-16 lg:left-24">
+        <div className="flex-none">
           <div className="flex items-center gap-3">
             <div className="bg-primary text-primary-foreground shadow-primary/20 flex h-9 w-9 items-center justify-center rounded-xl font-bold shadow-lg transition-transform hover:scale-105">
               RA
@@ -89,8 +89,10 @@ export default async function AuthLayout({
           </div>
         </div>
 
-        <div className="animate-in fade-in slide-in-from-bottom-4 w-full max-w-md duration-1000 ease-out">
-          {children}
+        <div className="flex flex-1 items-center justify-center py-12">
+          <div className="animate-in fade-in slide-in-from-bottom-4 w-full max-w-md duration-1000 ease-out">
+            {children}
+          </div>
         </div>
       </div>
     </div>

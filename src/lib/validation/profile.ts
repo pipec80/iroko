@@ -15,15 +15,15 @@ const phoneSchema = z
   .or(z.literal(''));
 
 export const updateProfileSchema = z.object({
-  given_name: z.string().min(1).max(80),
-  family_name: z.string().min(1).max(80),
+  given_name: z.string().min(1, { message: 'required' }).max(80),
+  family_name: z.string().min(1, { message: 'required' }).max(80),
   locale: z.enum(SUPPORTED_LOCALES),
   timezone: timezoneSchema,
   phone_number: phoneSchema,
 });
 
 export const updateEmailSchema = z.object({
-  email: z.string().email(),
+  email: z.string().email({ message: 'invalid_email' }),
 });
 
 const MIN_PASSWORD_LENGTH = 10;

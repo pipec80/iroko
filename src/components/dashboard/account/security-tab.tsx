@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useActionState } from 'react';
+import React, { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import {
@@ -8,11 +8,12 @@ import {
   requestPasswordResetFromSettingsAction,
   updatePasswordFromSettingsAction,
   type SettingsActionState,
-} from '@/app/[locale]/dashboard/settings/actions';
+} from '@/app/[locale]/dashboard/account/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MfaSetup } from './mfa-setup';
 
 const initialState: SettingsActionState = {};
 
@@ -36,6 +37,9 @@ export function SecurityTab() {
   );
   const [delState, delAction, delPending] = useActionState(deleteAccountAction, initialState);
 
+  const [isPwDirty, setIsPwDirty] = useState(false);
+  const [isDelDirty, setIsDelDirty] = useState(false);
+
   const pwError = translateError(t, pwState.error);
   const resetError = translateError(t, resetState.error);
   const delError = translateError(t, delState.error);
@@ -49,19 +53,38 @@ export function SecurityTab() {
           <CardDescription>{t('security.password_policy_hint')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={pwAction} className="grid gap-4 md:grid-cols-3">
+          <form
+            action={pwAction}
+            noValidate
+            className="grid gap-4 md:grid-cols-3"
+            onChange={() => setIsPwDirty(true)}>
             <div className="space-y-1.5">
               <Label htmlFor="current_password">{t('security.current_password')}</Label>
-              <Input id="current_password" name="current_password" type="password" required />
+              <Input
+                id="current_password"
+                name="current_password"
+                type="password"
+                required
+                aria-invalid={!!pwState.fieldErrors?.current_password}
+              />
               {pwState.fieldErrors?.current_password && (
-                <p className="text-error text-xs">{pwState.fieldErrors.current_password[0]}</p>
+                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                  {pwState.fieldErrors.current_password[0]}
+                </p>
               )}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">{t('security.new_password')}</Label>
-              <Input id="password" name="password" type="password" required minLength={10} />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                minLength={10}
+                aria-invalid={!!pwState.fieldErrors?.password}
+              />
               {pwState.fieldErrors?.password && (
-                <p className="text-error text-xs">
+                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
                   {t(`errors.${pwState.fieldErrors.password[0]}` as 'errors.generic', {
                     default: pwState.fieldErrors.password[0],
                   })}
@@ -76,9 +99,10 @@ export function SecurityTab() {
                 type="password"
                 required
                 minLength={10}
+                aria-invalid={!!pwState.fieldErrors?.confirm_password}
               />
               {pwState.fieldErrors?.confirm_password && (
-                <p className="text-error text-xs">
+                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
                   {t(`errors.${pwState.fieldErrors.confirm_password[0]}` as 'errors.generic', {
                     default: pwState.fieldErrors.confirm_password[0],
                   })}
@@ -92,18 +116,22 @@ export function SecurityTab() {
                   {pwError}
                 </p>
               )}
-              {pwState.success === 'password_updated' && (
-                <p className="text-primary mb-3 text-sm">
+              {pwState.success === 'password_updated' && !isPwDirty && (
+                <div className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
                   {t('security.success.password_updated')}
-                </p>
+                </div>
               )}
-              <Button type="submit" disabled={pwPending}>
+              <Button type="submit" disabled={pwPending || !isPwDirty}>
                 {t('security.update_password')}
               </Button>
             </div>
           </form>
         </CardContent>
       </Card>
+
+      {/* MFA Management */}
+      <MfaSetup />
 
       {/* Reset password */}
       <Card className="border-outline-variant/10 rounded-3xl">
@@ -112,7 +140,7 @@ export function SecurityTab() {
           <CardDescription>{t('security.reset_password_description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={resetAction}>
+          <form action={resetAction} noValidate>
             <Button type="submit" variant="outline" disabled={resetPending}>
               <span className="material-symbols-outlined mr-2 text-[18px]">mail</span>
               {t('security.send_reset_link')}
@@ -124,7 +152,10 @@ export function SecurityTab() {
             </p>
           )}
           {resetState.success === 'reset_link_sent' && (
-            <p className="text-primary mt-3 text-sm">{t('security.success.reset_link_sent')}</p>
+            <div className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+              <span className="material-symbols-outlined text-[18px]">check_circle</span>
+              {t('security.success.reset_link_sent')}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -136,7 +167,11 @@ export function SecurityTab() {
           <CardDescription>{t('security.delete_account_description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={delAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <form
+            action={delAction}
+            noValidate
+            className="flex flex-col gap-3 sm:flex-row sm:items-end"
+            onChange={() => setIsDelDirty(true)}>
             <div className="flex-1 space-y-1.5">
               <Label htmlFor="confirmation">{t('security.delete_account_confirm_label')}</Label>
               <Input
@@ -144,15 +179,18 @@ export function SecurityTab() {
                 name="confirmation"
                 placeholder={t('security.delete_account_confirm_placeholder')}
                 required
+                aria-invalid={!!delState.fieldErrors?.confirmation}
               />
               {delState.fieldErrors?.confirmation && (
-                <p className="text-error text-xs">{t('errors.invalid_confirmation_phrase')}</p>
+                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                  {t('errors.invalid_confirmation_phrase')}
+                </p>
               )}
             </div>
             <Button
               type="submit"
               variant="destructive"
-              disabled={delPending}
+              disabled={delPending || !isDelDirty}
               className="bg-error text-on-error hover:opacity-90">
               {t('security.delete_account_button')}
             </Button>

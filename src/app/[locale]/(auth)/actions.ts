@@ -11,6 +11,8 @@ import {
   forgotPasswordSchema,
   loginSchema,
   magicLinkSchema,
+  mfaRecoverySchema,
+  mfaSchema,
   signupSchema,
   updatePasswordSchema,
 } from '@/lib/validation/auth';
@@ -19,6 +21,7 @@ export type AuthActionState = {
   error?: string;
   fieldErrors?: Record<string, string[]>;
   success?: string;
+  mfaFactorId?: string;
 };
 
 function flattenFieldErrors(
@@ -45,18 +48,72 @@ export async function signInAction(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
 
   if (error) {
     logger.warn({ action: 'auth.signIn', code: error.code }, 'Sign-in failed');
     return { error: error.code ?? 'invalid_credentials' };
   }
 
+  // Check if MFA is required
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const verifiedFactor = factors?.all.find((f) => f.status === 'verified');
+
+  if (verifiedFactor) {
+    logger.info({ userId: data.user.id, action: 'auth.signIn.mfa_required' }, 'MFA Required');
+    return { success: 'mfa_required', mfaFactorId: verifiedFactor.id };
+  }
+
+  // Log successful auth for compromise detection (SECURITY_AUDIT F-08)
+  if (data.user) {
+    logger.info({ userId: data.user.id, action: 'auth.signIn.success' }, 'Sign-in OK');
+  }
+
   const locale = await getLocale();
   const next = safeRedirectPath(formData.get('next') as string | null, locale);
-  // safeRedirectPath returns an absolute path like `/es/dashboard` — strip locale for i18n redirect.
   const hrefWithoutLocale = next.replace(new RegExp(`^/${locale}`), '') || '/dashboard';
   redirect({ href: hrefWithoutLocale, locale });
+  return {};
+}
+
+export async function verifyMfaAction(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = mfaSchema.safeParse({
+    code: formData.get('code'),
+    factorId: formData.get('factorId'),
+  });
+
+  if (!parsed.success) {
+    return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
+  }
+
+  const supabase = await createClient();
+
+  // Challenge and verify the code
+  const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+    factorId: parsed.data.factorId,
+  });
+
+  if (challengeError) {
+    return { error: 'mfa_challenge_failed' };
+  }
+
+  const { error: verifyError } = await supabase.auth.mfa.verify({
+    factorId: parsed.data.factorId,
+    challengeId: challengeData.id,
+    code: parsed.data.code,
+  });
+
+  if (verifyError) {
+    return { error: 'invalid_mfa_code' };
+  }
+
+  logger.info({ action: 'auth.mfa.success' }, 'MFA Challenge Verified');
+
+  const locale = await getLocale();
+  redirect({ href: '/dashboard', locale });
   return {};
 }
 
@@ -207,6 +264,39 @@ export async function resendConfirmationAction(
   return { success: 'confirmation_resent' };
 }
 
+export async function verifyRecoveryAction(
+  _prev: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> {
+  const parsed = mfaRecoverySchema.safeParse({ code: formData.get('code') });
+
+  if (!parsed.success) {
+    return {
+      fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors),
+    };
+  }
+
+  const supabase = await createClient();
+  const { data: consumed, error } = await supabase.rpc('consume_recovery_code', {
+    p_code: parsed.data.code,
+  });
+
+  if (error) {
+    logger.warn({ action: 'auth.recovery', code: error.code }, 'Recovery code RPC error');
+    return { error: 'recovery_invalid' };
+  }
+
+  if (!consumed) {
+    return { error: 'recovery_invalid' };
+  }
+
+  logger.info({ action: 'auth.recovery.success' }, 'Recovery code consumed');
+
+  const locale = await getLocale();
+  redirect({ href: '/dashboard/account?tab=security&reenroll=1', locale });
+  return {};
+}
+
 export async function oauthAction(provider: 'google' | 'azure'): Promise<void> {
   const supabase = await createClient();
   const locale = await getLocale();
@@ -223,5 +313,7 @@ export async function oauthAction(provider: 'google' | 'azure'): Promise<void> {
     redirect({ href: '/login?error=oauth_failed', locale });
   }
 
-  if (data.url) redirect({ href: data.url as `/${string}`, locale });
+  // Supabase returns an absolute URL to their OAuth authorize endpoint.
+  // Type cast needed because next-intl redirect() is typed for relative paths only.
+  if (data.url) redirect({ href: data.url as '/', locale });
 }

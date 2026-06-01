@@ -77,7 +77,7 @@ export function BillingTab() {
                   API Access
                 </li>
               </ul>
-              <button className="from-primary text-on-primary w-full rounded-md bg-gradient-to-r to-[#4a858d] py-2.5 text-sm font-bold tracking-widest uppercase shadow-md transition-all hover:shadow-lg active:scale-[0.98]">
+              <button className="from-primary text-on-primary w-full rounded-md bg-linear-to-r to-[#4a858d] py-2.5 text-sm font-bold tracking-widest uppercase shadow-md transition-all hover:shadow-lg active:scale-[0.98]">
                 Manage Plan
               </button>
             </div>
@@ -130,7 +130,7 @@ export function BillingTab() {
                   Edit
                 </button>
               </div>
-              <div className="text-on-surface relative z-10 mb-2 font-mono text-xl tracking-[0.1em]">
+              <div className="text-on-surface relative z-10 mb-2 font-mono text-xl tracking-widest">
                 •••• •••• •••• 4242
               </div>
               <div className="text-on-surface-variant relative z-10 flex justify-between text-[10px] font-bold tracking-widest uppercase">

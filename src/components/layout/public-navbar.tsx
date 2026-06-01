@@ -1,6 +1,19 @@
+'use client';
+
+import { usePathname } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 
 export function PublicNavbar() {
+  const pathname = usePathname();
+
+  const getLinkClasses = (path: string) => {
+    const isActive = pathname.endsWith(path);
+    if (isActive) {
+      return 'text-primary border-primary border-b-2 font-bold transition-opacity duration-150 hover:opacity-80 active:scale-95';
+    }
+    return 'hover:text-primary text-slate-600 transition-opacity duration-150 hover:opacity-80 active:scale-95 dark:text-slate-400';
+  };
+
   return (
     <nav className="bg-surface/70 flat no-shadows fixed top-0 z-50 w-full border-none backdrop-blur-xl dark:bg-slate-900/70">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-4">
@@ -8,30 +21,22 @@ export function PublicNavbar() {
           Axiom Ledger
         </Link>
         <div className="font-body hidden items-center gap-8 font-medium tracking-tight md:flex">
-          <Link
-            className="text-primary border-primary border-b-2 font-bold transition-opacity duration-150 hover:opacity-80 active:scale-95"
-            href="/product">
+          <Link className={getLinkClasses('/product')} href="/product">
             Product
           </Link>
-          <Link
-            className="hover:text-primary text-slate-600 transition-opacity duration-150 hover:opacity-80 active:scale-95 dark:text-slate-400"
-            href="/solutions">
+          <Link className={getLinkClasses('/solutions')} href="/solutions">
             Solutions
           </Link>
-          <Link
-            className="hover:text-primary text-slate-600 transition-opacity duration-150 hover:opacity-80 active:scale-95 dark:text-slate-400"
-            href="/pricing">
+          <Link className={getLinkClasses('/pricing')} href="/pricing">
             Pricing
           </Link>
-          <Link
-            className="hover:text-primary text-slate-600 transition-opacity duration-150 hover:opacity-80 active:scale-95 dark:text-slate-400"
-            href="/contact">
+          <Link className={getLinkClasses('/contact')} href="/contact">
             Contact
           </Link>
         </div>
         <Link
           href="/login"
-          className="from-primary to-primary-container text-on-primary rounded-md bg-gradient-to-r px-6 py-2 font-medium transition-opacity hover:opacity-90 active:scale-95">
+          className="from-primary to-primary-container text-on-primary rounded-md bg-linear-to-r px-6 py-2 font-medium transition-opacity hover:opacity-90 active:scale-95">
           Login
         </Link>
       </div>

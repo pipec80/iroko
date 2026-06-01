@@ -259,7 +259,7 @@ function TopProductItem({
       <div className="bg-surface-container-high text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
         <span className="material-symbols-outlined text-[20px]">{icon}</span>
       </div>
-      <div className="min-w-0 flex-grow">
+      <div className="min-w-0 grow">
         <p className="text-on-surface truncate text-sm font-bold">{name}</p>
         <p className="text-on-surface-variant font-mono text-[10px] opacity-60">{sku}</p>
       </div>

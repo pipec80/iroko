@@ -9,7 +9,13 @@ import { Label } from '@/components/ui/label';
 import { Link } from '@/i18n/routing';
 
 import type { AuthActionState } from '../actions';
-import { magicLinkAction, oauthAction, signInAction } from '../actions';
+import {
+  magicLinkAction,
+  oauthAction,
+  signInAction,
+  verifyMfaAction,
+  verifyRecoveryAction,
+} from '../actions';
 
 const initialState: AuthActionState = {};
 
@@ -17,18 +23,137 @@ export default function LoginPage() {
   const t = useTranslations('Auth');
   const [email, setEmail] = useState('');
   const [signInState, signInForm, signInPending] = useActionState(signInAction, initialState);
+  const [mfaState, mfaForm, mfaPending] = useActionState(verifyMfaAction, initialState);
+  const [recoveryState, recoveryForm, recoveryPending] = useActionState(
+    verifyRecoveryAction,
+    initialState,
+  );
   const [magicState, magicForm, magicPending] = useActionState(magicLinkAction, initialState);
   const [oauthPending, startOAuth] = useTransition();
+  const [showRecovery, setShowRecovery] = useState(false);
+
+  const isMfaRequired = signInState.success === 'mfa_required';
+  const mfaFactorId = signInState.mfaFactorId;
 
   const signInError =
     signInState.error ?
       t(`errors.${signInState.error}` as 'errors.generic', { default: t('errors.generic') })
+    : null;
+  const mfaError =
+    mfaState.error ?
+      t(`errors.${mfaState.error}` as 'errors.generic', { default: t('errors.generic') })
+    : null;
+  const recoveryError =
+    recoveryState.error ?
+      t(`errors.${recoveryState.error}` as 'errors.generic', { default: t('errors.generic') })
     : null;
   const magicError =
     magicState.error ?
       t(`errors.${magicState.error}` as 'errors.generic', { default: t('errors.generic') })
     : null;
   const magicSuccess = magicState.success === 'magic_link_sent' ? t('magic_link_sent') : null;
+
+  if (isMfaRequired) {
+    return (
+      <div className="mx-auto w-full max-w-md">
+        <div className="mb-10 text-center lg:text-left">
+          <h1 className="font-headline text-on-surface mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+            {showRecovery ? t('recovery_login_title') : t('mfa_login_title')}
+          </h1>
+          <p className="text-on-surface-variant text-sm sm:text-base">
+            {showRecovery ? t('recovery_login_desc') : t('mfa_login_desc')}
+          </p>
+        </div>
+
+        {!showRecovery ?
+          <form action={mfaForm} className="space-y-6">
+            <input type="hidden" name="factorId" value={mfaFactorId} />
+            <div className="space-y-2">
+              <Label
+                className="text-on-surface block text-center font-sans text-sm font-semibold"
+                htmlFor="code">
+                {t('mfa_login_label')}
+              </Label>
+              <Input
+                id="code"
+                name="code"
+                placeholder="000000"
+                required
+                className="bg-surface-container-low border-outline-variant/10 focus:ring-primary/20 h-16 rounded-xl text-center font-mono text-3xl tracking-[0.3em]"
+                autoFocus
+                maxLength={6}
+              />
+            </div>
+
+            {mfaError && (
+              <p role="alert" className="text-error text-center text-sm">
+                {mfaError}
+              </p>
+            )}
+
+            <Button
+              className="bg-primary text-primary-foreground w-full rounded-lg py-6 font-bold shadow-md transition-opacity hover:opacity-90"
+              type="submit"
+              disabled={mfaPending}>
+              {t('mfa_login_verify')}
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setShowRecovery(true)}
+              className="text-muted-foreground hover:text-primary w-full text-center text-sm font-medium transition-colors">
+              {t('recovery_use_instead')}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="text-muted-foreground hover:text-primary w-full text-center text-sm font-medium transition-colors">
+              {t('mfa_login_back')}
+            </button>
+          </form>
+        : <form action={recoveryForm} className="space-y-6">
+            <div className="space-y-2">
+              <Label
+                className="text-on-surface block text-center font-sans text-sm font-semibold"
+                htmlFor="recovery-code">
+                {t('recovery_login_label')}
+              </Label>
+              <Input
+                id="recovery-code"
+                name="code"
+                placeholder="XXXX-XXXX"
+                required
+                className="bg-surface-container-low border-outline-variant/10 focus:ring-primary/20 h-16 rounded-xl text-center font-mono text-2xl tracking-widest uppercase"
+                autoFocus
+                maxLength={9}
+              />
+            </div>
+
+            {recoveryError && (
+              <p role="alert" className="text-error text-center text-sm">
+                {recoveryError}
+              </p>
+            )}
+
+            <Button
+              className="bg-primary text-primary-foreground w-full rounded-lg py-6 font-bold shadow-md transition-opacity hover:opacity-90"
+              type="submit"
+              disabled={recoveryPending}>
+              {t('recovery_login_verify')}
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => setShowRecovery(false)}
+              className="text-muted-foreground hover:text-primary w-full text-center text-sm font-medium transition-colors">
+              {t('recovery_use_totp_instead')}
+            </button>
+          </form>
+        }
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full max-w-md">
@@ -53,7 +178,7 @@ export default function LoginPage() {
       </div>
 
       {/* Primary form (password) */}
-      <form action={signInForm} className="space-y-5">
+      <form action={signInForm} className="space-y-5" noValidate>
         {/* Email Input */}
         <div className="space-y-1.5">
           <Label className="text-on-surface block font-sans text-sm font-semibold" htmlFor="email">
@@ -75,7 +200,11 @@ export default function LoginPage() {
             />
           </div>
           {signInState.fieldErrors?.email && (
-            <p className="text-error text-xs">{signInState.fieldErrors.email[0]}</p>
+            <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+              {t(`errors.${signInState.fieldErrors.email[0]}` as 'errors.generic', {
+                default: signInState.fieldErrors.email[0],
+              })}
+            </p>
           )}
         </div>
 
@@ -107,12 +236,18 @@ export default function LoginPage() {
             />
           </div>
           {signInState.fieldErrors?.password && (
-            <p className="text-error text-xs">{signInState.fieldErrors.password[0]}</p>
+            <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+              {t(`errors.${signInState.fieldErrors.password[0]}` as 'errors.generic', {
+                default: signInState.fieldErrors.password[0],
+              })}
+            </p>
           )}
         </div>
 
         {signInError && (
-          <p role="alert" className="text-error text-sm">
+          <p
+            role="alert"
+            className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-sm font-medium">
             {signInError}
           </p>
         )}
@@ -128,7 +263,7 @@ export default function LoginPage() {
       </form>
 
       {/* Magic link — separate form that shares the email field above */}
-      <form action={magicForm} className="mt-3 space-y-2">
+      <form action={magicForm} className="mt-3 space-y-2" noValidate>
         <input type="hidden" name="email" value={email} readOnly />
         <Button
           variant="outline"
@@ -139,7 +274,9 @@ export default function LoginPage() {
           {t('magic_link')}
         </Button>
         {magicError && (
-          <p role="alert" className="text-error text-xs">
+          <p
+            role="alert"
+            className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
             {magicError}
           </p>
         )}
@@ -148,11 +285,11 @@ export default function LoginPage() {
 
       {/* Divider */}
       <div className="my-8 flex items-center">
-        <div className="border-border/40 flex-grow border-t"></div>
+        <div className="border-border/40 grow border-t"></div>
         <span className="text-muted-foreground px-4 text-xs font-medium tracking-wider uppercase">
           {t('or_continue_with')}
         </span>
-        <div className="border-border/40 flex-grow border-t"></div>
+        <div className="border-border/40 grow border-t"></div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

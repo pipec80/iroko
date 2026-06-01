@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from 'next-intl/server';
 
-import { listMySessions } from '@/app/[locale]/dashboard/settings/actions';
+import { listMySessions } from '@/app/[locale]/dashboard/account/actions';
 
 import { SessionsTabClient } from './sessions-tab-client';
 

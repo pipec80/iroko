@@ -46,7 +46,7 @@ export default function SignupPage() {
       </div>
 
       {/* Form */}
-      <form action={formAction} className="space-y-4">
+      <form action={formAction} className="space-y-4" noValidate>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label
@@ -62,7 +62,11 @@ export default function SignupPage() {
               required
             />
             {state.fieldErrors?.first_name && (
-              <p className="text-error text-xs">{state.fieldErrors.first_name[0]}</p>
+              <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                {t(`errors.${state.fieldErrors.first_name[0]}` as 'errors.generic', {
+                  default: state.fieldErrors.first_name[0],
+                })}
+              </p>
             )}
           </div>
           <div className="space-y-1.5">
@@ -79,7 +83,11 @@ export default function SignupPage() {
               required
             />
             {state.fieldErrors?.last_name && (
-              <p className="text-error text-xs">{state.fieldErrors.last_name[0]}</p>
+              <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                {t(`errors.${state.fieldErrors.last_name[0]}` as 'errors.generic', {
+                  default: state.fieldErrors.last_name[0],
+                })}
+              </p>
             )}
           </div>
         </div>
@@ -102,7 +110,11 @@ export default function SignupPage() {
             />
           </div>
           {state.fieldErrors?.email && (
-            <p className="text-error text-xs">{state.fieldErrors.email[0]}</p>
+            <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+              {t(`errors.${state.fieldErrors.email[0]}` as 'errors.generic', {
+                default: state.fieldErrors.email[0],
+              })}
+            </p>
           )}
         </div>
 
@@ -127,12 +139,18 @@ export default function SignupPage() {
             />
           </div>
           {state.fieldErrors?.password && (
-            <p className="text-error text-xs">{state.fieldErrors.password[0]}</p>
+            <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+              {t(`errors.${state.fieldErrors.password[0]}` as 'errors.generic', {
+                default: state.fieldErrors.password[0],
+              })}
+            </p>
           )}
         </div>
 
         {error && (
-          <p role="alert" className="text-error text-sm">
+          <p
+            role="alert"
+            className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-sm font-medium">
             {error}
           </p>
         )}
@@ -149,11 +167,11 @@ export default function SignupPage() {
 
       {/* Divider */}
       <div className="my-8 flex items-center">
-        <div className="border-border/40 flex-grow border-t"></div>
+        <div className="border-border/40 grow border-t"></div>
         <span className="text-muted-foreground px-4 text-xs font-medium tracking-wider uppercase">
           {t('or_continue_with')}
         </span>
-        <div className="border-border/40 flex-grow border-t"></div>
+        <div className="border-border/40 grow border-t"></div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

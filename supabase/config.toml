@@ -117,6 +117,24 @@ public = true
 file_size_limit = "5MiB"
 allowed_mime_types = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"]
 
+# Documentos privados por org — acceso solo via URL firmada (15 min TTL)
+# Path: documents/{accountId}/{userId}/{uuid}.{ext}
+[storage.buckets.documents]
+public = false
+file_size_limit = "50MiB"
+allowed_mime_types = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  "text/plain",
+  "text/csv",
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+]
+
 [storage.s3_protocol]
 enabled = false
 

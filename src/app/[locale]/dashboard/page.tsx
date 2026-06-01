@@ -1,47 +1,82 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/server';
+
+import type { Metadata } from 'next';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Dashboard' });
+
+  return {
+    title: t('page_title'),
+    description: t('page_description'),
+  };
+}
+
 export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const userDisplayName = 'Admin';
+  const t = await getTranslations('Dashboard');
+
+  // Get real user display name from profile
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const displayName =
+    user?.user_metadata?.given_name || user?.user_metadata?.display_name || user?.email || '';
 
   return (
     <div className="animate-in fade-in space-y-10 p-2 duration-700">
       <header className="space-y-2">
         <h1 className="text-on-surface font-sans text-4xl font-extrabold tracking-tighter">
-          Dashboard Overview
+          {t('page_title')}
         </h1>
         <p className="text-on-surface-variant max-w-2xl font-sans text-lg tracking-tight opacity-80">
-          Bienvenido de nuevo, <span className="text-primary font-bold">{userDisplayName}</span>.
-          Aquí tienes un resumen de las métricas de Axiom Ledger para hoy.
+          {t('welcome_back', { name: displayName })}
         </p>
       </header>
 
       {/* KPI Bento Grid */}
       <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total Sales Volume"
+          title={t('kpis.total_sales')}
           value="$1,284,500.00"
           change="+12.5%"
           icon="trending_up"
           trend="up"
+          periodLabel={t('vs_period')}
         />
-        <StatCard title="Active Sessions" value="14,209" change="+3.1%" icon="bolt" trend="up" />
         <StatCard
-          title="Conversion Rate"
+          title={t('kpis.orders')}
+          value="14,209"
+          change="+3.1%"
+          icon="bolt"
+          trend="up"
+          periodLabel={t('vs_period')}
+        />
+        <StatCard
+          title={t('kpis.conversion')}
           value="3.42%"
           change="-0.8%"
           icon="monitoring"
           trend="down"
+          periodLabel={t('vs_period')}
         />
         <StatCard
-          title="Inventory Health"
+          title={t('metrics.system_health')}
           value="98.2%"
           change="+1.2%"
           icon="inventory_2"
           trend="up"
+          periodLabel={t('vs_period')}
         />
       </section>
 
@@ -52,17 +87,17 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             <div className="mb-2 flex items-center gap-3">
               <span className="material-symbols-outlined text-primary">analytics</span>
               <CardTitle className="font-sans text-xl font-bold tracking-tight">
-                System Performance
+                {t('system_performance')}
               </CardTitle>
             </div>
             <p className="text-on-surface-variant font-sans text-sm opacity-70">
-              Estado de la red y métricas de procesamiento en tiempo real.
+              {t('system_performance_desc')}
             </p>
           </CardHeader>
           <CardContent className="flex h-[350px] items-center justify-center p-8 pt-0">
             <div className="bg-surface-container-low border-outline-variant/30 flex h-full w-full items-center justify-center rounded-xl border border-dashed">
               <span className="text-on-surface-variant font-mono text-xs tracking-widest uppercase opacity-40">
-                [ Waiting for telemetry data... ]
+                {t('waiting_telemetry')}
               </span>
             </div>
           </CardContent>
@@ -78,12 +113,14 @@ function StatCard({
   change,
   icon,
   trend = 'up',
+  periodLabel,
 }: {
   title: string;
   value: string;
   change: string;
   icon: string;
   trend?: 'up' | 'down';
+  periodLabel: string;
 }) {
   return (
     <Card className="bg-surface-container-highest hover:bg-surface-container-high group rounded-2xl border-none shadow-none transition-all">
@@ -108,7 +145,7 @@ function StatCard({
             {change}
           </span>
           <span className="text-on-surface-variant font-sans text-[10px] font-medium tracking-wider uppercase opacity-50">
-            vs last period
+            {periodLabel}
           </span>
         </div>
       </CardContent>

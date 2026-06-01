@@ -1,21 +1,28 @@
 <!doctype html>
 <html>
-  <body style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px;">
+  <body style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px">
     <h2>Confirma tu cuenta</h2>
     <p>Gracias por registrarte. Haz clic en el botón para confirmar tu email:</p>
     <p>
       <a
         href="{{ .SiteURL }}/es/auth/confirm?token_hash={{ .TokenHash }}&type=signup&next=/es/dashboard"
-        style="display:inline-block;background:#1f2937;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold"
-      >Confirmar mi cuenta</a>
+        style="
+          display: inline-block;
+          background: #1f2937;
+          color: #fff;
+          padding: 12px 20px;
+          border-radius: 8px;
+          text-decoration: none;
+          font-weight: bold;
+        "
+        >Confirmar mi cuenta</a
+      >
     </p>
-    <p style="color:#555;font-size:13px">
+    <p style="color: #555; font-size: 13px">
       Si el botón no funciona, también puedes ingresar este código en la app:
-      <br><b style="font-size:20px;letter-spacing:2px">{{ .Token }}</b>
+      <br /><b style="font-size: 20px; letter-spacing: 2px">{{ .Token }}</b>
     </p>
-    <hr style="border:none;border-top:1px solid #e5e5e5;margin:32px 0">
-    <p style="color:#888;font-size:12px">
-      Si no creaste esta cuenta, ignora este correo.
-    </p>
+    <hr style="border: none; border-top: 1px solid #e5e5e5; margin: 32px 0" />
+    <p style="color: #888; font-size: 12px">Si no creaste esta cuenta, ignora este correo.</p>
   </body>
 </html>

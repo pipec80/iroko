@@ -9,12 +9,13 @@ import {
   updateProfileAction,
   uploadAvatarAction,
   type SettingsActionState,
-} from '@/app/[locale]/dashboard/settings/actions';
+} from '@/app/[locale]/dashboard/account/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { ProfileSnapshot } from './settings-tabs';
+import { storageUrl } from '@/lib/storage';
+import type { ProfileSnapshot } from './account-tabs';
 
 const initialState: SettingsActionState = {};
 
@@ -44,13 +45,24 @@ export function ProfileTab({ profile, email, role }: Props) {
     initialState,
   );
 
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(profile.avatar_url);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(storageUrl(profile.avatar_url));
   const [hasFile, setHasFile] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [isProfileDirty, setIsProfileDirty] = useState(false);
+  const [isEmailDirty, setIsEmailDirty] = useState(false);
 
   const profileError = translateError(t, profileState.error);
   const emailError = translateError(t, emailState.error);
   const avatarError = translateError(t, avatarState.error);
+
+  const [prevAvatarSuccess, setPrevAvatarSuccess] = useState(avatarState.success);
+  if (avatarState.success !== prevAvatarSuccess) {
+    setPrevAvatarSuccess(avatarState.success);
+    if (avatarState.success === 'avatar_updated') {
+      setHasFile(false);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -103,10 +115,13 @@ export function ProfileTab({ profile, email, role }: Props) {
                   {avatarPending ? t('profile.saving') : t('profile.save_changes')}
                 </Button>
               </div>
-              {avatarError && <p className="text-error mt-2 text-xs">{avatarError}</p>}
-              {avatarState.success === 'avatar_updated' && (
-                <p className="text-primary mt-2 text-xs">{t('profile.success.avatar_updated')}</p>
+              {avatarState.success === 'avatar_updated' && !hasFile && (
+                <div className="bg-primary/10 text-primary mt-3 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  {t('profile.success.avatar_updated')}
+                </div>
               )}
+              {avatarError && <p className="text-error mt-2 text-xs">{avatarError}</p>}
             </div>
           </form>
         </CardContent>
@@ -118,17 +133,27 @@ export function ProfileTab({ profile, email, role }: Props) {
           <CardTitle>{t('profile.heading')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={profileAction} className="grid gap-5 md:grid-cols-2">
+          <form
+            action={profileAction}
+            noValidate
+            className="grid gap-5 md:grid-cols-2"
+            onChange={() => setIsProfileDirty(true)}>
             <div className="space-y-1.5">
               <Label htmlFor="given_name">{t('profile.given_name')}</Label>
               <Input
                 id="given_name"
                 name="given_name"
                 defaultValue={profile.given_name ?? ''}
+                placeholder="John"
                 required
+                aria-invalid={!!profileState.fieldErrors?.given_name}
               />
               {profileState.fieldErrors?.given_name && (
-                <p className="text-error text-xs">{profileState.fieldErrors.given_name[0]}</p>
+                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                  {t(`errors.${profileState.fieldErrors.given_name[0]}` as 'errors.generic', {
+                    default: profileState.fieldErrors.given_name[0],
+                  })}
+                </p>
               )}
             </div>
             <div className="space-y-1.5">
@@ -137,10 +162,16 @@ export function ProfileTab({ profile, email, role }: Props) {
                 id="family_name"
                 name="family_name"
                 defaultValue={profile.family_name ?? ''}
+                placeholder="Doe"
                 required
+                aria-invalid={!!profileState.fieldErrors?.family_name}
               />
               {profileState.fieldErrors?.family_name && (
-                <p className="text-error text-xs">{profileState.fieldErrors.family_name[0]}</p>
+                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                  {t(`errors.${profileState.fieldErrors.family_name[0]}` as 'errors.generic', {
+                    default: profileState.fieldErrors.family_name[0],
+                  })}
+                </p>
               )}
             </div>
 
@@ -150,7 +181,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                 id="locale"
                 name="locale"
                 defaultValue={profile.locale ?? 'es'}
-                className="border-input bg-background h-10 w-full rounded-md border px-3 text-sm">
+                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm transition-all outline-none focus-visible:ring-4">
                 <option value="es">Español</option>
                 <option value="en">English</option>
               </select>
@@ -164,6 +195,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                 defaultValue={profile.timezone ?? 'America/Santiago'}
                 placeholder="America/Santiago"
                 required
+                aria-invalid={!!profileState.fieldErrors?.timezone}
               />
             </div>
 
@@ -175,10 +207,15 @@ export function ProfileTab({ profile, email, role }: Props) {
                 defaultValue={profile.phone_number ?? ''}
                 placeholder="+56912345678"
                 type="tel"
+                aria-invalid={!!profileState.fieldErrors?.phone_number}
               />
               <p className="text-on-surface-variant text-xs">{t('profile.phone_hint')}</p>
               {profileState.fieldErrors?.phone_number && (
-                <p className="text-error text-xs">{t('errors.invalid_phone')}</p>
+                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                  {t(`errors.${profileState.fieldErrors.phone_number[0]}` as 'errors.generic', {
+                    default: t('errors.invalid_phone'),
+                  })}
+                </p>
               )}
             </div>
 
@@ -188,10 +225,13 @@ export function ProfileTab({ profile, email, role }: Props) {
                   {profileError}
                 </p>
               )}
-              {profileState.success === 'profile_updated' && (
-                <p className="text-primary mb-3 text-sm">{t('profile.success.profile_updated')}</p>
+              {profileState.success === 'profile_updated' && !isProfileDirty && (
+                <div className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  {t('profile.success.profile_updated')}
+                </div>
               )}
-              <Button type="submit" disabled={profilePending}>
+              <Button type="submit" disabled={profilePending || !isProfileDirty}>
                 {profilePending ? t('profile.saving') : t('profile.save_changes')}
               </Button>
             </div>
@@ -211,15 +251,31 @@ export function ProfileTab({ profile, email, role }: Props) {
             <strong>{email}</strong>
             {role && <span className="text-on-surface-variant ml-3 text-xs">({role})</span>}
           </div>
-          <form action={emailAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <form
+            action={emailAction}
+            noValidate
+            onChange={() => setIsEmailDirty(true)}
+            className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-1.5">
               <Label htmlFor="new_email">{t('profile.new_email')}</Label>
-              <Input id="new_email" name="email" type="email" required defaultValue="" />
+              <Input
+                id="new_email"
+                name="email"
+                type="email"
+                placeholder="name@company.com"
+                required
+                defaultValue=""
+                aria-invalid={!!emailState.fieldErrors?.email}
+              />
               {emailState.fieldErrors?.email && (
-                <p className="text-error text-xs">{emailState.fieldErrors.email[0]}</p>
+                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                  {t(`errors.${emailState.fieldErrors.email[0]}` as 'errors.generic', {
+                    default: emailState.fieldErrors.email[0],
+                  })}
+                </p>
               )}
             </div>
-            <Button type="submit" disabled={emailPending}>
+            <Button type="submit" disabled={emailPending || !isEmailDirty}>
               {t('profile.change_email')}
             </Button>
           </form>
@@ -228,10 +284,11 @@ export function ProfileTab({ profile, email, role }: Props) {
               {emailError}
             </p>
           )}
-          {emailState.success === 'email_change_requested' && (
-            <p className="text-primary mt-3 text-sm">
+          {emailState.success === 'email_change_requested' && !isEmailDirty && (
+            <div className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+              <span className="material-symbols-outlined text-[18px]">check_circle</span>
               {t('profile.success.email_change_requested')}
-            </p>
+            </div>
           )}
         </CardContent>
       </Card>

@@ -10,6 +10,12 @@ export async function POST(
   const { locale } = await params;
   const { origin } = new URL(request.url);
 
+  // CSRF: reject cross-origin logout requests (SECURITY_AUDIT F-07)
+  const requestOrigin = request.headers.get('origin');
+  if (requestOrigin && requestOrigin !== origin) {
+    return new NextResponse('Forbidden', { status: 403 });
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
 

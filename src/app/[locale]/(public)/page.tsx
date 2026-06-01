@@ -29,7 +29,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             analyze sales in real-time with an editorial-grade dashboard.
           </p>
           <div className="mt-4 flex items-center gap-4">
-            <button className="from-primary to-primary-container text-on-primary ambient-shadow rounded-md bg-gradient-to-r px-8 py-4 text-lg font-semibold transition-opacity hover:opacity-90">
+            <button className="from-primary to-primary-container text-on-primary ambient-shadow rounded-md bg-linear-to-r px-8 py-4 text-lg font-semibold transition-opacity hover:opacity-90">
               Empezar ahora
             </button>
             <button className="text-primary ghost-border hover:bg-surface-container-low rounded-md px-8 py-4 font-semibold transition-colors">
@@ -38,7 +38,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
         <div className="relative h-[300px] w-full overflow-hidden rounded-xl md:h-[450px] md:w-1/2">
-          <div className="from-primary-container/20 to-surface absolute inset-0 -z-10 rounded-full bg-gradient-to-tr blur-3xl"></div>
+          <div className="from-primary-container/20 to-surface absolute inset-0 -z-10 rounded-full bg-linear-to-tr blur-3xl"></div>
           <Image
             alt="Dashboard"
             className="ambient-shadow object-cover"

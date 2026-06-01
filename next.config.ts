@@ -47,6 +47,12 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
   images: {
+    // Node.js uses its own CA bundle (not the Windows cert store), so in dev
+    // environments with SSL-inspection proxies the server-side fetch inside
+    // /_next/image fails.  Disabling optimization in dev makes the <Image>
+    // component emit a plain <img> that the browser fetches directly — no
+    // Node.js TLS involved.
+    unoptimized: process.env.NODE_ENV !== 'production',
     remotePatterns: [
       {
         protocol: 'https',
@@ -58,6 +64,18 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.supabase.co',
         port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '54321',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '54321',
         pathname: '/storage/v1/object/public/**',
       },
       {

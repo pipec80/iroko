@@ -65,7 +65,7 @@ export function InventoryGrid() {
         </div>
 
         <div className="flex flex-wrap items-center gap-4">
-          <div className="relative max-w-md flex-grow">
+          <div className="relative max-w-md grow">
             <span className="material-symbols-outlined text-on-surface-variant absolute top-1/2 left-3 -translate-y-1/2 text-[20px]">
               search
             </span>
@@ -121,7 +121,7 @@ export function InventoryGrid() {
                 <tr
                   key={idx}
                   className={cn(
-                    'hover:bg-primary/[0.03] group border-outline-variant/5 border-b transition-all duration-300',
+                    'hover:bg-primary/3 group border-outline-variant/5 border-b transition-all duration-300',
                     idx % 2 === 0 ? 'bg-surface-container-lowest' : 'bg-surface-container-low/20',
                   )}>
                   <td className="px-6 py-5">

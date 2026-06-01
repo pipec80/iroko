@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { SessionsTab } from '@/components/dashboard/settings/sessions-tab';
-import { SettingsTabs } from '@/components/dashboard/settings/settings-tabs';
+import { SessionsTab } from '@/components/dashboard/account/sessions-tab';
+import { AccountTabs } from '@/components/dashboard/account/account-tabs';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function SettingsPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -43,7 +43,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
             <div className="bg-muted h-[400px] w-full animate-pulse rounded-3xl" />
           </div>
         }>
-        <SettingsTabs
+        <AccountTabs
           email={email}
           role={role}
           profile={

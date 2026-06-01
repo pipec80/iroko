@@ -108,7 +108,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                 {/* Submit Button */}
                 <div className="pt-2">
                   <button
-                    className="from-primary to-primary-container text-on-primary focus:ring-primary focus:ring-offset-surface w-full rounded-md bg-gradient-to-r px-8 py-3 font-bold transition-opacity hover:opacity-90 focus:ring-2 focus:ring-offset-2 focus:outline-none sm:w-auto"
+                    className="from-primary to-primary-container text-on-primary focus:ring-primary focus:ring-offset-surface w-full rounded-md bg-linear-to-r px-8 py-3 font-bold transition-opacity hover:opacity-90 focus:ring-2 focus:ring-offset-2 focus:outline-none sm:w-auto"
                     type="button">
                     Enviar mensaje
                   </button>
@@ -126,7 +126,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
               <div className="space-y-8">
                 {/* Address */}
                 <div className="flex items-start space-x-4">
-                  <div className="bg-surface-container-highest flex-shrink-0 rounded-full p-3">
+                  <div className="bg-surface-container-highest shrink-0 rounded-full p-3">
                     <span
                       className="material-symbols-outlined text-primary"
                       style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -147,7 +147,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
 
                 {/* Sales Email */}
                 <div className="flex items-start space-x-4">
-                  <div className="bg-surface-container-highest flex-shrink-0 rounded-full p-3">
+                  <div className="bg-surface-container-highest shrink-0 rounded-full p-3">
                     <span
                       className="material-symbols-outlined text-primary"
                       style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -168,7 +168,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
 
                 {/* Support Phone */}
                 <div className="flex items-start space-x-4">
-                  <div className="bg-surface-container-highest flex-shrink-0 rounded-full p-3">
+                  <div className="bg-surface-container-highest shrink-0 rounded-full p-3">
                     <span
                       className="material-symbols-outlined text-primary"
                       style={{ fontVariationSettings: "'FILL' 1" }}>

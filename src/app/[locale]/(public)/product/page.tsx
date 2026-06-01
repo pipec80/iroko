@@ -18,7 +18,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
             analítico diseñado para la velocidad, construido para la precisión en el retail moderno.
           </p>
           <div className="flex gap-4 pt-4">
-            <button className="from-primary to-primary-container text-on-primary flex items-center gap-2 rounded-md bg-gradient-to-r px-8 py-4 text-lg font-semibold transition-opacity hover:opacity-90">
+            <button className="from-primary to-primary-container text-on-primary flex items-center gap-2 rounded-md bg-linear-to-r px-8 py-4 text-lg font-semibold transition-opacity hover:opacity-90">
               Empieza tu prueba gratuita
               <span
                 className="material-symbols-outlined text-sm"
@@ -38,7 +38,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
               <div className="bg-surface-container-lowest h-4 w-1/3 rounded-full"></div>
               <div className="bg-primary/20 h-4 w-16 rounded-full"></div>
             </div>
-            <div className="bg-surface-container-lowest flex flex-grow flex-col gap-3 rounded-lg p-4">
+            <div className="bg-surface-container-lowest flex grow flex-col gap-3 rounded-lg p-4">
               <div className="flex items-end justify-between">
                 <div className="w-1/2 space-y-2">
                   <div className="bg-surface-container-high h-3 w-24 rounded"></div>
@@ -199,7 +199,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
       {/* CTA Section */}
       <section className="mx-auto max-w-7xl px-8 py-32 text-center">
         <div className="bg-surface-container-low relative overflow-hidden rounded-[2rem] p-16">
-          <div className="from-primary/5 absolute inset-0 bg-gradient-to-br to-transparent"></div>
+          <div className="from-primary/5 absolute inset-0 bg-linear-to-br to-transparent"></div>
           <div className="relative z-10 mx-auto max-w-2xl space-y-8">
             <h2 className="text-4xl font-bold tracking-tight">
               Listo para optimizar sus operaciones?
@@ -207,7 +207,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
             <p className="text-on-surface-variant text-xl">
               Experimente la precisión técnica de Axiom Ledger hoy mismo.
             </p>
-            <button className="from-primary to-primary-container text-on-primary mt-4 rounded-md bg-gradient-to-r px-10 py-5 text-lg font-semibold transition-opacity hover:opacity-90">
+            <button className="from-primary to-primary-container text-on-primary mt-4 rounded-md bg-linear-to-r px-10 py-5 text-lg font-semibold transition-opacity hover:opacity-90">
               Empieza tu prueba gratuita
             </button>
           </div>
