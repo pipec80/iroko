@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useTranslations } from 'next-intl';
+import { Bell, Globe, Keyboard, LogOut, Menu, Moon, Search, Settings, User } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -20,9 +20,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Link } from '@/i18n/routing';
-
-import { AppSidebar } from './app-sidebar';
+import { Link, usePathname } from '@/i18n/routing';
+import type { OrgAccount } from './app-sidebar-client';
+import { AppSidebarClient } from './app-sidebar-client';
 
 export type TopbarUser = {
   displayName: string;
@@ -32,111 +32,177 @@ export type TopbarUser = {
 type Props = {
   user: TopbarUser;
   locale: string;
+  orgs: OrgAccount[];
 };
 
-export function AppTopbarClient({ user, locale }: Props) {
-  const t = useTranslations('Navigation');
+const PAGE_TITLES: Record<string, string> = {
+  '/dashboard': 'Inicio',
+  '/dashboard/projects': 'Proyectos',
+  '/dashboard/members': 'Equipo',
+  '/dashboard/billing': 'Billing',
+  '/dashboard/org/settings': 'Configuración',
+  '/dashboard/account': 'Mi cuenta',
+};
+
+function getPageTitle(pathname: string): string {
+  for (const [route, title] of Object.entries(PAGE_TITLES)) {
+    if (pathname === route || (route !== '/dashboard' && pathname.startsWith(route))) {
+      return title;
+    }
+  }
+  return 'Dashboard';
+}
+
+function userInitials(displayName: string): string {
+  return displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
+export function AppTopbarClient({ user, locale, orgs }: Props) {
+  const pathname = usePathname();
+  const pageTitle = getPageTitle(pathname);
+  const firstOrg = orgs[0];
+  const orgLabel = firstOrg?.name.toUpperCase() ?? 'IROKO';
 
   return (
-    <header className="bg-surface-bright/80 sticky top-0 z-30 flex h-16 w-full items-center justify-between border-none px-4 backdrop-blur-xl lg:px-8">
-      <div className="flex w-full items-center gap-4 lg:max-w-sm">
+    <header className="bg-surface-1 border-border sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b px-4 lg:px-6">
+      {/* Left: mobile menu + breadcrumb */}
+      <div className="flex items-center gap-3">
         <div className="lg:hidden">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2">
-                <span className="material-symbols-outlined">menu</span>
-                <span className="sr-only">Toggle navigation menu</span>
+              <Button variant="ghost" size="icon" className="mr-1">
+                <Menu className="size-5" />
+                <span className="sr-only">Abrir navegación</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 border-none p-0">
-              <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+              <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
               <SheetDescription className="sr-only">
-                Menu lateral para navegación en dispositivos móviles.
+                Menú lateral para navegación en dispositivos móviles.
               </SheetDescription>
-              <AppSidebar />
+              <AppSidebarClient orgs={orgs} />
             </SheetContent>
           </Sheet>
         </div>
-        <div className="relative hidden w-full max-w-sm md:block">
-          <span className="material-symbols-outlined text-on-surface-variant absolute top-1/2 left-3 -translate-y-1/2 text-[18px]">
-            search
+
+        {/* Breadcrumb */}
+        <div className="hidden items-center gap-2 lg:flex">
+          <span className="text-muted-foreground font-mono text-[11px] font-semibold tracking-widest uppercase">
+            {orgLabel}
           </span>
-          <Input
-            type="search"
-            placeholder={t('search_placeholder')}
-            className="bg-surface-container-lowest border-outline-variant/20 focus-visible:ring-primary/20 h-9 w-full rounded-full pl-10 text-sm shadow-none md:w-[300px] lg:w-[400px]"
-          />
+          <span className="text-muted-foreground text-sm">/</span>
+          <span className="text-foreground text-[17px] font-bold">{pageTitle}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      {/* Right: search + bell + avatar */}
+      <div className="flex items-center gap-2">
+        {/* Search */}
+        <div className="relative hidden md:block">
+          <Search
+            className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2"
+            strokeWidth={2}
+          />
+          <Input
+            type="search"
+            placeholder="Buscar..."
+            className="border-border h-8 w-52 rounded-lg pr-10 pl-8 text-sm shadow-none"
+          />
+          <kbd className="text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 font-mono text-[10px] font-bold">
+            ⌘K
+          </kbd>
+        </div>
+
+        {/* Bell */}
         <Button
           variant="ghost"
           size="icon"
-          className="text-on-surface-variant hover:text-primary relative transition-colors">
-          <span className="material-symbols-outlined">notifications</span>
-          <span className="bg-primary absolute top-2.5 right-2.5 flex h-1.5 w-1.5 rounded-full"></span>
-          <span className="sr-only">{t('notifications')}</span>
+          className="text-muted-foreground hover:text-foreground relative h-8 w-8 transition-colors">
+          <Bell className="size-4" strokeWidth={1.75} />
+          <span
+            className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full"
+            style={{ background: 'var(--color-poppy)' }}
+          />
+          <span className="sr-only">Notificaciones</span>
         </Button>
 
+        {/* Avatar dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
-              className="text-on-surface-variant hover:text-primary rounded-full transition-colors focus-visible:ring-0">
-              <span
-                className="material-symbols-outlined text-[28px]"
-                style={{ fontVariationSettings: "'FILL' 0" }}>
-                account_circle
-              </span>
+              className="h-8 w-8 rounded-full p-0 focus-visible:ring-0">
+              <div
+                className="flex h-7 w-7 items-center justify-center rounded-full font-mono text-[11px] font-black text-white"
+                style={{ background: 'var(--color-poppy)' }}>
+                {userInitials(user.displayName)}
+              </div>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="border-outline-variant/10 bg-surface-container-lowest w-64 rounded-2xl p-2 shadow-2xl">
-            <DropdownMenuLabel className="font-headline px-3 py-2">
+            className="border-border w-60 rounded-xl p-1.5 shadow-xl">
+            <DropdownMenuLabel className="px-3 py-2">
               <div className="flex flex-col">
-                <span className="text-on-surface text-sm font-bold">{user.displayName}</span>
-                <span className="text-on-surface-variant text-[11px] font-medium opacity-70">
-                  {user.email}
-                </span>
+                <span className="text-foreground text-[13px] font-bold">{user.displayName}</span>
+                <span className="text-muted-foreground text-[11px]">{user.email}</span>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-outline-variant/10 my-1" />
+            <DropdownMenuSeparator className="my-1" />
 
             <Link href="/dashboard/account?tab=profile">
-              <DropdownMenuItem className="focus:bg-surface-container-highest group cursor-pointer rounded-lg py-2.5">
-                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary mr-3 text-[20px] transition-colors">
-                  person
-                </span>
-                <span className="text-on-surface-variant group-hover:text-on-surface text-sm font-bold">
-                  {t('profile')}
-                </span>
+              <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
+                <User className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
+                <span className="text-[13px] font-medium">Perfil</span>
               </DropdownMenuItem>
             </Link>
 
-            <Link href="/dashboard/team">
-              <DropdownMenuItem className="focus:bg-surface-container-highest group cursor-pointer rounded-lg py-2.5">
-                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary mr-3 text-[20px] transition-colors">
-                  group
-                </span>
-                <span className="text-on-surface-variant group-hover:text-on-surface text-sm font-bold">
-                  {t('team')}
-                </span>
-              </DropdownMenuItem>
-            </Link>
+            <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
+              <Settings className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
+              <span className="text-[13px] font-medium">Preferencias</span>
+            </DropdownMenuItem>
 
-            <DropdownMenuSeparator className="bg-outline-variant/10 my-1" />
+            <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
+              <Keyboard className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
+              <span className="text-[13px] font-medium">Atajos</span>
+              <kbd className="text-muted-foreground ml-auto font-mono text-[10px]">⌘/</kbd>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator className="my-1" />
+
+            <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
+              <Moon className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
+              <span className="text-[13px] font-medium">Cambiar tema</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
+              <Globe className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
+              <span className="text-[13px] font-medium">Idioma</span>
+              <span className="text-muted-foreground ml-auto font-mono text-[10px] uppercase">
+                {locale}
+              </span>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator className="my-1" />
 
             <form action={`/${locale}/auth/logout`} method="POST">
               <button
                 type="submit"
-                className="focus:bg-error-container/20 group flex w-full cursor-pointer items-center rounded-lg px-2 py-2.5 text-left transition-colors">
-                <span className="material-symbols-outlined text-error group-hover:text-error mr-3 text-[20px] transition-colors">
-                  logout
+                className="hover:bg-destructive/8 group flex w-full cursor-pointer items-center rounded-lg px-2 py-2.5 text-left transition-colors">
+                <LogOut
+                  className="mr-3 size-4 transition-colors"
+                  style={{ color: 'var(--color-poppy)' }}
+                  strokeWidth={1.75}
+                />
+                <span className="text-[13px] font-medium" style={{ color: 'var(--color-poppy)' }}>
+                  Cerrar sesión
                 </span>
-                <span className="text-error text-sm font-bold">{t('sign_out')}</span>
               </button>
             </form>
           </DropdownMenuContent>
