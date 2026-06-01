@@ -1,21 +1,36 @@
-import React from 'react';
 import { getTranslations } from 'next-intl/server';
-import { Link } from '@/i18n/routing';
+import {
+  BarChart2,
+  Package,
+  Gauge,
+  MoreHorizontal,
+  ChevronRight,
+  ArrowRight,
+  Download,
+} from 'lucide-react';
+
+import type { LucideIcon } from 'lucide-react';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Navigation' });
-
-  return {
-    title: t('reports'),
-  };
+  return { title: t('reports') };
 }
 
-const REPORT_CATEGORIES = [
+type ReportCategory = {
+  id: string;
+  title: string;
+  Icon: LucideIcon;
+  color: string;
+  reports: { id: string; title: string; desc: string; trend: string }[];
+};
+
+const REPORT_CATEGORIES: ReportCategory[] = [
   {
     id: 'sales',
     title: 'Sales & Revenue',
-    icon: 'payments',
+    Icon: BarChart2,
+    color: 'var(--color-cobalt)',
     reports: [
       {
         id: 'daily-revenue',
@@ -34,7 +49,8 @@ const REPORT_CATEGORIES = [
   {
     id: 'inventory',
     title: 'Inventory & Stock',
-    icon: 'inventory_2',
+    Icon: Package,
+    color: 'var(--color-gold)',
     reports: [
       {
         id: 'stock-turnover',
@@ -53,7 +69,8 @@ const REPORT_CATEGORIES = [
   {
     id: 'performance',
     title: 'Operational Efficiency',
-    icon: 'speed',
+    Icon: Gauge,
+    color: 'var(--color-poppy)',
     reports: [
       {
         id: 'order-fulfillment',
@@ -75,83 +92,101 @@ export default async function ReportsPage() {
   const t = await getTranslations('Navigation');
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col gap-8 p-8 duration-1000 ease-out">
-      {/* Header Section */}
-      <div className="flex flex-col gap-2">
-        <h1 className="font-headline text-on-surface text-3xl font-extrabold tracking-tight">
-          {t('reports')}
-        </h1>
-        <p className="text-on-surface-variant max-w-2xl text-base">
-          Access comprehensive analytics and generate high-precision data exports across all retail
+    <div className="animate-in fade-in space-y-6 duration-700">
+      {/* Header */}
+      <header className="space-y-1">
+        <h1 className="text-foreground text-3xl font-extrabold tracking-tight">{t('reports')}</h1>
+        <p className="text-muted-foreground max-w-2xl text-sm">
+          Access comprehensive analytics and generate high-precision data exports across all
           operations.
         </p>
-      </div>
+      </header>
 
-      {/* Featured / Favorite Reports Section */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* Category grid */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {REPORT_CATEGORIES.map((category) => (
           <div
             key={category.id}
-            className="bg-surface-container-low ambient-shadow group hover:bg-surface-container flex flex-col rounded-3xl p-6 transition-all hover:scale-[1.02]">
-            <div className="mb-6 flex items-center justify-between">
-              <div className="bg-primary-container/20 group-hover:bg-primary/10 flex h-14 w-14 items-center justify-center rounded-2xl transition-colors">
-                <span className="material-symbols-outlined text-primary text-3xl">
-                  {category.icon}
-                </span>
+            className="border-border flex flex-col rounded-2xl border p-5"
+            style={{ background: 'var(--surface-1)' }}>
+            {/* Category header */}
+            <div className="mb-5 flex items-center justify-between">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ background: category.color + '18' }}>
+                <category.Icon size={18} style={{ color: category.color }} strokeWidth={1.75} />
               </div>
-              <button className="text-on-surface-variant hover:text-primary flex h-10 w-10 items-center justify-center rounded-full transition-colors">
-                <span className="material-symbols-outlined text-xl">more_vert</span>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground rounded-lg p-1 transition-colors">
+                <MoreHorizontal size={16} strokeWidth={1.75} />
               </button>
             </div>
 
-            <h2 className="text-on-surface mb-6 text-xl font-bold">{category.title}</h2>
+            <h2 className="text-foreground mb-4 text-[14px] font-semibold">{category.title}</h2>
 
-            <div className="space-y-4">
+            <div className="flex flex-1 flex-col gap-2">
               {category.reports.map((report) => (
-                <Link
+                <a
                   key={report.id}
                   href={`/dashboard/reports/${report.id}`}
-                  className="bg-surface-container-highest/30 ghost-border group/item hover:bg-surface-container-highest flex items-center justify-between rounded-xl p-4 transition-all">
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-on-surface group-hover/item:text-primary text-sm font-bold">
+                  className="border-border group/item hover:bg-surface-3 flex items-center justify-between rounded-xl border px-3 py-3 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground truncate text-[12px] font-semibold">
                       {report.title}
-                    </span>
-                    <span className="text-on-surface-variant font-mono text-[10px] tracking-wider uppercase opacity-60">
-                      {report.desc.slice(0, 35)}...
-                    </span>
+                    </p>
+                    <p className="text-muted-foreground truncate font-mono text-[10px] tracking-wide">
+                      {report.desc.slice(0, 38)}…
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-primary font-mono text-xs font-bold">{report.trend}</span>
-                    <span className="material-symbols-outlined text-on-surface-variant text-sm transition-transform group-hover/item:translate-x-1">
-                      chevron_right
+                  <div className="ml-3 flex shrink-0 items-center gap-2">
+                    <span
+                      className="font-mono text-[10px] font-bold"
+                      style={{ color: category.color }}>
+                      {report.trend}
                     </span>
+                    <ChevronRight
+                      size={13}
+                      className="text-muted-foreground transition-transform group-hover/item:translate-x-0.5"
+                      strokeWidth={2}
+                    />
                   </div>
-                </Link>
+                </a>
               ))}
             </div>
 
-            <button className="text-primary hover:bg-primary/5 mt-6 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold transition-colors">
-              View all {category.title}
-              <span className="material-symbols-outlined text-sm">arrow_forward</span>
+            <button
+              type="button"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-[12px] font-medium transition-colors"
+              style={{ color: category.color }}>
+              Ver todos
+              <ArrowRight size={13} strokeWidth={2} />
             </button>
           </div>
         ))}
       </div>
 
-      {/* Info Section - Data Export */}
-      <div className="glass ghost-border flex items-center justify-between rounded-3xl p-8 backdrop-blur-xl">
-        <div className="flex items-center gap-6">
-          <div className="bg-secondary-container/30 flex h-16 w-16 items-center justify-center rounded-2xl">
-            <span className="material-symbols-outlined text-secondary text-3xl">download</span>
+      {/* Export banner */}
+      <div
+        className="border-border flex flex-col items-start justify-between gap-4 rounded-2xl border p-6 sm:flex-row sm:items-center"
+        style={{ background: 'var(--surface-1)' }}>
+        <div className="flex items-center gap-4">
+          <div
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{ background: 'var(--color-cobalt)18' }}>
+            <Download size={18} style={{ color: 'var(--color-cobalt)' }} strokeWidth={1.75} />
           </div>
           <div>
-            <h3 className="text-on-surface text-lg font-bold">Scheduled Exports</h3>
-            <p className="text-on-surface-variant text-sm">
+            <h3 className="text-foreground text-[14px] font-semibold">Scheduled Exports</h3>
+            <p className="text-muted-foreground text-[12px]">
               Configure automated delivery of key reports to your email or cloud storage.
             </p>
           </div>
         </div>
-        <button className="bg-primary text-primary-foreground shadow-primary/20 rounded-xl px-6 py-3 text-sm font-bold shadow-lg transition-transform hover:scale-105 active:scale-95">
+        <button
+          type="button"
+          className="shrink-0 rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: 'var(--color-cobalt)' }}>
           Configure Export
         </button>
       </div>

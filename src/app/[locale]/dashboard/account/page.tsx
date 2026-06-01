@@ -5,7 +5,7 @@ import { SessionsTab } from '@/components/dashboard/account/sessions-tab';
 import { AccountTabs } from '@/components/dashboard/account/account-tabs';
 import { createClient } from '@/lib/supabase/server';
 
-export default async function SettingsPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function AccountPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations('Settings');
@@ -28,19 +28,18 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
     : { data: null };
 
   return (
-    <div className="animate-in fade-in flex flex-col gap-8 duration-700">
-      <div className="flex flex-col gap-2">
-        <h1 className="font-headline text-on-surface text-3xl font-bold tracking-tight md:text-4xl">
-          {t('title')}
-        </h1>
-        <p className="text-on-surface-variant text-base">{t('profile.description')}</p>
-      </div>
+    <div className="animate-in fade-in space-y-6 duration-700">
+      {/* Header */}
+      <header className="space-y-1">
+        <h1 className="text-foreground text-3xl font-extrabold tracking-tight">{t('title')}</h1>
+        <p className="text-muted-foreground text-sm">{t('profile.description')}</p>
+      </header>
 
       <Suspense
         fallback={
-          <div className="flex flex-col gap-8">
-            <div className="bg-muted h-12 w-96 animate-pulse rounded-xl" />
-            <div className="bg-muted h-[400px] w-full animate-pulse rounded-3xl" />
+          <div className="space-y-4">
+            <div className="bg-surface-3 h-10 w-72 animate-pulse rounded-xl" />
+            <div className="bg-surface-3 h-80 w-full animate-pulse rounded-2xl" />
           </div>
         }>
         <AccountTabs

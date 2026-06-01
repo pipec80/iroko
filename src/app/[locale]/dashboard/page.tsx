@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { cn } from '@/lib/utils';
+import { TrendingUp, TrendingDown, Zap, Activity, BarChart2, Clock } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
+import { cn } from '@/lib/utils';
 
 import type { Metadata } from 'next';
 
@@ -12,11 +12,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Dashboard' });
-
-  return {
-    title: t('page_title'),
-    description: t('page_description'),
-  };
+  return { title: t('page_title'), description: t('page_description') };
 }
 
 export default async function DashboardPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -25,32 +21,30 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   const t = await getTranslations('Dashboard');
 
-  // Get real user display name from profile
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: claimsData } = await supabase.auth.getClaims();
   const displayName =
-    user?.user_metadata?.given_name || user?.user_metadata?.display_name || user?.email || '';
+    (claimsData?.claims.user_metadata?.given_name as string | undefined) ||
+    (claimsData?.claims.user_metadata?.display_name as string | undefined) ||
+    (claimsData?.claims.email as string | undefined) ||
+    '';
 
   return (
-    <div className="animate-in fade-in space-y-10 p-2 duration-700">
-      <header className="space-y-2">
-        <h1 className="text-on-surface font-sans text-4xl font-extrabold tracking-tighter">
+    <div className="animate-in fade-in space-y-8 duration-700">
+      {/* Header */}
+      <header className="space-y-1">
+        <h1 className="text-foreground text-3xl font-extrabold tracking-tight">
           {t('page_title')}
         </h1>
-        <p className="text-on-surface-variant max-w-2xl font-sans text-lg tracking-tight opacity-80">
-          {t('welcome_back', { name: displayName })}
-        </p>
+        <p className="text-muted-foreground text-sm">{t('welcome_back', { name: displayName })}</p>
       </header>
 
-      {/* KPI Bento Grid */}
-      <section className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* KPI Grid */}
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title={t('kpis.total_sales')}
-          value="$1,284,500.00"
+          value="$1,284,500"
           change="+12.5%"
-          icon="trending_up"
           trend="up"
           periodLabel={t('vs_period')}
         />
@@ -58,7 +52,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           title={t('kpis.orders')}
           value="14,209"
           change="+3.1%"
-          icon="bolt"
           trend="up"
           periodLabel={t('vs_period')}
         />
@@ -66,7 +59,6 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           title={t('kpis.conversion')}
           value="3.42%"
           change="-0.8%"
-          icon="monitoring"
           trend="down"
           periodLabel={t('vs_period')}
         />
@@ -74,34 +66,86 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
           title={t('metrics.system_health')}
           value="98.2%"
           change="+1.2%"
-          icon="inventory_2"
           trend="up"
           periodLabel={t('vs_period')}
         />
       </section>
 
-      {/* System Performance Section */}
-      <div className="grid gap-6">
-        <Card className="bg-surface-container-highest overflow-hidden rounded-2xl border-none shadow-none">
-          <CardHeader className="p-8 pb-4">
-            <div className="mb-2 flex items-center gap-3">
-              <span className="material-symbols-outlined text-primary">analytics</span>
-              <CardTitle className="font-sans text-xl font-bold tracking-tight">
+      {/* Chart + Activity */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Chart placeholder */}
+        <div
+          className="border-border flex flex-col gap-4 rounded-2xl border p-6 lg:col-span-2"
+          style={{ background: 'var(--surface-1)' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <BarChart2 className="text-muted-foreground size-4" strokeWidth={1.75} />
+              <span className="text-foreground text-[13px] font-semibold">
                 {t('system_performance')}
-              </CardTitle>
-            </div>
-            <p className="text-on-surface-variant font-sans text-sm opacity-70">
-              {t('system_performance_desc')}
-            </p>
-          </CardHeader>
-          <CardContent className="flex h-[350px] items-center justify-center p-8 pt-0">
-            <div className="bg-surface-container-low border-outline-variant/30 flex h-full w-full items-center justify-center rounded-xl border border-dashed">
-              <span className="text-on-surface-variant font-mono text-xs tracking-widest uppercase opacity-40">
-                {t('waiting_telemetry')}
               </span>
             </div>
-          </CardContent>
-        </Card>
+            <span className="text-muted-foreground font-mono text-[10px] tracking-widest uppercase">
+              Últ. 30 días
+            </span>
+          </div>
+          <div
+            className="border-border flex flex-1 items-center justify-center rounded-xl border border-dashed"
+            style={{ minHeight: 220 }}>
+            <span className="text-muted-foreground font-mono text-[10px] tracking-widest uppercase opacity-40">
+              {t('waiting_telemetry')}
+            </span>
+          </div>
+        </div>
+
+        {/* Activity feed */}
+        <div
+          className="border-border flex flex-col gap-4 rounded-2xl border p-6"
+          style={{ background: 'var(--surface-1)' }}>
+          <div className="flex items-center gap-2">
+            <Activity className="text-muted-foreground size-4" strokeWidth={1.75} />
+            <span className="text-foreground text-[13px] font-semibold">Actividad reciente</span>
+          </div>
+          <div className="flex flex-1 flex-col gap-3">
+            {ACTIVITY_FEED.map((item) => (
+              <div key={item.id} className="flex items-start gap-3">
+                <div
+                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: item.color + '20' }}>
+                  <item.Icon size={12} style={{ color: item.color }} strokeWidth={2} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-foreground truncate text-[12px] font-medium">{item.label}</p>
+                  <p className="text-muted-foreground font-mono text-[10px]">{item.time}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Quick actions */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <QuickAction
+          icon={Zap}
+          title="Nuevo proyecto"
+          desc="Inicia un proyecto desde cero"
+          href="/dashboard/projects"
+          color="var(--color-cobalt)"
+        />
+        <QuickAction
+          icon={Clock}
+          title="Ver reportes"
+          desc="Analítica de rendimiento"
+          href="/dashboard/reports"
+          color="var(--color-gold)"
+        />
+        <QuickAction
+          icon={Activity}
+          title="Operaciones"
+          desc="Estado de los servicios"
+          href="/dashboard/operations"
+          color="var(--color-poppy)"
+        />
       </div>
     </div>
   );
@@ -111,44 +155,111 @@ function StatCard({
   title,
   value,
   change,
-  icon,
-  trend = 'up',
+  trend,
   periodLabel,
 }: {
   title: string;
   value: string;
   change: string;
-  icon: string;
-  trend?: 'up' | 'down';
+  trend: 'up' | 'down';
   periodLabel: string;
 }) {
+  const TrendIcon = trend === 'up' ? TrendingUp : TrendingDown;
   return (
-    <Card className="bg-surface-container-highest hover:bg-surface-container-high group rounded-2xl border-none shadow-none transition-all">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-        <p className="text-on-surface-variant text-[10px] font-black tracking-[0.2em] uppercase opacity-60 transition-opacity group-hover:opacity-100">
-          {title}
-        </p>
-        <span className="material-symbols-outlined text-on-surface-variant/40 group-hover:text-primary transition-colors">
-          {icon}
+    <div
+      className="border-border group flex flex-col gap-3 rounded-2xl border p-5"
+      style={{ background: 'var(--surface-1)' }}>
+      <p className="text-muted-foreground font-mono text-[10px] font-bold tracking-[0.18em] uppercase">
+        {title}
+      </p>
+      <p className="text-foreground font-mono text-3xl font-bold tracking-tight">{value}</p>
+      <div className="flex items-center gap-2">
+        <span
+          className={cn(
+            'flex items-center gap-1 rounded-full px-2 py-0.5 font-mono text-[10px] font-bold',
+            trend === 'up' ?
+              'text-emerald-700 dark:text-emerald-400'
+            : 'text-red-600 dark:text-red-400',
+          )}
+          style={{
+            background: trend === 'up' ? 'rgba(16,185,129,0.1)' : 'rgba(217,33,33,0.1)',
+          }}>
+          <TrendIcon size={10} strokeWidth={2.5} />
+          {change}
         </span>
-      </CardHeader>
-      <CardContent>
-        <div className="text-on-surface font-mono text-3xl font-semibold tracking-tighter lg:text-4xl">
-          {value}
-        </div>
-        <div className="mt-3 flex items-center gap-2">
-          <span
-            className={cn(
-              'rounded-full px-2 py-0.5 font-mono text-[10px] font-bold',
-              trend === 'up' ? 'bg-primary/10 text-primary' : 'bg-error/10 text-error',
-            )}>
-            {change}
-          </span>
-          <span className="text-on-surface-variant font-sans text-[10px] font-medium tracking-wider uppercase opacity-50">
-            {periodLabel}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
+        <span className="text-muted-foreground font-mono text-[10px] tracking-wider uppercase opacity-60">
+          {periodLabel}
+        </span>
+      </div>
+    </div>
   );
 }
+
+function QuickAction({
+  icon: Icon,
+  title,
+  desc,
+  href,
+  color,
+}: {
+  icon: React.ElementType;
+  title: string;
+  desc: string;
+  href: string;
+  color: string;
+}) {
+  return (
+    <a
+      href={href}
+      className="border-border group flex items-center gap-4 rounded-2xl border p-5 transition-colors hover:border-transparent"
+      style={{ background: 'var(--surface-1)' }}>
+      <div
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+        style={{ background: color + '18' }}>
+        <Icon size={18} style={{ color }} strokeWidth={1.75} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-foreground text-[13px] font-semibold">{title}</p>
+        <p className="text-muted-foreground text-[11px]">{desc}</p>
+      </div>
+    </a>
+  );
+}
+
+const ACTIVITY_FEED = [
+  {
+    id: 1,
+    label: 'Nuevo miembro agregado',
+    time: 'hace 5 min',
+    Icon: Zap,
+    color: 'var(--color-cobalt)',
+  },
+  {
+    id: 2,
+    label: 'Proyecto actualizado',
+    time: 'hace 23 min',
+    Icon: Activity,
+    color: 'var(--color-gold)',
+  },
+  {
+    id: 3,
+    label: 'Reporte generado',
+    time: 'hace 1 h',
+    Icon: BarChart2,
+    color: 'var(--color-poppy)',
+  },
+  {
+    id: 4,
+    label: 'Operación completada',
+    time: 'hace 3 h',
+    Icon: TrendingUp,
+    color: 'var(--color-cobalt)',
+  },
+  {
+    id: 5,
+    label: 'Configuración guardada',
+    time: 'ayer',
+    Icon: Clock,
+    color: 'var(--color-ink)',
+  },
+];
