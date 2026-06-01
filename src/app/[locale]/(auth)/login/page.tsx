@@ -1,7 +1,8 @@
 'use client';
 import React, { useActionState, useState, useTransition } from 'react';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Image from 'next/image';
+import { Lock, Mail, WandSparkles } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,12 +56,12 @@ export default function LoginPage() {
 
   if (isMfaRequired) {
     return (
-      <div className="mx-auto w-full max-w-md">
-        <div className="mb-10 text-center lg:text-left">
-          <h1 className="font-headline text-on-surface mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+      <div className="w-full">
+        <div className="mb-8">
+          <h1 className="text-foreground mb-2 text-[36px] leading-none font-bold tracking-tight">
             {showRecovery ? t('recovery_login_title') : t('mfa_login_title')}
           </h1>
-          <p className="text-on-surface-variant text-sm sm:text-base">
+          <p className="text-muted-foreground text-sm">
             {showRecovery ? t('recovery_login_desc') : t('mfa_login_desc')}
           </p>
         </div>
@@ -69,9 +70,7 @@ export default function LoginPage() {
           <form action={mfaForm} className="space-y-6">
             <input type="hidden" name="factorId" value={mfaFactorId} />
             <div className="space-y-2">
-              <Label
-                className="text-on-surface block text-center font-sans text-sm font-semibold"
-                htmlFor="code">
+              <Label className="text-foreground block text-sm font-semibold" htmlFor="code">
                 {t('mfa_login_label')}
               </Label>
               <Input
@@ -79,22 +78,21 @@ export default function LoginPage() {
                 name="code"
                 placeholder="000000"
                 required
-                className="bg-surface-container-low border-outline-variant/10 focus:ring-primary/20 h-16 rounded-xl text-center font-mono text-3xl tracking-[0.3em]"
+                className="bg-surface-2 border-border h-16 rounded-md text-center font-mono text-3xl tracking-[0.3em]"
                 autoFocus
                 maxLength={6}
               />
             </div>
 
             {mfaError && (
-              <p role="alert" className="text-error text-center text-sm">
+              <p
+                role="alert"
+                className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-center text-sm">
                 {mfaError}
               </p>
             )}
 
-            <Button
-              className="bg-primary text-primary-foreground w-full rounded-lg py-6 font-bold shadow-md transition-opacity hover:opacity-90"
-              type="submit"
-              disabled={mfaPending}>
+            <Button type="submit" disabled={mfaPending} className="h-11 w-full">
               {t('mfa_login_verify')}
             </Button>
 
@@ -115,7 +113,7 @@ export default function LoginPage() {
         : <form action={recoveryForm} className="space-y-6">
             <div className="space-y-2">
               <Label
-                className="text-on-surface block text-center font-sans text-sm font-semibold"
+                className="text-foreground block text-sm font-semibold"
                 htmlFor="recovery-code">
                 {t('recovery_login_label')}
               </Label>
@@ -124,22 +122,21 @@ export default function LoginPage() {
                 name="code"
                 placeholder="XXXX-XXXX"
                 required
-                className="bg-surface-container-low border-outline-variant/10 focus:ring-primary/20 h-16 rounded-xl text-center font-mono text-2xl tracking-widest uppercase"
+                className="bg-surface-2 border-border h-16 rounded-md text-center font-mono text-2xl tracking-widest uppercase"
                 autoFocus
                 maxLength={9}
               />
             </div>
 
             {recoveryError && (
-              <p role="alert" className="text-error text-center text-sm">
+              <p
+                role="alert"
+                className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-center text-sm">
                 {recoveryError}
               </p>
             )}
 
-            <Button
-              className="bg-primary text-primary-foreground w-full rounded-lg py-6 font-bold shadow-md transition-opacity hover:opacity-90"
-              type="submit"
-              disabled={recoveryPending}>
+            <Button type="submit" disabled={recoveryPending} className="h-11 w-full">
               {t('recovery_login_verify')}
             </Button>
 
@@ -156,40 +153,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      {/* Welcome Text */}
-      <div className="mb-10 text-center lg:text-left">
-        <h1 className="font-headline text-on-surface mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+    <div className="w-full">
+      <div className="mb-8">
+        <span className="eyebrow text-muted-foreground">{t('sign_in')}</span>
+        <h1 className="text-foreground mt-2 text-[36px] leading-none font-bold tracking-tight">
           {t('login_title')}
         </h1>
-        <p className="text-on-surface-variant text-sm sm:text-base">{t('login_desc')}</p>
+        <p className="text-muted-foreground mt-2 text-sm">{t('login_desc')}</p>
       </div>
 
-      {/* Tabs / Switcher */}
-      <div className="bg-muted mb-8 flex rounded-full p-1">
-        <button className="bg-primary text-primary-foreground flex-1 rounded-full px-4 py-2.5 text-sm font-semibold shadow-sm transition-all">
-          {t('sign_in')}
-        </button>
-        <Link
-          href="/signup"
-          className="text-muted-foreground hover:text-primary flex-1 rounded-full px-4 py-2.5 text-center text-sm font-medium transition-colors">
-          {t('create_account')}
-        </Link>
-      </div>
-
-      {/* Primary form (password) */}
       <form action={signInForm} className="space-y-5" noValidate>
-        {/* Email Input */}
         <div className="space-y-1.5">
-          <Label className="text-on-surface block font-sans text-sm font-semibold" htmlFor="email">
+          <Label className="text-foreground block text-sm font-semibold" htmlFor="email">
             {t('email')}
           </Label>
           <div className="relative">
-            <span className="text-muted-foreground absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <span className="material-symbols-outlined text-[20px]">mail</span>
-            </span>
+            <Mail
+              className="text-muted-foreground absolute top-1/2 left-3 size-[15px] -translate-y-1/2"
+              strokeWidth={1.5}
+            />
             <Input
-              className="bg-background border-border/40 text-on-surface focus:border-primary focus:ring-primary/10 rounded-lg py-6 pr-4 pl-10 text-sm transition-all focus:ring-4"
+              className="h-11 pl-10"
               id="email"
               name="email"
               placeholder="name@company.com"
@@ -200,7 +184,7 @@ export default function LoginPage() {
             />
           </div>
           {signInState.fieldErrors?.email && (
-            <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+            <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
               {t(`errors.${signInState.fieldErrors.email[0]}` as 'errors.generic', {
                 default: signInState.fieldErrors.email[0],
               })}
@@ -208,12 +192,9 @@ export default function LoginPage() {
           )}
         </div>
 
-        {/* Password Input */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label
-              className="text-on-surface block font-sans text-sm font-semibold"
-              htmlFor="password">
+            <Label className="text-foreground block text-sm font-semibold" htmlFor="password">
               {t('password')}
             </Label>
             <Link
@@ -223,11 +204,12 @@ export default function LoginPage() {
             </Link>
           </div>
           <div className="relative">
-            <span className="text-muted-foreground absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <span className="material-symbols-outlined text-[20px]">lock</span>
-            </span>
+            <Lock
+              className="text-muted-foreground absolute top-1/2 left-3 size-[15px] -translate-y-1/2"
+              strokeWidth={1.5}
+            />
             <Input
-              className="bg-background border-border/40 text-on-surface focus:border-primary focus:ring-primary/10 rounded-lg py-6 pr-4 pl-10 text-sm transition-all focus:ring-4"
+              className="h-11 pl-10"
               id="password"
               name="password"
               placeholder="••••••••"
@@ -236,7 +218,7 @@ export default function LoginPage() {
             />
           </div>
           {signInState.fieldErrors?.password && (
-            <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+            <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
               {t(`errors.${signInState.fieldErrors.password[0]}` as 'errors.generic', {
                 default: signInState.fieldErrors.password[0],
               })}
@@ -247,52 +229,43 @@ export default function LoginPage() {
         {signInError && (
           <p
             role="alert"
-            className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-sm font-medium">
+            className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm font-medium">
             {signInError}
           </p>
         )}
 
-        <div className="pt-2">
-          <Button
-            className="bg-primary text-primary-foreground w-full rounded-lg py-6 font-bold shadow-md transition-opacity hover:opacity-90"
-            type="submit"
-            disabled={signInPending}>
-            {t('sign_in')}
-          </Button>
-        </div>
+        <Button type="submit" disabled={signInPending} className="h-11 w-full">
+          {t('sign_in')}
+        </Button>
       </form>
 
-      {/* Magic link — separate form that shares the email field above */}
-      <form action={magicForm} className="mt-3 space-y-2" noValidate>
+      <form action={magicForm} className="mt-3" noValidate>
         <input type="hidden" name="email" value={email} readOnly />
         <Button
           variant="outline"
-          className="border-border text-primary hover:bg-muted flex w-full items-center justify-center gap-2 rounded-lg py-6 font-semibold transition-colors"
+          className="h-11 w-full gap-2"
           type="submit"
           disabled={magicPending || !email}>
-          <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+          <WandSparkles size={14} strokeWidth={1.5} />
           {t('magic_link')}
         </Button>
         {magicError && (
           <p
             role="alert"
-            className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+            className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
             {magicError}
           </p>
         )}
-        {magicSuccess && <p className="text-primary text-xs">{magicSuccess}</p>}
+        {magicSuccess && <p className="text-primary mt-1 text-xs">{magicSuccess}</p>}
       </form>
 
-      {/* Divider */}
-      <div className="my-8 flex items-center">
-        <div className="border-border/40 grow border-t"></div>
-        <span className="text-muted-foreground px-4 text-xs font-medium tracking-wider uppercase">
-          {t('or_continue_with')}
-        </span>
-        <div className="border-border/40 grow border-t"></div>
+      <div className="my-7 flex items-center gap-4">
+        <div className="border-border grow border-t" />
+        <span className="eyebrow text-muted-foreground">{t('or_continue_with')}</span>
+        <div className="border-border grow border-t" />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-2">
         <Button
           variant="outline"
           disabled={oauthPending}
@@ -301,32 +274,19 @@ export default function LoginPage() {
               void oauthAction('google');
             })
           }
-          className="bg-background border-border/40 text-foreground hover:bg-muted flex items-center justify-center gap-2 rounded-lg py-6 text-sm font-medium transition-colors">
-          <Image
-            alt="Google"
-            width={16}
-            height={16}
-            unoptimized
-            src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
-          />
+          className="h-11 gap-2">
+          <Image src="/logo-google.svg" alt="" width={15} height={15} aria-hidden="true" />
           Google
         </Button>
-        <Button
-          variant="outline"
-          disabled
-          className="bg-background border-border/40 text-foreground hover:bg-muted flex items-center justify-center gap-2 rounded-lg py-6 text-sm font-medium transition-colors">
-          <Image
-            alt="Microsoft"
-            width={16}
-            height={16}
-            unoptimized
-            src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_logo.svg"
-          />
-          Microsoft
+        <Button variant="outline" disabled className="h-11 gap-2">
+          <svg viewBox="0 0 24 24" width={15} height={15} fill="currentColor" aria-hidden="true">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
+          </svg>
+          GitHub
         </Button>
       </div>
 
-      <div className="mt-8 text-center">
+      <div className="mt-7 text-center">
         <p className="text-muted-foreground text-xs">
           {t.rich('terms_privacy', {
             terms: (chunks) => (
@@ -340,6 +300,13 @@ export default function LoginPage() {
               </Link>
             ),
           })}
+        </p>
+        <p className="text-muted-foreground mt-4 text-sm">
+          <Link
+            href="/signup"
+            className="text-foreground hover:text-primary font-semibold transition-colors">
+            {t('create_account')}
+          </Link>
         </p>
       </div>
     </div>

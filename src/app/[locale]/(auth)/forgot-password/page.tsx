@@ -2,6 +2,7 @@
 
 import React, { useActionState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Mail } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,25 +25,26 @@ export default function ForgotPasswordPage() {
     : null;
 
   return (
-    <div className="mx-auto w-full max-w-md">
-      <div className="mb-10 text-center lg:text-left">
-        <h1 className="font-headline text-on-surface mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl">
+    <div className="w-full">
+      <div className="mb-8">
+        <h1 className="text-foreground mb-2 text-[36px] leading-none font-bold tracking-tight">
           {t('forgot_password_title')}
         </h1>
-        <p className="text-on-surface-variant text-sm sm:text-base">{t('forgot_password_desc')}</p>
+        <p className="text-muted-foreground text-sm">{t('forgot_password_desc')}</p>
       </div>
 
       <form action={formAction} className="space-y-5">
         <div className="space-y-1.5">
-          <Label className="text-on-surface block font-sans text-sm font-semibold" htmlFor="email">
+          <Label className="text-foreground block text-sm font-semibold" htmlFor="email">
             {t('email')}
           </Label>
           <div className="relative">
-            <span className="text-muted-foreground absolute inset-y-0 left-0 flex items-center pl-3.5">
-              <span className="material-symbols-outlined text-[20px]">mail</span>
-            </span>
+            <Mail
+              className="text-muted-foreground absolute top-1/2 left-3 size-[15px] -translate-y-1/2"
+              strokeWidth={1.5}
+            />
             <Input
-              className="bg-background border-border/40 text-on-surface focus:border-primary focus:ring-primary/10 rounded-lg py-6 pr-4 pl-10 text-sm transition-all focus:ring-4"
+              className="h-11 pl-10"
               id="email"
               name="email"
               placeholder="name@company.com"
@@ -51,21 +53,18 @@ export default function ForgotPasswordPage() {
             />
           </div>
           {state.fieldErrors?.email && (
-            <p className="text-error text-xs">{state.fieldErrors.email[0]}</p>
+            <p className="text-destructive text-xs">{state.fieldErrors.email[0]}</p>
           )}
         </div>
 
         {error && (
-          <p role="alert" className="text-error text-sm">
+          <p role="alert" className="text-destructive text-sm">
             {error}
           </p>
         )}
         {success && <p className="text-primary text-sm">{success}</p>}
 
-        <Button
-          type="submit"
-          disabled={pending}
-          className="bg-primary text-primary-foreground w-full rounded-lg py-6 font-bold shadow-md transition-opacity hover:opacity-90">
+        <Button type="submit" disabled={pending} className="h-11 w-full">
           {t('send_reset_link')}
         </Button>
       </form>

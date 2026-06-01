@@ -1,6 +1,6 @@
 import React from 'react';
-import Image from 'next/image';
 import { setRequestLocale } from 'next-intl/server';
+import { Link } from '@/i18n/routing';
 
 export default async function AuthLayout({
   children,
@@ -11,90 +11,137 @@ export default async function AuthLayout({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+
   return (
-    <div className="bg-background selection:bg-primary/20 selection:text-primary flex min-h-screen">
-      {/* Left pane - Branding & Hero (Premium Corporate Design) */}
-      <div className="bg-accent/10 relative hidden flex-1 items-center justify-center overflow-hidden p-16 lg:flex">
-        {/* Decorative Background Elements */}
-        <div className="from-primary absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--tw-gradient-stops))] via-transparent to-transparent opacity-10" />
-        <div className="bg-primary absolute -bottom-32 -left-32 h-96 w-96 rounded-full opacity-20 mix-blend-multiply blur-3xl" />
+    <div className="grid min-h-screen lg:grid-cols-2">
+      {/* ── Left: form pane ── */}
+      <div className="flex items-center justify-center px-8 py-12">
+        <div className="w-full max-w-[420px]">
+          {/* Logo mark */}
+          <Link href="/" className="mb-10 flex items-center gap-2">
+            <svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+              <rect width="32" height="32" rx="6" fill="var(--color-ink)" />
+              <circle
+                cx="16"
+                cy="16"
+                r="10"
+                fill="none"
+                stroke="var(--color-poppy)"
+                strokeWidth="2.2"
+              />
+              <circle cx="16" cy="16" r="3.5" fill="var(--color-cobalt)" />
+            </svg>
+            <span className="wordmark text-foreground text-[22px]">Iroko</span>
+          </Link>
 
-        {/* Content Container */}
-        <div className="relative z-10 max-w-lg space-y-12">
-          {/* Floating Card Graphic (Bento-style) */}
-          <div className="bg-card ambient-shadow flex h-64 w-full flex-col justify-between overflow-hidden rounded-2xl p-8 shadow-2xl">
-            <div className="mb-6 flex items-start justify-between">
-              <div>
-                <div className="text-muted-foreground mb-1 font-sans text-xs font-bold tracking-widest uppercase opacity-60">
-                  Performance Analytics
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">{children}</div>
+        </div>
+      </div>
+
+      {/* ── Right: ink brand panel ── */}
+      <aside
+        aria-hidden="true"
+        className="relative hidden overflow-hidden lg:block"
+        style={{ background: 'var(--color-ink)' }}>
+        {/* Dot grid */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, rgba(245,236,218,0.05) 1px, transparent 1px),' +
+              'linear-gradient(to bottom, rgba(245,236,218,0.05) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+          }}
+        />
+        {/* Top-right glow */}
+        <div
+          className="pointer-events-none absolute"
+          style={{
+            top: -200,
+            right: -200,
+            width: 600,
+            height: 600,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, rgba(184,81,58,0.18), transparent 60%)',
+          }}
+        />
+
+        {/* Editorial content */}
+        <div className="relative z-10 flex h-full max-w-[560px] flex-col justify-center gap-6 px-16 py-14">
+          <span className="eyebrow" style={{ color: '#d9a441' }}>
+            Proverbio Akan
+          </span>
+
+          <blockquote
+            className="m-0 font-sans leading-[1.3] font-bold italic"
+            style={{ fontSize: 32, color: '#f5ecda' }}>
+            &ldquo;Antes de cortar el iroko, se le pide permiso al espíritu del árbol — porque sin
+            tronco, no hay ramas.&rdquo;
+          </blockquote>
+
+          <hr
+            style={{ width: 80, borderTopWidth: 1, borderColor: 'rgba(217,164,65,0.4)', margin: 0 }}
+          />
+
+          {/* HUD ring */}
+          <svg viewBox="0 0 200 200" width="200" height="200">
+            <defs>
+              <radialGradient id="hud-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="rgba(255,58,58,0.35)" />
+                <stop offset="100%" stopColor="rgba(255,58,58,0)" />
+              </radialGradient>
+            </defs>
+            <circle cx="100" cy="100" r="92" fill="url(#hud-glow)" />
+            <g stroke="rgba(230,232,235,0.12)" strokeWidth="0.5" fill="none">
+              <circle cx="100" cy="100" r="90" />
+              <circle cx="100" cy="100" r="60" />
+              <circle cx="100" cy="100" r="30" />
+              <line x1="100" y1="0" x2="100" y2="200" />
+              <line x1="0" y1="100" x2="200" y2="100" />
+            </g>
+            <circle cx="100" cy="100" r="70" fill="none" stroke="#ff3a3a" strokeWidth="2" />
+            <circle
+              cx="100"
+              cy="100"
+              r="40"
+              fill="none"
+              stroke="#4682bf"
+              strokeWidth="1.6"
+              strokeDasharray="3 4"
+            />
+            <circle cx="100" cy="100" r="14" fill="#0047ab" />
+            <circle cx="100" cy="100" r="5" fill="#ff3a3a" />
+            <circle cx="100" cy="30" r="4" fill="#ff3a3a" />
+            <circle cx="170" cy="100" r="4" fill="#4682bf" />
+            <circle cx="100" cy="170" r="4" fill="#ff3a3a" />
+            <circle cx="30" cy="100" r="4" fill="#4682bf" />
+          </svg>
+
+          {/* Stats footer */}
+          <div
+            className="grid grid-cols-3 gap-9 border-t pt-6"
+            style={{ borderColor: 'rgba(245,236,218,0.14)' }}>
+            {[
+              { val: '1.0', label: 'VERSION' },
+              { val: '23', label: 'COMMITS' },
+              { val: '∞', label: 'RAMAS' },
+            ].map(({ val, label }) => (
+              <div key={label}>
+                <div
+                  className="font-mono leading-none font-semibold"
+                  style={{ fontSize: 32, letterSpacing: '-0.04em', color: '#f5ecda' }}>
+                  {val}
                 </div>
-                <div className="text-foreground font-mono text-3xl font-bold">+$2.4M</div>
+                <div
+                  className="eyebrow mt-1"
+                  style={{ fontSize: 9, color: 'rgba(245,236,218,0.5)' }}>
+                  {label}
+                </div>
               </div>
-              <div className="bg-primary shadow-primary/20 flex h-12 w-12 items-center justify-center rounded-xl shadow-lg">
-                <span className="material-symbols-outlined text-primary-foreground text-2xl">
-                  trending_up
-                </span>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <div className="bg-muted h-2.5 w-full overflow-hidden rounded-full">
-                <div className="bg-primary h-full w-3/4 rounded-full transition-all duration-1000" />
-              </div>
-              <div className="bg-muted h-2.5 w-full overflow-hidden rounded-full">
-                <div className="bg-secondary h-full w-1/2 rounded-full transition-all duration-1000" />
-              </div>
-            </div>
-          </div>
-
-          {/* Quote Section with Glassmorphism */}
-          <div className="glass ghost-border relative rounded-2xl p-10 backdrop-blur-xl">
-            <span className="material-symbols-outlined text-primary absolute -top-5 -left-5 text-[48px] opacity-20">
-              format_quote
-            </span>
-            <h2 className="font-headline text-foreground mb-6 text-2xl leading-tight font-bold">
-              &quot;Turning fragmented retail data into precise, actionable intelligence.&quot;
-            </h2>
-            <div className="flex items-center gap-4">
-              <div className="border-primary/20 relative h-12 w-12 overflow-hidden rounded-full border-2 shadow-inner">
-                <Image
-                  alt="Sarah Jenkins"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                  src="https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah"
-                />
-              </div>
-              <div>
-                <p className="text-foreground text-sm font-bold">Sarah Jenkins</p>
-                <p className="text-muted-foreground font-mono text-xs font-medium tracking-wide uppercase">
-                  VP of Analytics, Global Retail
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
-
-      {/* Right pane - Auth Forms */}
-      <div className="bg-background flex flex-1 flex-col px-8 py-8 lg:px-24 lg:py-12">
-        {/* Top Branding (Mobile & Desktop) */}
-        <div className="flex-none">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary text-primary-foreground shadow-primary/20 flex h-9 w-9 items-center justify-center rounded-xl font-bold shadow-lg transition-transform hover:scale-105">
-              RA
-            </div>
-            <span className="font-headline text-primary text-2xl font-extrabold tracking-tight">
-              Retail Analytics
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-1 items-center justify-center py-12">
-          <div className="animate-in fade-in slide-in-from-bottom-4 w-full max-w-md duration-1000 ease-out">
-            {children}
-          </div>
-        </div>
-      </div>
+      </aside>
     </div>
   );
 }
