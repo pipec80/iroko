@@ -162,9 +162,14 @@ export function SecurityTab() {
       </Card>
 
       {/* Danger zone */}
-      <Card className="border-error/20 rounded-3xl">
+      <Card
+        className="rounded-3xl"
+        style={{
+          background: 'color-mix(in srgb, var(--color-poppy) 6%, transparent)',
+          borderColor: 'color-mix(in srgb, var(--color-poppy) 30%, transparent)',
+        }}>
         <CardHeader>
-          <CardTitle className="text-error">{t('security.danger_zone')}</CardTitle>
+          <CardTitle style={{ color: 'var(--color-poppy)' }}>{t('security.danger_zone')}</CardTitle>
           <CardDescription>{t('security.delete_account_description')}</CardDescription>
         </CardHeader>
         <CardContent>

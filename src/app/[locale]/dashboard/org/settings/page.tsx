@@ -141,16 +141,21 @@ function DangerTab() {
     <div className="space-y-4">
       <div
         className="flex items-center justify-between rounded-2xl border p-6"
-        style={{ background: 'var(--surface-1)', borderColor: 'rgba(217,33,33,0.3)' }}>
+        style={{
+          background: 'color-mix(in srgb, var(--color-poppy) 6%, transparent)',
+          borderColor: 'color-mix(in srgb, var(--color-poppy) 30%, transparent)',
+        }}>
         <div className="space-y-1">
-          <h3 className="text-foreground text-[14px] font-semibold">Eliminar organización</h3>
+          <h3 className="text-[14px] font-semibold" style={{ color: 'var(--color-poppy)' }}>
+            Eliminar organización
+          </h3>
           <p className="text-muted-foreground max-w-sm text-[12px]">
             Esta acción es permanente. Todos los datos, proyectos y miembros serán eliminados.
           </p>
         </div>
         <button
           type="button"
-          className="shrink-0 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-colors hover:bg-red-50 dark:hover:bg-red-950"
+          className="shrink-0 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
           style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
           Eliminar organización
         </button>
