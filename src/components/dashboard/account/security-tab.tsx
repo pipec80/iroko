@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useActionState, useState } from 'react';
+import { CheckCircle, Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import {
@@ -118,7 +119,7 @@ export function SecurityTab() {
               )}
               {pwState.success === 'password_updated' && !isPwDirty && (
                 <div className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
-                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  <CheckCircle size={18} strokeWidth={1.75} />
                   {t('security.success.password_updated')}
                 </div>
               )}
@@ -142,7 +143,7 @@ export function SecurityTab() {
         <CardContent>
           <form action={resetAction} noValidate>
             <Button type="submit" variant="outline" disabled={resetPending}>
-              <span className="material-symbols-outlined mr-2 text-[18px]">mail</span>
+              <Mail size={16} strokeWidth={1.75} className="mr-2" />
               {t('security.send_reset_link')}
             </Button>
           </form>
@@ -153,7 +154,7 @@ export function SecurityTab() {
           )}
           {resetState.success === 'reset_link_sent' && (
             <div className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
-              <span className="material-symbols-outlined text-[18px]">check_circle</span>
+              <CheckCircle size={18} strokeWidth={1.75} />
               {t('security.success.reset_link_sent')}
             </div>
           )}
