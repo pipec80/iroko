@@ -74,3 +74,10 @@ knip-output.txt
 skills-lock.json
 .antigravitycli/
 
+# supabase studio queries locales
+supabase/snippets/
+
+# QA screenshots y artefactos de automatización
+*.png
+.playwright-mcp/
+
