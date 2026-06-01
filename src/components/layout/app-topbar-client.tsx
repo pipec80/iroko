@@ -115,7 +115,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
             placeholder="Buscar..."
             className="border-border bg-background h-8 w-52 rounded-lg pr-10 pl-8 text-sm shadow-none"
           />
-          <kbd className="text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 font-mono text-[10px] font-bold">
+          <kbd className="text-muted-foreground border-border bg-muted pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border px-1.5 py-0.5 font-mono text-[9px] font-bold">
             ⌘K
           </kbd>
         </div>
@@ -139,9 +139,9 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full p-0 focus-visible:ring-0">
+              className="h-8 w-8 rounded-lg p-0 focus-visible:ring-0">
               <div
-                className="flex h-7 w-7 items-center justify-center rounded-full font-mono text-[11px] font-black text-white"
+                className="flex h-7 w-7 items-center justify-center rounded-md font-mono text-[11px] font-black text-white"
                 style={{ background: 'var(--color-poppy)' }}>
                 {userInitials(user.displayName)}
               </div>

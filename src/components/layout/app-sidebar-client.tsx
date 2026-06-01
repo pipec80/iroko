@@ -171,7 +171,7 @@ export function AppSidebarClient({ orgs }: Props) {
                 'flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors',
                 isActive ?
                   'bg-accent text-foreground font-semibold'
-                : 'text-muted-foreground hover:bg-surface-3 hover:text-foreground font-medium',
+                : 'text-muted-foreground hover:bg-accent hover:text-foreground font-medium',
               )}>
               <Icon
                 className={cn('size-4 shrink-0', isActive ? 'text-primary' : '')}
