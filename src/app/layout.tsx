@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import './globals.css';
@@ -14,6 +14,13 @@ const geistMono = Geist_Mono({
   weight: ['400', '500', '600', '700'],
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f5ecda' },
+    { media: '(prefers-color-scheme: dark)', color: '#0e1117' },
+  ],
+};
+
 export const metadata: Metadata = {
   title: {
     default: 'Iroko',
@@ -22,10 +29,6 @@ export const metadata: Metadata = {
   description: 'El tronco común para tus micro-SaaS.',
   metadataBase: new URL(process.env.SITE_URL || 'http://localhost:3000'),
   robots: { index: true, follow: true },
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f5ecda' },
-    { media: '(prefers-color-scheme: dark)', color: '#0e1117' },
-  ],
   openGraph: {
     type: 'website',
     siteName: 'Iroko',
