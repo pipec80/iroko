@@ -763,44 +763,44 @@ export type Database = {
         Row: {
           account_id: string
           color: string | null
-          created_at: string
+          created_at: string | null
           created_by: string | null
           deleted_at: string | null
           description: string | null
           id: string
-          metadata: Json
+          metadata: Json | null
           name: string
           slug: string
           status: Database["public"]["Enums"]["project_status"]
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           account_id: string
           color?: string | null
-          created_at?: string
+          created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
           description?: string | null
           id?: string
-          metadata?: Json
+          metadata?: Json | null
           name: string
           slug: string
           status?: Database["public"]["Enums"]["project_status"]
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           account_id?: string
           color?: string | null
-          created_at?: string
+          created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
           description?: string | null
           id?: string
-          metadata?: Json
+          metadata?: Json | null
           name?: string
           slug?: string
           status?: Database["public"]["Enums"]["project_status"]
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -1104,6 +1104,7 @@ export const Constants = {
       account_type: ["personal", "team"],
       invitation_status: ["pending", "accepted", "revoked", "expired"],
       membership_role: ["owner", "admin", "member", "viewer"],
+      project_status: ["active", "paused", "draft"],
     },
   },
 } as const

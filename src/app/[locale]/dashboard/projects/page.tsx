@@ -132,10 +132,12 @@ function ProjectCard({ project }: { project: Project }) {
         <div className="text-muted-foreground flex items-center gap-3">
           <span className="flex items-center gap-1 font-mono text-[10px]">
             <Clock size={10} strokeWidth={2} />
-            {new Date(project.updated_at).toLocaleDateString('es', {
-              day: 'numeric',
-              month: 'short',
-            })}
+            {project.updated_at ?
+              new Date(project.updated_at).toLocaleDateString('es', {
+                day: 'numeric',
+                month: 'short',
+              })
+            : '—'}
           </span>
         </div>
       </div>
