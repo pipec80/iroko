@@ -113,7 +113,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
           <Input
             type="search"
             placeholder="Buscar..."
-            className="border-border h-8 w-52 rounded-lg pr-10 pl-8 text-sm shadow-none"
+            className="border-border bg-background h-8 w-52 rounded-lg pr-10 pl-8 text-sm shadow-none"
           />
           <kbd className="text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 -translate-y-1/2 font-mono text-[10px] font-bold">
             ⌘K
