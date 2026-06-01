@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import React, { useActionState, useRef, useState } from 'react';
+import { CheckCircle, FolderOpen, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import {
@@ -67,14 +68,14 @@ export function ProfileTab({ profile, email, role }: Props) {
   return (
     <div className="flex flex-col gap-8">
       {/* Avatar */}
-      <Card className="border-outline-variant/10 rounded-3xl">
+      <Card className="border-border rounded-3xl">
         <CardHeader>
           <CardTitle>{t('profile.avatar_heading')}</CardTitle>
           <CardDescription>{t('profile.avatar_hint')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form action={avatarAction} className="flex items-center gap-6">
-            <div className="bg-surface-container relative h-20 w-20 overflow-hidden rounded-full ring-2 ring-white">
+            <div className="bg-muted relative h-20 w-20 overflow-hidden rounded-full ring-2 ring-white">
               {avatarPreview ?
                 <Image
                   src={avatarPreview}
@@ -84,9 +85,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                   className="object-cover"
                 />
               : <div className="flex h-full w-full items-center justify-center">
-                  <span className="material-symbols-outlined text-on-surface-variant text-4xl">
-                    person
-                  </span>
+                  <User size={36} className="text-muted-foreground" strokeWidth={1.25} />
                 </div>
               }
             </div>
@@ -108,7 +107,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                   type="button"
                   variant="outline"
                   onClick={() => avatarInputRef.current?.click()}>
-                  <span className="material-symbols-outlined mr-2 text-[18px]">folder</span>
+                  <FolderOpen size={16} strokeWidth={1.75} className="mr-2" />
                   {t('profile.upload_avatar')}
                 </Button>
                 <Button type="submit" disabled={avatarPending || !hasFile}>
@@ -117,7 +116,7 @@ export function ProfileTab({ profile, email, role }: Props) {
               </div>
               {avatarState.success === 'avatar_updated' && !hasFile && (
                 <div className="bg-primary/10 text-primary mt-3 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
-                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  <CheckCircle size={18} strokeWidth={1.75} />
                   {t('profile.success.avatar_updated')}
                 </div>
               )}
@@ -128,7 +127,7 @@ export function ProfileTab({ profile, email, role }: Props) {
       </Card>
 
       {/* Profile fields */}
-      <Card className="border-outline-variant/10 rounded-3xl">
+      <Card className="border-border rounded-3xl">
         <CardHeader>
           <CardTitle>{t('profile.heading')}</CardTitle>
         </CardHeader>
@@ -209,7 +208,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                 type="tel"
                 aria-invalid={!!profileState.fieldErrors?.phone_number}
               />
-              <p className="text-on-surface-variant text-xs">{t('profile.phone_hint')}</p>
+              <p className="text-muted-foreground text-xs">{t('profile.phone_hint')}</p>
               {profileState.fieldErrors?.phone_number && (
                 <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
                   {t(`errors.${profileState.fieldErrors.phone_number[0]}` as 'errors.generic', {
@@ -227,7 +226,7 @@ export function ProfileTab({ profile, email, role }: Props) {
               )}
               {profileState.success === 'profile_updated' && !isProfileDirty && (
                 <div className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
-                  <span className="material-symbols-outlined text-[18px]">check_circle</span>
+                  <CheckCircle size={18} strokeWidth={1.75} />
                   {t('profile.success.profile_updated')}
                 </div>
               )}
@@ -240,16 +239,16 @@ export function ProfileTab({ profile, email, role }: Props) {
       </Card>
 
       {/* Email change */}
-      <Card className="border-outline-variant/10 rounded-3xl">
+      <Card className="border-border rounded-3xl">
         <CardHeader>
           <CardTitle>{t('profile.email_heading')}</CardTitle>
           <CardDescription>{t('profile.email_hint')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="mb-4 text-sm">
-            <span className="text-on-surface-variant">{t('profile.email_heading')}: </span>
+            <span className="text-muted-foreground">{t('profile.email_heading')}: </span>
             <strong>{email}</strong>
-            {role && <span className="text-on-surface-variant ml-3 text-xs">({role})</span>}
+            {role && <span className="text-muted-foreground ml-3 text-xs">({role})</span>}
           </div>
           <form
             action={emailAction}
@@ -286,7 +285,7 @@ export function ProfileTab({ profile, email, role }: Props) {
           )}
           {emailState.success === 'email_change_requested' && !isEmailDirty && (
             <div className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
-              <span className="material-symbols-outlined text-[18px]">check_circle</span>
+              <CheckCircle size={18} strokeWidth={1.75} />
               {t('profile.success.email_change_requested')}
             </div>
           )}

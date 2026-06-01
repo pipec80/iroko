@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Copy, Download, KeyRound, Loader2, Smartphone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Factor } from '@supabase/supabase-js';
@@ -204,14 +205,14 @@ export function MfaSetup() {
 
   if (isLoading) {
     return (
-      <Card className="border-outline-variant/10 animate-pulse rounded-3xl">
-        <div className="bg-surface-container-low h-[200px] rounded-3xl" />
+      <Card className="border-border animate-pulse rounded-3xl">
+        <div className="bg-muted/30 h-[200px] rounded-3xl" />
       </Card>
     );
   }
 
   return (
-    <Card className="border-outline-variant/10 rounded-3xl">
+    <Card className="border-border rounded-3xl">
       <CardHeader>
         <CardTitle>{t('mfa_heading')}</CardTitle>
         <CardDescription>{t('mfa_description')}</CardDescription>
@@ -220,10 +221,8 @@ export function MfaSetup() {
         {/* Authenticator App Item */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-4">
-            <div className="bg-surface-container-highest flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
-              <span className="material-symbols-outlined text-primary text-[24px]">
-                phone_android
-              </span>
+            <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+              <Smartphone size={22} strokeWidth={1.75} style={{ color: 'var(--color-cobalt)' }} />
             </div>
             <div className="space-y-1">
               <h4 className="text-sm font-bold">{t('authenticator_app_title')}</h4>
@@ -264,17 +263,18 @@ export function MfaSetup() {
                     {t('enable')}
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="border-outline-variant/10 rounded-3xl sm:max-w-md">
+                <DialogContent className="border-border rounded-3xl sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle>{t('mfa_modal_title')}</DialogTitle>
                     <DialogDescription>{t('mfa_modal_step1')}</DialogDescription>
                   </DialogHeader>
                   <div className="flex flex-col items-center gap-6 py-6">
-                    <div className="border-outline-variant/5 flex h-[186px] w-[186px] items-center justify-center rounded-2xl border bg-white p-5 shadow-sm">
+                    <div className="border-border/30 flex h-[186px] w-[186px] items-center justify-center rounded-2xl border bg-white p-5 shadow-sm">
                       {isLoadingQr && (
-                        <span className="material-symbols-outlined text-on-surface-variant animate-spin text-4xl opacity-40">
-                          progress_activity
-                        </span>
+                        <Loader2
+                          size={36}
+                          className="text-muted-foreground animate-spin opacity-40"
+                        />
                       )}
                       {!isLoadingQr && qrCode && (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -300,7 +300,7 @@ export function MfaSetup() {
                         onChange={(e) =>
                           setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))
                         }
-                        className="bg-surface-container-low border-outline-variant/10 focus:ring-primary/20 h-14 rounded-xl text-center font-mono text-2xl tracking-[0.2em]"
+                        className="bg-background border-border h-14 rounded-xl text-center font-mono text-2xl tracking-[0.2em]"
                         autoFocus
                       />
                     </div>
@@ -315,7 +315,7 @@ export function MfaSetup() {
                     <Button
                       onClick={onVerify}
                       disabled={verifyCode.length !== 6}
-                      className="shadow-primary/20 rounded-xl px-8 shadow-lg">
+                      className="rounded-xl px-8 shadow-sm">
                       {t('mfa_modal_verify')}
                     </Button>
                   </div>
@@ -326,11 +326,11 @@ export function MfaSetup() {
         </div>
 
         {/* Recovery Codes Item */}
-        <div className="border-outline-variant/5 border-t pt-6">
+        <div className="border-border/30 border-t pt-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex gap-4">
-              <div className="bg-surface-container-highest flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
-                <span className="material-symbols-outlined text-primary text-[24px]">key</span>
+              <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+                <KeyRound size={24} strokeWidth={1.75} style={{ color: 'var(--color-cobalt)' }} />
               </div>
               <div className="space-y-1">
                 <h4 className="text-sm font-bold">{t('recovery_codes_title')}</h4>
@@ -356,16 +356,23 @@ export function MfaSetup() {
                     </Button>
                   </form>
                 </DialogTrigger>
-                <DialogContent className="border-outline-variant/10 rounded-3xl sm:max-w-md">
+                <DialogContent className="border-border rounded-3xl sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle>{t('recovery_modal_title')}</DialogTitle>
                     <DialogDescription>{t('recovery_codes_warning')}</DialogDescription>
                   </DialogHeader>
-                  <div className="bg-warning/10 border-warning/20 rounded-xl border px-4 py-3">
-                    <p className="text-warning text-xs font-semibold">
-                      <span className="material-symbols-outlined mr-1 align-middle text-[16px]">
-                        warning
-                      </span>
+                  <div
+                    className="rounded-xl border px-4 py-3"
+                    style={{
+                      background: 'color-mix(in srgb, var(--color-gold) 10%, transparent)',
+                      borderColor: 'color-mix(in srgb, var(--color-gold) 20%, transparent)',
+                    }}>
+                    <p className="text-xs font-semibold" style={{ color: 'var(--color-gold)' }}>
+                      <AlertTriangle
+                        size={14}
+                        strokeWidth={2}
+                        className="mr-1 inline align-middle"
+                      />
                       {t('recovery_codes_warning')}
                     </p>
                   </div>
@@ -373,7 +380,7 @@ export function MfaSetup() {
                     {recoveryCodes.map((code, idx) => (
                       <div
                         key={idx}
-                        className="bg-surface-container-low border-outline-variant/5 rounded-xl border p-3 text-center font-mono text-sm">
+                        className="bg-muted/20 border-border/30 rounded-xl border p-3 text-center font-mono text-sm">
                         {code}
                       </div>
                     ))}
@@ -390,13 +397,13 @@ export function MfaSetup() {
                         variant="outline"
                         onClick={() => void copyRecoveryCodes()}
                         className="flex items-center gap-2 rounded-xl">
-                        <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                        <Copy size={16} strokeWidth={1.75} />
                         {t('recovery_copy')}
                       </Button>
                       <Button
                         onClick={downloadRecoveryCodes}
                         className="flex items-center gap-2 rounded-xl">
-                        <span className="material-symbols-outlined text-[18px]">download</span>
+                        <Download size={16} strokeWidth={1.75} />
                         {t('recovery_download')}
                       </Button>
                     </div>
