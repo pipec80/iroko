@@ -1,8 +1,43 @@
 import { setRequestLocale } from 'next-intl/server';
-import Image from 'next/image';
+import { Check, Code2, Layers, Users } from 'lucide-react';
 
-const INSIGHTS_IMAGE_URL =
-  'https://lh3.googleusercontent.com/aida-public/AB6AXuD9ixXWyhSG5OeiC8zJp946w6XdN5S1UlrxCPqg1AnJqOQaroMSvV5UbtRUOz5Ur_-Rb_t3pq2vcZ5BMT6fGSl9sKW2xH_j4R0sdgHkBzEbiZAWRbTLT5xmeDjW_xTUZLcbbs2DJ9Wrpu2htbNC02a5sHN-k2m8gu9kEt3Sn66HpACwFpy-GyPCgipRZd1Ah2dEFH7XTVxFTQ--jFuwYe6BSnpBBpbmRz34hxoZ4woLd75pEOw9hCUn2uO3ggJvaA_K_EG1OgdDSGmm';
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/routing';
+
+const USE_CASES = [
+  {
+    Icon: Code2,
+    title: 'SaaS en solitario',
+    desc: 'Un developer, una idea, un tarde. Iroko te da la base completa para que te centres en el diferenciador de tu producto.',
+    items: ['Auth lista desde el commit 1', 'Dashboard con layout ya diseñado'],
+    featured: false,
+  },
+  {
+    Icon: Layers,
+    title: 'Agencias y estudios',
+    desc: 'Lanza proyectos de cliente con la misma arquitectura cada vez. Rebrandea tokens, cambia copy, despliega en horas.',
+    items: ['Rebranding en una tarde', 'Multi-tenant out-of-the-box', 'Billing configurable'],
+    featured: true,
+  },
+  {
+    Icon: Users,
+    title: 'Equipos de producto',
+    desc: 'Olvida el scaffolding y salta directo a las features que importan. CI/CD, testing y calidad de código ya configurados.',
+    items: [
+      'Vitest + Playwright listos',
+      'ESLint + Prettier + commitlint',
+      'SLA garantizado (Custom)',
+    ],
+    featured: false,
+  },
+];
+
+const STATS = [
+  { val: '< 30 min', label: 'De clon a primer deploy' },
+  { val: '6+', label: 'Módulos de producción' },
+  { val: '100%', label: 'Código en tu repo' },
+  { val: '∞', label: 'Proyectos posibles' },
+];
 
 export default async function SolutionsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -10,291 +45,169 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
 
   return (
     <>
-      {/* Hero Section */}
-      <section className="mx-auto mb-24 max-w-7xl px-8 pt-20 lg:pt-32">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
-          <div className="lg:col-span-7">
-            <h1 className="font-display text-primary mb-6 text-5xl leading-[1.1] font-extrabold tracking-tighter md:text-6xl">
-              Soluciones a medida para cada escala de Retail
-            </h1>
-            <p className="font-body text-on-surface-variant mb-10 max-w-2xl text-xl leading-relaxed">
-              Nuestra arquitectura modular se adapta a la complejidad de tu operación. Desde el
-              control local hasta la analítica consolidada a nivel corporativo, unificamos tu
-              ecosistema financiero.
-            </p>
-            <div className="flex gap-4">
-              <button className="from-primary to-primary-container text-on-primary flex items-center gap-2 rounded-lg bg-linear-to-r px-6 py-3 font-bold transition-opacity hover:opacity-90">
-                Agendar Consultoría
-                <span
-                  className="material-symbols-outlined text-sm"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  arrow_forward
-                </span>
-              </button>
-              <button className="text-primary border-outline-variant/30 hover:border-outline-variant/60 rounded-lg border px-6 py-3 font-semibold transition-colors">
-                Ver Documentación
-              </button>
-            </div>
-          </div>
-          <div className="bg-surface-container-highest relative h-[400px] overflow-hidden rounded-xl lg:col-span-5">
-            <Image
-              alt="Business Insights"
-              className="h-full w-full object-cover opacity-90 mix-blend-multiply"
-              src={INSIGHTS_IMAGE_URL}
-              width={800}
-              height={600}
-              priority
-              sizes="(max-width: 1024px) 100vw, 40vw"
-            />
-          </div>
+      {/* Hero */}
+      <section className="mx-auto max-w-7xl px-8 pt-16 pb-24 lg:pt-24">
+        <div className="mx-auto max-w-3xl text-center">
+          <span className="eyebrow text-muted-foreground mb-6 block">Casos de uso</span>
+          <h1 className="text-foreground mb-6 text-5xl leading-[1.1] font-extrabold tracking-tighter md:text-6xl">
+            Un boilerplate, <span style={{ color: 'var(--color-poppy)' }}>infinitas ramas.</span>
+          </h1>
+          <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-xl leading-relaxed">
+            Iroko se adapta a la escala y contexto de cada proyecto. Desde el indie hacker hasta el
+            equipo de producto consolidado.
+          </p>
+          <Button
+            asChild
+            className="h-12 px-8 text-base"
+            style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
+            <Link href="/signup">Empezar gratis →</Link>
+          </Button>
         </div>
       </section>
 
-      {/* Casos de Uso (Bento Grid) */}
-      <section className="bg-surface-container-low py-24">
+      {/* Stats bar */}
+      <section className="bg-surface-2 border-border border-y py-12">
         <div className="mx-auto max-w-7xl px-8">
-          <div className="mb-16">
-            <h2 className="font-headline text-primary mb-4 text-3xl font-bold tracking-tight">
-              Adaptabilidad por Diseño
-            </h2>
-            <p className="text-on-surface-variant max-w-3xl text-lg">
-              Estructuras pre-configuradas para desplegar valor inmediato según la naturaleza de tu
-              red comercial.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-            {/* Block 1 */}
-            <div className="bg-surface-container-highest group hover:bg-surface-dim flex flex-col rounded-xl p-8 transition-colors duration-300">
-              <div className="bg-surface-lowest text-primary mb-6 flex h-12 w-12 items-center justify-center rounded-full">
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  storefront
-                </span>
-              </div>
-              <h3 className="font-headline text-on-surface mb-3 text-xl font-bold">
-                Mini-supermercados locales
-              </h3>
-              <p className="text-on-surface-variant mb-8 grow">
-                Visibilidad inmediata del flujo de caja diario, conciliación automática de TPVs y
-                control de inventario básico sin curva de aprendizaje.
-              </p>
-              <ul className="border-outline-variant/20 mt-auto space-y-3 border-t pt-6">
-                <li className="text-on-surface-variant flex items-center gap-2 text-sm font-medium">
-                  <span className="material-symbols-outlined text-primary text-base">
-                    check_circle
-                  </span>
-                  Conciliación TPV en 1-clic
-                </li>
-                <li className="text-on-surface-variant flex items-center gap-2 text-sm font-medium">
-                  <span className="material-symbols-outlined text-primary text-base">
-                    check_circle
-                  </span>
-                  Alertas de stock crítico
-                </li>
-              </ul>
-            </div>
-            {/* Block 2 */}
-            <div className="bg-surface-container-highest group hover:bg-surface-dim relative flex flex-col overflow-hidden rounded-xl p-8 transition-colors duration-300">
-              {/* Subtle gradient accent for the middle tier */}
-              <div className="from-primary to-primary-container absolute top-0 left-0 h-1 w-full bg-linear-to-r"></div>
-              <div className="bg-surface-lowest text-primary mb-6 flex h-12 w-12 items-center justify-center rounded-full">
-                <span
-                  className="material-symbols-outlined"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  account_tree
-                </span>
-              </div>
-              <h3 className="font-headline text-on-surface mb-3 text-xl font-bold">
-                Cadenas Regionales
-              </h3>
-              <p className="text-on-surface-variant mb-8 grow">
-                Gestión multi-sucursal con consolidación de datos en tiempo real. Estandarización de
-                procesos contables entre regiones.
-              </p>
-              <ul className="border-outline-variant/20 mt-auto space-y-3 border-t pt-6">
-                <li className="text-on-surface-variant flex items-center gap-2 text-sm font-medium">
-                  <span className="material-symbols-outlined text-primary text-base">
-                    check_circle
-                  </span>
-                  Reportes comparativos por tienda
-                </li>
-                <li className="text-on-surface-variant flex items-center gap-2 text-sm font-medium">
-                  <span className="material-symbols-outlined text-primary text-base">
-                    check_circle
-                  </span>
-                  Gestión centralizada de catálogos
-                </li>
-              </ul>
-            </div>
-            {/* Block 3 */}
-            <div className="bg-primary text-on-primary relative flex flex-col overflow-hidden rounded-xl p-8">
-              {/* Glass overlay effect inside the solid card */}
-              <div className="bg-surface-variant/10 pointer-events-none absolute inset-0 backdrop-blur-sm"></div>
-              <div className="relative z-10 flex h-full flex-col">
-                <div className="bg-on-primary/10 text-on-primary mb-6 flex h-12 w-12 items-center justify-center rounded-full">
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontVariationSettings: "'FILL' 1" }}>
-                    domain
-                  </span>
+          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
+            {STATS.map(({ val, label }) => (
+              <div key={label} className="text-center">
+                <div
+                  className="mb-1 font-mono text-3xl font-semibold"
+                  style={{ color: 'var(--color-ink)' }}>
+                  {val}
                 </div>
-                <h3 className="font-headline mb-3 text-xl font-bold">
-                  Enterprise &amp; Franquicias
-                </h3>
-                <p className="text-primary-fixed-dim mb-8 grow">
-                  Infraestructura de alta disponibilidad para miles de puntos de venta. APIs
-                  robustas y control granular de permisos por franquiciado.
-                </p>
-                <ul className="border-on-primary/20 mt-auto space-y-3 border-t pt-6">
-                  <li className="flex items-center gap-2 text-sm font-medium">
-                    <span className="material-symbols-outlined text-base">check_circle</span>
-                    Liquidación a franquiciados
-                  </li>
-                  <li className="flex items-center gap-2 text-sm font-medium">
-                    <span className="material-symbols-outlined text-base">check_circle</span>
-                    SLA garantizado 99.99%
-                  </li>
-                </ul>
+                <div className="text-muted-foreground eyebrow text-xs">{label}</div>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Eficiencia Operativa (Bento Data Grid) */}
+      {/* Use Cases */}
       <section className="mx-auto max-w-7xl px-8 py-24">
-        <div className="mb-12 flex items-end justify-between">
-          <div>
-            <h2 className="font-headline text-primary mb-2 text-3xl font-bold tracking-tight">
-              Eficiencia Operativa
-            </h2>
-            <p className="text-on-surface-variant">Métricas clave consolidadas en tiempo real.</p>
-          </div>
-          <div className="text-primary hidden items-center gap-2 text-sm font-medium md:flex">
-            <span className="material-symbols-outlined text-sm">sync</span>
-            Actualizado hace 2 min
-          </div>
+        <div className="mb-16 text-center">
+          <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
+            Adaptabilidad por diseño.
+          </h2>
+          <p className="text-muted-foreground mx-auto max-w-2xl">
+            El mismo tronco soporta proyectos muy distintos. La diferencia está en cómo lo
+            rebrandeas y qué construyes encima.
+          </p>
         </div>
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-          {/* Large Highlight Card */}
-          <div className="bg-surface-container-highest flex flex-col justify-between rounded-xl p-8 md:col-span-2">
-            <div className="mb-12 flex items-start justify-between">
-              <div>
-                <p className="font-label text-on-surface-variant mb-1 text-xs font-bold tracking-widest uppercase">
-                  Impacto Financiero
-                </p>
-                <h4 className="font-headline text-on-surface text-lg font-semibold">
-                  Reducción de Mermas
-                </h4>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {USE_CASES.map(({ Icon, title, desc, items, featured }) => (
+            <div
+              key={title}
+              className="relative flex flex-col rounded-2xl p-8 transition-all duration-300"
+              style={
+                featured ?
+                  {
+                    background: 'var(--color-ink)',
+                    boxShadow: '0 16px 48px rgba(14,17,23,0.2)',
+                  }
+                : {
+                    background: 'var(--background)',
+                    border: '1px solid var(--border)',
+                  }
+              }>
+              {featured && (
+                <div
+                  className="absolute top-0 left-0 h-1 w-full rounded-t-2xl"
+                  style={{ background: 'var(--color-poppy)' }}
+                />
+              )}
+
+              <div
+                className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl"
+                style={{
+                  background: featured ? 'rgba(245,236,218,0.08)' : 'rgba(217,33,33,0.08)',
+                }}>
+                <Icon
+                  className="size-5"
+                  style={{ color: featured ? 'var(--color-bone)' : 'var(--color-poppy)' }}
+                  strokeWidth={1.5}
+                />
               </div>
-              <span className="material-symbols-outlined text-secondary text-3xl">
-                trending_down
-              </span>
-            </div>
-            <div>
-              <div className="mb-2 flex items-baseline gap-3">
-                <span className="text-primary font-mono text-6xl font-semibold">-24.8%</span>
-                <span className="text-secondary bg-secondary-fixed/50 rounded-md px-2 py-1 text-sm font-medium">
-                  YTD
-                </span>
-              </div>
-              <p className="text-on-surface-variant text-sm">
-                Ahorro proyectado de <span className="font-mono font-medium">€142,500</span> este
-                trimestre.
+
+              <h3
+                className="mb-3 text-xl font-bold"
+                style={{ color: featured ? 'var(--color-bone)' : undefined }}>
+                {title}
+              </h3>
+              <p
+                className="mb-8 grow text-sm leading-relaxed"
+                style={{
+                  color: featured ? 'rgba(245,236,218,0.6)' : 'var(--muted-foreground)',
+                }}>
+                {desc}
               </p>
+
+              <ul
+                className="space-y-3 border-t pt-6"
+                style={{ borderColor: featured ? 'rgba(245,236,218,0.1)' : 'var(--border)' }}>
+                {items.map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-sm">
+                    <Check
+                      className="size-4 shrink-0"
+                      style={{
+                        color: featured ? 'var(--color-gold)' : 'var(--color-poppy)',
+                      }}
+                      strokeWidth={2.5}
+                    />
+                    <span
+                      style={{
+                        color: featured ? 'rgba(245,236,218,0.8)' : undefined,
+                      }}>
+                      {item}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-          {/* Stock Optimization Card */}
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:col-span-2">
-            <div className="bg-surface-container-highest flex flex-col justify-between rounded-xl p-6">
-              <p className="font-label text-on-surface-variant mb-4 text-xs font-bold tracking-widest uppercase">
-                Rotación de Inventario
-              </p>
-              <div>
-                <div className="text-on-surface mb-1 font-mono text-4xl font-semibold">4.2x</div>
-                <p className="text-on-surface-variant flex items-center gap-1 text-xs">
-                  <span className="material-symbols-outlined text-tertiary text-xs">
-                    arrow_upward
-                  </span>
-                  +0.5 vs mes anterior
-                </p>
-              </div>
-            </div>
-            <div className="bg-surface-container-highest flex flex-col justify-between rounded-xl p-6">
-              <p className="font-label text-on-surface-variant mb-4 text-xs font-bold tracking-widest uppercase">
-                Precisión de Stock
-              </p>
-              <div>
-                <div className="text-on-surface mb-1 font-mono text-4xl font-semibold">99.1%</div>
-                <p className="text-on-surface-variant flex items-center gap-1 text-xs">
-                  <span className="material-symbols-outlined text-primary text-xs">check</span>
-                  Óptimo
-                </p>
-              </div>
-            </div>
-            {/* Data Grid Preview */}
-            <div className="bg-surface-container-lowest border-outline-variant/20 overflow-hidden rounded-xl border sm:col-span-2">
-              <div className="bg-surface-container-high border-outline-variant/20 border-b px-4 py-2">
-                <p className="font-label text-on-surface-variant text-xs font-bold tracking-wider uppercase">
-                  Top SKUs Críticos
-                </p>
-              </div>
-              <div className="p-0">
-                <div className="text-on-surface-variant border-outline-variant/10 grid grid-cols-3 border-b px-4 py-2 text-xs font-medium">
-                  <div>SKU</div>
-                  <div className="text-right">Stock</div>
-                  <div className="text-right">Días Cobertura</div>
-                </div>
-                <div className="border-outline-variant/10 bg-surface-container-low/50 grid grid-cols-3 border-b px-4 py-3 text-sm">
-                  <div className="text-on-surface font-mono">P-8842</div>
-                  <div className="text-error text-right font-mono font-medium">12</div>
-                  <div className="text-right font-mono">1.5</div>
-                </div>
-                <div className="grid grid-cols-3 px-4 py-3 text-sm">
-                  <div className="text-on-surface font-mono">P-9102</div>
-                  <div className="text-on-surface text-right font-mono">84</div>
-                  <div className="text-right font-mono">4.2</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      {/* Testimonial */}
-      <section className="bg-surface-container-low border-outline-variant/10 border-y py-20">
-        <div className="mx-auto max-w-4xl px-8 text-center">
-          <span className="material-symbols-outlined text-primary/40 mb-6 text-4xl">
-            format_quote
-          </span>
-          <blockquote className="font-display text-primary mb-8 text-2xl leading-relaxed font-medium md:text-3xl">
-            &quot;La implementación de Axiom Ledger transformó nuestra cadena regional. Pasamos de
-            conciliar datos ciegos a fin de mes, a tener control quirúrgico diario sobre la
-            rentabilidad de cada pasillo.&quot;
+      {/* Quote / Testimonial */}
+      <section className="bg-surface-2 border-border border-y py-20">
+        <div className="mx-auto max-w-3xl px-8 text-center">
+          <span className="eyebrow text-muted-foreground mb-6 block">Proverbio Akan</span>
+          <blockquote
+            className="mb-8 font-sans text-xl leading-[1.5] font-bold italic md:text-2xl"
+            style={{ color: 'var(--color-ink)' }}>
+            &ldquo;Antes de cortar el iroko, se le pide permiso al espíritu del árbol — porque sin
+            tronco, no hay ramas.&rdquo;
           </blockquote>
-          <div className="flex flex-col items-center">
-            <p className="text-on-surface font-label text-sm font-bold tracking-wider uppercase">
-              Elena Ríos
-            </p>
-            <p className="text-on-surface-variant text-sm">
-              Directora de Operaciones, Supermercados Vértice
-            </p>
-          </div>
+          <hr
+            className="mx-auto mb-6"
+            style={{ width: 64, borderTopWidth: 1, borderColor: 'rgba(217,164,65,0.4)' }}
+          />
+          <p className="text-muted-foreground font-mono text-xs tracking-widest uppercase">
+            Sabiduría Akan · Ghana y Costa de Marfil
+          </p>
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* CTA */}
       <section className="mx-auto max-w-4xl px-8 py-24 text-center">
-        <h2 className="font-headline text-primary mb-4 text-3xl font-bold">
-          ¿Listo para auditar su eficiencia?
+        <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
+          ¿Listo para lanzar en una tarde?
         </h2>
-        <p className="text-on-surface-variant mb-10 text-lg">
-          Agende una sesión técnica con nuestros arquitectos de soluciones.
+        <p className="text-muted-foreground mb-10 text-lg">
+          Sin tarjeta de crédito. Sin lock-in. El código es completamente tuyo.
         </p>
-        <button className="from-primary to-primary-container text-on-primary hover:shadow-primary/20 rounded-xl bg-linear-to-r px-8 py-4 text-lg font-bold transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
-          Agendar Consultoría Gratuita
-        </button>
+        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Button
+            asChild
+            className="h-12 px-8 text-base"
+            style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
+            <Link href="/signup">Empezar gratis →</Link>
+          </Button>
+          <Button asChild variant="outline" className="h-12 px-8 text-base">
+            <Link href="/contact">Hablar con el equipo</Link>
+          </Button>
+        </div>
       </section>
     </>
   );

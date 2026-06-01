@@ -1,4 +1,72 @@
 import { setRequestLocale } from 'next-intl/server';
+import { Check } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Link } from '@/i18n/routing';
+
+const PRICING_TIERS = [
+  {
+    name: 'Personal',
+    price: 'Gratis',
+    period: 'para siempre',
+    desc: 'Para proyectos en solitario y experimentos rápidos.',
+    cta: 'Clonar el repo',
+    href: '#',
+    featured: false,
+    items: [
+      '1 organización',
+      'Usuarios ilimitados',
+      'Auth completa + MFA',
+      'Dashboard base',
+      'Soporte via GitHub Issues',
+    ],
+  },
+  {
+    name: 'Studio',
+    price: '$79',
+    period: '/mes',
+    desc: 'Para equipos que construyen y lanzan productos reales.',
+    cta: 'Empezar gratis →',
+    href: '/signup',
+    featured: true,
+    items: [
+      'Organizaciones ilimitadas',
+      'Usuarios ilimitados',
+      'Billing Stripe incluido',
+      'Soporte prioritario',
+      'Updates mensuales',
+      'Canal privado Discord',
+    ],
+  },
+  {
+    name: 'Custom',
+    price: 'Hablemos',
+    period: '',
+    desc: 'Para agencias y equipos con necesidades específicas.',
+    cta: 'Contactar',
+    href: '/contact',
+    featured: false,
+    items: [
+      'Todo en Studio',
+      'Implementación guiada',
+      'Customización de arquitectura',
+      'Revisión de PRs',
+      'SLA garantizado',
+    ],
+  },
+];
+
+const COMPARISON = [
+  { feature: 'Organizaciones', personal: '1', studio: 'Ilimitadas', custom: 'Ilimitadas' },
+  { feature: 'Auth + MFA', personal: true, studio: true, custom: true },
+  { feature: 'Billing Stripe', personal: false, studio: true, custom: true },
+  { feature: 'i18n ES/EN', personal: true, studio: true, custom: true },
+  { feature: 'Dark mode', personal: true, studio: true, custom: true },
+  { feature: 'Updates del boilerplate', personal: false, studio: true, custom: true },
+  { feature: 'Canal Discord privado', personal: false, studio: true, custom: true },
+  { feature: 'Implementación guiada', personal: false, studio: false, custom: true },
+  { feature: 'SLA garantizado', personal: false, studio: false, custom: true },
+];
 
 export default async function PricingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -6,217 +74,203 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
 
   return (
     <>
-      <section className="mx-auto w-full max-w-7xl px-8 pt-20 pb-24 lg:pt-32">
+      <section className="mx-auto w-full max-w-7xl px-8 pt-16 pb-24 lg:pt-24">
         {/* Header */}
-        <header className="mx-auto mb-16 max-w-3xl text-center">
-          <h1 className="text-primary font-headline mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">
-            Planes simples y transparentes
+        <div className="mx-auto mb-20 max-w-3xl text-center">
+          <span className="eyebrow text-muted-foreground mb-4 block">Planes</span>
+          <h1 className="text-foreground mb-4 text-5xl font-extrabold tracking-tighter md:text-6xl">
+            Precios honestos, <span style={{ color: 'var(--color-poppy)' }}>sin sorpresas.</span>
           </h1>
-          <p className="text-on-surface-variant font-body text-xl">
-            Encuentra el plan perfecto para las necesidades de tu negocio. Sin costos ocultos.
+          <p className="text-muted-foreground text-xl">
+            Empieza gratis. Escala cuando tu producto lo necesite.
           </p>
-        </header>
-
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Free */}
-          <div className="bg-surface-container-lowest border-outline-variant/20 hover:border-primary/30 flex flex-col rounded-2xl border p-8 transition-colors">
-            <h4 className="text-on-surface mb-2 text-xl font-bold">Free</h4>
-            <p className="text-on-surface-variant mb-6 h-10 text-sm">
-              Para probar la plataforma y pequeños proyectos.
-            </p>
-            <p className="text-on-surface mb-6 font-mono text-4xl">
-              $0
-              <span className="text-on-surface-variant font-body text-base font-medium">/mes</span>
-            </p>
-            <button className="bg-surface-container border-outline-variant/20 text-on-surface hover:bg-surface-container-high mb-8 w-full rounded-xl border px-4 py-3 font-semibold transition-colors">
-              Comenzar Gratis
-            </button>
-            <ul className="grow space-y-4">
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Hasta 100 SKUs
-              </li>
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                1 Usuario
-              </li>
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Soporte comunitario
-              </li>
-            </ul>
-          </div>
-
-          {/* Básico */}
-          <div className="bg-surface-container-lowest border-outline-variant/20 hover:border-primary/30 flex flex-col rounded-2xl border p-8 transition-colors">
-            <h4 className="text-on-surface mb-2 text-xl font-bold">Básico</h4>
-            <p className="text-on-surface-variant mb-6 h-10 text-sm">
-              Ideal para negocios en crecimiento y startups.
-            </p>
-            <p className="text-on-surface mb-6 font-mono text-4xl">
-              $49
-              <span className="text-on-surface-variant font-body text-base font-medium">/mes</span>
-            </p>
-            <button className="bg-surface-container border-outline-variant/20 text-on-surface hover:bg-surface-container-high mb-8 w-full rounded-xl border px-4 py-3 font-semibold transition-colors">
-              Comenzar Básico
-            </button>
-            <ul className="grow space-y-4">
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Hasta 1,000 SKUs
-              </li>
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                2 Usuarios
-              </li>
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Soporte por email
-              </li>
-            </ul>
-          </div>
-
-          {/* Pro (Recommended) */}
-          <div className="bg-primary border-primary relative flex transform flex-col rounded-2xl border p-8 shadow-xl md:-translate-y-4">
-            <div className="bg-primary-container text-on-primary-container absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 text-xs font-bold tracking-wider uppercase shadow-sm">
-              Más Popular
-            </div>
-            <h4 className="text-on-primary mb-2 text-xl font-bold">Pro</h4>
-            <p className="text-primary-fixed-dim mb-6 h-10 text-sm">
-              Para empresas consolidadas con múltiples operaciones.
-            </p>
-            <p className="text-on-primary mb-6 font-mono text-4xl">
-              $149
-              <span className="text-primary-fixed-dim font-body text-base font-medium">/mes</span>
-            </p>
-            <button className="bg-on-primary text-primary hover:bg-surface mb-8 w-full rounded-xl px-4 py-3 font-bold shadow-sm transition-colors">
-              Comenzar Pro
-            </button>
-            <ul className="grow space-y-4">
-              <li className="text-on-primary flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary-fixed shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Hasta 10,000 SKUs
-              </li>
-              <li className="text-on-primary flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary-fixed shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                15 Usuarios
-              </li>
-              <li className="text-on-primary flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary-fixed shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Multitienda
-              </li>
-              <li className="text-on-primary flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary-fixed shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Soporte prioritario 24/7
-              </li>
-            </ul>
-          </div>
-
-          {/* Enterprise */}
-          <div className="bg-surface-container-lowest border-outline-variant/20 hover:border-primary/30 flex flex-col rounded-2xl border p-8 transition-colors">
-            <h4 className="text-on-surface mb-2 text-xl font-bold">Enterprise</h4>
-            <p className="text-on-surface-variant mb-6 h-10 text-sm">
-              Soluciones a medida para grandes corporaciones.
-            </p>
-            <p className="text-on-surface mb-6 py-1 font-mono text-3xl">Personalizado</p>
-            <button className="bg-surface-container border-outline-variant/20 text-on-surface hover:bg-surface-container-high mb-8 w-full rounded-xl border px-4 py-3 font-semibold transition-colors">
-              Contactar Ventas
-            </button>
-            <ul className="grow space-y-4">
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                SKUs Ilimitados
-              </li>
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Usuarios Ilimitados
-              </li>
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                API Access
-              </li>
-              <li className="text-on-surface-variant flex items-start gap-3 text-sm">
-                <span
-                  className="material-symbols-outlined text-primary shrink-0 text-[20px]"
-                  style={{ fontVariationSettings: "'FILL' 1" }}>
-                  check_circle
-                </span>{' '}
-                Account Manager Dedicado
-              </li>
-            </ul>
-          </div>
         </div>
 
-        {/* CTA Section */}
-        <section className="bg-surface-container-low border-outline-variant/10 mt-24 rounded-3xl border p-12 text-center md:p-16">
-          <h2 className="font-headline text-on-surface mb-4 text-3xl font-bold">
-            ¿Listo para transformar tu gestión?
-          </h2>
-          <p className="text-on-surface-variant mx-auto mb-8 max-w-2xl text-lg">
-            Únete a cientos de empresas que ya optimizan sus operaciones con Axiom Ledger. Comienza
-            gratis hoy mismo.
-          </p>
-          <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <button className="bg-primary text-on-primary hover:bg-primary/90 rounded-xl px-8 py-3 font-semibold shadow-md transition-colors">
-              Crear cuenta gratis
-            </button>
-            <button className="bg-surface-container-highest text-on-surface hover:bg-surface-variant border-outline-variant/20 rounded-xl border px-8 py-3 font-semibold transition-colors">
-              Hablar con un experto
-            </button>
+        {/* Pricing cards */}
+        <div className="mx-auto mb-24 grid max-w-5xl grid-cols-1 items-center gap-6 md:grid-cols-3">
+          {PRICING_TIERS.map((tier) => (
+            <div
+              key={tier.name}
+              className="relative flex flex-col rounded-2xl p-8 transition-all duration-300"
+              style={
+                tier.featured ?
+                  {
+                    background: 'var(--color-ink)',
+                    transform: 'translateY(-12px)',
+                    boxShadow: '0 24px 64px rgba(14,17,23,0.25)',
+                  }
+                : {
+                    background: 'var(--background)',
+                    border: '1px solid var(--border)',
+                  }
+              }>
+              {tier.featured && (
+                <div
+                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 font-mono text-xs font-bold tracking-wider uppercase"
+                  style={{ background: 'var(--color-gold)', color: 'var(--color-ink)' }}>
+                  Más popular
+                </div>
+              )}
+
+              <h2
+                className="mb-1 text-xl font-bold"
+                style={{ color: tier.featured ? 'var(--color-bone)' : undefined }}>
+                {tier.name}
+              </h2>
+              <p
+                className="mb-6 text-sm"
+                style={{
+                  color: tier.featured ? 'rgba(245,236,218,0.6)' : 'var(--muted-foreground)',
+                }}>
+                {tier.desc}
+              </p>
+
+              <div className="mb-6 flex items-baseline gap-1">
+                <span
+                  className="font-mono text-4xl font-semibold"
+                  style={{ color: tier.featured ? 'var(--color-bone)' : undefined }}>
+                  {tier.price}
+                </span>
+                {tier.period && (
+                  <span
+                    className="text-sm"
+                    style={{
+                      color: tier.featured ? 'rgba(245,236,218,0.5)' : 'var(--muted-foreground)',
+                    }}>
+                    {tier.period}
+                  </span>
+                )}
+              </div>
+
+              <Button
+                asChild
+                className="mb-8 h-11 w-full"
+                variant={tier.featured ? 'default' : 'outline'}
+                style={
+                  tier.featured ?
+                    { background: 'var(--color-bone)', color: 'var(--color-ink)' }
+                  : undefined
+                }>
+                <Link href={tier.href}>{tier.cta}</Link>
+              </Button>
+
+              <ul className="grow space-y-3">
+                {tier.items.map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm">
+                    <Check
+                      className="size-4 shrink-0"
+                      style={{
+                        color: tier.featured ? 'var(--color-gold)' : 'var(--color-poppy)',
+                      }}
+                      strokeWidth={2.5}
+                    />
+                    <span
+                      style={{
+                        color: tier.featured ? 'rgba(245,236,218,0.8)' : undefined,
+                      }}>
+                      {item}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Comparison Table */}
+        <div className="border-border overflow-hidden rounded-2xl border">
+          <div
+            className="border-border border-b px-6 py-4"
+            style={{ background: 'var(--color-ink)' }}>
+            <h3 className="font-mono text-sm font-semibold" style={{ color: 'var(--color-bone)' }}>
+              Comparativa completa
+            </h3>
           </div>
-        </section>
+          <table className="w-full">
+            <thead>
+              <tr className="bg-surface-2 border-border border-b">
+                <th className="text-muted-foreground px-6 py-4 text-left text-sm font-semibold">
+                  Característica
+                </th>
+                {['Personal', 'Studio', 'Custom'].map((col) => (
+                  <th
+                    key={col}
+                    className="px-4 py-4 text-center text-sm font-semibold"
+                    style={{
+                      color: col === 'Studio' ? 'var(--color-poppy)' : undefined,
+                    }}>
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARISON.map((row, i) => (
+                <tr
+                  key={row.feature}
+                  className="border-border border-b last:border-0"
+                  style={{ background: i % 2 === 0 ? undefined : 'var(--surface-2)' }}>
+                  <td className="text-foreground px-6 py-4 text-sm">{row.feature}</td>
+                  {([row.personal, row.studio, row.custom] as (boolean | string)[]).map(
+                    (val, j) => (
+                      <td key={j} className="px-4 py-4 text-center">
+                        {typeof val === 'boolean' ?
+                          val ?
+                            <Check
+                              className="mx-auto size-4"
+                              style={{ color: 'var(--color-poppy)' }}
+                              strokeWidth={2.5}
+                            />
+                          : <span className="text-muted-foreground font-mono text-xs">—</span>
+                        : <span className="text-foreground text-sm">{val}</span>}
+                      </td>
+                    ),
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* CTA */}
+        <div
+          className="relative mt-24 overflow-hidden rounded-3xl px-12 py-20 text-center"
+          style={{ background: 'var(--color-ink)' }}>
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage:
+                'linear-gradient(to right, rgba(245,236,218,0.04) 1px, transparent 1px),' +
+                'linear-gradient(to bottom, rgba(245,236,218,0.04) 1px, transparent 1px)',
+              backgroundSize: '40px 40px',
+            }}
+          />
+          <div className="relative z-10 mx-auto max-w-xl">
+            <h2
+              className="mb-4 text-3xl font-bold tracking-tight"
+              style={{ color: 'var(--color-bone)' }}>
+              Tu próximo micro-SaaS empieza esta tarde.
+            </h2>
+            <p className="mb-8 text-lg" style={{ color: 'rgba(245,236,218,0.6)' }}>
+              Sin tarjeta de crédito. Sin lock-in. El código es tuyo.
+            </p>
+            <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Button
+                asChild
+                className="h-12 px-8 text-base"
+                style={{ background: 'var(--color-bone)', color: 'var(--color-ink)' }}>
+                <Link href="/signup">Empezar gratis →</Link>
+              </Button>
+              <Button
+                asChild
+                variant="ghost"
+                className="h-12 px-8 text-base"
+                style={{ color: 'rgba(245,236,218,0.6)' }}>
+                <Link href="/contact">Hablar con el equipo</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
       </section>
     </>
   );

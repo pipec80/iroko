@@ -1,4 +1,9 @@
 import { setRequestLocale } from 'next-intl/server';
+import { Mail, MapPin, Phone } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default async function ContactPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -6,51 +11,44 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
 
   return (
     <>
-      <section className="mx-auto w-full max-w-7xl px-4 pt-24 pb-16 sm:px-6 lg:px-8">
-        {/* Header Section */}
-        <div className="mt-8 mb-12 md:mb-16">
-          <h1 className="text-primary font-headline mb-4 max-w-2xl text-4xl font-extrabold tracking-tight md:text-5xl">
-            Contacta con nuestro equipo de expertos
+      <section className="mx-auto w-full max-w-7xl px-4 pt-16 pb-24 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-12 md:mb-16">
+          <span className="eyebrow text-muted-foreground mb-4 block">Contacto</span>
+          <h1 className="text-foreground mb-4 max-w-2xl text-4xl font-extrabold tracking-tight md:text-5xl">
+            ¿Tienes preguntas? Estamos aquí.
           </h1>
-          <p className="text-on-surface-variant font-body max-w-xl text-lg">
-            Estamos aquí para ayudarle a optimizar sus análisis financieros. Rellene el formulario y
-            nos pondremos en contacto en breve.
+          <p className="text-muted-foreground max-w-xl text-lg">
+            Cuéntanos tu proyecto y te responderemos en menos de 24 horas.
           </p>
         </div>
 
-        {/* Split Layout */}
+        {/* Split layout */}
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-16">
-          {/* Left Side: Form */}
+          {/* Form */}
           <div className="lg:col-span-7">
-            <div className="bg-surface-container-highest relative overflow-hidden rounded-xl p-6 sm:p-8">
-              {/* Glassmorphism subtle overlay effect */}
-              <div className="bg-surface-variant/30 absolute inset-0 z-0 backdrop-blur-sm"></div>
-              <form className="relative z-10 space-y-6">
+            <div className="border-border rounded-2xl border p-6 sm:p-8">
+              {/* Form has no action — submit logic is handled by backend integration */}
+              <form className="space-y-6">
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  {/* Name */}
-                  <div className="space-y-2">
-                    <label
-                      className="text-on-surface font-headline block text-sm font-semibold tracking-wider uppercase"
-                      htmlFor="name">
+                  <div className="space-y-1.5">
+                    <Label className="text-foreground block text-sm font-semibold" htmlFor="name">
                       Nombre completo
-                    </label>
-                    <input
-                      className="bg-surface-container-lowest border-outline-variant/20 text-on-surface placeholder-outline focus:ring-primary focus:border-primary w-full rounded-md border px-4 py-3 shadow-sm transition-all focus:ring-1 focus:outline-none"
+                    </Label>
+                    <Input
+                      className="h-11"
                       id="name"
                       name="name"
-                      placeholder="Ej. Jane Doe"
+                      placeholder="Jane Doe"
                       type="text"
                     />
                   </div>
-                  {/* Business Email */}
-                  <div className="space-y-2">
-                    <label
-                      className="text-on-surface font-headline block text-sm font-semibold tracking-wider uppercase"
-                      htmlFor="email">
-                      Email corporativo
-                    </label>
-                    <input
-                      className="bg-surface-container-lowest border-outline-variant/20 text-on-surface placeholder-outline focus:ring-primary focus:border-primary w-full rounded-md border px-4 py-3 shadow-sm transition-all focus:ring-1 focus:outline-none"
+                  <div className="space-y-1.5">
+                    <Label className="text-foreground block text-sm font-semibold" htmlFor="email">
+                      Email
+                    </Label>
+                    <Input
+                      className="h-11"
                       id="email"
                       name="email"
                       placeholder="jane@empresa.com"
@@ -59,133 +57,148 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                   </div>
                 </div>
 
-                {/* Company Size (Dropdown) */}
-                <div className="space-y-2">
-                  <label
-                    className="text-on-surface font-headline block text-sm font-semibold tracking-wider uppercase"
+                <div className="space-y-1.5">
+                  <Label
+                    className="text-foreground block text-sm font-semibold"
                     htmlFor="company_size">
-                    Tamaño de la empresa
-                  </label>
+                    Tamaño del equipo
+                  </Label>
                   <div className="relative">
                     <select
-                      className="bg-surface-container-lowest border-outline-variant/20 text-on-surface focus:ring-primary focus:border-primary font-body w-full cursor-pointer appearance-none rounded-md border px-4 py-3 shadow-sm transition-all focus:ring-1 focus:outline-none"
+                      className="border-border bg-background text-foreground focus:ring-primary h-11 w-full cursor-pointer appearance-none rounded-md border px-4 py-2 text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
                       id="company_size"
                       name="company_size"
                       defaultValue="">
                       <option disabled value="">
-                        Seleccione una opción
+                        Selecciona una opción
                       </option>
-                      <option value="1-50">1 - 50 empleados</option>
-                      <option value="51-200">51 - 200 empleados</option>
-                      <option value="201-500">201 - 500 empleados</option>
-                      <option value="500+">Más de 500 empleados</option>
+                      <option value="solo">Solo (indie hacker)</option>
+                      <option value="2-5">2 - 5 personas</option>
+                      <option value="6-20">6 - 20 personas</option>
+                      <option value="20+">Más de 20 personas</option>
                     </select>
-                    <div className="text-on-surface-variant pointer-events-none absolute inset-y-0 right-0 flex items-center px-4">
-                      <span
-                        className="material-symbols-outlined text-xl"
-                        style={{ fontVariationSettings: "'FILL' 0" }}>
-                        expand_more
-                      </span>
+                    <div className="text-muted-foreground pointer-events-none absolute inset-y-0 right-0 flex items-center px-4">
+                      <svg
+                        viewBox="0 0 16 16"
+                        width="14"
+                        height="14"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        aria-hidden="true">
+                        <path d="M4 6l4 4 4-4" />
+                      </svg>
                     </div>
                   </div>
                 </div>
 
-                {/* Message */}
-                <div className="space-y-2">
-                  <label
-                    className="text-on-surface font-headline block text-sm font-semibold tracking-wider uppercase"
-                    htmlFor="message">
+                <div className="space-y-1.5">
+                  <Label className="text-foreground block text-sm font-semibold" htmlFor="message">
                     Mensaje
-                  </label>
+                  </Label>
                   <textarea
-                    className="bg-surface-container-lowest border-outline-variant/20 text-on-surface placeholder-outline focus:ring-primary focus:border-primary w-full resize-none rounded-md border px-4 py-3 shadow-sm transition-all focus:ring-1 focus:outline-none"
+                    className="border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-primary w-full resize-none rounded-md border px-4 py-3 text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
                     id="message"
                     name="message"
-                    placeholder="¿En qué podemos ayudarle?"
-                    rows={4}></textarea>
+                    placeholder="Cuéntanos sobre tu proyecto..."
+                    rows={5}
+                  />
                 </div>
 
-                {/* Submit Button */}
-                <div className="pt-2">
-                  <button
-                    className="from-primary to-primary-container text-on-primary focus:ring-primary focus:ring-offset-surface w-full rounded-md bg-linear-to-r px-8 py-3 font-bold transition-opacity hover:opacity-90 focus:ring-2 focus:ring-offset-2 focus:outline-none sm:w-auto"
-                    type="button">
-                    Enviar mensaje
-                  </button>
-                </div>
+                <Button
+                  type="button"
+                  className="h-11 w-full sm:w-auto sm:px-10"
+                  style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
+                  Enviar mensaje →
+                </Button>
               </form>
             </div>
           </div>
 
-          {/* Right Side: Contact Details */}
-          <div className="flex flex-col justify-start space-y-8 lg:col-span-5">
-            <div className="bg-surface-container-low h-full rounded-xl p-8">
-              <h2 className="text-primary font-headline mb-6 text-xl font-bold">
-                Información de Contacto
-              </h2>
-              <div className="space-y-8">
-                {/* Address */}
-                <div className="flex items-start space-x-4">
-                  <div className="bg-surface-container-highest shrink-0 rounded-full p-3">
-                    <span
-                      className="material-symbols-outlined text-primary"
-                      style={{ fontVariationSettings: "'FILL' 1" }}>
-                      location_on
-                    </span>
+          {/* Contact details */}
+          <div className="flex flex-col justify-start space-y-6 lg:col-span-5">
+            <div className="bg-surface-2 rounded-2xl p-8">
+              <h2 className="text-foreground mb-6 text-xl font-bold">Contacto directo</h2>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: 'rgba(217,33,33,0.08)' }}>
+                    <MapPin
+                      className="size-5"
+                      style={{ color: 'var(--color-poppy)' }}
+                      strokeWidth={1.5}
+                    />
                   </div>
                   <div>
-                    <h3 className="text-on-surface font-headline mb-1 text-sm font-bold tracking-wider uppercase">
-                      Sede Central
+                    <h3 className="text-foreground mb-1 text-sm font-bold tracking-wider uppercase">
+                      Ubicación
                     </h3>
-                    <p className="text-on-surface-variant font-body">
-                      Paseo de la Castellana, 42
+                    <p className="text-muted-foreground text-sm">
+                      Madrid, España
                       <br />
-                      28046 Madrid, España
+                      Remote-first 🌍
                     </p>
                   </div>
                 </div>
 
-                {/* Sales Email */}
-                <div className="flex items-start space-x-4">
-                  <div className="bg-surface-container-highest shrink-0 rounded-full p-3">
-                    <span
-                      className="material-symbols-outlined text-primary"
-                      style={{ fontVariationSettings: "'FILL' 1" }}>
-                      mail
-                    </span>
+                <div className="flex items-start gap-4">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: 'rgba(217,33,33,0.08)' }}>
+                    <Mail
+                      className="size-5"
+                      style={{ color: 'var(--color-poppy)' }}
+                      strokeWidth={1.5}
+                    />
                   </div>
                   <div>
-                    <h3 className="text-on-surface font-headline mb-1 text-sm font-bold tracking-wider uppercase">
-                      Ventas
+                    <h3 className="text-foreground mb-1 text-sm font-bold tracking-wider uppercase">
+                      Email
                     </h3>
                     <a
-                      className="text-primary hover:text-primary-container font-mono transition-colors"
-                      href="mailto:sales@axiomledger.com">
-                      sales@axiomledger.com
+                      className="text-muted-foreground hover:text-foreground font-mono text-sm transition-colors"
+                      href="mailto:hola@iroko.dev">
+                      hola@iroko.dev
                     </a>
                   </div>
                 </div>
 
-                {/* Support Phone */}
-                <div className="flex items-start space-x-4">
-                  <div className="bg-surface-container-highest shrink-0 rounded-full p-3">
-                    <span
-                      className="material-symbols-outlined text-primary"
-                      style={{ fontVariationSettings: "'FILL' 1" }}>
-                      support_agent
-                    </span>
+                <div className="flex items-start gap-4">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    style={{ background: 'rgba(217,33,33,0.08)' }}>
+                    <Phone
+                      className="size-5"
+                      style={{ color: 'var(--color-poppy)' }}
+                      strokeWidth={1.5}
+                    />
                   </div>
                   <div>
-                    <h3 className="text-on-surface font-headline mb-1 text-sm font-bold tracking-wider uppercase">
-                      Soporte Técnico
+                    <h3 className="text-foreground mb-1 text-sm font-bold tracking-wider uppercase">
+                      Soporte
                     </h3>
-                    <p className="text-primary font-mono">+34 900 123 456</p>
-                    <p className="text-on-surface-variant font-body mt-1 text-xs">
-                      Lun-Vie, 9:00 - 18:00 CET
+                    <p className="text-muted-foreground text-sm">Discord privado</p>
+                    <p className="text-muted-foreground mt-0.5 font-mono text-xs">
+                      Lun–Vie, 9:00–18:00 CET
                     </p>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-2xl p-6" style={{ background: 'var(--color-ink)' }}>
+              <p
+                className="mb-1 font-mono text-xs font-semibold tracking-wider uppercase"
+                style={{ color: 'var(--color-gold)' }}>
+                Tiempo de respuesta
+              </p>
+              <p className="text-2xl font-bold" style={{ color: 'var(--color-bone)' }}>
+                &lt; 24 horas
+              </p>
+              <p className="mt-1 text-sm" style={{ color: 'rgba(245,236,218,0.5)' }}>
+                En días laborables.
+              </p>
             </div>
           </div>
         </div>
