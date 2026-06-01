@@ -154,13 +154,13 @@
   --popover-foreground: var(--color-ink);
 
   /* ── Sidebar ── */
-  --sidebar: var(--color-gray-50);
+  --sidebar: var(--color-bone);
   --sidebar-foreground: var(--color-ink);
   --sidebar-primary: var(--color-poppy);
   --sidebar-primary-foreground: var(--color-paper);
   --sidebar-accent: var(--color-poppy-wash);
   --sidebar-accent-foreground: var(--color-poppy);
-  --sidebar-border: #e8e9ec;
+  --sidebar-border: rgba(180, 150, 100, 0.2);
   --sidebar-ring: var(--color-poppy);
 
   /* ── Charts ── */

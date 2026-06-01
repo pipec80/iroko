@@ -36,7 +36,7 @@
     "vs_period": "vs período anterior",
     "system_performance": "Actividad del período",
     "system_performance_desc": "Métricas de uso y rendimiento en tiempo real.",
-    "waiting_telemetry": "[ Esperando datos... ]",
+    "waiting_telemetry": "Sin datos disponibles",
     "operations_title": "Operaciones",
     "today_overview": "Vista de hoy",
     "today_desc": "Métricas en tiempo real.",

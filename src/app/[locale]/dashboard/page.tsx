@@ -89,8 +89,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             </span>
           </div>
           <div
-            className="border-border flex flex-1 items-center justify-center rounded-xl border border-dashed"
+            className="border-border flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-dashed"
             style={{ minHeight: 220 }}>
+            <BarChart2 className="text-muted-foreground size-8 opacity-20" strokeWidth={1.25} />
             <span className="text-muted-foreground font-mono text-[10px] tracking-widest uppercase opacity-40">
               {t('waiting_telemetry')}
             </span>
