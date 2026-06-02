@@ -27,12 +27,20 @@
     "profile": "Mi perfil",
     "billing": "Plan y facturación",
     "security": "Seguridad",
-    "sign_out": "Cerrar sesión"
+    "sign_out": "Cerrar sesión",
+    "nav_overview": "Overview",
+    "nav_projects": "Proyectos",
+    "nav_members": "Miembros",
+    "nav_billing": "Billing",
+    "nav_settings": "Ajustes",
+    "new_org": "Nueva organización",
+    "no_org": "Sin organización"
   },
   "Dashboard": {
     "page_title": "Inicio",
     "page_description": "Vista general de tu workspace.",
     "welcome_back": "Hola, {name}.",
+    "welcome_subtitle": "Bienvenido de nuevo a tu workspace.",
     "vs_period": "vs período anterior",
     "system_performance": "Actividad del período",
     "system_performance_desc": "Métricas de uso y rendimiento en tiempo real.",
@@ -286,7 +294,16 @@
     "remove_title": "Eliminar miembro",
     "remove_description": "¿Eliminar a {name} del equipo? Esta acción no se puede deshacer.",
     "confirm_remove": "Eliminar",
-    "removing": "Eliminando..."
+    "removing": "Eliminando...",
+    "members_page_title": "Miembros de la organización",
+    "members_subtitle": "{active} activos · {pending} pendientes",
+    "search_members": "Buscar miembros…",
+    "filter_all_roles": "Todos los roles",
+    "filter_all_statuses": "Todos los estados",
+    "col_member": "Miembro",
+    "col_status": "Estado",
+    "col_last_access": "Último acceso",
+    "status_invited": "Invitado"
   },
   "Errors": {
     "title": "Algo salió mal",

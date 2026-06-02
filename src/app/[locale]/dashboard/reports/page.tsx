@@ -105,10 +105,7 @@ export default async function ReportsPage() {
       {/* Category grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {REPORT_CATEGORIES.map((category) => (
-          <div
-            key={category.id}
-            className="border-border flex flex-col rounded-2xl border p-5"
-            style={{ background: 'var(--surface-1)' }}>
+          <div key={category.id} className="card flex flex-col p-5">
             {/* Category header */}
             <div className="mb-5 flex items-center justify-between">
               <div
@@ -167,9 +164,7 @@ export default async function ReportsPage() {
       </div>
 
       {/* Export banner */}
-      <div
-        className="border-border flex flex-col items-start justify-between gap-4 rounded-2xl border p-6 sm:flex-row sm:items-center"
-        style={{ background: 'var(--surface-1)' }}>
+      <div className="card flex flex-col items-start justify-between gap-4 p-6 sm:flex-row sm:items-center">
         <div className="flex items-center gap-4">
           <div
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"

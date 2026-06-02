@@ -1,6 +1,7 @@
 import React from 'react';
 import { AppTopbar } from './app-topbar';
 import { AppSidebar } from './app-sidebar';
+import { PageTransition } from './page-transition';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -10,7 +11,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
         <AppTopbar />
-        <main className="flex-1 overflow-y-auto p-7 lg:p-10">{children}</main>
+        <main className="flex-1 overflow-y-auto">
+          <div className="page-content">
+            <PageTransition>{children}</PageTransition>
+          </div>
+        </main>
       </div>
     </div>
   );

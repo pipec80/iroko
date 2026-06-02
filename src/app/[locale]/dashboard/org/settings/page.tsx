@@ -69,9 +69,7 @@ function GeneralTab() {
   return (
     <div className="space-y-6">
       {/* Org info */}
-      <div
-        className="border-border space-y-5 rounded-2xl border p-6"
-        style={{ background: 'var(--surface-1)' }}>
+      <div className="card space-y-5 p-6">
         <h2 className="text-foreground text-[14px] font-semibold">
           Información de la organización
         </h2>
@@ -96,9 +94,7 @@ function GeneralTab() {
 
 function SecurityTab() {
   return (
-    <div
-      className="border-border space-y-5 rounded-2xl border p-6"
-      style={{ background: 'var(--surface-1)' }}>
+    <div className="card space-y-5 p-6">
       <h2 className="text-foreground text-[14px] font-semibold">Seguridad del workspace</h2>
       <div className="space-y-4">
         <ToggleRow
@@ -120,9 +116,7 @@ function SecurityTab() {
 
 function IntegrationsTab() {
   return (
-    <div
-      className="border-border space-y-4 rounded-2xl border p-6"
-      style={{ background: 'var(--surface-1)' }}>
+    <div className="card space-y-4 p-6">
       <h2 className="text-foreground text-[14px] font-semibold">Integraciones disponibles</h2>
       <p className="text-muted-foreground text-[12px]">
         Conecta herramientas externas a tu workspace. Las integraciones se configuran aquí.
@@ -139,12 +133,7 @@ function IntegrationsTab() {
 function DangerTab() {
   return (
     <div className="space-y-4">
-      <div
-        className="flex items-center justify-between rounded-2xl border p-6"
-        style={{
-          background: 'color-mix(in srgb, var(--color-poppy) 6%, transparent)',
-          borderColor: 'color-mix(in srgb, var(--color-poppy) 30%, transparent)',
-        }}>
+      <div className="card danger-zone flex items-center justify-between p-6">
         <div className="space-y-1">
           <h3 className="text-[14px] font-semibold" style={{ color: 'var(--color-poppy)' }}>
             Eliminar organización

@@ -14,7 +14,7 @@ import {
 
 export function BillingTab() {
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 grid grid-cols-1 items-start gap-8 duration-500 lg:grid-cols-12">
+    <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
       {/* Left Column: Plans & Payment */}
       <div className="flex flex-col gap-8 lg:col-span-8">
         {/* Section: Plan Comparison */}

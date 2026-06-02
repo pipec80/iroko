@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useActionState, useRef, useState } from 'react';
 
+import { UserPlus } from 'lucide-react';
+
 import {
   Dialog,
   DialogContent,
@@ -35,7 +37,10 @@ export function InviteDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <button className="bg-primary text-primary-foreground shadow-primary/20 rounded-xl px-6 py-3 text-xs font-bold shadow-lg transition-transform hover:scale-105 active:scale-95">
+        <button
+          className="bg-primary flex cursor-pointer items-center gap-2 rounded-[8px] px-[18px] py-[10px] text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ border: 0 }}>
+          <UserPlus style={{ width: 14, height: 14, strokeWidth: 1.5 }} />
           {t('invite_member')}
         </button>
       </DialogTrigger>

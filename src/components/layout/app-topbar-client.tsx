@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import {
   Sheet,
   SheetContent,
@@ -35,12 +34,13 @@ type Props = {
   orgs: OrgAccount[];
 };
 
+// Matches NAV_ITEMS labels in sidebar exactly
 const PAGE_TITLES: Record<string, string> = {
-  '/dashboard': 'Inicio',
+  '/dashboard': 'Overview',
   '/dashboard/projects': 'Proyectos',
-  '/dashboard/members': 'Equipo',
+  '/dashboard/members': 'Miembros',
   '/dashboard/billing': 'Billing',
-  '/dashboard/org/settings': 'Configuración',
+  '/dashboard/org/settings': 'Ajustes',
   '/dashboard/account': 'Mi cuenta',
 };
 
@@ -70,8 +70,13 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
 
   return (
     <header
-      className="border-border sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b px-4 lg:px-6"
-      style={{ background: 'var(--color-bone)' }}>
+      className="border-border sticky top-0 z-20 flex w-full items-center justify-between border-b px-8"
+      style={{
+        height: 60,
+        background: 'rgba(245,236,218,0.85)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+      }}>
       {/* Left: mobile menu + breadcrumb */}
       <div className="flex items-center gap-3">
         <div className="lg:hidden">
@@ -82,7 +87,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                 <span className="sr-only">Abrir navegación</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-64 border-none p-0">
+            <SheetContent side="left" className="w-[248px] border-none p-0">
               <SheetTitle className="sr-only">Menú de navegación</SheetTitle>
               <SheetDescription className="sr-only">
                 Menú lateral para navegación en dispositivos móviles.
@@ -93,12 +98,18 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
         </div>
 
         {/* Breadcrumb */}
-        <div className="hidden items-center gap-2 lg:flex">
-          <span className="text-muted-foreground font-mono text-[11px] font-semibold tracking-widest uppercase">
+        <div className="hidden items-center gap-[10px] lg:flex">
+          <span
+            className="font-mono text-[11px] font-semibold whitespace-nowrap uppercase"
+            style={{ letterSpacing: '0.16em', color: 'var(--text-tertiary)' }}>
             {orgLabel}
           </span>
-          <span className="text-muted-foreground text-sm">/</span>
-          <span className="text-foreground text-[17px] font-bold">{pageTitle}</span>
+          <span style={{ color: 'var(--text-tertiary)', fontSize: 14, opacity: 0.5 }}>/</span>
+          <span
+            className="leading-none font-bold"
+            style={{ fontSize: 18, color: 'var(--text-primary)' }}>
+            {pageTitle}
+          </span>
         </div>
       </div>
 
@@ -107,102 +118,138 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
         {/* Search */}
         <div className="relative hidden md:block">
           <Search
-            className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2"
-            strokeWidth={2}
+            className="absolute top-1/2 left-3 -translate-y-1/2"
+            style={{ width: 14, height: 14, color: 'var(--text-tertiary)', strokeWidth: 1.5 }}
           />
-          <Input
-            type="search"
+          <input
+            type="text"
             placeholder="Buscar..."
-            className="border-border bg-background h-8 w-52 rounded-lg pr-10 pl-8 text-sm shadow-none"
+            className="focus-visible:outline-none"
+            style={{
+              height: 32,
+              width: 240,
+              padding: '0 56px 0 32px',
+              background: 'var(--surface-elevated)',
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              fontSize: 13,
+              outline: 'none',
+              color: 'var(--text-primary)',
+            }}
           />
-          <kbd className="text-muted-foreground border-border bg-muted pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border px-1.5 py-0.5 font-mono text-[9px] font-bold">
-            ⌘K
-          </kbd>
+          <span
+            className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 font-mono"
+            style={{
+              fontSize: 10,
+              color: 'var(--text-tertiary)',
+              background: 'var(--surface-2)',
+              padding: '1px 6px',
+              borderRadius: 3,
+              border: '1px solid var(--border)',
+            }}>
+            ⌘ K
+          </span>
         </div>
 
         {/* Bell */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-foreground relative h-8 w-8 transition-colors">
-          <Bell className="size-4" strokeWidth={1.75} />
+        <button
+          className="relative flex items-center justify-center rounded-[6px] transition-colors"
+          style={{ width: 32, height: 32, background: 'transparent', border: 0 }}>
+          <Bell
+            style={{ width: 17, height: 17, color: 'var(--text-secondary)', strokeWidth: 1.5 }}
+          />
           <span
-            className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full"
-            style={{ background: 'var(--color-poppy)' }}
+            className="absolute rounded-full"
+            style={{
+              top: 6,
+              right: 6,
+              width: 6,
+              height: 6,
+              background: 'var(--color-poppy)',
+              border: '2px solid var(--background)',
+            }}
           />
           <span className="sr-only">Notificaciones</span>
-        </Button>
+        </button>
 
         {/* Avatar dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-lg p-0 focus-visible:ring-0">
-              <div
-                className="flex h-7 w-7 items-center justify-center rounded-md font-mono text-[11px] font-black text-white"
-                style={{ background: 'var(--color-poppy)' }}>
-                {userInitials(user.displayName)}
-              </div>
-            </Button>
+            <button
+              className="avatar-32 cursor-pointer font-mono text-[12px] font-bold"
+              style={{ background: 'var(--color-poppy)', border: 0 }}>
+              {userInitials(user.displayName)}
+            </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="border-border w-60 rounded-xl p-1.5 shadow-xl">
-            <DropdownMenuLabel className="px-3 py-2">
+            className="border-border shadow-lg"
+            style={{ width: 240, borderRadius: 10, padding: 8 }}>
+            <DropdownMenuLabel style={{ padding: '8px 10px 10px' }}>
               <div className="flex flex-col">
-                <span className="text-foreground text-[13px] font-bold">{user.displayName}</span>
-                <span className="text-muted-foreground text-[11px]">{user.email}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                  {user.displayName}
+                </span>
+                <span
+                  className="font-mono"
+                  style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                  {user.email}
+                </span>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuSeparator style={{ margin: '4px -2px' }} />
 
             <Link href="/dashboard/account?tab=profile">
-              <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
-                <User className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
-                <span className="text-[13px] font-medium">Perfil</span>
+              <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+                <User style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Perfil</span>
               </DropdownMenuItem>
             </Link>
 
-            <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
-              <Settings className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
-              <span className="text-[13px] font-medium">Preferencias</span>
+            <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+              <Settings style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Preferencias</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
-              <Keyboard className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
-              <span className="text-[13px] font-medium">Atajos</span>
-              <kbd className="text-muted-foreground ml-auto font-mono text-[10px]">⌘/</kbd>
+            <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+              <Keyboard style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Atajos</span>
+              <span
+                className="font-mono"
+                style={{ fontSize: 10, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}>
+                ⌘/
+              </span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuSeparator style={{ margin: '4px -2px' }} />
 
-            <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
-              <Moon className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
-              <span className="text-[13px] font-medium">Cambiar tema</span>
+            <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+              <Moon style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Cambiar tema</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="group cursor-pointer rounded-lg py-2.5">
-              <Globe className="text-muted-foreground group-hover:text-foreground mr-3 size-4 transition-colors" />
-              <span className="text-[13px] font-medium">Idioma</span>
-              <span className="text-muted-foreground ml-auto font-mono text-[10px] uppercase">
+            <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+              <Globe style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Idioma</span>
+              <span
+                className="font-mono uppercase"
+                style={{ fontSize: 10, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}>
                 {locale}
               </span>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuSeparator style={{ margin: '4px -2px' }} />
 
             <form action={`/${locale}/auth/logout`} method="POST">
               <button
                 type="submit"
-                className="hover:bg-destructive/8 group flex w-full cursor-pointer items-center rounded-lg px-2 py-2.5 text-left transition-colors">
+                className="flex w-full cursor-pointer items-center rounded-[4px] px-[10px] py-[7px] text-left transition-colors hover:bg-red-50"
+                style={{ gap: 10, background: 'transparent', border: 0, fontFamily: 'inherit' }}>
                 <LogOut
-                  className="mr-3 size-4 transition-colors"
-                  style={{ color: 'var(--color-poppy)' }}
-                  strokeWidth={1.75}
+                  style={{ width: 15, height: 15, strokeWidth: 1.25, color: 'var(--color-poppy)' }}
                 />
-                <span className="text-[13px] font-medium" style={{ color: 'var(--color-poppy)' }}>
+                <span
+                  style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--color-poppy)' }}>
                   Cerrar sesión
                 </span>
               </button>

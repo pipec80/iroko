@@ -100,10 +100,14 @@
   --color-gold-soft: #ecc775;
   --color-indigo: #3c4f73;
 
-  /* Iron — warm orange-red (distinct from poppy) */
-  --color-iron: #b8513a;
-  --color-iron-deep: #8a3b2a;
-  --color-iron-soft: #d97a5f;
+  /* Night — alias de ink (dark surface, sidebar brand box) */
+  --color-night: var(--color-ink);
+
+  /* Iron — alias de poppy (nuevo sistema de tokens Iroko) */
+  --color-iron: var(--color-poppy);
+  --color-iron-wash: var(--color-poppy-wash);
+  --color-iron-deep: var(--color-crimson);
+  --color-iron-soft: var(--color-poppy-soft);
 
   /* Neutral ramp */
   --color-gray-50: #fafafa;
@@ -173,7 +177,7 @@
   --popover-foreground: var(--color-ink);
 
   /* ── Sidebar ── */
-  --sidebar: var(--color-gray-100);
+  --sidebar: var(--color-gray-50);
   --sidebar-foreground: var(--color-ink);
   --sidebar-primary: var(--color-poppy);
   --sidebar-primary-foreground: var(--color-paper);
@@ -354,7 +358,7 @@
       'ss02' on;
   }
 
-  /* Mono eyebrow label */
+  /* Mono eyebrow labels */
   .eyebrow {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -363,6 +367,26 @@
     text-transform: uppercase;
     line-height: 1.2;
     color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+  .eyebrow-sm {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    color: var(--text-tertiary);
+    white-space: nowrap;
+  }
+
+  /* Display heading — large bold sans with tight tracking (display-italic is an alias, NOT italic per design spec) */
+  .display,
+  .display-italic {
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+    color: var(--text-primary);
   }
 
   /* Glow rings */
@@ -372,4 +396,279 @@
   .ring-cobalt {
     box-shadow: var(--shadow-cobalt);
   }
+
+  /* ── Page content wrapper — centered max-width container ── */
+  .page-content {
+    padding: 28px 40px 56px;
+    max-width: 1280px;
+    width: 100%;
+    margin: 0 auto;
+    flex: 1;
+  }
+
+  /* ── Col header — 9 px mono uppercase for table/grid column labels ── */
+  .col-header {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+
+  /* ── Avatar initials — 32 × 32 rounded square with initials ── */
+  .avatar-32 {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Chip — pill badge base ── */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  .chip-sm {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+  }
+  .chip-md {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+  }
+
+  /* ── Icon button — transparent square ghost button ── */
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ── Surface card — elevated bordered container ── */
+  .surface-card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  /* ── Toolbar form control (search input / filter select) ── */
+  .toolbar-control {
+    height: 36px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    outline: none;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 12px;
+  }
+
+  /* ── Members table row grid ── */
+  .members-row {
+    display: grid;
+    grid-template-columns: 32px 2fr 1fr 1fr 1fr 32px;
+    gap: 16px;
+    align-items: center;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
+  /* ── Danger zone card — .card.danger-zone wins cascade over plain .card ── */
+  .card.danger-zone {
+    background: rgba(217, 33, 33, 0.12);
+    border-color: rgba(217, 33, 33, 0.4);
+  }
+
+  /* ── Wordmark — brand name treatment ── */
+  .brand-wordmark {
+    font-size: 22px;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-transform: uppercase;
+  }
+
+  /* ── Org switcher button ── */
+  .org-switcher {
+    width: 100%;
+    margin: 14px 0 8px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+
+  /* ── Nav item ── */
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    transition:
+      background-color 150ms,
+      color 150ms,
+      opacity 150ms;
+    position: relative;
+  }
+  .nav-item--active {
+    font-weight: 700;
+    background: rgba(184, 81, 58, 0.1);
+    color: var(--color-iron);
+  }
+  .nav-item--inactive {
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .nav-item--inactive:hover {
+    opacity: 0.8;
+  }
+
+  /* ── Card — elevated container (border-radius 10px per original) ── */
+  .card {
+    background: var(--surface-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .card-pad {
+    padding: 24px;
+  }
+
+  /* ── Buttons ── */
+  .btn {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    cursor: pointer;
+    border: 0;
+    transition: all 200ms ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-iron {
+    background: var(--color-iron);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-iron:hover {
+    background: var(--color-iron-deep);
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong);
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-outline:hover {
+    background: var(--surface-2);
+  }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn-ghost:hover {
+    background: var(--surface-2);
+    color: var(--text-primary);
+  }
+  .btn-night {
+    background: var(--color-night);
+    color: var(--color-bone);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  /* ── Input field ── */
+  .input {
+    height: 36px;
+    width: 100%;
+    padding: 0 12px;
+    background: var(--surface-elevated);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    color: var(--text-primary);
+  }
+  .input:focus {
+    border-color: var(--color-iron);
+    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.16);
+  }
+
+  /* ── Form field label ── */
+  .label-field {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  /* ── Mono — tabular-nums helper ── */
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Page transition — matches Iroko original (opacity + 4px Y slide, 400ms ease-out) */
+@keyframes iroko-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.iroko-fade-in {
+  animation: iroko-fade-in 400ms ease-out;
 }

@@ -27,12 +27,20 @@
     "profile": "My profile",
     "billing": "Plan & billing",
     "security": "Security",
-    "sign_out": "Sign out"
+    "sign_out": "Sign out",
+    "nav_overview": "Overview",
+    "nav_projects": "Projects",
+    "nav_members": "Members",
+    "nav_billing": "Billing",
+    "nav_settings": "Settings",
+    "new_org": "New organization",
+    "no_org": "No organization"
   },
   "Dashboard": {
     "page_title": "Home",
     "page_description": "Your workspace at a glance.",
     "welcome_back": "Hey, {name}.",
+    "welcome_subtitle": "Welcome back to your workspace.",
     "vs_period": "vs last period",
     "system_performance": "Period activity",
     "system_performance_desc": "Usage and performance metrics in real time.",
@@ -286,7 +294,16 @@
     "remove_title": "Remove member",
     "remove_description": "Remove {name} from the team? This action cannot be undone.",
     "confirm_remove": "Remove",
-    "removing": "Removing..."
+    "removing": "Removing...",
+    "members_page_title": "Organization members",
+    "members_subtitle": "{active} active · {pending} pending",
+    "search_members": "Search members…",
+    "filter_all_roles": "All roles",
+    "filter_all_statuses": "All statuses",
+    "col_member": "Member",
+    "col_status": "Status",
+    "col_last_access": "Last access",
+    "status_invited": "Invited"
   },
   "Errors": {
     "title": "Something went wrong",

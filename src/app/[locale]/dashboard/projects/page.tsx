@@ -1,5 +1,5 @@
-import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { FolderTree, Plus, Clock, MoreHorizontal } from 'lucide-react';
+import { setRequestLocale } from 'next-intl/server';
+import { FolderTree, Plus, Users, GitBranch } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { listByAccount } from '@/lib/projects';
 
@@ -10,23 +10,27 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: 'Proyectos — Iroko' };
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  active: 'Activo',
-  paused: 'Pausado',
-  draft: 'Borrador',
+const STATUS_TO_ENV: Record<string, string> = {
+  active: 'prod',
+  paused: 'staging',
+  draft: 'preview',
 };
 
-const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
-  active: { bg: 'rgba(16,185,129,0.1)', text: '#10b981' },
-  paused: { bg: 'rgba(217,164,65,0.15)', text: 'var(--color-gold)' },
-  draft: { bg: 'rgba(100,116,139,0.1)', text: '#64748b' },
+const ENV_BG: Record<string, string> = {
+  prod: 'rgba(111,147,98,0.16)',
+  staging: 'rgba(217,164,65,0.18)',
+  preview: 'rgba(60,79,115,0.16)',
+};
+
+const ENV_FG: Record<string, string> = {
+  prod: '#4f6f44',
+  staging: '#a87a1f',
+  preview: '#2a3a5a',
 };
 
 export default async function ProjectsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
-
-  const t = await getTranslations('Dashboard');
 
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
@@ -49,21 +53,24 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
   return (
     <div className="animate-in fade-in space-y-6 duration-700">
       {/* Header */}
-      <header className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-foreground text-3xl font-extrabold tracking-tight">
-            {t('inventory_title')}
+      <header className="flex items-end justify-between">
+        <div>
+          <span className="eyebrow-sm">Bosque</span>
+          <h1
+            className="display-italic text-foreground mt-1.5"
+            style={{ fontSize: 44, lineHeight: 1 }}>
+            Tus proyectos
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {projects.length} {t('inventory_desc').toLowerCase()}
+          <p className="text-muted-foreground mt-1.5 text-[15px]">
+            Cada proyecto es una rama que crece del mismo tronco Iroko.
           </p>
         </div>
         <button
           type="button"
-          className="flex items-center gap-2 rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 active:opacity-80"
-          style={{ background: 'var(--color-poppy)' }}>
-          <Plus size={15} strokeWidth={2.5} />
-          {t('new_order')}
+          className="btn btn-iron"
+          style={{ padding: '10px 18px', fontSize: 13 }}>
+          <Plus size={14} strokeWidth={1.5} />
+          Nuevo proyecto
         </button>
       </header>
 
@@ -76,15 +83,15 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
         {/* New project CTA card */}
         <button
           type="button"
-          className="border-border group flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed py-12 transition-colors hover:border-transparent"
-          style={{ background: 'var(--surface-1)' }}>
+          className="border-border group flex flex-col items-center justify-center gap-3 rounded-[10px] border border-dashed py-12 transition-colors hover:border-transparent"
+          style={{ background: 'var(--surface-elevated)' }}>
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl transition-colors"
-            style={{ background: 'var(--color-poppy)18' }}>
-            <Plus size={18} style={{ color: 'var(--color-poppy)' }} strokeWidth={2} />
+            className="flex h-[30px] w-[30px] items-center justify-center rounded-md"
+            style={{ background: 'rgba(217,33,33,0.10)' }}>
+            <Plus size={14} style={{ color: 'var(--color-iron)' }} strokeWidth={1.5} />
           </div>
           <span className="text-muted-foreground group-hover:text-foreground text-[13px] font-medium transition-colors">
-            {t('new_order')}
+            Nuevo proyecto
           </span>
         </button>
       </div>
@@ -93,54 +100,51 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
 }
 
 function ProjectCard({ project }: { project: Project }) {
-  const statusStyle = STATUS_STYLES[project.status] ?? STATUS_STYLES.draft;
-  const color = project.color ?? 'var(--color-cobalt)';
+  const env = STATUS_TO_ENV[project.status] ?? 'preview';
+  const color = project.color ?? 'var(--color-iron)';
 
   return (
-    <div
-      className="border-border group flex flex-col gap-4 rounded-2xl border p-5 transition-colors"
-      style={{ background: 'var(--surface-1)' }}>
+    <article className="card flex flex-col gap-3.5 p-[22px]">
       {/* Top row */}
-      <div className="flex items-start justify-between">
-        <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-          style={{ background: color + '18' }}>
-          <FolderTree size={16} style={{ color }} strokeWidth={1.75} />
-        </div>
-        <button
-          type="button"
-          className="text-muted-foreground hover:text-foreground -mr-1 rounded-lg p-1 transition-colors">
-          <MoreHorizontal size={16} strokeWidth={1.75} />
-        </button>
+      <div className="flex items-center gap-2.5">
+        <span
+          className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md text-white"
+          style={{ background: color }}>
+          <FolderTree size={14} strokeWidth={1.5} />
+        </span>
+        <span className="text-foreground font-mono text-[13px] font-semibold">{project.name}</span>
+        <span
+          className="ml-auto rounded font-mono text-[9px] font-bold tracking-[0.12em] uppercase"
+          style={{
+            padding: '2px 8px',
+            background: ENV_BG[env] ?? 'var(--surface-2)',
+            color: ENV_FG[env] ?? 'var(--text-tertiary)',
+          }}>
+          {env}
+        </span>
       </div>
 
-      {/* Name + description */}
-      <div className="space-y-1">
-        <h3 className="text-foreground text-[14px] font-semibold">{project.name}</h3>
-        <p className="text-muted-foreground line-clamp-2 text-[12px] leading-relaxed">
-          {project.description}
-        </p>
-      </div>
+      {/* Description */}
+      <p className="text-muted-foreground text-[13px] leading-relaxed">{project.description}</p>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-1">
-        <span
-          className="rounded-full px-2 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase"
-          style={{ background: statusStyle.bg, color: statusStyle.text }}>
-          {STATUS_LABELS[project.status]}
+      <div className="border-border flex items-center gap-3 border-t pt-3">
+        <span className="text-muted-foreground flex items-center gap-1 font-mono text-[11px]">
+          <Users size={11} strokeWidth={1.5} />4
         </span>
-        <div className="text-muted-foreground flex items-center gap-3">
-          <span className="flex items-center gap-1 font-mono text-[10px]">
-            <Clock size={10} strokeWidth={2} />
-            {project.updated_at ?
-              new Date(project.updated_at).toLocaleDateString('es', {
-                day: 'numeric',
-                month: 'short',
-              })
-            : '—'}
-          </span>
-        </div>
+        <span className="text-muted-foreground flex items-center gap-1 font-mono text-[11px]">
+          <GitBranch size={11} strokeWidth={1.5} />
+          main
+        </span>
+        <span className="text-muted-foreground ml-auto font-mono text-[11px]">
+          {project.updated_at ?
+            new Date(project.updated_at).toLocaleDateString('es', {
+              day: 'numeric',
+              month: 'short',
+            })
+          : '—'}
+        </span>
       </div>
-    </div>
+    </article>
   );
 }
