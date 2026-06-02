@@ -38,7 +38,8 @@ function getMemberName(member: TeamMember): string {
   const given = member.given_name?.trim();
   const family = member.family_name?.trim();
   if (given && family && given !== family) return `${given} ${family}`;
-  if (given ?? family) return (given ?? family)!;
+  const name = given ?? family;
+  if (name) return name;
   return member.display_name ?? member.email;
 }
 
@@ -193,6 +194,7 @@ export function MembersTable({ members }: Props) {
             const tone = memberTone(member.role, idx);
             const isActive = member.status === 'active';
             const roleKey = ROLE_LABELS[member.role] ?? 'role_member';
+            const avatarUrl = storageUrl(member.avatar_url);
 
             return (
               <div
@@ -200,10 +202,10 @@ export function MembersTable({ members }: Props) {
                 className="members-row py-[14px]"
                 style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
                 {/* Avatar */}
-                {storageUrl(member.avatar_url) ?
+                {avatarUrl ?
                   <div className="relative size-8 overflow-hidden rounded-[6px]">
                     <Image
-                      src={storageUrl(member.avatar_url)!}
+                      src={avatarUrl}
                       alt={displayName}
                       fill
                       unoptimized

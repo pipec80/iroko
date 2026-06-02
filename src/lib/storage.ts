@@ -11,8 +11,3 @@ export function storageUrl(path: string | null | undefined): string | null {
   if (path.startsWith('http')) return path; // URL legacy completa — compatibilidad hacia atrás
   return `${SUPABASE_URL}/storage/v1/object/public/${path}`;
 }
-
-/** Devuelve el bucket del path: "avatars/abc/avatar.jpg" → "avatars" */
-export function storageBucket(path: string): string {
-  return path.split('/')[0] ?? '';
-}
