@@ -1,23 +1,85 @@
 <!doctype html>
-<html>
-  <body style="font-family: system-ui, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px">
-    <h2>Restablecer contraseña</h2>
-    <p>Haz clic para definir una nueva contraseña:</p>
-    <p>
-      <a
-        href="{{ .SiteURL }}/es/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/es/reset-password"
-        style="
-          display: inline-block;
-          background: #1f2937;
-          color: #fff;
-          padding: 12px 20px;
-          border-radius: 8px;
-          text-decoration: none;
-          font-weight: bold;
-        "
-        >Restablecer contraseña</a
-      >
-    </p>
-    <p style="color: #555; font-size: 13px">Si no solicitaste este cambio, ignora este correo.</p>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Restablecer contraseña — IROKO</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f5ecda;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f5ecda;">
+      <tr>
+        <td align="center" style="padding:48px 16px 40px;">
+
+          <!-- Card -->
+          <table cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e8e9ec;">
+
+            <!-- Header -->
+            <tr>
+              <td align="center" style="padding:36px 40px 28px;border-bottom:1px solid #e8e9ec;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="44" height="44" style="display:block;margin:0 auto 14px;">
+                  <rect width="64" height="64" rx="8" fill="#0e1117"/>
+                  <circle cx="32" cy="32" r="20" fill="none" stroke="#d92121" stroke-width="3.5"/>
+                  <circle cx="32" cy="32" r="7" fill="#0047ab"/>
+                  <line x1="32" y1="8" x2="32" y2="14" stroke="#d92121" stroke-width="2" stroke-linecap="square"/>
+                  <line x1="32" y1="50" x2="32" y2="56" stroke="#d92121" stroke-width="2" stroke-linecap="square"/>
+                </svg>
+                <div style="font-size:20px;font-weight:800;letter-spacing:4px;line-height:1;">
+                  <span style="color:#0e1117;">IR</span><span style="color:#d92121;">O</span><span style="color:#0e1117;">K</span><span style="color:#0047ab;">O</span>
+                </div>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:40px 40px 8px;">
+                <h1 style="margin:0 0 14px;font-size:22px;font-weight:700;color:#0e1117;line-height:1.3;">Restablecer contraseña</h1>
+                <p style="margin:0 0 32px;font-size:15px;color:#52525b;line-height:1.65;">
+                  Recibimos una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón para definir una nueva.
+                </p>
+
+                <!-- CTA -->
+                <table cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:32px;">
+                  <tr>
+                    <td style="border-radius:8px;background:#d92121;">
+                      <a href="{{ .SiteURL }}/es/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/es/reset-password"
+                         style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.02em;">
+                        Restablecer contraseña
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Ornament -->
+            <tr>
+              <td align="center" style="padding:0 40px 4px;">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 24" width="120" height="24">
+                  <line x1="0" y1="12" x2="42" y2="12" stroke="#d3d3d3" stroke-width="1"/>
+                  <line x1="78" y1="12" x2="120" y2="12" stroke="#d3d3d3" stroke-width="1"/>
+                  <circle cx="52" cy="12" r="3" fill="#d92121"/>
+                  <circle cx="60" cy="12" r="1.6" fill="#0e1117"/>
+                  <circle cx="68" cy="12" r="3" fill="#0047ab"/>
+                </svg>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td align="center" style="padding:16px 40px 36px;">
+                <p style="margin:0;font-size:12px;color:#a8a9ad;line-height:1.6;">
+                  Si no solicitaste este cambio, puedes ignorar este correo. Tu contraseña no será modificada.
+                </p>
+              </td>
+            </tr>
+
+          </table>
+
+          <!-- Tagline -->
+          <p style="margin:20px 0 0;font-size:11px;color:#8b6645;letter-spacing:0.1em;text-transform:uppercase;">Saas · Template · Engine</p>
+
+        </td>
+      </tr>
+    </table>
   </body>
 </html>
