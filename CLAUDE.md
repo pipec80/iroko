@@ -31,6 +31,7 @@ pnpm test src/path/to/test.spec.ts
 # Supabase local
 pnpm supa:start     # Start local Supabase (requires Docker)
 pnpm supa:stop      # Stop local Supabase
+pnpm supa:fix-ports # Fix Studio/API ports lost after Windows sleep (Docker Desktop bug)
 pnpm supa:gen:types # Regenerate src/types/database.ts from local schema
 ```
 
