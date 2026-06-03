@@ -1,8 +1,8 @@
 'use client';
-import React, { useActionState, useTransition } from 'react';
+import React, { useActionState, useState, useTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
-import { Lock, Mail } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,24 @@ export default function SignupPage() {
   const t = useTranslations('Auth');
   const [state, formAction, pending] = useActionState(signUpAction, initialState);
   const [oauthPending, startOAuth] = useTransition();
+  const [showPassword, setShowPassword] = useState(false);
+  const [prevState, setPrevState] = useState(state);
+  const [dirtyFields, setDirtyFields] = useState<Set<string>>(new Set());
+
+  // When the server returns a new state, reset dirty tracking (derived-state pattern)
+  if (prevState !== state) {
+    setPrevState(state);
+    setDirtyFields(new Set());
+  }
+
+  const markDirty = (field: string) => setDirtyFields((prev) => new Set(prev).add(field));
+
+  const fieldError = (field: keyof NonNullable<typeof state.fieldErrors>) => {
+    if (dirtyFields.has(field)) return null;
+    const errors = state.fieldErrors?.[field];
+    if (!errors?.length) return null;
+    return t(`errors.${errors[0]}` as 'errors.generic', { default: errors[0] });
+  };
 
   const error =
     state.error ?
@@ -40,12 +58,17 @@ export default function SignupPage() {
             <Label className="text-foreground block text-sm font-semibold" htmlFor="first_name">
               {t('first_name')}
             </Label>
-            <Input className="h-11" id="first_name" name="first_name" placeholder="John" required />
-            {state.fieldErrors?.first_name && (
+            <Input
+              className="h-11"
+              id="first_name"
+              name="first_name"
+              placeholder="John"
+              required
+              onChange={() => markDirty('first_name')}
+            />
+            {fieldError('first_name') && (
               <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
-                {t(`errors.${state.fieldErrors.first_name[0]}` as 'errors.generic', {
-                  default: state.fieldErrors.first_name[0],
-                })}
+                {fieldError('first_name')}
               </p>
             )}
           </div>
@@ -53,12 +76,17 @@ export default function SignupPage() {
             <Label className="text-foreground block text-sm font-semibold" htmlFor="last_name">
               {t('last_name')}
             </Label>
-            <Input className="h-11" id="last_name" name="last_name" placeholder="Doe" required />
-            {state.fieldErrors?.last_name && (
+            <Input
+              className="h-11"
+              id="last_name"
+              name="last_name"
+              placeholder="Doe"
+              required
+              onChange={() => markDirty('last_name')}
+            />
+            {fieldError('last_name') && (
               <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
-                {t(`errors.${state.fieldErrors.last_name[0]}` as 'errors.generic', {
-                  default: state.fieldErrors.last_name[0],
-                })}
+                {fieldError('last_name')}
               </p>
             )}
           </div>
@@ -80,13 +108,12 @@ export default function SignupPage() {
               placeholder="name@company.com"
               required
               type="email"
+              onChange={() => markDirty('email')}
             />
           </div>
-          {state.fieldErrors?.email && (
+          {fieldError('email') && (
             <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
-              {t(`errors.${state.fieldErrors.email[0]}` as 'errors.generic', {
-                default: state.fieldErrors.email[0],
-              })}
+              {fieldError('email')}
             </p>
           )}
         </div>
@@ -101,20 +128,28 @@ export default function SignupPage() {
               strokeWidth={1.5}
             />
             <Input
-              className="h-11 pl-10"
+              className="h-11 pr-10 pl-10"
               id="password"
               name="password"
               placeholder="••••••••"
               required
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               minLength={8}
+              onChange={() => markDirty('password')}
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? t('hide_password') : t('show_password')}
+              className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors">
+              {showPassword ?
+                <EyeOff className="size-[15px]" strokeWidth={1.5} />
+              : <Eye className="size-[15px]" strokeWidth={1.5} />}
+            </button>
           </div>
-          {state.fieldErrors?.password && (
+          {fieldError('password') && (
             <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
-              {t(`errors.${state.fieldErrors.password[0]}` as 'errors.generic', {
-                default: state.fieldErrors.password[0],
-              })}
+              {fieldError('password')}
             </p>
           )}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
+import { LogOut } from 'lucide-react';
 
 import {
   revokeAllOtherSessionsAction,
@@ -89,7 +90,7 @@ export function SessionsTabClient({ sessions, locale, labels }: Props) {
           size="sm"
           onClick={handleRevokeAllOthers}
           disabled={isPending || localSessions.length <= 1}>
-          <span className="material-symbols-outlined mr-2 text-[16px]">logout</span>
+          <LogOut className="size-[14px]" strokeWidth={1.5} />
           {labels.revoke_all_others}
         </Button>
       </CardHeader>

@@ -91,6 +91,8 @@
     "last_name": "Last name",
     "email": "Email address",
     "password": "Password",
+    "show_password": "Show password",
+    "hide_password": "Hide password",
     "forgot_password": "Forgot password?",
     "magic_link": "Send magic link",
     "or_continue_with": "Or continue with",
@@ -270,7 +272,8 @@
       "no_file": "Select a file first.",
       "no_email_on_account": "This account has no email associated.",
       "invalid_url": "Enter a valid URL (must start with https://).",
-      "generic": "Something went wrong. Try again."
+      "generic": "Something went wrong. Try again.",
+      "PGRST203": "Database conflict. Reload the page and try again."
     }
   },
   "Team": {

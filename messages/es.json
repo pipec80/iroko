@@ -91,6 +91,8 @@
     "last_name": "Apellido",
     "email": "Correo electrónico",
     "password": "Contraseña",
+    "show_password": "Mostrar contraseña",
+    "hide_password": "Ocultar contraseña",
     "forgot_password": "¿Olvidaste tu contraseña?",
     "magic_link": "Enviar enlace mágico",
     "or_continue_with": "O continúa con",
@@ -270,7 +272,8 @@
       "no_file": "Debes seleccionar un archivo.",
       "no_email_on_account": "Esta cuenta no tiene correo asociado.",
       "invalid_url": "Ingresa una URL válida (debe comenzar con https://).",
-      "generic": "Ocurrió un error. Intenta nuevamente."
+      "generic": "Ocurrió un error. Intenta nuevamente.",
+      "PGRST203": "Conflicto en la base de datos. Recarga y vuelve a intentarlo."
     }
   },
   "Team": {
