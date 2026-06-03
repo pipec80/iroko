@@ -203,14 +203,75 @@ export function ProfileTab({ profile, email, role }: Props) {
 
             <div className="space-y-1.5">
               <Label htmlFor="timezone">{t('profile.timezone')}</Label>
-              <Input
+              <select
                 id="timezone"
                 name="timezone"
                 defaultValue={profile.timezone ?? 'America/Santiago'}
-                placeholder="America/Santiago"
-                required
-                aria-invalid={!!profileState.fieldErrors?.timezone}
-              />
+                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm transition-all outline-none focus-visible:ring-4">
+                <optgroup label="América del Sur">
+                  <option value="America/Santiago">Santiago (Chile)</option>
+                  <option value="America/Argentina/Buenos_Aires">Buenos Aires (Argentina)</option>
+                  <option value="America/Sao_Paulo">São Paulo (Brasil)</option>
+                  <option value="America/Lima">Lima (Perú)</option>
+                  <option value="America/Bogota">Bogotá (Colombia)</option>
+                  <option value="America/Caracas">Caracas (Venezuela)</option>
+                  <option value="America/La_Paz">La Paz (Bolivia)</option>
+                  <option value="America/Asuncion">Asunción (Paraguay)</option>
+                  <option value="America/Montevideo">Montevideo (Uruguay)</option>
+                  <option value="America/Guayaquil">Quito / Guayaquil (Ecuador)</option>
+                </optgroup>
+                <optgroup label="América Central y Caribe">
+                  <option value="America/Mexico_City">Ciudad de México (México)</option>
+                  <option value="America/Monterrey">Monterrey (México)</option>
+                  <option value="America/Costa_Rica">San José (Costa Rica)</option>
+                  <option value="America/Guatemala">Guatemala</option>
+                  <option value="America/Panama">Panamá</option>
+                  <option value="America/Havana">La Habana (Cuba)</option>
+                  <option value="America/Santo_Domingo">Santo Domingo (R. Dominicana)</option>
+                </optgroup>
+                <optgroup label="América del Norte">
+                  <option value="America/New_York">Nueva York (ET)</option>
+                  <option value="America/Chicago">Chicago (CT)</option>
+                  <option value="America/Denver">Denver (MT)</option>
+                  <option value="America/Los_Angeles">Los Ángeles (PT)</option>
+                  <option value="America/Phoenix">Phoenix (MST sin DST)</option>
+                  <option value="America/Anchorage">Anchorage (Alaska)</option>
+                  <option value="Pacific/Honolulu">Honolulu (Hawaii)</option>
+                  <option value="America/Toronto">Toronto (Canadá ET)</option>
+                  <option value="America/Vancouver">Vancouver (Canadá PT)</option>
+                </optgroup>
+                <optgroup label="Europa">
+                  <option value="Europe/London">Londres (GMT/BST)</option>
+                  <option value="Europe/Madrid">Madrid (CET)</option>
+                  <option value="Europe/Paris">París (CET)</option>
+                  <option value="Europe/Berlin">Berlín (CET)</option>
+                  <option value="Europe/Rome">Roma (CET)</option>
+                  <option value="Europe/Amsterdam">Ámsterdam (CET)</option>
+                  <option value="Europe/Lisbon">Lisboa (WET)</option>
+                  <option value="Europe/Zurich">Zúrich (CET)</option>
+                  <option value="Europe/Kiev">Kiev (EET)</option>
+                  <option value="Europe/Moscow">Moscú (MSK)</option>
+                </optgroup>
+                <optgroup label="Asia y Pacífico">
+                  <option value="Asia/Dubai">Dubái (GST)</option>
+                  <option value="Asia/Kolkata">Nueva Delhi (IST)</option>
+                  <option value="Asia/Singapore">Singapur (SGT)</option>
+                  <option value="Asia/Shanghai">Shanghai (CST)</option>
+                  <option value="Asia/Tokyo">Tokio (JST)</option>
+                  <option value="Asia/Seoul">Seúl (KST)</option>
+                  <option value="Australia/Sydney">Sídney (AEDT)</option>
+                  <option value="Pacific/Auckland">Auckland (NZDT)</option>
+                </optgroup>
+                <optgroup label="África">
+                  <option value="Africa/Cairo">El Cairo (EET)</option>
+                  <option value="Africa/Lagos">Lagos (WAT)</option>
+                  <option value="Africa/Nairobi">Nairobi (EAT)</option>
+                  <option value="Africa/Johannesburg">Johannesburgo (SAST)</option>
+                </optgroup>
+                <optgroup label="UTC">
+                  <option value="UTC">UTC</option>
+                </optgroup>
+              </select>
             </div>
 
             {/* Phone */}
