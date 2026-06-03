@@ -657,6 +657,67 @@ export type Database = {
         }
         Relationships: []
       }
+      documents: {
+        Row: {
+          account_id: string
+          content: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          id: string
+          name: string
+          project_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          project_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          project_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           account_id: string
@@ -714,6 +775,9 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
+          birth_date: string | null
+          company: string | null
           created_at: string | null
           deleted_at: string | null
           display_name: string | null
@@ -726,9 +790,13 @@ export type Database = {
           phone_number: string | null
           timezone: string | null
           updated_at: string | null
+          website_url: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
+          birth_date?: string | null
+          company?: string | null
           created_at?: string | null
           deleted_at?: string | null
           display_name?: string | null
@@ -741,9 +809,13 @@ export type Database = {
           phone_number?: string | null
           timezone?: string | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
+          birth_date?: string | null
+          company?: string | null
           created_at?: string | null
           deleted_at?: string | null
           display_name?: string | null
@@ -756,6 +828,7 @@ export type Database = {
           phone_number?: string | null
           timezone?: string | null
           updated_at?: string | null
+          website_url?: string | null
         }
         Relationships: []
       }
@@ -772,6 +845,7 @@ export type Database = {
           name: string
           slug: string
           status: Database["public"]["Enums"]["project_status"]
+          type: Database["public"]["Enums"]["project_type"]
           updated_at: string | null
         }
         Insert: {
@@ -786,6 +860,7 @@ export type Database = {
           name: string
           slug: string
           status?: Database["public"]["Enums"]["project_status"]
+          type?: Database["public"]["Enums"]["project_type"]
           updated_at?: string | null
         }
         Update: {
@@ -800,6 +875,7 @@ export type Database = {
           name?: string
           slug?: string
           status?: Database["public"]["Enums"]["project_status"]
+          type?: Database["public"]["Enums"]["project_type"]
           updated_at?: string | null
         }
         Relationships: [
@@ -854,6 +930,7 @@ export type Database = {
           trial_days: number
         }[]
       }
+      get_my_account_id: { Args: never; Returns: string }
       get_my_accounts: {
         Args: never
         Returns: {
@@ -905,43 +982,88 @@ export type Database = {
       }
       request_account_deletion: { Args: never; Returns: undefined }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
-      update_my_profile: {
-        Args: {
-          p_avatar_url?: string
-          p_family_name?: string
-          p_given_name?: string
-          p_locale?: string
-          p_phone_number?: string
-          p_timezone?: string
-        }
-        Returns: {
-          avatar_url: string | null
-          created_at: string | null
-          deleted_at: string | null
-          display_name: string | null
-          family_name: string | null
-          given_name: string | null
-          id: string
-          locale: string | null
-          metadata: Json | null
-          onboarding_completed: boolean | null
-          phone_number: string | null
-          timezone: string | null
-          updated_at: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "profiles"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
+      update_my_profile:
+        | {
+            Args: {
+              p_avatar_url?: string
+              p_family_name?: string
+              p_given_name?: string
+              p_locale?: string
+              p_phone_number?: string
+              p_timezone?: string
+            }
+            Returns: {
+              avatar_url: string | null
+              bio: string | null
+              birth_date: string | null
+              company: string | null
+              created_at: string | null
+              deleted_at: string | null
+              display_name: string | null
+              family_name: string | null
+              given_name: string | null
+              id: string
+              locale: string | null
+              metadata: Json | null
+              onboarding_completed: boolean | null
+              phone_number: string | null
+              timezone: string | null
+              updated_at: string | null
+              website_url: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "profiles"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
+        | {
+            Args: {
+              p_avatar_url?: string
+              p_bio?: string
+              p_birth_date?: string
+              p_company?: string
+              p_family_name?: string
+              p_given_name?: string
+              p_locale?: string
+              p_phone_number?: string
+              p_timezone?: string
+              p_website_url?: string
+            }
+            Returns: {
+              avatar_url: string | null
+              bio: string | null
+              birth_date: string | null
+              company: string | null
+              created_at: string | null
+              deleted_at: string | null
+              display_name: string | null
+              family_name: string | null
+              given_name: string | null
+              id: string
+              locale: string | null
+              metadata: Json | null
+              onboarding_completed: boolean | null
+              phone_number: string | null
+              timezone: string | null
+              updated_at: string | null
+              website_url: string | null
+            }
+            SetofOptions: {
+              from: "*"
+              to: "profiles"
+              isOneToOne: true
+              isSetofReturn: false
+            }
+          }
     }
     Enums: {
       account_type: "personal" | "team"
       invitation_status: "pending" | "accepted" | "revoked" | "expired"
       membership_role: "owner" | "admin" | "member" | "viewer"
       project_status: "active" | "paused" | "draft"
+      project_type: "docs" | "automation" | "agent"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1105,6 +1227,7 @@ export const Constants = {
       invitation_status: ["pending", "accepted", "revoked", "expired"],
       membership_role: ["owner", "admin", "member", "viewer"],
       project_status: ["active", "paused", "draft"],
+      project_type: ["docs", "automation", "agent"],
     },
   },
 } as const

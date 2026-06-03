@@ -158,6 +158,14 @@
       "timezone": "Timezone",
       "phone_number": "Phone",
       "phone_hint": "International E.164 format, e.g. +15555550100",
+      "phone_country": "Country code",
+      "birth_date": "Date of birth",
+      "bio": "Bio",
+      "bio_hint": "Tell us something about yourself (max. 500 characters).",
+      "website_url": "Website",
+      "website_placeholder": "https://yoursite.com",
+      "company": "Company or organization",
+      "company_placeholder": "Acme Corp",
       "email_heading": "Email address",
       "email_hint": "We'll send a confirmation to your current and new email.",
       "change_email": "Change email",
@@ -261,6 +269,7 @@
       "upload_failed": "Could not upload the image.",
       "no_file": "Select a file first.",
       "no_email_on_account": "This account has no email associated.",
+      "invalid_url": "Enter a valid URL (must start with https://).",
       "generic": "Something went wrong. Try again."
     }
   },

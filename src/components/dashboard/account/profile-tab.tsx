@@ -15,7 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { storageUrl } from '@/lib/storage';
+import { PhoneCountryInput } from './phone-country-input';
 import type { ProfileSnapshot } from './account-tabs';
 
 const initialState: SettingsActionState = {};
@@ -32,6 +34,14 @@ function translateError(
 ) {
   if (!code) return null;
   return t(`errors.${code}` as 'errors.generic', { default: t('errors.generic') });
+}
+
+function FieldError({ message }: { message: string }) {
+  return (
+    <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+      {message}
+    </p>
+  );
 }
 
 export function ProfileTab({ profile, email, role }: Props) {
@@ -137,6 +147,7 @@ export function ProfileTab({ profile, email, role }: Props) {
             noValidate
             className="grid gap-5 md:grid-cols-2"
             onChange={() => setIsProfileDirty(true)}>
+            {/* Name */}
             <div className="space-y-1.5">
               <Label htmlFor="given_name">{t('profile.given_name')}</Label>
               <Input
@@ -148,13 +159,15 @@ export function ProfileTab({ profile, email, role }: Props) {
                 aria-invalid={!!profileState.fieldErrors?.given_name}
               />
               {profileState.fieldErrors?.given_name && (
-                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
-                  {t(`errors.${profileState.fieldErrors.given_name[0]}` as 'errors.generic', {
-                    default: profileState.fieldErrors.given_name[0],
-                  })}
-                </p>
+                <FieldError
+                  message={t(
+                    `errors.${profileState.fieldErrors.given_name[0]}` as 'errors.generic',
+                    { default: profileState.fieldErrors.given_name[0] },
+                  )}
+                />
               )}
             </div>
+
             <div className="space-y-1.5">
               <Label htmlFor="family_name">{t('profile.family_name')}</Label>
               <Input
@@ -166,14 +179,16 @@ export function ProfileTab({ profile, email, role }: Props) {
                 aria-invalid={!!profileState.fieldErrors?.family_name}
               />
               {profileState.fieldErrors?.family_name && (
-                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
-                  {t(`errors.${profileState.fieldErrors.family_name[0]}` as 'errors.generic', {
-                    default: profileState.fieldErrors.family_name[0],
-                  })}
-                </p>
+                <FieldError
+                  message={t(
+                    `errors.${profileState.fieldErrors.family_name[0]}` as 'errors.generic',
+                    { default: profileState.fieldErrors.family_name[0] },
+                  )}
+                />
               )}
             </div>
 
+            {/* Locale + Timezone */}
             <div className="space-y-1.5">
               <Label htmlFor="locale">{t('profile.locale')}</Label>
               <select
@@ -198,26 +213,97 @@ export function ProfileTab({ profile, email, role }: Props) {
               />
             </div>
 
+            {/* Phone */}
             <div className="space-y-1.5 md:col-span-2">
-              <Label htmlFor="phone_number">{t('profile.phone_number')}</Label>
-              <Input
-                id="phone_number"
+              <Label>{t('profile.phone_number')}</Label>
+              <PhoneCountryInput
                 name="phone_number"
-                defaultValue={profile.phone_number ?? ''}
-                placeholder="+56912345678"
-                type="tel"
+                defaultValue={profile.phone_number}
                 aria-invalid={!!profileState.fieldErrors?.phone_number}
               />
-              <p className="text-muted-foreground text-xs">{t('profile.phone_hint')}</p>
-              {profileState.fieldErrors?.phone_number && (
-                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
-                  {t(`errors.${profileState.fieldErrors.phone_number[0]}` as 'errors.generic', {
-                    default: t('errors.invalid_phone'),
-                  })}
-                </p>
+              {profileState.fieldErrors?.phone_number ?
+                <FieldError message={t('errors.invalid_phone')} />
+              : <p className="text-muted-foreground text-xs">{t('profile.phone_hint')}</p>}
+            </div>
+
+            {/* Date of birth + Company */}
+            <div className="space-y-1.5">
+              <Label htmlFor="birth_date">{t('profile.birth_date')}</Label>
+              <Input
+                id="birth_date"
+                name="birth_date"
+                type="date"
+                defaultValue={profile.birth_date ?? ''}
+                aria-invalid={!!profileState.fieldErrors?.birth_date}
+              />
+              {profileState.fieldErrors?.birth_date && (
+                <FieldError
+                  message={t(
+                    `errors.${profileState.fieldErrors.birth_date[0]}` as 'errors.generic',
+                    { default: profileState.fieldErrors.birth_date[0] },
+                  )}
+                />
               )}
             </div>
 
+            <div className="space-y-1.5">
+              <Label htmlFor="company">{t('profile.company')}</Label>
+              <Input
+                id="company"
+                name="company"
+                defaultValue={profile.company ?? ''}
+                placeholder={t('profile.company_placeholder')}
+                maxLength={100}
+                aria-invalid={!!profileState.fieldErrors?.company}
+              />
+              {profileState.fieldErrors?.company && (
+                <FieldError
+                  message={t(`errors.${profileState.fieldErrors.company[0]}` as 'errors.generic', {
+                    default: profileState.fieldErrors.company[0],
+                  })}
+                />
+              )}
+            </div>
+
+            {/* Website */}
+            <div className="space-y-1.5 md:col-span-2">
+              <Label htmlFor="website_url">{t('profile.website_url')}</Label>
+              <Input
+                id="website_url"
+                name="website_url"
+                type="url"
+                defaultValue={profile.website_url ?? ''}
+                placeholder={t('profile.website_placeholder')}
+                maxLength={255}
+                aria-invalid={!!profileState.fieldErrors?.website_url}
+              />
+              {profileState.fieldErrors?.website_url && (
+                <FieldError message={t('errors.invalid_url')} />
+              )}
+            </div>
+
+            {/* Bio */}
+            <div className="space-y-1.5 md:col-span-2">
+              <Label htmlFor="bio">{t('profile.bio')}</Label>
+              <Textarea
+                id="bio"
+                name="bio"
+                defaultValue={profile.bio ?? ''}
+                placeholder={t('profile.bio_hint')}
+                rows={3}
+                maxLength={500}
+                aria-invalid={!!profileState.fieldErrors?.bio}
+              />
+              {profileState.fieldErrors?.bio ?
+                <FieldError
+                  message={t(`errors.${profileState.fieldErrors.bio[0]}` as 'errors.generic', {
+                    default: profileState.fieldErrors.bio[0],
+                  })}
+                />
+              : <p className="text-muted-foreground text-xs">{t('profile.bio_hint')}</p>}
+            </div>
+
+            {/* Submit */}
             <div className="md:col-span-2">
               {profileError && (
                 <p role="alert" className="text-error mb-3 text-sm">
@@ -267,11 +353,11 @@ export function ProfileTab({ profile, email, role }: Props) {
                 aria-invalid={!!emailState.fieldErrors?.email}
               />
               {emailState.fieldErrors?.email && (
-                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
-                  {t(`errors.${emailState.fieldErrors.email[0]}` as 'errors.generic', {
+                <FieldError
+                  message={t(`errors.${emailState.fieldErrors.email[0]}` as 'errors.generic', {
                     default: emailState.fieldErrors.email[0],
                   })}
-                </p>
+                />
               )}
             </div>
             <Button type="submit" disabled={emailPending || !isEmailDirty}>

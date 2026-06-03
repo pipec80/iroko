@@ -158,6 +158,14 @@
       "timezone": "Zona horaria",
       "phone_number": "Teléfono",
       "phone_hint": "Formato internacional E.164, ej. +56912345678",
+      "phone_country": "Código de país",
+      "birth_date": "Fecha de nacimiento",
+      "bio": "Biografía",
+      "bio_hint": "Cuéntanos algo sobre ti (máx. 500 caracteres).",
+      "website_url": "Sitio web",
+      "website_placeholder": "https://tusitio.com",
+      "company": "Empresa u organización",
+      "company_placeholder": "Acme Corp",
       "email_heading": "Correo electrónico",
       "email_hint": "Te enviaremos un enlace de confirmación al correo actual y al nuevo.",
       "change_email": "Cambiar correo",
@@ -261,6 +269,7 @@
       "upload_failed": "No se pudo subir la imagen.",
       "no_file": "Debes seleccionar un archivo.",
       "no_email_on_account": "Esta cuenta no tiene correo asociado.",
+      "invalid_url": "Ingresa una URL válida (debe comenzar con https://).",
       "generic": "Ocurrió un error. Intenta nuevamente."
     }
   },
