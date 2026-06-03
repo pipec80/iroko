@@ -21,7 +21,7 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
       await supabase
         .from('profiles')
         .select(
-          'id, given_name, family_name, display_name, avatar_url, locale, timezone, phone_number',
+          'id, given_name, family_name, display_name, avatar_url, locale, timezone, phone_number, birth_date, bio, website_url, company',
         )
         .eq('id', userId)
         .maybeSingle()
@@ -55,6 +55,10 @@ export default async function AccountPage({ params }: { params: Promise<{ locale
               locale: locale,
               timezone: 'America/Santiago',
               phone_number: null,
+              birth_date: null,
+              bio: null,
+              website_url: null,
+              company: null,
             }
           }
           sessionsSlot={<SessionsTab />}

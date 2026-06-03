@@ -49,6 +49,11 @@ export async function updateProfileAction(
     locale: formData.get('locale'),
     timezone: formData.get('timezone'),
     phone_number: formData.get('phone_number') || null,
+    // Pass empty string explicitly so the RPC can clear the field (NULLIF logic).
+    birth_date: (formData.get('birth_date') as string) ?? '',
+    bio: (formData.get('bio') as string) ?? '',
+    website_url: (formData.get('website_url') as string) ?? '',
+    company: (formData.get('company') as string) ?? '',
   });
 
   if (!parsed.success) {
@@ -64,6 +69,11 @@ export async function updateProfileAction(
     p_locale: parsed.data.locale,
     p_timezone: parsed.data.timezone,
     p_phone_number: parsed.data.phone_number || undefined,
+    // NULL = keep existing; empty string = clear (handled by NULLIF in RPC).
+    p_birth_date: parsed.data.birth_date ?? '',
+    p_bio: parsed.data.bio ?? '',
+    p_website_url: parsed.data.website_url ?? '',
+    p_company: parsed.data.company ?? '',
   });
 
   if (error) {

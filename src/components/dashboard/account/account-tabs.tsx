@@ -20,6 +20,10 @@ export type ProfileSnapshot = {
   locale: string | null;
   timezone: string | null;
   phone_number: string | null;
+  birth_date: string | null;
+  bio: string | null;
+  website_url: string | null;
+  company: string | null;
 };
 
 type Props = {

@@ -14,12 +14,26 @@ const phoneSchema = z
   .optional()
   .or(z.literal(''));
 
+// URL optional — empty string treated as "clear".
+const urlSchema = z
+  .string()
+  .url({ message: 'invalid_url' })
+  .max(255)
+  .nullable()
+  .optional()
+  .or(z.literal(''));
+
 export const updateProfileSchema = z.object({
   given_name: z.string().min(1, { message: 'required' }).max(80),
   family_name: z.string().min(1, { message: 'required' }).max(80),
   locale: z.enum(SUPPORTED_LOCALES),
   timezone: timezoneSchema,
   phone_number: phoneSchema,
+  // ISO 8601 date string YYYY-MM-DD, optional.
+  birth_date: z.string().date().nullable().optional().or(z.literal('')),
+  bio: z.string().max(500).nullable().optional().or(z.literal('')),
+  website_url: urlSchema,
+  company: z.string().max(100).nullable().optional().or(z.literal('')),
 });
 
 export const updateEmailSchema = z.object({
