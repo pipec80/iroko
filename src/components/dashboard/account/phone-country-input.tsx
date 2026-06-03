@@ -31,7 +31,7 @@ export function PhoneCountryInput({ name, defaultValue, 'aria-invalid': ariaInva
         )}>
         {PHONE_COUNTRIES.map((c) => (
           <option key={`${c.iso}-${c.dialCode}`} value={c.dialCode}>
-            {c.flag} {c.dialCode}
+            {c.dialCode} — {c.name}
           </option>
         ))}
       </select>
