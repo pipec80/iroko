@@ -136,9 +136,10 @@ export default withSentryConfig(baseConfig, {
   // Sube más source maps para mejor stack traces en el cliente
   widenClientFileUpload: true,
 
-  // Quita el logger de Sentry del bundle de cliente (~3.5KB)
-  disableLogger: true,
-
-  // Monitoreo automático de cron jobs en Vercel
-  automaticVercelMonitors: true,
+  webpack: {
+    // Quita el logger de Sentry del bundle de cliente (~3.5KB)
+    treeshake: { removeDebugLogging: true },
+    // Monitoreo automático de cron jobs en Vercel
+    automaticVercelMonitors: true,
+  },
 });

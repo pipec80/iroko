@@ -151,11 +151,14 @@ jobs:
   # ─────────────────────────────────────────────
   # JOB 4: Build de producción (gate final)
   # Bloqueado por quality + test — si alguno falla, no buildea
+  # Saltado en PRs de Dependabot: los secrets no están disponibles
+  # en ese contexto por restricción de seguridad de GitHub.
   # ─────────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-latest
     needs: [quality, test]
+    if: github.actor != 'dependabot[bot]'
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
