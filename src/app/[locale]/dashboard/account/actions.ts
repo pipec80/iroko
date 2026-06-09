@@ -2,6 +2,7 @@
 
 import { getLocale } from 'next-intl/server';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
 import { redirect } from '@/i18n/routing';
 import { logger } from '@/lib/logger';
@@ -267,6 +268,10 @@ export async function generateRecoveryCodesAction(
 }
 
 export async function revokeSessionAction(sessionId: string): Promise<SettingsActionState> {
+  if (!z.string().uuid().safeParse(sessionId).success) {
+    return { error: 'invalid_session_id' };
+  }
+
   const { supabase, userId } = await requireUserId();
   if (!userId) return { error: 'not_authenticated' };
 

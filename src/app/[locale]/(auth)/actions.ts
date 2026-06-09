@@ -147,6 +147,17 @@ export async function signUpAction(
   });
 
   if (error) {
+    // Anti-enumeration: treat existing-email the same as success to prevent user discovery.
+    if (error.code === 'user_already_exists' || error.code === 'email_exists') {
+      logger.info(
+        { action: 'auth.signUp' },
+        'signup_attempt_existing_email — returning generic confirmation',
+      );
+      redirect({
+        href: `/signup/confirmation?email=${encodeURIComponent(email)}`,
+        locale,
+      });
+    }
     logger.warn({ action: 'auth.signUp', code: error.code }, 'Sign-up failed');
     return { error: error.code ?? 'signup_failed' };
   }

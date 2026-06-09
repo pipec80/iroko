@@ -16,24 +16,17 @@ import { createDocument } from '@/app/[locale]/dashboard/projects/[slug]/doc/act
 
 interface NewDocumentDialogProps {
   projectId: string;
-  accountId: string;
   projectSlug: string;
   variant?: 'card';
 }
 
-export function NewDocumentDialog({
-  projectId,
-  accountId,
-  projectSlug,
-  variant,
-}: NewDocumentDialogProps) {
+export function NewDocumentDialog({ projectId, projectSlug, variant }: NewDocumentDialogProps) {
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   const [state, action, isPending] = useActionState(
     async (_prev: { error?: string; docId?: string }, formData: FormData) => {
       formData.set('projectId', projectId);
-      formData.set('accountId', accountId);
       const result = await createDocument(formData);
       if (result.docId) {
         formRef.current?.reset();
