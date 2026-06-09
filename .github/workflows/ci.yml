@@ -158,8 +158,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [quality, test]
-    # Dependabot branches: secrets unavailable → use SKIP_ENV_VALIDATION
-    # Own branches: use real secrets from repository
+    # production env → main branch
+    # preview env    → feature/fix/etc branches
+    # Dependabot     → no environment, SKIP_ENV_VALIDATION bypasses Zod
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || (startsWith(github.head_ref, 'dependabot/') && '' || 'preview') }}
     env:
       SKIP_ENV_VALIDATION: ${{ startsWith(github.head_ref, 'dependabot/') && '1' || '' }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
