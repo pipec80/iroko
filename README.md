@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Iroko — SaaS Boilerplate
 
-## Getting Started
+Base de producción para micro-SaaS. Auth completa, multi-tenancy, i18n, observabilidad y CI/CD listo para desplegar.
 
-First, run the development server:
+## Stack
+
+| Capa            | Tecnología                                        |
+| --------------- | ------------------------------------------------- |
+| Framework       | Next.js 16 (App Router, React 19, React Compiler) |
+| Backend / Auth  | Supabase (PostgreSQL, RLS, RPCs, MFA, OAuth)      |
+| Estilos         | Tailwind CSS 4 + Material Design 3 tokens         |
+| i18n            | next-intl (es / en)                               |
+| Estado servidor | TanStack Query 5                                  |
+| Observabilidad  | Sentry, Vercel Analytics, Vercel Speed Insights   |
+| Tests           | Vitest (unit) + Playwright (E2E) + pgTAP (DB)     |
+| Deploy          | Vercel (pipec80-projects/iroko)                   |
+
+## Requisitos
+
+- Node.js 22+
+- pnpm 10+
+- Docker Desktop (para Supabase local)
+- Cuenta Supabase (para producción)
+
+## Setup local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+# 1. Instalar dependencias
+pnpm install
+
+# 2. Copiar variables de entorno
+cp .env.example .env.local
+# Editar .env.local con tus credenciales de Supabase local
+
+# 3. Levantar Supabase local (requiere Docker)
+pnpm supa:start
+
+# 4. Arrancar dev server
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre http://localhost:3000 — el dashboard de Supabase Studio está en http://localhost:54323.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Variables de entorno requeridas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<anon-key>
+SUPABASE_SECRET_KEY=<service-role-key>
 
-## Learn More
+# Site
+SITE_URL=http://localhost:3000
 
-To learn more about Next.js, take a look at the following resources:
+# Sentry (opcional en dev)
+NEXT_PUBLIC_SENTRY_DSN=<dsn>
+SENTRY_AUTH_TOKEN=<auth-token>
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# OAuth Google
+GOOGLE_CLIENT_ID=<client-id>
+SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=<client-secret>
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+```bash
+pnpm dev              # Dev server con Turbopack
+pnpm build            # Build de producción
+pnpm typecheck        # TypeScript sin emit
+pnpm lint             # ESLint
+pnpm format           # Prettier
+pnpm test             # Tests unitarios (Vitest)
+pnpm test:coverage    # Tests con reporte de cobertura
+pnpm test:e2e         # Tests E2E (Playwright)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+pnpm supa:start       # Iniciar Supabase local
+pnpm supa:stop        # Detener Supabase local
+pnpm supa:test        # Tests de base de datos (pgTAP)
+pnpm supa:lint        # Lint de esquema SQL
+pnpm supa:gen:types   # Regenerar src/types/database.ts
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estructura
+
+```
+src/
+├── app/
+│   ├── layout.tsx              # Root layout (metadata, CSS global)
+│   └── [locale]/               # Rutas con prefijo de idioma
+│       ├── layout.tsx          # html/body + fonts + providers
+│       ├── (public)/           # Landing, pricing, product
+│       ├── (auth)/             # Login, signup, forgot, reset
+│       ├── auth/               # Callbacks OAuth y OTP
+│       └── dashboard/          # Zona protegida (sidebar + topbar)
+├── components/
+│   ├── ui/                     # Primitivos (shadcn/radix)
+│   ├── layout/                 # Sidebar, topbar, navbar
+│   └── dashboard/              # Componentes por módulo
+├── lib/
+│   ├── supabase/               # Clientes server/client/admin
+│   ├── validation/             # Schemas Zod
+│   └── auth/                   # safe-redirect
+└── types/
+    └── database.ts             # Tipos generados de Supabase
+supabase/
+├── migrations/                 # 38+ migraciones SQL
+├── schemas/                    # Declarative schema (source of truth)
+├── templates/                  # Email templates
+└── tests/database/             # Tests pgTAP
+```
+
+## Documentación
+
+- `docs/modules/auth/BEST_PRACTICES.md` — guía completa de seguridad en auth
+- `docs/modules/auth/BITACORA.md` — decisiones técnicas documentadas
+- `docs/audit/` — auditoría técnica completa (Fases 0–8)

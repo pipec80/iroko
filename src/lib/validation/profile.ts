@@ -40,16 +40,12 @@ export const updateEmailSchema = z.object({
   email: z.string().email({ message: 'invalid_email' }),
 });
 
-const MIN_PASSWORD_LENGTH = 10;
-const PASSWORD_POLICY_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/;
+import { strongPassword } from './shared';
 
 export const updatePasswordFromSettingsSchema = z
   .object({
     current_password: z.string().min(1),
-    password: z
-      .string()
-      .min(MIN_PASSWORD_LENGTH, { message: 'password_too_short' })
-      .regex(PASSWORD_POLICY_REGEX, { message: 'weak_password' }),
+    password: strongPassword,
     confirm_password: z.string().min(1),
   })
   .refine((d) => d.password === d.confirm_password, {

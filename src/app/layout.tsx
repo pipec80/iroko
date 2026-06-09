@@ -1,20 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import './globals.css';
-
-const geistSans = Geist({
-  variable: '--font-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-mono',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-});
 
 export const viewport: Viewport = {
   themeColor: [
@@ -29,12 +15,11 @@ export const metadata: Metadata = {
     template: '%s | Iroko',
   },
   description: 'El tronco común para tus micro-SaaS.',
-  metadataBase: new URL(process.env.SITE_URL || 'http://localhost:3000'),
+  metadataBase: new URL(process.env.SITE_URL ?? 'http://localhost:3000'),
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
     siteName: 'Iroko',
-    locale: 'es_CL',
   },
   icons: {
     icon: [
@@ -47,17 +32,8 @@ export const metadata: Metadata = {
   manifest: '/site.webmanifest',
 };
 
+// html/body are provided by [locale]/layout.tsx so lang is dynamic per locale.
+// This root layout exists only for metadata, viewport, and global CSS.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      suppressHydrationWarning>
-      <body className="flex min-h-full flex-col">
-        {children}
-        <Analytics />
-        <SpeedInsights />
-      </body>
-    </html>
-  );
+  return children;
 }

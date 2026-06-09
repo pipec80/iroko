@@ -1,11 +1,25 @@
+import { Geist, Geist_Mono } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import { Suspense } from 'react';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import { Providers } from '@/components/providers';
 import { routing } from '@/i18n/routing';
+
+const geistSans = Geist({
+  variable: '--font-sans',
+  subsets: ['latin'],
+});
+
+const geistMono = Geist_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -27,11 +41,20 @@ export default async function LocaleLayout({
   setRequestLocale(locale);
 
   return (
-    <Suspense fallback={null}>
-      <I18nProvider locale={locale}>
-        <Providers>{children}</Providers>
-      </I18nProvider>
-    </Suspense>
+    <html
+      lang={locale}
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning>
+      <body className="flex min-h-full flex-col">
+        <Suspense fallback={null}>
+          <I18nProvider locale={locale}>
+            <Providers>{children}</Providers>
+          </I18nProvider>
+        </Suspense>
+        <Analytics />
+        <SpeedInsights />
+      </body>
+    </html>
   );
 }
 
