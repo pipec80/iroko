@@ -1,5 +1,6 @@
 import type { NextConfig } from 'next';
 import withBundleAnalyzer from '@next/bundle-analyzer';
+import { withSentryConfig } from '@sentry/nextjs';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
@@ -121,6 +122,23 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer({
+const baseConfig = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 })(withNextIntl(nextConfig));
+
+export default withSentryConfig(baseConfig, {
+  org: 'iroko',
+  project: 'javascript-nextjs',
+
+  // Silencia output de Sentry en local; en CI sí muestra (para detectar errores de upload)
+  silent: process.env.CI !== 'true',
+
+  // Sube más source maps para mejor stack traces en el cliente
+  widenClientFileUpload: true,
+
+  // Quita el logger de Sentry del bundle de cliente (~3.5KB)
+  disableLogger: true,
+
+  // Monitoreo automático de cron jobs en Vercel
+  automaticVercelMonitors: true,
+});
