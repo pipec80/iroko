@@ -1,0 +1,38 @@
+version: 2
+updates:
+  # ── npm / pnpm ──────────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Santiago
+    open-pull-requests-limit: 5
+    groups:
+      # Agrupar todas las actualizaciones de Next.js + React en un solo PR
+      nextjs:
+        patterns:
+          - "next"
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      # Agrupar Supabase
+      supabase:
+        patterns:
+          - "@supabase/*"
+      # Agrupar Radix UI
+      radix:
+        patterns:
+          - "@radix-ui/*"
+    ignore:
+      # Major versions requieren revisión manual
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3

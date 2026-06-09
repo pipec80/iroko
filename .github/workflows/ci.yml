@@ -1,0 +1,195 @@
+# CI Pipeline — Iroko SaaS Boilerplate
+#
+# Jobs (paralelos donde sea posible):
+#   quality  → typecheck + lint + format:check + knip
+#   security → pnpm audit --prod (solo deps de producción)
+#   test     → vitest con coverage report
+#   build    → next build  (bloqueado por quality + test)
+#
+# Secrets requeridos en GitHub → Settings → Secrets → Actions:
+#   NEXT_PUBLIC_SUPABASE_URL           (URL pública del proyecto Supabase)
+#   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (clave anon del proyecto Supabase)
+#   SUPABASE_SECRET_KEY                (clave service_role del proyecto Supabase)
+#   SITE_URL                           (URL del sitio, ej. https://iroko.vercel.app)
+#
+# Branch protection recomendada (GitHub → Settings → Branches → main):
+#   - Require status checks: quality, test, build
+#   - Require branches to be up to date before merging
+#   - Do not allow bypassing the above settings
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - 'fix/**'
+      - 'feat/**'
+      - 'refactor/**'
+      - 'chore/**'
+  pull_request:
+    branches:
+      - main
+
+# Cancela runs anteriores del mismo branch/PR para ahorrar minutos
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+  PNPM_VERSION: '10'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1: Calidad de código
+  # ─────────────────────────────────────────────
+  quality:
+    name: Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript check
+        run: pnpm typecheck
+
+      - name: ESLint
+        run: pnpm lint
+
+      - name: Prettier format check
+        run: pnpm format:check
+
+      - name: Dead code check (knip)
+        run: pnpm knip
+        # knip puede tener falsos positivos en proyectos grandes;
+        # si bloquea el pipeline, cambiar a: continue-on-error: true
+        continue-on-error: true
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Auditoría de seguridad (solo prod deps)
+  # ─────────────────────────────────────────────
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit production dependencies
+        # --prod omite devDependencies (vitest, eslint, etc.)
+        # --audit-level=high falla solo en high/critical
+        run: pnpm audit --prod --audit-level=high
+
+  # ─────────────────────────────────────────────
+  # JOB 3: Tests unitarios con coverage
+  # ─────────────────────────────────────────────
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests with coverage
+        run: pnpm test:coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────
+  # JOB 4: Build de producción (gate final)
+  # Bloqueado por quality + test — si alguno falla, no buildea
+  # ─────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [quality, test]
+    env:
+      # Variables requeridas por @t3-oss/env-nextjs en build time.
+      # Añadir en GitHub → Settings → Secrets → Actions.
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      SITE_URL: ${{ secrets.SITE_URL }}
+      # Sentry es opcional — el build no falla si no está configurado
+      NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload build artifact (standalone)
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: nextjs-build
+          path: |
+            .next/standalone
+            .next/static
+            public
+          retention-days: 1
