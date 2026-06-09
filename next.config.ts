@@ -128,7 +128,7 @@ const baseConfig = withBundleAnalyzer({
 
 export default withSentryConfig(baseConfig, {
   org: 'iroko',
-  project: 'javascript-nextjs',
+  project: 'iroko',
 
   // Silencia output de Sentry en local; en CI sí muestra (para detectar errores de upload)
   silent: process.env.CI !== 'true',
