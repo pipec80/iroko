@@ -8,6 +8,7 @@ import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 import {
+  emailSchema,
   forgotPasswordSchema,
   loginSchema,
   magicLinkSchema,
@@ -253,8 +254,9 @@ export async function resendConfirmationAction(
   _prev: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
-  const email = formData.get('email');
-  if (typeof email !== 'string') return { error: 'invalid_email' };
+  const parsed = emailSchema.safeParse(formData.get('email'));
+  if (!parsed.success) return { error: 'invalid_email' };
+  const email = parsed.data;
 
   const supabase = await createClient();
   const locale = await getLocale();

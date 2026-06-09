@@ -1,4 +1,7 @@
 {
+  "Common": {
+    "skipToContent": "Skip to main content"
+  },
   "HomePage": {
     "title": "Iroko — the shared trunk for your micro-SaaS",
     "description": "The template you refuse to rewrite. Auth, billing, teams and deploy ready on day one."
