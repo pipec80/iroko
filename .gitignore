@@ -54,7 +54,7 @@ next-env.d.ts
 /.zed/
 /.vscode/
 /.claude/
-/.github/
+# .github tracked: workflows, templates, dependabot, CODEOWNERS must be in git
 /.temp/
 /.kiro/
 .mcp.json

@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
@@ -10,6 +11,10 @@ export async function saveDocument(
   docId: string,
   content: string,
 ): Promise<{ error?: string; success?: boolean }> {
+  if (!z.string().uuid().safeParse(docId).success) {
+    return { error: 'invalid_document_id' };
+  }
+
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const userId = claimsData?.claims.sub;

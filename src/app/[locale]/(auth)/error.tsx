@@ -1,16 +1,23 @@
 'use client';
 
+import * as Sentry from '@sentry/nextjs';
 import { useTranslations } from 'next-intl';
+import { useEffect } from 'react';
 
 import { Link } from '@/i18n/routing';
 
 export default function AuthError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
   const t = useTranslations('Errors');
+
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8">

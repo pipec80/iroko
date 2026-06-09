@@ -2,7 +2,9 @@
 
 import { getLocale } from 'next-intl/server';
 import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 
+import { env } from '@/env';
 import { redirect } from '@/i18n/routing';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
@@ -201,7 +203,7 @@ export async function requestPasswordResetFromSettingsAction(
   if (!email) return { error: 'no_email_on_account' };
 
   const locale = await getLocale();
-  const redirectTo = `${process.env.SITE_URL ?? 'http://localhost:3000'}/${locale}/auth/confirm?next=/${locale}/reset-password`;
+  const redirectTo = `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/reset-password`;
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
   if (error) {
@@ -267,6 +269,10 @@ export async function generateRecoveryCodesAction(
 }
 
 export async function revokeSessionAction(sessionId: string): Promise<SettingsActionState> {
+  if (!z.string().uuid().safeParse(sessionId).success) {
+    return { error: 'invalid_session_id' };
+  }
+
   const { supabase, userId } = await requireUserId();
   if (!userId) return { error: 'not_authenticated' };
 

@@ -1,5 +1,6 @@
 'use client';
 
+import * as Sentry from '@sentry/nextjs';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
@@ -13,8 +14,7 @@ export default function GlobalError({
   const t = useTranslations('Errors');
 
   useEffect(() => {
-    // Error is already logged server-side by Next.js — only console.error on client
-    console.error('[GlobalError]', error.digest, error.message);
+    Sentry.captureException(error);
   }, [error]);
 
   return (

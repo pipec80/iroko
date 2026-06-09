@@ -55,22 +55,17 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             )}
           </div>
         </div>
-        <NewDocumentDialog projectId={project.id} accountId={accountId} projectSlug={slug} />
+        <NewDocumentDialog projectId={project.id} projectSlug={slug} />
       </header>
 
       {/* Documents grid */}
       {documents.length === 0 ?
-        <EmptyState projectId={project.id} accountId={accountId} projectSlug={slug} />
+        <EmptyState projectId={project.id} projectSlug={slug} />
       : <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {documents.map((doc) => (
             <DocumentCard key={doc.id} doc={doc} slug={slug} />
           ))}
-          <NewDocumentDialog
-            projectId={project.id}
-            accountId={accountId}
-            projectSlug={slug}
-            variant="card"
-          />
+          <NewDocumentDialog projectId={project.id} projectSlug={slug} variant="card" />
         </div>
       }
     </div>
@@ -111,15 +106,7 @@ function DocumentCard({ doc, slug }: { doc: ProjectDocument; slug: string }) {
   );
 }
 
-function EmptyState({
-  projectId,
-  accountId,
-  projectSlug,
-}: {
-  projectId: string;
-  accountId: string;
-  projectSlug: string;
-}) {
+function EmptyState({ projectId, projectSlug }: { projectId: string; projectSlug: string }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
       <div
@@ -133,12 +120,7 @@ function EmptyState({
           Crea el primero para empezar a documentar este proyecto.
         </p>
       </div>
-      <NewDocumentDialog
-        projectId={projectId}
-        accountId={accountId}
-        projectSlug={projectSlug}
-        variant="card"
-      />
+      <NewDocumentDialog projectId={projectId} projectSlug={projectSlug} variant="card" />
     </div>
   );
 }

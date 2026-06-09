@@ -1,4 +1,7 @@
 {
+  "Common": {
+    "skipToContent": "Ir al contenido principal"
+  },
   "HomePage": {
     "title": "Iroko — el tronco común para tus micro-SaaS",
     "description": "El template que rehúsas reescribir. Auth, billing, equipos y deploy listos desde el primer día."

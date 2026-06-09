@@ -8,6 +8,7 @@ import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 import {
+  emailSchema,
   forgotPasswordSchema,
   loginSchema,
   magicLinkSchema,
@@ -147,6 +148,17 @@ export async function signUpAction(
   });
 
   if (error) {
+    // Anti-enumeration: treat existing-email the same as success to prevent user discovery.
+    if (error.code === 'user_already_exists' || error.code === 'email_exists') {
+      logger.info(
+        { action: 'auth.signUp' },
+        'signup_attempt_existing_email — returning generic confirmation',
+      );
+      redirect({
+        href: `/signup/confirmation?email=${encodeURIComponent(email)}`,
+        locale,
+      });
+    }
     logger.warn({ action: 'auth.signUp', code: error.code }, 'Sign-up failed');
     return { error: error.code ?? 'signup_failed' };
   }
@@ -242,8 +254,9 @@ export async function resendConfirmationAction(
   _prev: AuthActionState,
   formData: FormData,
 ): Promise<AuthActionState> {
-  const email = formData.get('email');
-  if (typeof email !== 'string') return { error: 'invalid_email' };
+  const parsed = emailSchema.safeParse(formData.get('email'));
+  if (!parsed.success) return { error: 'invalid_email' };
+  const email = parsed.data;
 
   const supabase = await createClient();
   const locale = await getLocale();
