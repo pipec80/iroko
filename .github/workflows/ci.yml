@@ -158,8 +158,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [quality, test]
-    if: github.actor != 'dependabot[bot]'
+    # Dependabot branches: secrets unavailable → use SKIP_ENV_VALIDATION
+    # Own branches: use real secrets from repository
     env:
+      SKIP_ENV_VALIDATION: ${{ startsWith(github.head_ref, 'dependabot/') && '1' || '' }}
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}

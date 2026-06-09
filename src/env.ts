@@ -2,6 +2,11 @@ import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
 export const env = createEnv({
+  // GitHub Actions passes unset secrets as empty strings.
+  // SKIP_ENV_VALIDATION=1 lets CI build without real credentials
+  // (used for Dependabot PRs where secrets are unavailable).
+  skipValidation: process.env.SKIP_ENV_VALIDATION === '1',
+
   server: {
     NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
     LOG_LEVEL: z
