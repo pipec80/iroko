@@ -149,12 +149,15 @@ allowed_mime_types = [
 # ============================================================================
 [auth]
 enabled = true
-site_url = "http://localhost:3000"
-# Wildcards permitidos para previews. En prod agregar dominios reales.
+site_url = "env(SITE_URL)"
+# Local: SITE_URL=http://localhost:3000
+# Cloud: SITE_URL=https://iroko.vercel.app (o tu dominio custom)
 additional_redirect_urls = [
   "http://localhost:3000",
   "http://localhost:3000/**",
   "http://127.0.0.1:3000/**",
+  "https://iroko.vercel.app/**",
+  "https://*.vercel.app/**",
 ]
 # JWT: 1h es el default recomendado. No bajar de 5 min (clock skew).
 jwt_expiry = 3600
@@ -216,8 +219,8 @@ enable_confirmations = true
 secure_password_change = true
 # Anti-spam: minimo entre requests de email al mismo user.
 max_frequency = "1m"
-# OTP de 6 digitos (rango valido: 6-10).
-otp_length = 6
+# OTP de 8 digitos (rango valido: 6-10). 8 = mejor seguridad, alineado con cloud default.
+otp_length = 8
 otp_expiry = 3600
 
 # ----------------------------------------------------------------------------
@@ -344,10 +347,12 @@ enable_confirmations = false
 # Sessions — control de duracion (SOC 2 / HIPAA / PCI-DSS compliant)
 # ----------------------------------------------------------------------------
 [auth.sessions]
-# Re-login forzado tras 7 dias.
-timebox = "168h"
-# Logout automatico por inactividad.
-inactivity_timeout = "2h"
+# ⚠️  timebox e inactivity_timeout requieren Pro plan en Supabase Cloud.
+# En Free plan deben ser "0s" (sin limite). Al upgradear, cambiar a:
+#   timebox = "168h"          # re-login forzado tras 7 dias
+#   inactivity_timeout = "2h" # logout automatico por inactividad
+timebox = "0s"
+inactivity_timeout = "0s"
 
 # ----------------------------------------------------------------------------
 # MFA (Multi-Factor Authentication)
@@ -361,17 +366,26 @@ max_enrolled_factors = 10
 enroll_enabled = true
 verify_enabled = true
 
-# Phone MFA — usa test_otp en local. En prod requiere Twilio (ver arriba).
+# Phone MFA — ⚠️ REQUIERE PRO+ ($75/mes base + $10/mes).
+# Tambien requiere Twilio configurado (ver seccion [auth.sms.twilio] arriba).
+# Al upgradear a Pro, descomentar y configurar Twilio:
+# [auth.mfa.phone]
+# enroll_enabled = true
+# verify_enabled = true
+# otp_length = 6
+# max_frequency = "10s"
 [auth.mfa.phone]
-enroll_enabled = true
-verify_enabled = true
-otp_length = 6
-max_frequency = "10s"
+enroll_enabled = false
+verify_enabled = false
 
-# WebAuthn (passkeys, YubiKey, Touch ID, Windows Hello) — FREE, activo.
+# WebAuthn (passkeys, YubiKey, Touch ID, Windows Hello) — ⚠️ REQUIERE PRO+ ($75/mes base).
+# Al upgradear a Pro, descomentar:
+# [auth.mfa.web_authn]
+# enroll_enabled = true
+# verify_enabled = true
 [auth.mfa.web_authn]
-enroll_enabled = true
-verify_enabled = true
+enroll_enabled = false
+verify_enabled = false
 
 # ============================================================================
 # OAuth Providers — REQUIEREN Client ID y Secret de cada provider.
