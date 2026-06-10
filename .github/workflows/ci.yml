@@ -52,9 +52,6 @@ concurrency:
 env:
   NODE_VERSION: '24'
   PNPM_VERSION: '10'
-  # Fuerza las acciones con wrapper Node 20 a correr en Node 24.
-  # Eliminar cuando supabase/setup-cli y demás publiquen wrappers Node 24 nativos.
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   # ─────────────────────────────────────────────
@@ -65,15 +62,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -104,15 +101,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -132,15 +129,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -152,7 +149,7 @@ jobs:
         run: pnpm test:coverage
 
       - name: Upload coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-report
@@ -169,7 +166,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.head_ref || github.ref_name }}
@@ -181,7 +178,7 @@ jobs:
 
       - name: Restore Supabase Docker image cache
         id: supabase-cache-db-types
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/supabase-images.tar
           key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
@@ -218,7 +215,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
@@ -227,7 +224,7 @@ jobs:
 
       - name: Restore Supabase Docker image cache
         id: supabase-cache-db-tests
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/supabase-images.tar
           key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
@@ -276,15 +273,15 @@ jobs:
       github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -300,7 +297,7 @@ jobs:
       # Caché de binarios de Playwright — evita la descarga de ~300 MB en cada run
       - name: Restore Playwright browser cache
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('**/package.json') }}
@@ -308,7 +305,7 @@ jobs:
       # Caché de imágenes Docker de Supabase — evita la descarga de ~2 GB en cada run
       - name: Restore Supabase Docker image cache
         id: supabase-cache-e2e
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /tmp/supabase-images.tar
           key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
@@ -345,7 +342,7 @@ jobs:
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
@@ -392,17 +389,17 @@ jobs:
     steps:
       - name: Checkout
         # Usa HEAD del branch para incluir el commit de db-types si lo hubo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'pnpm'
@@ -414,7 +411,7 @@ jobs:
         run: pnpm build
 
       - name: Upload build artifact (standalone)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: success()
         with:
           name: nextjs-build
