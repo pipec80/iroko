@@ -1,6 +1,4 @@
 import { Geist, Geist_Mono } from 'next/font/google';
-import { connection } from 'next/server';
-import { headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -34,9 +32,7 @@ export default async function LocaleLayout({
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }) {
-  await connection();
   const { locale } = await params;
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) {
     notFound();
@@ -49,7 +45,6 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      nonce={nonce}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning>
       <body className="flex min-h-full flex-col">
