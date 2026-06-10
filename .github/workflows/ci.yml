@@ -188,7 +188,12 @@ jobs:
         run: docker load -i /tmp/supabase-images.tar
 
       - name: Start local database
-        run: supabase db start
+        run: |
+          for i in 1 2 3; do
+            supabase db start && break
+            echo "Attempt $i failed — retrying in 15s..."
+            sleep 15
+          done
 
       - name: Save Docker images to cache
         if: steps.supabase-cache-db-types.outputs.cache-hit != 'true'
@@ -234,7 +239,12 @@ jobs:
         run: docker load -i /tmp/supabase-images.tar
 
       - name: Start local database
-        run: supabase db start
+        run: |
+          for i in 1 2 3; do
+            supabase db start && break
+            echo "Attempt $i failed — retrying in 15s..."
+            sleep 15
+          done
 
       - name: Save Docker images to cache
         if: steps.supabase-cache-db-tests.outputs.cache-hit != 'true'
@@ -315,7 +325,12 @@ jobs:
         run: docker load -i /tmp/supabase-images.tar
 
       - name: Start local Supabase (full stack con Auth + Mailpit)
-        run: supabase start
+        run: |
+          for i in 1 2 3; do
+            supabase start && break
+            echo "Attempt $i failed — retrying in 15s..."
+            sleep 15
+          done
         env:
           SUPABASE_AUTH_CAPTCHA_SECRET: 1x0000000000000000000000000000000AA
 
