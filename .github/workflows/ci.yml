@@ -177,7 +177,7 @@ jobs:
 
       - name: Verify generated types match schema
         run: |
-          supabase gen types typescript --local > src/types/database.ts
+          supabase gen types --local --lang typescript --schema public,billing,audit > src/types/database.ts
           if ! git diff --ignore-space-at-eol --exit-code --quiet src/types/database.ts; then
             echo "src/types/database.ts está desincronizado con el schema."
             echo "Ejecuta: pnpm supa:gen:types && git commit"
@@ -221,6 +221,7 @@ jobs:
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     steps:
       - name: Checkout
