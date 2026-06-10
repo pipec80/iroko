@@ -127,6 +127,17 @@
     "magic_link_sent": "We sent you a magic link. Check your email.",
     "reset_link_sent": "We sent you a password reset link. Check your email.",
     "confirmation_resent": "Confirmation email resent.",
+    "click_title": "Confirm action",
+    "click_desc_signup": "Click to verify your email and activate your account.",
+    "click_desc_magiclink": "Click to sign in securely.",
+    "click_desc_recovery": "Click to go to the password reset page.",
+    "click_desc_email_change": "Click to confirm your new email address.",
+    "click_desc_invite": "Click to accept the invitation and join the team.",
+    "click_btn_signup": "Confirm account",
+    "click_btn_magiclink": "Sign in",
+    "click_btn_recovery": "Reset password",
+    "click_btn_email_change": "Confirm email change",
+    "click_btn_invite": "Accept invitation",
     "errors": {
       "invalid_credentials": "Invalid credentials.",
       "email_not_confirmed": "You must confirm your email before signing in.",
@@ -143,7 +154,9 @@
       "generic": "Something went wrong. Try again.",
       "invalid_email": "Invalid email address.",
       "required": "This field is required.",
-      "password_too_short": "Password must be at least 10 characters."
+      "password_too_short": "Password must be at least 10 characters.",
+      "captcha_verification_process_failed": "CAPTCHA verification failed. Wait a moment and try again.",
+      "unexpected_failure": "An unexpected error occurred. Please try again."
     }
   },
   "Settings": {

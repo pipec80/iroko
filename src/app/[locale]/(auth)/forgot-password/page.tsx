@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useActionState } from 'react';
+import React, { useActionState, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Mail } from 'lucide-react';
 
+import { env } from '@/env';
+import { CaptchaField } from '@/components/auth/captcha-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +19,14 @@ const initialState: AuthActionState = {};
 export default function ForgotPasswordPage() {
   const t = useTranslations('Auth');
   const [state, formAction, pending] = useActionState(forgotPasswordAction, initialState);
+  const [prevState, setPrevState] = useState(state);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [captchaReady, setCaptchaReady] = useState(!env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  if (prevState !== state) {
+    setPrevState(state);
+    setCaptchaResetKey((k) => k + 1);
+    setCaptchaReady(false);
+  }
 
   const success = state.success === 'reset_link_sent' ? t('reset_link_sent') : null;
   const error =
@@ -64,7 +74,8 @@ export default function ForgotPasswordPage() {
         )}
         {success && <p className="text-primary text-sm">{success}</p>}
 
-        <Button type="submit" disabled={pending} className="h-11 w-full">
+        <CaptchaField resetKey={captchaResetKey} onReadyChange={setCaptchaReady} />
+        <Button type="submit" disabled={pending || !captchaReady} className="h-11 w-full">
           {t('send_reset_link')}
         </Button>
       </form>

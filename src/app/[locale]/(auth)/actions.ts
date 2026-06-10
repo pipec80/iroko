@@ -48,8 +48,12 @@ export async function signInAction(
     return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
   }
 
+  const captchaToken = formData.get('captchaToken') as string | undefined;
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
+  const { data, error } = await supabase.auth.signInWithPassword({
+    ...parsed.data,
+    options: captchaToken ? { captchaToken } : undefined,
+  });
 
   if (error) {
     logger.warn({ action: 'auth.signIn', code: error.code }, 'Sign-in failed');
@@ -134,6 +138,7 @@ export async function signUpAction(
   }
 
   const { first_name, last_name, email, password } = parsed.data;
+  const captchaToken = formData.get('captchaToken') as string | undefined;
   const supabase = await createClient();
   const locale = await getLocale();
 
@@ -144,6 +149,7 @@ export async function signUpAction(
       // Keys must match what private.handle_new_profile() reads from raw_user_meta_data.
       data: { given_name: first_name, family_name: last_name },
       emailRedirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/dashboard`,
+      ...(captchaToken ? { captchaToken } : {}),
     },
   });
 
@@ -180,6 +186,7 @@ export async function magicLinkAction(
     return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
   }
 
+  const captchaToken = formData.get('captchaToken') as string | undefined;
   const supabase = await createClient();
   const locale = await getLocale();
 
@@ -188,6 +195,7 @@ export async function magicLinkAction(
     options: {
       shouldCreateUser: false,
       emailRedirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/dashboard`,
+      ...(captchaToken ? { captchaToken } : {}),
     },
   });
 
@@ -209,11 +217,13 @@ export async function forgotPasswordAction(
     return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
   }
 
+  const captchaToken = formData.get('captchaToken') as string | undefined;
   const supabase = await createClient();
   const locale = await getLocale();
 
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
     redirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/reset-password`,
+    ...(captchaToken ? { captchaToken } : {}),
   });
 
   if (error) {

@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
+import { env } from '@/env';
+import { CaptchaField } from '@/components/auth/captcha-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,11 +23,15 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [prevState, setPrevState] = useState(state);
   const [dirtyFields, setDirtyFields] = useState<Set<string>>(new Set());
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [captchaReady, setCaptchaReady] = useState(!env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
 
-  // When the server returns a new state, reset dirty tracking (derived-state pattern)
+  // When the server returns a new state, reset dirty tracking and CAPTCHA token.
   if (prevState !== state) {
     setPrevState(state);
     setDirtyFields(new Set());
+    setCaptchaResetKey((k) => k + 1);
+    setCaptchaReady(false);
   }
 
   const markDirty = (field: string) => setDirtyFields((prev) => new Set(prev).add(field));
@@ -162,7 +168,8 @@ export default function SignupPage() {
           </p>
         )}
 
-        <Button type="submit" disabled={pending} className="h-11 w-full">
+        <CaptchaField resetKey={captchaResetKey} onReadyChange={setCaptchaReady} />
+        <Button type="submit" disabled={pending || !captchaReady} className="h-11 w-full">
           {t('create_account')}
         </Button>
       </form>

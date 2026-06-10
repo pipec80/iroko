@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { Lock, Mail, WandSparkles } from 'lucide-react';
 
+import { env } from '@/env';
+import { CaptchaField } from '@/components/auth/captcha-field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +27,14 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [signInState, signInForm, signInPending] = useActionState(signInAction, initialState);
   const [mfaState, mfaForm, mfaPending] = useActionState(verifyMfaAction, initialState);
+  const [prevSignInState, setPrevSignInState] = useState(signInState);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+  const [captchaReady, setCaptchaReady] = useState(!env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  if (prevSignInState !== signInState) {
+    setPrevSignInState(signInState);
+    setCaptchaResetKey((k) => k + 1);
+    setCaptchaReady(false);
+  }
   const [recoveryState, recoveryForm, recoveryPending] = useActionState(
     verifyRecoveryAction,
     initialState,
@@ -234,7 +244,8 @@ export default function LoginPage() {
           </p>
         )}
 
-        <Button type="submit" disabled={signInPending} className="h-11 w-full">
+        <CaptchaField resetKey={captchaResetKey} onReadyChange={setCaptchaReady} />
+        <Button type="submit" disabled={signInPending || !captchaReady} className="h-11 w-full">
           {t('sign_in')}
         </Button>
       </form>

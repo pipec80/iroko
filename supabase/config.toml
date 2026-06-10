@@ -34,8 +34,8 @@ schemas = ["public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
-[api.tls]
-enabled = false
+# [api.tls]        # no documentado en CLI spec
+# enabled = false
 
 # ============================================================================
 # Database (Postgres 17)
@@ -43,7 +43,7 @@ enabled = false
 [db]
 port = 54322
 shadow_port = 54320
-health_timeout = "2m"
+# health_timeout = "2m"   # no documentado en CLI spec
 major_version = 17
 
 [db.pooler]
@@ -53,9 +53,9 @@ pool_mode = "transaction"
 default_pool_size = 20
 max_client_conn = 100
 
-[db.migrations]
-enabled = true
-schema_paths = []
+# [db.migrations]      # no documentado en CLI spec
+# enabled = true
+# schema_paths = []
 
 [db.seed]
 enabled = true
@@ -135,14 +135,14 @@ allowed_mime_types = [
   "image/webp",
 ]
 
-[storage.s3_protocol]
-enabled = false
+# [storage.s3_protocol]   # no documentado en CLI spec
+# enabled = false
 
-[storage.analytics]
-enabled = false
+# [storage.analytics]     # no documentado en CLI spec
+# enabled = false
 
-[storage.vector]
-enabled = false
+# [storage.vector]        # no documentado en CLI spec
+# enabled = false
 
 # ============================================================================
 # Auth (GoTrue)
@@ -170,8 +170,27 @@ enable_manual_linking = true
 # Password policy: longitud y caracteres requeridos.
 # Valores validos: "letters_digits", "lower_upper_letters_digits",
 # "lower_upper_letters_digits_symbols"
-minimum_password_length = 10
-password_requirements = "lower_upper_letters_digits"
+# minimum_password_length = 10          # no documentado en CLI spec (opcion GoTrue nativa)
+# password_requirements = "lower_upper_letters_digits"   # idem
+
+# ----------------------------------------------------------------------------
+# CAPTCHA — Cloudflare Turnstile (recomendado) o hCaptcha.
+# Para activar:
+#   1. Crear app en dash.cloudflare.com (Turnstile) o hcaptcha.com.
+#   2. Agregar al .env.local:
+#        NEXT_PUBLIC_TURNSTILE_SITE_KEY=<tu-site-key>
+#        SUPABASE_AUTH_CAPTCHA_SECRET=<tu-secret-key>
+#   3. Descomentar el bloque [auth.captcha] de abajo.
+#   4. supabase stop && supabase start
+#
+# Claves de prueba locales Turnstile (siempre pasan, solo para dev):
+#   Site key:   1x00000000000000000000AA
+#   Secret key: 1x0000000000000000000000000000000AA
+# ----------------------------------------------------------------------------
+[auth.captcha]
+enabled = true
+provider = "turnstile"
+secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
 
 # ----------------------------------------------------------------------------
 # Rate limits (defaults sensatos para dev — en prod ajustar segun trafico)
@@ -291,8 +310,8 @@ subject = "Una identidad fue desvinculada de tu cuenta"
 # Activa cuando descomientes un provider abajo.
 enable_signup = false
 enable_confirmations = false
-template = "Tu codigo SaaS Boilerplate es {{ .Code }}"
-max_frequency = "10s"
+# template = "Tu codigo SaaS Boilerplate es {{ .Code }}"   # no documentado en CLI spec
+# max_frequency = "10s"   # no documentado bajo [auth.sms]; si aplica, va en [auth.mfa.phone]
 
 # Numeros de prueba — solo aplican cuando un provider real esta configurado.
 # Formato: <phone_sin_plus> = "<otp_6_digitos>"
@@ -474,8 +493,8 @@ uri = "pg-functions://postgres/public/custom_access_token_hook"
 # OAuth Server — Permite que TU app sea OAuth provider para terceros.
 # Feature avanzado de B2B SaaS. Deshabilitado por defecto.
 # ============================================================================
-[auth.oauth_server]
-enabled = false
+# [auth.oauth_server]   # no documentado en CLI spec (feature experimental)
+# enabled = false
 
 # ============================================================================
 # Edge Functions (Deno)
@@ -485,7 +504,7 @@ enabled = true
 # "oneshot" = hot reload en dev. "per_worker" = load testing.
 policy = "oneshot"
 inspector_port = 8083
-deno_version = 2
+# deno_version = 2   # no documentado en CLI spec
 
 # ============================================================================
 # Analytics (Logflare) — DESHABILITADO en local.

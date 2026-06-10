@@ -127,6 +127,17 @@
     "magic_link_sent": "Te enviamos un enlace mágico. Revisa tu correo.",
     "reset_link_sent": "Te enviamos un enlace para restablecer tu contraseña. Revisa tu correo.",
     "confirmation_resent": "Correo de confirmación reenviado.",
+    "click_title": "Confirmar acción",
+    "click_desc_signup": "Haz clic para verificar tu correo y activar tu cuenta.",
+    "click_desc_magiclink": "Haz clic para iniciar sesión de forma segura.",
+    "click_desc_recovery": "Haz clic para ir a la página de restablecimiento de contraseña.",
+    "click_desc_email_change": "Haz clic para confirmar tu nueva dirección de correo.",
+    "click_desc_invite": "Haz clic para aceptar la invitación y unirte al equipo.",
+    "click_btn_signup": "Confirmar cuenta",
+    "click_btn_magiclink": "Iniciar sesión",
+    "click_btn_recovery": "Restablecer contraseña",
+    "click_btn_email_change": "Confirmar cambio de correo",
+    "click_btn_invite": "Aceptar invitación",
     "errors": {
       "invalid_credentials": "Credenciales incorrectas.",
       "email_not_confirmed": "Debes confirmar tu correo antes de iniciar sesión.",
@@ -143,7 +154,9 @@
       "generic": "Ocurrió un error. Intenta nuevamente.",
       "invalid_email": "Correo electrónico inválido.",
       "required": "Este campo es requerido.",
-      "password_too_short": "La contraseña debe tener al menos 10 caracteres."
+      "password_too_short": "La contraseña debe tener al menos 10 caracteres.",
+      "captcha_verification_process_failed": "Verificación CAPTCHA fallida. Espera un momento y vuelve a intentarlo.",
+      "unexpected_failure": "Ocurrió un error inesperado. Intenta nuevamente."
     }
   },
   "Settings": {
