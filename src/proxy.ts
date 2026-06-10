@@ -1,5 +1,5 @@
 import createMiddleware from 'next-intl/middleware';
-import { type NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 import { routing } from './i18n/routing';
 import { updateSession } from './lib/supabase/middleware';
@@ -9,21 +9,16 @@ const intlMiddleware = createMiddleware(routing);
 const SENTRY_INGEST_ORIGIN = 'https://o4511537461067776.ingest.us.sentry.io';
 const SENTRY_REPORT_URI = `${SENTRY_INGEST_ORIGIN}/api/4511537462771713/security/?sentry_key=f88007bc87fbd834a3f62bfc0d256a7e`;
 
-function buildCspHeader(isDev: boolean): string {
+function buildCspHeader(nonce: string, isDev: boolean): string {
   const localOrigin = isDev ? 'http://127.0.0.1:54321' : '';
 
+  // With 'strict-dynamic', host allowlists in script-src are ignored by modern browsers.
+  // Nonce is sufficient for all scripts; connect-src still needs explicit origins.
   const directives: string[] = [
     "default-src 'self'",
     isDev ?
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:"
-    : [
-        // 'unsafe-inline' es requerido por Next.js App Router (RSC payload scripts).
-        // Los scripts inline de hidratación no aceptan nonces con middleware compuesto.
-        "script-src 'self' 'unsafe-inline'",
-        'https://va.vercel-scripts.com',
-        'https://vitals.vercel-insights.com',
-        SENTRY_INGEST_ORIGIN,
-      ].join(' '),
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
+    : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     [
       "img-src 'self' blob: data:",
@@ -67,9 +62,7 @@ function buildCspHeader(isDev: boolean): string {
   return directives.join('; ');
 }
 
-function applySecurityHeaders(response: { headers: Headers }, isDev: boolean): void {
-  const csp = buildCspHeader(isDev);
-
+function applySecurityHeaders(response: { headers: Headers }, cspHeader: string): void {
   const reportToValue = JSON.stringify({
     group: 'csp-endpoint',
     max_age: 10886400,
@@ -77,7 +70,7 @@ function applySecurityHeaders(response: { headers: Headers }, isDev: boolean): v
     include_subdomains: true,
   });
 
-  response.headers.set('Content-Security-Policy', csp);
+  response.headers.set('Content-Security-Policy', cspHeader);
   response.headers.set('Cache-Control', 'private, no-store');
   response.headers.set('Report-To', reportToValue);
   response.headers.set('Reporting-Endpoints', `csp-endpoint="${SENTRY_REPORT_URI}"`);
@@ -95,29 +88,62 @@ function applySecurityHeaders(response: { headers: Headers }, isDev: boolean): v
 
 export async function proxy(request: NextRequest) {
   const isDev = process.env.NODE_ENV === 'development';
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const cspHeader = buildCspHeader(nonce, isDev);
 
+  // 1. Refresh Supabase session and guard protected routes.
   const supabaseResponse = await updateSession(request);
-
   if (supabaseResponse.status >= 300 && supabaseResponse.status < 400) {
-    applySecurityHeaders(supabaseResponse, isDev);
+    applySecurityHeaders(supabaseResponse, cspHeader);
     return supabaseResponse;
   }
 
-  const response = intlMiddleware(request);
+  // 2. i18n locale routing — run against the original request to detect redirects.
+  const intlResponse = intlMiddleware(request);
 
+  // 3. If intl redirects (e.g., / → /es/), forward the redirect with security headers.
+  if (intlResponse.status >= 300 && intlResponse.status < 400) {
+    applySecurityHeaders(intlResponse, cspHeader);
+    return intlResponse;
+  }
+
+  // 4. Passthrough: use NextResponse.next({ request: { headers } }) — the official
+  // Next.js pattern for nonce propagation. Next.js reads x-nonce and the CSP header
+  // from the request headers during SSR and automatically applies the nonce to all
+  // framework scripts, JS bundles, and inline RSC payload scripts (self.__next_f.push).
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', cspHeader);
+
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+
+  // 5. Carry locale cookies from next-intl (e.g., NEXT_LOCALE).
+  for (const cookie of intlResponse.cookies.getAll()) {
+    response.cookies.set(cookie.name, cookie.value, cookie);
+  }
+
+  // 6. Carry Supabase auth cookies.
   for (const cookie of supabaseResponse.cookies.getAll()) {
     response.cookies.set(cookie.name, cookie.value, cookie);
   }
 
-  applySecurityHeaders(response, isDev);
+  // 7. Set CSP and security headers on the response (browsers read from response).
+  applySecurityHeaders(response, cspHeader);
 
   return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|.*\\..*).*)',
-    '/',
-    '/(es|en)/:path*',
+    {
+      // Exclude static assets and prefetch requests — they don't need nonces.
+      source: '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|.*\\..*).*)',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
   ],
 };
