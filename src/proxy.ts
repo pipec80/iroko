@@ -26,8 +26,9 @@ export async function proxy(request: NextRequest) {
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https://flagcdn.com https://cdn.jsdelivr.net https://images.unsplash.com https://api.dicebear.com https://lh3.googleusercontent.com https://upload.wikimedia.org https://www.gstatic.com https://i.pravatar.cc https://*.supabase.co ${isDev ? 'http://127.0.0.1:54321' : ''};
     font-src 'self' https://fonts.gstatic.com;
-    connect-src 'self' http://127.0.0.1:54321 https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com;
+    connect-src 'self' http://127.0.0.1:54321 https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://vitals.vercel-insights.com https://va.vercel-scripts.com;
     frame-src 'self' https://challenges.cloudflare.com;
+    worker-src 'self' blob:;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
