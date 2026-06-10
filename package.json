@@ -18,6 +18,7 @@
     "test": "vitest run",
     "test:unit": "vitest run",
     "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
@@ -39,6 +40,7 @@
     "supa:reset": "supabase db reset --local",
     "supa:diff": "supabase db diff --local",
     "supa:lint": "supabase db lint --local",
+    "supa:advisors": "supabase db advisors --local",
     "supa:test": "supabase test db --local",
     "supa:migration:new": "supabase migration new",
     "supa:migration:list": "supabase migration list --local",
@@ -59,6 +61,7 @@
     "supa:cloud:pull": "supabase db pull --linked",
     "supa:cloud:dump": "supabase db dump --linked -f supabase/schema.dump.sql",
     "supa:cloud:migration:list": "supabase migration list --linked",
+    "supa:cloud:advisors": "supabase db advisors --linked",
     "supa:cloud:config:push": "supabase config push"
   },
   "dependencies": {

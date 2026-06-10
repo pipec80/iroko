@@ -36,7 +36,7 @@ CREATE TABLE public.invitations (
   account_id  uuid NOT NULL REFERENCES public.accounts(id) ON DELETE CASCADE,
   email       text NOT NULL,
   role        public.membership_role NOT NULL DEFAULT 'member',
-  token       text NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+  token       text NOT NULL UNIQUE DEFAULT encode(extensions.gen_random_bytes(32), 'hex'),
   status      public.invitation_status DEFAULT 'pending',
   invited_by  uuid REFERENCES public.profiles(id),
   expires_at  timestamptz DEFAULT now() + interval '7 days',
