@@ -1,0 +1,47 @@
+# CodeQL SAST — Análisis Estático de Seguridad
+#
+# Escanea el código TypeScript/JavaScript en busca de vulnerabilidades
+# que ESLint y Zod no pueden detectar: inyecciones de segundo orden,
+# path traversal, prototype pollution, credenciales hardcodeadas, etc.
+#
+# Gratuito para todos los repositorios en GitHub.
+# Resultados disponibles en GitHub → Security → Code scanning alerts.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Lunes a las 6 AM UTC — análisis semanal completo
+    - cron: '0 6 * * 1'
+
+jobs:
+  analyze:
+    name: CodeQL Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          # Queries adicionales de seguridad y calidad
+          queries: security-and-quality
+
+      - name: Build (requerido para análisis completo de TypeScript)
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:javascript-typescript'
