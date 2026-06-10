@@ -12,24 +12,16 @@ const config: KnipConfig = {
     'src/components/dashboard/team/team-management.tsx',
     'src/lib/supabase/admin.ts',
   ],
-  // Dependencias que son base del boilerplate pero no se usan en páginas aún
   ignoreDependencies: [
-    '@hookform/resolvers',
+    // Radix UI — usados en src/components/ui/* (knip no detecta imports de barrel exports)
     '@radix-ui/react-dialog',
     '@radix-ui/react-scroll-area',
     '@radix-ui/react-slider',
     '@radix-ui/react-slot',
-    'ai',
-    'date-fns',
-    'jose',
-    'motion',
-    'nanoid',
-    'nuqs',
-    'react-hook-form',
+    // Utilidades prod — usados en config files o imports dinámicos, no en src/
     'sharp',
-    'slugify',
     'tailwindcss-animate',
-    'zustand',
+    // Dev tooling — usados por configs de ESLint / testing / build, no importados en src/
     '@eslint/js',
     '@testing-library/dom',
     '@testing-library/react',
@@ -45,7 +37,7 @@ const config: KnipConfig = {
     'cross-env',
     'tailwindcss',
   ],
-  ignoreBinaries: ['supabase'],
+  ignoreBinaries: ['supabase', 'vercel'],
 };
 
 export default config;
