@@ -8,6 +8,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    // Glob explícito para evitar que fast-glob interprete [locale], [slug], etc.
+    // como clases de caracteres en Windows. Ver: https://github.com/mrmlnc/fast-glob#pattern-syntax
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
     // Playwright specs live in src/test/e2e/ — excluded from unit run.
     exclude: ['**/node_modules/**', '**/dist/**', '**/.next/**', 'src/test/e2e/**'],
     alias: {

@@ -25,8 +25,9 @@ pnpm test:coverage  # Vitest with coverage report
 pnpm test:e2e       # Playwright E2E tests
 pnpm test:e2e:ui    # Playwright with interactive UI
 
-# Run a single test file
-pnpm test src/path/to/test.spec.ts
+# Run a single test file (use partial path — avoids bracket issues on Windows)
+pnpm test src/lib/__tests__/server-action         # files outside [brackets] dirs: full path ok
+pnpm test "dashboard/account/__tests__/actions"   # files inside [locale]/[slug]: use unique suffix
 
 # Supabase local
 pnpm supa:start     # Start local Supabase (requires Docker)
