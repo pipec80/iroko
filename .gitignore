@@ -81,3 +81,5 @@ supabase/snippets/
 *.png
 .playwright-mcp/
 
+
+.vercel

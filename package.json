@@ -22,6 +22,13 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "prepare": "husky",
+    "--- VERCEL ---": "",
+    "vercel:env": "vercel env pull .env.local",
+    "vercel:dev": "vercel dev",
+    "vercel:deploy": "vercel deploy",
+    "vercel:deploy:prod": "vercel deploy --prod",
+    "vercel:build": "vercel build",
+    "vercel:logs": "vercel logs",
     "--- SUPABASE LOCAL (SAFE) ---": "",
     "supa:start": "supabase start",
     "supa:stop": "supabase stop",
@@ -55,6 +62,7 @@
     "supa:cloud:config:push": "supabase config push"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.5.3",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-scroll-area": "^1.2.10",

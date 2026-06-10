@@ -130,11 +130,17 @@ export default withSentryConfig(baseConfig, {
   org: 'iroko',
   project: 'iroko',
 
-  // Silencia output de Sentry en local; en CI sí muestra (para detectar errores de upload)
-  silent: process.env.CI !== 'true',
+  // Route Sentry requests through your server (avoids ad-blockers)
+  tunnelRoute: '/sentry-tunnel',
 
   // Sube más source maps para mejor stack traces en el cliente
   widenClientFileUpload: true,
+
+  // Usa SENTRY_AUTH_TOKEN desde las variables de entorno para Vercel
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
+  // Silencia output de Sentry en local; en CI sí muestra (para detectar errores de upload)
+  silent: process.env.CI !== 'true',
 
   webpack: {
     // Quita el logger de Sentry del bundle de cliente (~3.5KB)

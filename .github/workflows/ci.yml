@@ -1,10 +1,12 @@
 # CI Pipeline — Iroko SaaS Boilerplate
 #
 # Jobs (paralelos donde sea posible):
-#   quality  → typecheck + lint + format:check + knip
-#   security → pnpm audit --prod (solo deps de producción)
-#   test     → vitest con coverage report
-#   build    → next build  (bloqueado por quality + test)
+#   quality   → typecheck + lint + format:check + knip
+#   security  → pnpm audit --prod (solo deps de producción)
+#   test      → vitest con coverage report
+#   db-types  → verifica que src/types/database.ts esté sincronizado con el schema
+#   db-tests  → corre supabase/tests/database/*.test.sql con pgTAP
+#   build     → next build  (bloqueado por quality + test + db-types + db-tests)
 #
 # Secrets requeridos en GitHub → Settings → Secrets → Actions:
 #   NEXT_PUBLIC_SUPABASE_URL           (URL pública del proyecto Supabase)
@@ -149,15 +151,67 @@ jobs:
           retention-days: 7
 
   # ─────────────────────────────────────────────
-  # JOB 4: Build de producción (gate final)
-  # Bloqueado por quality + test — si alguno falla, no buildea
+  # JOB 4: Verificación de tipos generados de Supabase
+  # Falla si src/types/database.ts está desincronizado con el schema.
+  # Solución: pnpm supa:gen:types && git commit
+  # ─────────────────────────────────────────────
+  db-types:
+    name: Database Types
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local database
+        run: supabase db start
+
+      - name: Verify generated types match schema
+        run: |
+          supabase gen types typescript --local > src/types/database.ts
+          if ! git diff --ignore-space-at-eol --exit-code --quiet src/types/database.ts; then
+            echo "src/types/database.ts está desincronizado con el schema."
+            echo "Ejecuta: pnpm supa:gen:types && git commit"
+            git diff src/types/database.ts
+            exit 1
+          fi
+
+  # ─────────────────────────────────────────────
+  # JOB 5: Tests de base de datos (pgTAP)
+  # Corre supabase/tests/database/*.test.sql contra el schema local.
+  # ─────────────────────────────────────────────
+  db-tests:
+    name: Database Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start local database
+        run: supabase db start
+
+      - name: Run pgTAP tests
+        run: supabase test db
+
+  # ─────────────────────────────────────────────
+  # JOB 6: Build de producción (gate final)
+  # Bloqueado por quality + test + db-types + db-tests
   # Saltado en PRs de Dependabot: los secrets no están disponibles
   # en ese contexto por restricción de seguridad de GitHub.
   # ─────────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [quality, test]
+    needs: [quality, test, db-types, db-tests]
     # Dependabot PRs solo necesitan quality + security + tests.
     # El build requiere secrets que GitHub no pasa a Dependabot por seguridad.
     if: ${{ !startsWith(github.head_ref, 'dependabot/') }}

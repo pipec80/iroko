@@ -982,81 +982,45 @@ export type Database = {
       }
       request_account_deletion: { Args: never; Returns: undefined }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
-      update_my_profile:
-        | {
-            Args: {
-              p_avatar_url?: string
-              p_family_name?: string
-              p_given_name?: string
-              p_locale?: string
-              p_phone_number?: string
-              p_timezone?: string
-            }
-            Returns: {
-              avatar_url: string | null
-              bio: string | null
-              birth_date: string | null
-              company: string | null
-              created_at: string | null
-              deleted_at: string | null
-              display_name: string | null
-              family_name: string | null
-              given_name: string | null
-              id: string
-              locale: string | null
-              metadata: Json | null
-              onboarding_completed: boolean | null
-              phone_number: string | null
-              timezone: string | null
-              updated_at: string | null
-              website_url: string | null
-            }
-            SetofOptions: {
-              from: "*"
-              to: "profiles"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
-        | {
-            Args: {
-              p_avatar_url?: string
-              p_bio?: string
-              p_birth_date?: string
-              p_company?: string
-              p_family_name?: string
-              p_given_name?: string
-              p_locale?: string
-              p_phone_number?: string
-              p_timezone?: string
-              p_website_url?: string
-            }
-            Returns: {
-              avatar_url: string | null
-              bio: string | null
-              birth_date: string | null
-              company: string | null
-              created_at: string | null
-              deleted_at: string | null
-              display_name: string | null
-              family_name: string | null
-              given_name: string | null
-              id: string
-              locale: string | null
-              metadata: Json | null
-              onboarding_completed: boolean | null
-              phone_number: string | null
-              timezone: string | null
-              updated_at: string | null
-              website_url: string | null
-            }
-            SetofOptions: {
-              from: "*"
-              to: "profiles"
-              isOneToOne: true
-              isSetofReturn: false
-            }
-          }
+      update_my_profile: {
+        Args: {
+          p_avatar_url?: string
+          p_bio?: string
+          p_birth_date?: string
+          p_company?: string
+          p_family_name?: string
+          p_given_name?: string
+          p_locale?: string
+          p_phone_number?: string
+          p_timezone?: string
+          p_website_url?: string
+        }
+        Returns: {
+          avatar_url: string | null
+          bio: string | null
+          birth_date: string | null
+          company: string | null
+          created_at: string | null
+          deleted_at: string | null
+          display_name: string | null
+          family_name: string | null
+          given_name: string | null
+          id: string
+          locale: string | null
+          metadata: Json | null
+          onboarding_completed: boolean | null
+          phone_number: string | null
+          timezone: string | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       account_type: "personal" | "team"
