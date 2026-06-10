@@ -54,6 +54,7 @@
     "supa:gen:types": "supabase gen types --local --lang typescript --schema public,billing,audit > src/types/database.ts",
     "supa:gen:types:cloud": "supabase gen types --linked --lang typescript --schema public,billing,audit > src/types/database.ts",
     "supa:gen:seed-buckets": "supabase seed buckets --local",
+    "supa:cloud:seed-buckets": "supabase seed buckets --linked",
     "--- SUPABASE CLOUD (⚠️ DESTRUCTIVE) ---": "",
     "supa:cloud:link": "supabase link",
     "supa:cloud:push": "supabase db push --linked",
