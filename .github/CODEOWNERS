@@ -2,14 +2,14 @@
 # Documentación: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Default: todo cambio requiere revisión del owner
-* @pipec800
+* @pipec80
 
 # Seguridad y auth — revisión obligatoria del owner
-src/app/[locale]/(auth)/         @pipec800
-src/lib/supabase/                @pipec800
-src/proxy.ts                     @pipec800
-src/env.ts                       @pipec800
-supabase/migrations/             @pipec800
+src/app/[locale]/(auth)/         @pipec80
+src/lib/supabase/                @pipec80
+src/proxy.ts                     @pipec80
+src/env.ts                       @pipec80
+supabase/migrations/             @pipec80
 
 # CI/CD — cambios en el pipeline requieren revisión
-.github/workflows/               @pipec800
+.github/workflows/               @pipec80
