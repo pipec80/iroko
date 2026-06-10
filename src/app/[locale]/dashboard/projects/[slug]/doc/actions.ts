@@ -3,6 +3,7 @@
 import { z } from 'zod';
 
 import { logger } from '@/lib/logger';
+import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { create } from '@/lib/project-documents';
 
@@ -14,7 +15,9 @@ const createDocumentSchema = z.object({
 
 type CreateDocumentResult = { error?: string; docId?: string };
 
-export async function createDocument(formData: FormData): Promise<CreateDocumentResult> {
+export const createDocument = withServerAction(async function createDocument(
+  formData: FormData,
+): Promise<CreateDocumentResult> {
   const raw = {
     name: formData.get('name') as string,
     description: (formData.get('description') as string) || undefined,
@@ -55,4 +58,4 @@ export async function createDocument(formData: FormData): Promise<CreateDocument
     logger.warn({ action: 'documents.create', accountId, message }, 'createDocument failed');
     return { error: 'No se pudo crear el documento. Intenta de nuevo.' };
   }
-}
+});

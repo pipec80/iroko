@@ -4,10 +4,11 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import { logger } from '@/lib/logger';
+import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { update } from '@/lib/project-documents';
 
-export async function saveDocument(
+export const saveDocument = withServerAction(async function saveDocument(
   docId: string,
   content: string,
 ): Promise<{ error?: string; success?: boolean }> {
@@ -31,4 +32,4 @@ export async function saveDocument(
   logger.info({ action: 'documents.save.success', docId }, 'Document saved');
   revalidatePath('/', 'layout');
   return { success: true };
-}
+});

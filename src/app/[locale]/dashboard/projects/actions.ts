@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { logger } from '@/lib/logger';
+import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { create } from '@/lib/projects';
 import { createProjectSchema, TONE_TO_COLOR } from '@/lib/validation/projects';
@@ -34,7 +35,9 @@ function toSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-export async function createProject(formData: FormData): Promise<ActionResult> {
+export const createProject = withServerAction(async function createProject(
+  formData: FormData,
+): Promise<ActionResult> {
   const raw = {
     name: formData.get('name') as string,
     description: (formData.get('description') as string) || undefined,
@@ -81,4 +84,4 @@ export async function createProject(formData: FormData): Promise<ActionResult> {
   revalidatePath('/es/dashboard/projects');
   revalidatePath('/en/dashboard/projects');
   return { success: true };
-}
+});

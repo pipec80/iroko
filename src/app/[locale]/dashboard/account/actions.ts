@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { env } from '@/env';
 import { redirect } from '@/i18n/routing';
 import { logger } from '@/lib/logger';
+import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import {
   deleteAccountSchema,
@@ -41,7 +42,7 @@ async function requireUserId() {
   return { supabase, userId };
 }
 
-export async function updateProfileAction(
+export const updateProfileAction = withServerAction(async function updateProfileAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
@@ -85,9 +86,9 @@ export async function updateProfileAction(
 
   revalidatePath('/dashboard/settings');
   return { success: 'profile_updated' };
-}
+});
 
-export async function updateEmailAction(
+export const updateEmailAction = withServerAction(async function updateEmailAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
@@ -109,43 +110,45 @@ export async function updateEmailAction(
   }
 
   return { success: 'email_change_requested' };
-}
+});
 
-export async function updatePasswordFromSettingsAction(
-  _prev: SettingsActionState,
-  formData: FormData,
-): Promise<SettingsActionState> {
-  const parsed = updatePasswordFromSettingsSchema.safeParse({
-    current_password: formData.get('current_password'),
-    password: formData.get('password'),
-    confirm_password: formData.get('confirm_password'),
-  });
+export const updatePasswordFromSettingsAction = withServerAction(
+  async function updatePasswordFromSettingsAction(
+    _prev: SettingsActionState,
+    formData: FormData,
+  ): Promise<SettingsActionState> {
+    const parsed = updatePasswordFromSettingsSchema.safeParse({
+      current_password: formData.get('current_password'),
+      password: formData.get('password'),
+      confirm_password: formData.get('confirm_password'),
+    });
 
-  if (!parsed.success) {
-    return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
-  }
+    if (!parsed.success) {
+      return { fieldErrors: flattenFieldErrors(parsed.error.flatten().fieldErrors) };
+    }
 
-  const { supabase, userId } = await requireUserId();
-  if (!userId) return { error: 'not_authenticated' };
+    const { supabase, userId } = await requireUserId();
+    if (!userId) return { error: 'not_authenticated' };
 
-  // Pass currentPassword so Supabase can enforce secure_password_change.
-  const { error } = await supabase.auth.updateUser({
-    password: parsed.data.password,
-    // @ts-expect-error supabase-js types miss this option in 2.x; supported server-side.
-    currentPassword: parsed.data.current_password,
-  });
-  if (error) {
-    logger.warn(
-      { userId, action: 'settings.updatePassword', code: error.code },
-      'Password change failed',
-    );
-    return { error: error.code ?? 'update_password_failed' };
-  }
+    // Pass currentPassword so Supabase can enforce secure_password_change.
+    const { error } = await supabase.auth.updateUser({
+      password: parsed.data.password,
+      // @ts-expect-error supabase-js types miss this option in 2.x; supported server-side.
+      currentPassword: parsed.data.current_password,
+    });
+    if (error) {
+      logger.warn(
+        { userId, action: 'settings.updatePassword', code: error.code },
+        'Password change failed',
+      );
+      return { error: error.code ?? 'update_password_failed' };
+    }
 
-  return { success: 'password_updated' };
-}
+    return { success: 'password_updated' };
+  },
+);
 
-export async function uploadAvatarAction(
+export const uploadAvatarAction = withServerAction(async function uploadAvatarAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
@@ -189,35 +192,37 @@ export async function uploadAvatarAction(
 
   revalidatePath('/dashboard/settings');
   return { success: 'avatar_updated' };
-}
+});
 
-export async function requestPasswordResetFromSettingsAction(
-  _prev: SettingsActionState,
-  _formData: FormData,
-): Promise<SettingsActionState> {
-  const { supabase, userId } = await requireUserId();
-  if (!userId) return { error: 'not_authenticated' };
+export const requestPasswordResetFromSettingsAction = withServerAction(
+  async function requestPasswordResetFromSettingsAction(
+    _prev: SettingsActionState,
+    _formData: FormData,
+  ): Promise<SettingsActionState> {
+    const { supabase, userId } = await requireUserId();
+    if (!userId) return { error: 'not_authenticated' };
 
-  const { data: userData } = await supabase.auth.getUser();
-  const email = userData.user?.email;
-  if (!email) return { error: 'no_email_on_account' };
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData.user?.email;
+    if (!email) return { error: 'no_email_on_account' };
 
-  const locale = await getLocale();
-  const redirectTo = `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/reset-password`;
+    const locale = await getLocale();
+    const redirectTo = `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/reset-password`;
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-  if (error) {
-    logger.warn(
-      { userId, action: 'settings.requestReset', code: error.code },
-      'Reset link request failed',
-    );
-    return { error: error.code ?? 'reset_failed' };
-  }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) {
+      logger.warn(
+        { userId, action: 'settings.requestReset', code: error.code },
+        'Reset link request failed',
+      );
+      return { error: error.code ?? 'reset_failed' };
+    }
 
-  return { success: 'reset_link_sent' };
-}
+    return { success: 'reset_link_sent' };
+  },
+);
 
-export async function deleteAccountAction(
+export const deleteAccountAction = withServerAction(async function deleteAccountAction(
   _prev: SettingsActionState,
   formData: FormData,
 ): Promise<SettingsActionState> {
@@ -245,30 +250,34 @@ export async function deleteAccountAction(
   const locale = await getLocale();
   redirect({ href: '/login?deleted=1', locale });
   return {};
-}
+});
 
-export async function generateRecoveryCodesAction(
-  _prev: SettingsActionState,
-  _formData: FormData,
+export const generateRecoveryCodesAction = withServerAction(
+  async function generateRecoveryCodesAction(
+    _prev: SettingsActionState,
+    _formData: FormData,
+  ): Promise<SettingsActionState> {
+    const { supabase, userId } = await requireUserId();
+    if (!userId) return { error: 'not_authenticated' };
+
+    const { data, error } = await supabase.rpc('generate_recovery_codes');
+    if (error) {
+      logger.warn(
+        { userId, action: 'settings.generateRecoveryCodes', code: error.code },
+        'Recovery codes generation failed',
+      );
+      return { error: error.code ?? 'recovery_generate_failed' };
+    }
+
+    logger.info({ userId, action: 'recovery_codes_generated' }, 'Recovery codes generated');
+    revalidatePath('/dashboard/account');
+    return { success: 'recovery_codes_generated', codes: data ?? [] };
+  },
+);
+
+export const revokeSessionAction = withServerAction(async function revokeSessionAction(
+  sessionId: string,
 ): Promise<SettingsActionState> {
-  const { supabase, userId } = await requireUserId();
-  if (!userId) return { error: 'not_authenticated' };
-
-  const { data, error } = await supabase.rpc('generate_recovery_codes');
-  if (error) {
-    logger.warn(
-      { userId, action: 'settings.generateRecoveryCodes', code: error.code },
-      'Recovery codes generation failed',
-    );
-    return { error: error.code ?? 'recovery_generate_failed' };
-  }
-
-  logger.info({ userId, action: 'recovery_codes_generated' }, 'Recovery codes generated');
-  revalidatePath('/dashboard/account');
-  return { success: 'recovery_codes_generated', codes: data ?? [] };
-}
-
-export async function revokeSessionAction(sessionId: string): Promise<SettingsActionState> {
   if (!z.string().uuid().safeParse(sessionId).success) {
     return { error: 'invalid_session_id' };
   }
@@ -284,24 +293,26 @@ export async function revokeSessionAction(sessionId: string): Promise<SettingsAc
 
   revalidatePath('/dashboard/settings');
   return { success: 'session_revoked' };
-}
+});
 
-export async function revokeAllOtherSessionsAction(): Promise<SettingsActionState> {
-  const { supabase, userId } = await requireUserId();
-  if (!userId) return { error: 'not_authenticated' };
+export const revokeAllOtherSessionsAction = withServerAction(
+  async function revokeAllOtherSessionsAction(): Promise<SettingsActionState> {
+    const { supabase, userId } = await requireUserId();
+    if (!userId) return { error: 'not_authenticated' };
 
-  const { error } = await supabase.auth.signOut({ scope: 'others' });
-  if (error) {
-    logger.warn(
-      { userId, action: 'settings.signOutOthers', code: error.code },
-      'SignOut others failed',
-    );
-    return { error: error.code ?? 'sign_out_others_failed' };
-  }
+    const { error } = await supabase.auth.signOut({ scope: 'others' });
+    if (error) {
+      logger.warn(
+        { userId, action: 'settings.signOutOthers', code: error.code },
+        'SignOut others failed',
+      );
+      return { error: error.code ?? 'sign_out_others_failed' };
+    }
 
-  revalidatePath('/dashboard/settings');
-  return { success: 'other_sessions_revoked' };
-}
+    revalidatePath('/dashboard/settings');
+    return { success: 'other_sessions_revoked' };
+  },
+);
 
 export type SessionRow = {
   id: string;
@@ -313,7 +324,9 @@ export type SessionRow = {
   aal: string | null;
 };
 
-export async function listMySessions(): Promise<SessionRow[]> {
+export const listMySessions = withServerAction(async function listMySessions(): Promise<
+  SessionRow[]
+> {
   const { supabase, userId } = await requireUserId();
   if (!userId) return [];
 
@@ -326,4 +339,4 @@ export async function listMySessions(): Promise<SessionRow[]> {
     return [];
   }
   return (data ?? []) as SessionRow[];
-}
+});

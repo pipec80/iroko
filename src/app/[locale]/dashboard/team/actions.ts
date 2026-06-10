@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { logger } from '@/lib/logger';
+import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { inviteSchema, removeMemberSchema } from '@/lib/validation/team';
 
@@ -43,7 +44,10 @@ async function getAccountId(): Promise<string | null> {
  * Fetches team members + pending invitations for the current user's account.
  * Called server-side from the team page (RSC).
  */
-export async function getTeamMembers(): Promise<{ data: TeamMember[]; error?: string }> {
+export const getTeamMembers = withServerAction(async function getTeamMembers(): Promise<{
+  data: TeamMember[];
+  error?: string;
+}> {
   const accountId = await getAccountId();
   if (!accountId) return { data: [], error: 'no_account' };
 
@@ -58,13 +62,15 @@ export async function getTeamMembers(): Promise<{ data: TeamMember[]; error?: st
   }
 
   return { data: (data as TeamMember[]) ?? [] };
-}
+});
 
 /**
  * Invite members by email with a specified role.
  * Validates emails strictly with Zod before calling the RPC.
  */
-export async function inviteMembers(formData: FormData): Promise<ActionResult> {
+export const inviteMembers = withServerAction(async function inviteMembers(
+  formData: FormData,
+): Promise<ActionResult> {
   const raw = {
     emails: formData.get('emails') as string,
     role: formData.get('role') as string,
@@ -100,12 +106,14 @@ export async function inviteMembers(formData: FormData): Promise<ActionResult> {
 
   revalidatePath('/dashboard/team');
   return { success: true, count: data as number };
-}
+});
 
 /**
  * Remove a member from the team account.
  */
-export async function removeMember(formData: FormData): Promise<ActionResult> {
+export const removeMember = withServerAction(async function removeMember(
+  formData: FormData,
+): Promise<ActionResult> {
   const raw = { userId: formData.get('userId') as string };
 
   const parsed = removeMemberSchema.safeParse(raw);
@@ -137,4 +145,4 @@ export async function removeMember(formData: FormData): Promise<ActionResult> {
 
   revalidatePath('/dashboard/team');
   return { success: true };
-}
+});
