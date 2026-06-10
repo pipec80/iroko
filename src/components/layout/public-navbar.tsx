@@ -8,8 +8,6 @@ import { Link } from '@/i18n/routing';
 const NAV_LINKS = [
   { label: 'Producto', href: '/product' },
   { label: 'Precios', href: '/pricing' },
-  { label: 'Documentación', href: '/docs' },
-  { label: 'Changelog', href: '/changelog' },
 ];
 
 export function PublicNavbar() {
