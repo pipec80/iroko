@@ -5,6 +5,7 @@ import CountryFlag from 'react-country-flag';
 import { ChevronDown, Search } from 'lucide-react';
 import { Popover, ScrollArea } from 'radix-ui';
 
+import type { PhoneCountry } from '@/lib/phone-countries';
 import { PHONE_COUNTRIES, parseE164 } from '@/lib/phone-countries';
 import { cn } from '@/lib/utils';
 
@@ -22,9 +23,13 @@ export function PhoneCountryInput({ name, defaultValue, 'aria-invalid': ariaInva
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
-  const selectedCountry =
-    PHONE_COUNTRIES.find((c) => c.iso === selectedIso) ??
-    PHONE_COUNTRIES.find((c) => c.iso === 'CL')!;
+  const selectedCountry: PhoneCountry = PHONE_COUNTRIES.find((c) => c.iso === selectedIso) ??
+    PHONE_COUNTRIES.find((c) => c.iso === 'CL') ?? {
+      iso: 'CL',
+      name: 'Chile',
+      dialCode: '+56',
+      localDigits: 9,
+    };
 
   const e164Value = localNumber.trim() ? `${selectedCountry.dialCode}${localNumber.trim()}` : '';
 
