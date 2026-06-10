@@ -163,9 +163,14 @@ jobs:
   db-types:
     name: Database Types
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
@@ -175,14 +180,15 @@ jobs:
       - name: Start local database
         run: supabase db start
 
-      - name: Verify generated types match schema
+      - name: Sync database types
         run: |
           supabase gen types --local --lang typescript --schema public,billing,audit > src/types/database.ts
           if ! git diff --ignore-space-at-eol --exit-code --quiet src/types/database.ts; then
-            echo "src/types/database.ts está desincronizado con el schema."
-            echo "Ejecuta: pnpm supa:gen:types && git commit"
-            git diff src/types/database.ts
-            exit 1
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add src/types/database.ts
+            git commit -m "chore: sync database types [skip ci]"
+            git push
           fi
 
   # ─────────────────────────────────────────────

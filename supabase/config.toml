@@ -53,9 +53,10 @@ pool_mode = "transaction"
 default_pool_size = 20
 max_client_conn = 100
 
-# [db.migrations]      # no documentado en CLI spec
-# enabled = true
-# schema_paths = []
+# [db.migrations]
+# schema_paths = ["./schemas/public.sql", "./schemas/billing.sql", "./schemas/audit.sql", "./schemas/private.sql"]
+# Declarative schemas — currently disabled due to CLI bug on Windows (v2.101.0).
+# Files in supabase/schemas/ reflect the current DB state as reference.
 
 [db.seed]
 enabled = true
