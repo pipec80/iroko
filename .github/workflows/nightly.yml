@@ -19,12 +19,12 @@ on:
   schedule:
     # 3 AM UTC — fuera del horario pico de Europa y América
     - cron: '0 3 * * *'
-  # Permite disparar manualmente para debugging
   workflow_dispatch:
 
 env:
   NODE_VERSION: '24'
   PNPM_VERSION: '10'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   smoke:
@@ -47,6 +47,12 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/package.json') }}
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
