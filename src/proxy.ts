@@ -17,7 +17,9 @@ function buildCspHeader(isDev: boolean): string {
     isDev ?
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:"
     : [
-        "script-src 'self'",
+        // 'unsafe-inline' es requerido por Next.js App Router (RSC payload scripts).
+        // Los scripts inline de hidratación no aceptan nonces con middleware compuesto.
+        "script-src 'self' 'unsafe-inline'",
         'https://va.vercel-scripts.com',
         'https://vitals.vercel-insights.com',
         SENTRY_INGEST_ORIGIN,
