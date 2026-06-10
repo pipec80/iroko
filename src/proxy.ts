@@ -20,6 +20,9 @@ export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const isDev = process.env.NODE_ENV === 'development';
 
+  const sentryReportUri =
+    'https://o4511537461067776.ingest.us.sentry.io/api/4511537462771713/security/?sentry_key=f88007bc87fbd834a3f62bfc0d256a7e';
+
   const cspHeader = `
     default-src 'self';
     script-src 'self' ${isDev ? "'unsafe-inline' 'unsafe-eval' https:" : `'nonce-${nonce}' 'strict-dynamic'`};
@@ -34,6 +37,8 @@ export async function proxy(request: NextRequest) {
     form-action 'self';
     frame-ancestors 'none';
     upgrade-insecure-requests;
+    report-uri ${sentryReportUri};
+    report-to csp-endpoint;
   `
     .replace(/\s{2,}/g, ' ')
     .trim();
@@ -64,6 +69,16 @@ export async function proxy(request: NextRequest) {
   response.headers.set('x-middleware-request-x-nonce', nonce);
   response.headers.set('x-middleware-request-content-security-policy', cspHeader);
   response.headers.set('Cache-Control', 'private, no-store');
+
+  // CSP violation reporting endpoints (Report-To for modern browsers, report-uri as fallback)
+  const reportToValue = JSON.stringify({
+    group: 'csp-endpoint',
+    max_age: 10886400,
+    endpoints: [{ url: sentryReportUri }],
+    include_subdomains: true,
+  });
+  response.headers.set('Report-To', reportToValue);
+  response.headers.set('Reporting-Endpoints', `csp-endpoint="${sentryReportUri}"`);
 
   // OWASP recommended security headers
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
