@@ -57,7 +57,7 @@ test.describe('Password recovery flow', () => {
       expect(confirmUrl).not.toBeNull();
 
       // 4. /auth/click renders the "Restablecer contraseña" button (type=recovery).
-      await page.goto(confirmUrl!);
+      await page.goto(confirmUrl as string);
       await expect(page.getByRole('button', { name: /restablecer contraseña/i })).toBeVisible();
       await page.getByRole('button', { name: /restablecer contraseña/i }).click();
 

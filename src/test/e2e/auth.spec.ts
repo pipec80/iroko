@@ -65,7 +65,7 @@ test.describe('Auth flow', () => {
 
     // 4. Follow the OTP link: /auth/click (click shield) → button click
     //    → /auth/confirm (verifyOtp) → /es/dashboard (session established).
-    await page.goto(confirmUrl!);
+    await page.goto(confirmUrl as string);
     await expect(page.getByRole('button', { name: /confirmar cuenta/i })).toBeVisible();
     await page.getByRole('button', { name: /confirmar cuenta/i }).click();
     await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
