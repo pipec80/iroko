@@ -54,10 +54,10 @@ test.describe('Auth flow', () => {
 
   test('login page renders both forms and switcher', async ({ page }) => {
     await page.goto('/es/login');
-    await expect(page.getByRole('heading', { name: /bienvenido/i })).toBeVisible();
-    await expect(page.locator('input[name="email"]').first()).toBeVisible();
-    await expect(page.locator('input[name="password"]').first()).toBeVisible();
-    await expect(page.locator('form button[type="submit"]').first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /vuelve a tu tronco/i })).toBeVisible();
+    await expect(page.locator('input[name="email"][type="email"]')).toBeVisible();
+    await expect(page.locator('input[name="password"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: /iniciar sesión/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /enlace mágico/i })).toBeVisible();
   });
 

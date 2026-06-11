@@ -343,7 +343,9 @@ jobs:
         run: pnpm test:e2e
         env:
           SITE_URL: http://localhost:3000
-          NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+          # Sin NEXT_PUBLIC_TURNSTILE_SITE_KEY: CaptchaField no renderiza nada
+          # y captchaReady arranca en true → botones habilitados desde el inicio.
+          # Turnstile headless no dispara onSuccess aunque uses la test key.
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7

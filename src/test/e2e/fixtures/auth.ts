@@ -42,11 +42,13 @@ export const test = base.extend<AuthFixtures>({
 
     const userId = body.id;
 
-    // Login vía UI para establecer las cookies de sesión en el browser context
+    // Login vía UI para establecer las cookies de sesión en el browser context.
+    // Usar getByRole en lugar de form button[type="submit"] porque la página de login
+    // tiene DOS botones submit (sign-in + magic link) y el selector genérico es ambiguo.
     await page.goto('/es/login');
     await page.locator('input[name="email"][type="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
-    await page.locator('form button[type="submit"]').click();
+    await page.getByRole('button', { name: /iniciar sesión/i }).click();
     await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
 
     await provide(page);

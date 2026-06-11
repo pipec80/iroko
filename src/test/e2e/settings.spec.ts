@@ -37,7 +37,7 @@ authTest.describe('Settings page — authenticated', () => {
 
     await expect(page.locator('input[name="given_name"]')).toBeVisible();
     await expect(page.locator('input[name="family_name"]')).toBeVisible();
-    await expect(page.locator('form button[type="submit"]')).toBeVisible();
+    await expect(page.locator('form button[type="submit"]').first()).toBeVisible();
   });
 
   authTest(
@@ -70,7 +70,7 @@ authTest.describe('Settings page — authenticated', () => {
       await page.waitForURL(/\/es\/dashboard\/settings/);
 
       await page.locator('input[name="given_name"]').fill('');
-      await page.locator('form button[type="submit"]').click();
+      await page.locator('form button[type="submit"]').first().click();
       await page.waitForTimeout(500);
 
       // Sin validación el form no navega a otra URL
