@@ -299,10 +299,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Playwright se instala ANTES de Docker/Supabase para evitar que la extracción
-      # del zip falle por falta de recursos cuando los contenedores ya están corriendo.
+      # Sin --with-deps: ubuntu-latest ya tiene todas las deps de Chromium preinstaladas.
+      # --with-deps instala fonts grandes (japonesas, chinas) que disparan fc-cache
+      # y pueden colgar el step 15-20 min silenciosamente.
       - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
