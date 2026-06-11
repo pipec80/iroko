@@ -895,6 +895,126 @@ export type Database = {
           },
         ]
       }
+      robot_contacts: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          priority: number
+          relationship: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          name: string
+          phone: string
+          priority?: number
+          relationship?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          priority?: number
+          relationship?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "robot_contacts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      robot_memories: {
+        Row: {
+          account_id: string
+          created_at: string
+          entity: string
+          id: string
+          key_fact: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          entity: string
+          id?: string
+          key_fact: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          entity?: string
+          id?: string
+          key_fact?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "robot_memories_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      robot_routines: {
+        Row: {
+          account_id: string
+          activity_type: string
+          created_at: string
+          description: string | null
+          id: string
+          message: string | null
+          time: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          message?: string | null
+          time: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          message?: string | null
+          time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "robot_routines_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

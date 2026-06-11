@@ -55,13 +55,3 @@ export async function update(
   if (error) throw error;
   return data;
 }
-
-export async function archive(id: string): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase
-    .from('documents')
-    .update({ deleted_at: new Date().toISOString() })
-    .eq('id', id);
-
-  if (error) throw error;
-}

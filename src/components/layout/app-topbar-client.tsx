@@ -42,6 +42,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/billing': 'Billing',
   '/dashboard/org/settings': 'Ajustes',
   '/dashboard/account': 'Mi cuenta',
+  '/dashboard/operations/robot': 'Iroko Robot',
 };
 
 function getPageTitle(pathname: string): string {

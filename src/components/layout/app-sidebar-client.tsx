@@ -9,6 +9,7 @@ import {
   LayoutGrid,
   Settings,
   Users,
+  Bot,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -57,6 +58,7 @@ export function AppSidebarClient({ orgs }: Props) {
   const navItems = [
     { id: 'overview', Icon: LayoutGrid, label: t('nav_overview'), href: '/dashboard' },
     { id: 'projects', Icon: FolderTree, label: t('nav_projects'), href: '/dashboard/projects' },
+    { id: 'iroko', Icon: Bot, label: 'Iroko Robot', href: '/dashboard/operations/robot' },
     { id: 'members', Icon: Users, label: t('nav_members'), href: '/dashboard/members' },
     { id: 'billing', Icon: CreditCard, label: t('nav_billing'), href: '/dashboard/billing' },
     { id: 'settings', Icon: Settings, label: t('nav_settings'), href: '/dashboard/org/settings' },

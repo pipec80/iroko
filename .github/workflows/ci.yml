@@ -164,6 +164,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      SUPABASE_ACCESS_TOKEN: dummy_token_for_local_db
     steps:
       - name: Checkout
         uses: actions/checkout@v6

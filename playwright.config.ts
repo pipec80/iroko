@@ -59,6 +59,9 @@ export default defineConfig({
         timeout: 180_000,
         stdout: 'ignore',
         stderr: 'pipe',
+        env: {
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: '',
+        },
       },
     }),
 });

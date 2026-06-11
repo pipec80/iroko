@@ -6,11 +6,6 @@ export type PhoneCountry = {
   localDigits?: number;
 };
 
-/** Converts ISO 3166-1 alpha-2 code to flag emoji. */
-export function isoToFlag(iso: string): string {
-  return [...iso.toUpperCase()].map((c) => String.fromCodePoint(c.charCodeAt(0) + 127397)).join('');
-}
-
 export const PHONE_COUNTRIES: PhoneCountry[] = [
   { iso: 'AR', name: 'Argentina', dialCode: '+54', localDigits: 10 },
   { iso: 'AU', name: 'Australia', dialCode: '+61', localDigits: 9 },
