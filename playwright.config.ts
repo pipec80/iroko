@@ -25,7 +25,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // En CI usa el Google Chrome pre-instalado en el runner (evita descargar Playwright Chromium)
+        ...(process.env.CI ? { channel: 'chrome' } : {}),
+      },
     },
   ],
 

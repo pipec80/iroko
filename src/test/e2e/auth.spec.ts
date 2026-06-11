@@ -130,6 +130,6 @@ test.describe('Auth flow', () => {
       failOnStatusCode: false,
     });
     expect([301, 302, 303, 307]).toContain(res.status());
-    expect(res.headers()['location']).toMatch(/error=invalid_confirmation/);
+    expect(res.headers()['location']).toMatch(/error=confirmation_failed/);
   });
 });

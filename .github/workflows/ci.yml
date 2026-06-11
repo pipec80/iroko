@@ -344,8 +344,6 @@ jobs:
         env:
           SITE_URL: http://localhost:3000
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
-          # Usa el Chrome pre-instalado en el runner — evita descargar/extraer 170MB
-          PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome-stable
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
