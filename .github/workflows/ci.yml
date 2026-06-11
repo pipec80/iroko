@@ -299,6 +299,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Playwright se instala ANTES de Docker/Supabase para evitar que la extracción
+      # del zip falle por falta de recursos cuando los contenedores ya están corriendo.
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
@@ -338,9 +343,6 @@ jobs:
           echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY" >> $GITHUB_ENV
           echo "SUPABASE_SECRET_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
-
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
         run: pnpm test:e2e
