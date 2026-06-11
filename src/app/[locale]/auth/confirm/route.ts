@@ -1,9 +1,10 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { env } from '@/env';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 import { logger } from '@/lib/logger';
-import { createClient } from '@/lib/supabase/server';
+import type { Database } from '@/types/database';
 
 import type { EmailOtpType } from '@supabase/supabase-js';
 
@@ -31,7 +32,23 @@ export async function GET(
     return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?error=confirmation_failed`);
   }
 
-  const supabase = await createClient();
+  const response = NextResponse.redirect(`${env.SITE_URL}${next}`);
+
+  const supabase = createServerClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    {
+      cookies: {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
+          for (const { name, value, options } of cookiesToSet) {
+            response.cookies.set(name, value, options);
+          }
+        },
+      },
+    },
+  );
+
   const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
 
   if (error) {
@@ -42,5 +59,5 @@ export async function GET(
     return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?error=confirmation_failed`);
   }
 
-  return NextResponse.redirect(`${env.SITE_URL}${next}`);
+  return response;
 }

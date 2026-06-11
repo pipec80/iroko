@@ -33,7 +33,7 @@ export default defineConfig({
   use: {
     // PLAYWRIGHT_BASE_URL overrides local default — used by nightly production monitoring.
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-    trace: 'on-first-retry',
+    trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
 
@@ -57,7 +57,7 @@ export default defineConfig({
         url: 'http://localhost:3000',
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
-        stdout: 'ignore',
+        stdout: 'pipe',
         stderr: 'pipe',
         env: {
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: '',
