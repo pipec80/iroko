@@ -77,8 +77,8 @@ export default function ResetPasswordPage() {
           </div>
           {state.fieldErrors?.confirm_password && (
             <p className="text-destructive text-xs">
-              {t(`errors.${state.fieldErrors.confirm_password[0]}` as 'errors.generic', {
-                default: state.fieldErrors.confirm_password[0],
+              {t(`errors.${state.fieldErrors.confirm_password[0] ?? ''}` as 'errors.generic', {
+                default: state.fieldErrors.confirm_password[0] ?? '',
               })}
             </p>
           )}

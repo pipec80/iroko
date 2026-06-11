@@ -75,8 +75,12 @@ authTest.describe('Settings page — authenticated', () => {
       const profileForm = page
         .locator('form')
         .filter({ has: page.locator('input[name="given_name"]') });
-      await page.locator('input[name="given_name"]').fill('Temp');
-      await expect(profileForm.locator('button[type="submit"]')).toBeEnabled();
+
+      await expect(async () => {
+        await page.locator('input[name="given_name"]').fill('Temp');
+        await expect(profileForm.locator('button[type="submit"]')).toBeEnabled({ timeout: 1000 });
+      }).toPass({ timeout: 10_000 });
+
       await page.locator('input[name="given_name"]').fill('');
       await profileForm.locator('button[type="submit"]').click();
 

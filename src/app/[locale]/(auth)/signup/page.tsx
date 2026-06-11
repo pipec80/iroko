@@ -40,7 +40,7 @@ export default function SignupPage() {
     if (dirtyFields.has(field)) return null;
     const errors = state.fieldErrors?.[field];
     if (!errors?.length) return null;
-    return t(`errors.${errors[0]}` as 'errors.generic', { default: errors[0] });
+    return t(`errors.${errors[0] ?? ''}` as 'errors.generic', { default: errors[0] ?? '' });
   };
 
   const error =

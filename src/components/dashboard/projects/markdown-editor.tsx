@@ -54,7 +54,9 @@ export function MarkdownEditor({
       setContent(value);
       setStatus('idle');
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => save(value), AUTOSAVE_DELAY);
+      debounceRef.current = setTimeout(() => {
+        void save(value);
+      }, AUTOSAVE_DELAY);
     },
     [save],
   );

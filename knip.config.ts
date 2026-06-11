@@ -34,10 +34,9 @@ const config: KnipConfig = {
     'pino-pretty',
     'shadcn',
     'typescript-eslint',
-    'cross-env',
     'tailwindcss',
   ],
-  ignoreBinaries: ['supabase', 'vercel'],
+  ignoreBinaries: ['supabase', 'vercel', 'gitleaks'],
 };
 
 export default config;

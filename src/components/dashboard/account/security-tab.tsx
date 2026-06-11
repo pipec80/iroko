@@ -86,8 +86,8 @@ export function SecurityTab() {
               />
               {pwState.fieldErrors?.password && (
                 <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
-                  {t(`errors.${pwState.fieldErrors.password[0]}` as 'errors.generic', {
-                    default: pwState.fieldErrors.password[0],
+                  {t(`errors.${pwState.fieldErrors.password[0] ?? ''}` as 'errors.generic', {
+                    default: pwState.fieldErrors.password[0] ?? '',
                   })}
                 </p>
               )}
@@ -104,9 +104,12 @@ export function SecurityTab() {
               />
               {pwState.fieldErrors?.confirm_password && (
                 <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
-                  {t(`errors.${pwState.fieldErrors.confirm_password[0]}` as 'errors.generic', {
-                    default: pwState.fieldErrors.confirm_password[0],
-                  })}
+                  {t(
+                    `errors.${pwState.fieldErrors.confirm_password[0] ?? ''}` as 'errors.generic',
+                    {
+                      default: pwState.fieldErrors.confirm_password[0] ?? '',
+                    },
+                  )}
                 </p>
               )}
             </div>

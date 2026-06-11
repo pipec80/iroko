@@ -3,23 +3,15 @@
   "framework": "nextjs",
   "headers": [
     {
-      "source": "/(es|en)/auth/(.*)",
+      "source": "/:locale/auth/:path*",
       "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "no-store, no-cache, must-revalidate, proxy-revalidate"
-        },
+        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate" },
         { "key": "Pragma", "value": "no-cache" }
       ]
     },
     {
       "source": "/_next/static/(.*)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
-    },
-    {
-      "source": "/favicon.ico",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
     }
-  ],
-  "crons": []
+  ]
 }

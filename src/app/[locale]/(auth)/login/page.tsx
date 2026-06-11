@@ -195,8 +195,8 @@ export default function LoginPage() {
           </div>
           {signInState.fieldErrors?.email && (
             <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
-              {t(`errors.${signInState.fieldErrors.email[0]}` as 'errors.generic', {
-                default: signInState.fieldErrors.email[0],
+              {t(`errors.${signInState.fieldErrors.email[0] ?? ''}` as 'errors.generic', {
+                default: signInState.fieldErrors.email[0] ?? '',
               })}
             </p>
           )}
@@ -229,8 +229,8 @@ export default function LoginPage() {
           </div>
           {signInState.fieldErrors?.password && (
             <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
-              {t(`errors.${signInState.fieldErrors.password[0]}` as 'errors.generic', {
-                default: signInState.fieldErrors.password[0],
+              {t(`errors.${signInState.fieldErrors.password[0] ?? ''}` as 'errors.generic', {
+                default: signInState.fieldErrors.password[0] ?? '',
               })}
             </p>
           )}

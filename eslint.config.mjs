@@ -52,7 +52,37 @@ const eslintConfig = defineConfig([
         { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
       ],
       '@typescript-eslint/no-non-null-assertion': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────
+  // Type-checked rules — solo archivos src TS/TSX
+  // Más lentas (~10s extra) pero detectan bugs que TypeScript no cubre:
+  // floating promises, await en no-promises, async en event handlers
+  // ──────────────────────────────────────────────────────────────
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-misused-promises': [
+        'error',
+        { checksVoidReturn: { attributes: false } },
+      ],
+      '@typescript-eslint/await-thenable': 'error',
     },
   },
 
@@ -61,6 +91,7 @@ const eslintConfig = defineConfig([
   // ──────────────────────────────────────────────────────────────
   globalIgnores([
     '.next/**',
+    'coverage/**',
     '.agent/**',
     '.agents/**',
     '.claude/**',

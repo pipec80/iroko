@@ -11,21 +11,12 @@ const nextConfig: NextConfig = {
   devIndicators: {
     position: 'bottom-right',
   },
-  cacheLife: {
-    fast: {
-      stale: 60, // 1 min
-      revalidate: 30, // 30 sec
-      expire: 300, // 5 min
-    },
-  },
-  logging: {
-    fetches: {
-      fullUrl: true,
-    },
-    browserToTerminal: true,
-  },
+  logging:
+    process.env.NODE_ENV === 'development' ?
+      { fetches: { fullUrl: true }, browserToTerminal: true }
+    : undefined,
   output: 'standalone',
-  pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
+  pageExtensions: ['ts', 'tsx'],
   images: {
     // Node.js uses its own CA bundle (not the Windows cert store), so in dev
     // environments with SSL-inspection proxies the server-side fetch inside
@@ -91,7 +82,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   experimental: {
-    authInterrupts: true,
     serverActions: {
       bodySizeLimit: '2mb',
     },

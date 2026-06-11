@@ -10,7 +10,7 @@ if (existsSync('.env.local')) {
     const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)/);
     if (!m) continue;
     const [, key, raw] = m;
-    if (!process.env[key]) process.env[key] = raw.replace(/^(['"])(.*)\1$/, '$2');
+    if (key && raw && !process.env[key]) process.env[key] = raw.replace(/^(['"])(.*)\1$/, '$2');
   }
 }
 
@@ -61,6 +61,8 @@ export default defineConfig({
         stderr: 'pipe',
         env: {
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: '',
+          HOSTNAME: 'localhost',
+          PORT: '3000',
         },
       },
     }),

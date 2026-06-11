@@ -161,8 +161,8 @@ export function ProfileTab({ profile, email, role }: Props) {
               {profileState.fieldErrors?.given_name && (
                 <FieldError
                   message={t(
-                    `errors.${profileState.fieldErrors.given_name[0]}` as 'errors.generic',
-                    { default: profileState.fieldErrors.given_name[0] },
+                    `errors.${profileState.fieldErrors.given_name[0] ?? ''}` as 'errors.generic',
+                    { default: profileState.fieldErrors.given_name[0] ?? '' },
                   )}
                 />
               )}
@@ -181,8 +181,8 @@ export function ProfileTab({ profile, email, role }: Props) {
               {profileState.fieldErrors?.family_name && (
                 <FieldError
                   message={t(
-                    `errors.${profileState.fieldErrors.family_name[0]}` as 'errors.generic',
-                    { default: profileState.fieldErrors.family_name[0] },
+                    `errors.${profileState.fieldErrors.family_name[0] ?? ''}` as 'errors.generic',
+                    { default: profileState.fieldErrors.family_name[0] ?? '' },
                   )}
                 />
               )}
@@ -300,8 +300,8 @@ export function ProfileTab({ profile, email, role }: Props) {
               {profileState.fieldErrors?.birth_date && (
                 <FieldError
                   message={t(
-                    `errors.${profileState.fieldErrors.birth_date[0]}` as 'errors.generic',
-                    { default: profileState.fieldErrors.birth_date[0] },
+                    `errors.${profileState.fieldErrors.birth_date[0] ?? ''}` as 'errors.generic',
+                    { default: profileState.fieldErrors.birth_date[0] ?? '' },
                   )}
                 />
               )}
@@ -319,9 +319,12 @@ export function ProfileTab({ profile, email, role }: Props) {
               />
               {profileState.fieldErrors?.company && (
                 <FieldError
-                  message={t(`errors.${profileState.fieldErrors.company[0]}` as 'errors.generic', {
-                    default: profileState.fieldErrors.company[0],
-                  })}
+                  message={t(
+                    `errors.${profileState.fieldErrors.company[0] ?? ''}` as 'errors.generic',
+                    {
+                      default: profileState.fieldErrors.company[0] ?? '',
+                    },
+                  )}
                 />
               )}
             </div>
@@ -357,9 +360,12 @@ export function ProfileTab({ profile, email, role }: Props) {
               />
               {profileState.fieldErrors?.bio ?
                 <FieldError
-                  message={t(`errors.${profileState.fieldErrors.bio[0]}` as 'errors.generic', {
-                    default: profileState.fieldErrors.bio[0],
-                  })}
+                  message={t(
+                    `errors.${profileState.fieldErrors.bio[0] ?? ''}` as 'errors.generic',
+                    {
+                      default: profileState.fieldErrors.bio[0] ?? '',
+                    },
+                  )}
                 />
               : <p className="text-muted-foreground text-xs">{t('profile.bio_hint')}</p>}
             </div>
@@ -415,9 +421,12 @@ export function ProfileTab({ profile, email, role }: Props) {
               />
               {emailState.fieldErrors?.email && (
                 <FieldError
-                  message={t(`errors.${emailState.fieldErrors.email[0]}` as 'errors.generic', {
-                    default: emailState.fieldErrors.email[0],
-                  })}
+                  message={t(
+                    `errors.${emailState.fieldErrors.email[0] ?? ''}` as 'errors.generic',
+                    {
+                      default: emailState.fieldErrors.email[0] ?? '',
+                    },
+                  )}
                 />
               )}
             </div>

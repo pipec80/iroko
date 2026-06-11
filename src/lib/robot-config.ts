@@ -93,15 +93,14 @@ export async function uploadRobotConfigAction(
     }
 
     // 3. Extraer Datos
-    const routinesSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(
-      workbook.Sheets['Rutinas'],
-    );
-    const contactsSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(
-      workbook.Sheets['Contactos'],
-    );
-    const memoriesSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(
-      workbook.Sheets['Memoria'],
-    );
+    const rutinasWs = workbook.Sheets['Rutinas'];
+    const contactosWs = workbook.Sheets['Contactos'];
+    const memoriaWs = workbook.Sheets['Memoria'];
+    if (!rutinasWs || !contactosWs || !memoriaWs) return { error: 'missing_sheets: internal' };
+
+    const routinesSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(rutinasWs);
+    const contactsSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(contactosWs);
+    const memoriesSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(memoriaWs);
 
     // Mapeo a las tablas
     const routines: RobotRoutineInsert[] = routinesSheet.map((r) => ({
