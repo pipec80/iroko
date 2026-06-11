@@ -33,8 +33,12 @@ async function fetchLatestMessageTo(
         const content = `${body.HTML ?? ''}\n${body.Text ?? ''}`;
         const match = content.match(/https?:\/\/[^\s"<>()]+/g);
         const confirmUrl =
-          match?.find((u) => /\/(auth\/v1\/)?verify\?/.test(u) || u.includes('/auth/confirm')) ??
-          null;
+          match?.find(
+            (u) =>
+              /\/(auth\/v1\/)?verify\?/.test(u) ||
+              u.includes('/auth/confirm') ||
+              u.includes('/auth/click'),
+          ) ?? null;
         return { subject: msg.Subject, confirmUrl };
       }
     }
