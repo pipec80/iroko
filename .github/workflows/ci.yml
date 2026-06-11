@@ -299,12 +299,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Sin --with-deps: ubuntu-latest ya tiene todas las deps de Chromium preinstaladas.
-      # --with-deps instala fonts grandes (japonesas, chinas) que disparan fc-cache
-      # y pueden colgar el step 15-20 min silenciosamente.
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install chromium
-
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
@@ -350,6 +344,8 @@ jobs:
         env:
           SITE_URL: http://localhost:3000
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+          # Usa el Chrome pre-instalado en el runner — evita descargar/extraer 170MB
+          PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome-stable
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
