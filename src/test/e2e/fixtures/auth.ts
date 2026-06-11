@@ -44,7 +44,7 @@ export const test = base.extend<AuthFixtures>({
 
     // Login vía UI para establecer las cookies de sesión en el browser context
     await page.goto('/es/login');
-    await page.locator('input[name="email"]').fill(email);
+    await page.locator('input[name="email"][type="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
     await page.locator('form button[type="submit"]').click();
     await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
