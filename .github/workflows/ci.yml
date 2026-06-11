@@ -277,6 +277,11 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      # Necesario antes de `supabase start` para que GoTrue rellene {{ .SiteURL }}
+      # en los templates de email. Sin esto la URL en el email es relativa y los
+      # tests de confirmación no pueden extraerla.
+      SITE_URL: http://localhost:3000
     if: |
       github.event_name == 'pull_request' ||
       github.ref == 'refs/heads/main' ||
@@ -298,6 +303,21 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
 
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2

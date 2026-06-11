@@ -21,6 +21,9 @@ export async function GET(
 ) {
   const { locale } = await params;
   const { searchParams, origin } = new URL(request.url);
+
+  console.error('CONFIRM ROUTE REQUEST URL:', request.url);
+
   const tokenHash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
   const next = safeRedirectPath(searchParams.get('next'), locale);

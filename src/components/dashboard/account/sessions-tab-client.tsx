@@ -111,7 +111,10 @@ export function SessionsTabClient({ sessions, locale, labels }: Props) {
               </thead>
               <tbody>
                 {localSessions.map((s, i) => (
-                  <tr key={s.id} className="border-outline-variant/5 border-b last:border-b-0">
+                  <tr
+                    key={s.id}
+                    data-testid="session-item"
+                    className="border-outline-variant/5 border-b last:border-b-0">
                     <td className="py-3 pr-4">
                       <div className="font-medium">{summarizeUserAgent(s.user_agent)}</div>
                       {i === 0 && (

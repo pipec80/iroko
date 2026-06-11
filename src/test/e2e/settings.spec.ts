@@ -69,12 +69,19 @@ authTest.describe('Settings page — authenticated', () => {
       await page.goto('/es/dashboard/account?tab=profile');
       await page.waitForURL(/\/es\/dashboard\/account/);
 
+      // El fixture crea el usuario sin given_name, así que el campo empieza vacío.
+      // fill('') sobre un campo vacío no dispara onChange → isProfileDirty sigue false → botón disabled.
+      // Primero llenar con un valor para activar el botón, luego borrar para probar la validación.
+      const profileForm = page
+        .locator('form')
+        .filter({ has: page.locator('input[name="given_name"]') });
+      await page.locator('input[name="given_name"]').fill('Temp');
+      await expect(profileForm.locator('button[type="submit"]')).toBeEnabled();
       await page.locator('input[name="given_name"]').fill('');
-      await page.locator('form button[type="submit"]').first().click();
-      await page.waitForTimeout(500);
+      await profileForm.locator('button[type="submit"]').click();
 
-      // Sin validación el form no navega a otra URL
-      expect(page.url()).toContain('/es/dashboard/account');
+      // Validación server-side: el form no navega a otra URL
+      await expect(page).toHaveURL(/\/es\/dashboard\/account/);
     },
   );
 });

@@ -289,6 +289,7 @@
       "no_email_on_account": "Esta cuenta no tiene correo asociado.",
       "invalid_url": "Ingresa una URL válida (debe comenzar con https://).",
       "generic": "Ocurrió un error. Intenta nuevamente.",
+      "required": "Este campo es requerido.",
       "PGRST203": "Conflicto en la base de datos. Recarga y vuelve a intentarlo."
     }
   },

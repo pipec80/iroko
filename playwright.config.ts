@@ -1,4 +1,23 @@
+import { existsSync, readFileSync } from 'fs';
+
 import { defineConfig, devices } from '@playwright/test';
+
+// .env.local is loaded by Next.js for the dev server automatically, but Playwright
+// test workers are separate Node.js processes that don't inherit those vars. Load
+// it here so tests can access SUPABASE_SECRET_KEY and other server-side secrets.
+if (existsSync('.env.local')) {
+  for (const line of readFileSync('.env.local', 'utf-8').split('\n')) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.*)/);
+    if (!m) continue;
+    const [, key, raw] = m;
+    if (!process.env[key]) process.env[key] = raw.replace(/^(['"])(.*)\1$/, '$2');
+  }
+}
+
+// E2E: desactivar Turnstile — Chromium headless no soporta el widget.
+// Misma estrategia que CI: sin la variable, CaptchaField no renderiza nada
+// y captchaReady arranca en true → botones habilitados desde el inicio.
+delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 /**
  * Playwright configuration for Next.js E2E testing.
@@ -25,11 +44,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: {
-        ...devices['Desktop Chrome'],
-        // En CI usa el Google Chrome pre-instalado en el runner (evita descargar Playwright Chromium)
-        ...(process.env.CI ? { channel: 'chrome' } : {}),
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 

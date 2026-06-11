@@ -5,11 +5,11 @@ import { env } from '@/env';
 import { routing } from '@/i18n/routing';
 import type { Database } from '@/types/database';
 
-const PUBLIC_PATH_PREFIXES = ['/login', '/signup', '/forgot-password', '/reset-password', '/auth'];
+const PUBLIC_PATH_PREFIXES = ['/login', '/signup', '/forgot-password', '/auth'];
 
-const PROTECTED_PATH_PREFIXES = ['/dashboard'];
+const PROTECTED_PATH_PREFIXES = ['/dashboard', '/reset-password'];
 
-const AUTH_ONLY_PATHS = ['/login', '/signup', '/forgot-password', '/reset-password'];
+const AUTH_ONLY_PATHS = ['/login', '/signup', '/forgot-password'];
 
 function isAuthOnly(pathWithoutLocale: string): boolean {
   return AUTH_ONLY_PATHS.some((prefix) => pathWithoutLocale.startsWith(prefix));
