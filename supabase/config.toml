@@ -179,12 +179,13 @@ enable_manual_linking = true
 
 # ----------------------------------------------------------------------------
 # CAPTCHA — Cloudflare Turnstile (recomendado) o hCaptcha.
-# Para activar:
+# DESHABILITADO en local/CI — en producción se configura en Supabase Cloud dashboard.
+# Para activar localmente:
 #   1. Crear app en dash.cloudflare.com (Turnstile) o hcaptcha.com.
 #   2. Agregar al .env.local:
 #        NEXT_PUBLIC_TURNSTILE_SITE_KEY=<tu-site-key>
 #        SUPABASE_AUTH_CAPTCHA_SECRET=<tu-secret-key>
-#   3. Descomentar el bloque [auth.captcha] de abajo.
+#   3. Cambiar enabled = true abajo.
 #   4. supabase stop && supabase start
 #
 # Claves de prueba locales Turnstile (siempre pasan, solo para dev):
@@ -192,7 +193,7 @@ enable_manual_linking = true
 #   Secret key: 1x0000000000000000000000000000000AA
 # ----------------------------------------------------------------------------
 [auth.captcha]
-enabled = true
+enabled = false
 provider = "turnstile"
 secret = "env(SUPABASE_AUTH_CAPTCHA_SECRET)"
 

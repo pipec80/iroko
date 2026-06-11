@@ -323,8 +323,6 @@ jobs:
             echo "Attempt $i failed — retrying in 15s..."
             sleep 15
           done
-        env:
-          SUPABASE_AUTH_CAPTCHA_SECRET: 1x0000000000000000000000000000000AA
 
       - name: Save Docker images to cache
         if: steps.supabase-cache-e2e.outputs.cache-hit != 'true'
