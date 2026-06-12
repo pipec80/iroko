@@ -58,6 +58,7 @@ jobs:
       - name: Build
         run: pnpm build
         env:
+          SKIP_ENV_VALIDATION: '1'
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-key
           SITE_URL: https://placeholder.example.com
