@@ -126,7 +126,7 @@ describe('uploadRobotConfigAction', () => {
 
   describe('parsing', () => {
     it('reports which required sheets are missing', async () => {
-      const file = makeXlsxFile({ Rutinas: validSheets['Rutinas']! });
+      const file = makeXlsxFile({ Rutinas: validSheets['Rutinas'] ?? [] });
       const result = await uploadRobotConfigAction(PREV, makeUploadForm(file));
       expect(result.error).toContain('missing_sheets');
       expect(result.error).toContain('Contactos');

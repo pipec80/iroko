@@ -20,8 +20,9 @@ describe('storageUrl', () => {
   });
 
   it('returns null for null, undefined and empty path', () => {
+    const missingPath: string | undefined = undefined;
     expect(storageUrl(null)).toBeNull();
-    expect(storageUrl()).toBeNull();
+    expect(storageUrl(missingPath)).toBeNull();
     expect(storageUrl('')).toBeNull();
   });
 });

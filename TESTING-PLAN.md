@@ -1,7 +1,7 @@
 # Plan de Testing — Iroko
 
 > Documento de planificación: qué se testea, dónde, con qué prioridad y en qué orden.
-> Estado auditado el 2026-06-12 (119 unit tests pasando, 16 E2E).
+> Última actualización: 2026-06-12 — **Fases 1, 2 y 3 completadas** (310+ unit tests, 19 E2E).
 > Marca los checkboxes a medida que avances. Cada fase tiene un prompt listo para Claude Code al final.
 
 ---
@@ -28,54 +28,56 @@ Leyenda: ✅ cubierto · 🟡 parcial · ❌ sin tests · P0/P1/P2 prioridad
 
 ### `src/lib/` — lógica compartida
 
-| Archivo                  | Estado | Prioridad | Qué testear                                                                                                                                      |
-| ------------------------ | ------ | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `auth/safe-redirect.ts`  | ✅     | —         | (referencia de calidad: ataques + casos felices)                                                                                                 |
-| `server-action.ts`       | ✅     | —         | —                                                                                                                                                |
-| `logger.ts`              | ✅     | —         | —                                                                                                                                                |
-| `validation/auth.ts`     | ✅     | —         | —                                                                                                                                                |
-| `validation/profile.ts`  | ✅     | —         | —                                                                                                                                                |
-| `validation/projects.ts` | ❌     | **P1**    | `createProjectSchema`: nombre vacío/81 chars, description 301, tone/type inválidos, defaults                                                     |
-| `validation/team.ts`     | ❌     | **P1**    | schema de invitaciones: >10 emails, roles inválidos, emails malformados                                                                          |
-| `validation/shared.ts`   | ❌     | P2        | helpers compartidos                                                                                                                              |
-| `robot-config.ts`        | ❌     | **P0**    | Parseo Excel (lógica pura, 177 líneas): archivo válido, columnas faltantes, celdas vacías, tipos incorrectos, archivo vacío, filas duplicadas    |
-| `projects.ts`            | ❌     | P1        | fetchers con cliente Supabase mockeado: éxito, error, datos vacíos                                                                               |
-| `client-documents.ts`    | ❌     | P1        | ídem                                                                                                                                             |
-| `client-countries.ts`    | ❌     | P2        | ídem                                                                                                                                             |
-| `storage.ts`             | ❌     | P2        | construcción de URLs/paths                                                                                                                       |
-| `supabase/middleware.ts` | ❌     | **P0**    | `updateSession`: usuario sin sesión → redirect a login con `next=`, con sesión → pasa, rutas públicas no redirigen. Mockear `createServerClient` |
+| Archivo                             | Estado | Notas                                                                  |
+| ----------------------------------- | ------ | ---------------------------------------------------------------------- |
+| `auth/safe-redirect.ts`             | ✅     | Referencia de calidad: ataques + casos felices                         |
+| `server-action.ts`                  | ✅     | —                                                                      |
+| `logger.ts`                         | ✅     | —                                                                      |
+| `validation/auth.ts`                | ✅     | —                                                                      |
+| `validation/profile.ts`             | ✅     | —                                                                      |
+| `validation/projects.ts`            | ✅     | Schema + integridad de `TONE_TO_COLOR`                                 |
+| `validation/team.ts`                | ✅     | Transform de emails, límite 10, rol owner excluido                     |
+| `validation/shared.ts`              | ✅     | Cubierto vía signup/updatePassword (strongPassword)                    |
+| `robot-config.ts`                   | ✅     | Construye .xlsx reales en memoria — parseo genuino, guards OWASP, IDOR |
+| `projects.ts`                       | ✅     | Fetchers con builder encadenable mockeado                              |
+| `project-documents.ts`              | ✅     | Ídem                                                                   |
+| `phone-countries.ts`                | ✅     | `parseE164`: longest-match, fallbacks, ISO únicos                      |
+| `storage.ts`                        | ✅     | —                                                                      |
+| `utils.ts`                          | ✅     | —                                                                      |
+| `supabase/middleware.ts`            | ✅     | Matriz de protección de rutas, next=, tokens stale                     |
+| `supabase/{client,server,admin}.ts` | —      | Wrappers triviales del SDK — excluidos del coverage a propósito        |
 
 ### `src/app/[locale]/` — vistas y server actions
 
-| Vista / actions                                                                                | Unit (actions)                                                                                                                                  | E2E                      | Prioridad | Qué falta                                                                                                                                 |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `(auth)/login`                                                                                 | 🟡 `signInAction` ✅, `verifyMfaAction` ❌, `magicLinkAction` ❌, `oauthAction` ❌                                                              | 🟡 render + flujo OTP    | **P0**    | Unit: MFA con código inválido/factor ajeno/éxito; magic link. E2E: login con contraseña incorrecta → **asertar mensaje de error visible** |
-| `(auth)/signup`                                                                                | ✅ (anti-enumeración incluida)                                                                                                                  | 🟡                       | **P0**    | E2E weak password: asertar error visible (hoy solo URL)                                                                                   |
-| `(auth)/forgot-password`                                                                       | ❌ `forgotPasswordAction`                                                                                                                       | ✅ flujo completo        | P1        | Unit: email inválido, error Supabase, éxito siempre-genérico (anti-enumeración)                                                           |
-| `(auth)/reset-password`                                                                        | ❌ `updatePasswordAction`                                                                                                                       | ✅                       | P1        | Unit: passwords no coinciden, débil, sin sesión, éxito + redirect                                                                         |
-| `(auth)/confirmation`                                                                          | ❌ `resendConfirmationAction`, `verifyRecoveryAction`                                                                                           | ✅ parcial               | **P0**    | Unit recovery: código inválido, ya usado, éxito                                                                                           |
-| `auth/callback`, `auth/confirm`, `auth/click`, `auth/logout`                                   | ❌ (route handlers)                                                                                                                             | ✅ rechazos sin token    | P2        | Cubierto razonablemente por E2E                                                                                                           |
-| `dashboard/account`                                                                            | 🟡 6/10 actions ✅; faltan `updatePasswordFromSettingsAction`, `uploadAvatarAction`, `requestPasswordResetFromSettingsAction`, `listMySessions` | 🟡 renders + route guard | **P0**    | Unit de las 4 actions. E2E: guardar perfil → **asertar mensaje de éxito**; error inline → **asertar mensaje visible**                     |
-| `dashboard/team`                                                                               | ✅                                                                                                                                              | ❌                       | P1        | E2E: invitar miembro (form → success), remover miembro                                                                                    |
-| `dashboard/projects`                                                                           | ❌ `createProject`                                                                                                                              | ❌                       | **P1**    | Unit: validación, sin cuenta, error RPC, éxito+revalidate. E2E: crear proyecto desde UI                                                   |
-| `dashboard/projects/[slug]/doc`                                                                | ❌ `createDocument`, `saveDocument`                                                                                                             | ❌                       | P1        | Unit con el patrón de mocks existente                                                                                                     |
-| `dashboard/operations/robot`                                                                   | ❌                                                                                                                                              | ❌                       | P1        | La lógica vive en `lib/robot-config.ts` (P0 arriba); E2E del upload es P2                                                                 |
-| `dashboard` (home), `billing`, `inventory`, `members`, `operations`, `org/settings`, `reports` | ❌                                                                                                                                              | ❌                       | P2        | Cuando tengan lógica propia. Hoy: 1 E2E de render por vista basta (smoke)                                                                 |
-| `(public)` home, pricing, product, solutions, contact                                          | —                                                                                                                                               | ❌                       | P2        | 1 E2E `@smoke` de render por página (sirven además para el nightly)                                                                       |
+| Vista / actions                                                                              | Unit (actions)                                | E2E                                                              | Pendiente                                            |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------- |
+| `(auth)/login`                                                                               | ✅ signIn, verifyMfa, magicLink               | ✅ render @smoke, credenciales malas → error visible             | `oauthAction` (P2, requiere mock de URL externa)     |
+| `(auth)/signup`                                                                              | ✅ (anti-enumeración incluida)                | ✅ weak password → error inline visible                          | —                                                    |
+| `(auth)/forgot-password`                                                                     | ✅                                            | ✅ flujo OTP completo                                            | —                                                    |
+| `(auth)/reset-password`                                                                      | ✅ updatePassword                             | ✅                                                               | —                                                    |
+| `(auth)/confirmation`                                                                        | ✅ resend, verifyRecovery                     | ✅ parcial                                                       | —                                                    |
+| `auth/*` route handlers                                                                      | —                                             | ✅ rechazos sin token @smoke                                     | Suficiente vía E2E                                   |
+| `dashboard/account`                                                                          | ✅ 10/10 actions                              | ✅ guard @smoke, error inline, **camino feliz con persistencia** | —                                                    |
+| `dashboard/team`                                                                             | ✅                                            | ❌                                                               | [ ] E2E invitar/remover miembro (P1)                 |
+| `dashboard/projects`                                                                         | ✅ createProject (slug, duplicados, contexto) | ❌                                                               | [ ] E2E crear proyecto desde UI (P1)                 |
+| `dashboard/projects/[slug]/doc`                                                              | ✅ createDocument, saveDocument               | ❌                                                               | [ ] E2E editor (P2)                                  |
+| `dashboard/operations/robot`                                                                 | ✅ (lógica en lib)                            | ❌                                                               | [ ] E2E upload Excel (P2)                            |
+| `dashboard` home, `billing`, `inventory`, `members`, `operations`, `org/settings`, `reports` | —                                             | ❌                                                               | [ ] 1 E2E `@smoke` de render por vista (P2, Fase 4)  |
+| `(public)` home, pricing, product, solutions, contact                                        | —                                             | ❌                                                               | [ ] 1 E2E `@smoke` de render por página (P2, Fase 4) |
 
 ### `src/components/`
 
-| Carpeta                       | Decisión                                                                                                                      |
-| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `ui/` (button, dialog, card…) | **No testear** (shadcn, sin lógica propia). Excluir del coverage                                                              |
-| `providers/`, `layout/`       | No testear directamente; los cubre E2E                                                                                        |
-| `auth/`, `dashboard/`         | Solo si un componente acumula lógica de cliente (ej: `excel-upload.tsx`); preferir extraer la lógica a `lib/` y testearla ahí |
+| Carpeta                       | Decisión                                                                                             |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `ui/` (button, dialog, card…) | **No testear** (shadcn, sin lógica propia). Excluidos del coverage                                   |
+| `providers/`, `layout/`       | No testear directamente; los cubre E2E                                                               |
+| `auth/`, `dashboard/`         | Solo si un componente acumula lógica de cliente; preferir extraer la lógica a `lib/` y testearla ahí |
 
 ### `src/test/e2e/` — salud de la suite
 
-- [ ] **Test de sanidad de hidratación (P0)**: en `/es/login`, escuchar `page.on('response')` y fallar si algún request a `/_next/static/` o asset de `public/` devuelve ≥ 400. Protege contra la regresión del standalone sin assets.
-- [ ] Etiquetar con `@smoke` los tests seguros contra producción (renders, route guards) y cambiar el nightly a `--grep @smoke` (hoy el nightly corre TODO contra producción y está roto).
-- [ ] Reemplazar aserciones de "la URL no cambió" por aserciones de contenido visible.
+- [x] **Test de sanidad de hidratación**: `hydration.spec.ts` falla si algún asset propio devuelve ≥ 400 o si el JS de cliente no hidrata (botón de enlace mágico nunca se habilita). Protege contra la regresión del standalone sin assets.
+- [x] Tests seguros contra producción etiquetados `@smoke`; el nightly corre `--grep @smoke`.
+- [x] Aserciones de "la URL no cambió" reemplazadas por aserciones de contenido visible (error inline, mensaje de éxito, persistencia tras reload).
 
 ---
 
@@ -85,58 +87,40 @@ Leyenda: ✅ cubierto · 🟡 parcial · ❌ sin tests · P0/P1/P2 prioridad
 - **Patrón de mocks**: copiar el de `dashboard/account/__tests__/actions.test.ts` (`vi.hoisted` + mocks de `@/lib/supabase/server`, `@/env`, `next-intl/server`, `@sentry/nextjs`).
 - **Mockear auth SIEMPRE en `beforeEach`** (no depender de que la validación corra antes del auth check).
 - **Estructura por action**: 1 test de validación por campo crítico, 1 de no-autenticado, 1 de error de Supabase/RPC, 1 de camino feliz (incluyendo `revalidatePath`/redirect).
-- **E2E**: asertar texto/estado visible para el usuario. `@smoke` en el título si es seguro contra producción.
+- **E2E**: asertar texto/estado visible para el usuario. `@smoke` en el título si es seguro contra producción (solo lecturas).
+- **Queries encadenadas de Supabase**: usar el builder mockeado de `lib/__tests__/projects.test.ts` como plantilla.
 
 ---
 
-## 4. Coverage: configuración objetivo
+## 4. Coverage: configuración vigente
 
-En `vitest.config.ts`:
+`vitest.config.ts` mide **solo código con lógica**: `src/lib/**` + `src/app/**/actions.ts`.
+La UI (shadcn, layouts, providers) se cubre vía E2E y está excluida a propósito.
 
-```ts
-coverage: {
-  include: [
-    'src/lib/**/*.ts',
-    'src/app/**/actions.ts',      // ← las actions SÍ se miden
-  ],
-  exclude: [
-    'src/lib/supabase/client.ts', // wrappers triviales
-    'src/components/ui/**',       // shadcn sin lógica
-    // ...exclusiones actuales
-  ],
-  thresholds: { statements: 70, branches: 60, functions: 70, lines: 70 },
-}
-```
+Valores reales al calibrar (2026-06-12): **96.5 / 83.8 / 96 / 97**.
+Thresholds vigentes (margen ~5 puntos): `statements: 90, branches: 78, functions: 90, lines: 90`.
 
-Subir thresholds **después** de completar Fase 1-2 (si los subes antes, CI queda rojo). El threshold es un trinquete: nunca bajarlo, subirlo cada vez que una fase termine.
+Regla de trinquete: **nunca bajarlos**; subirlos cuando una fase agregue cobertura.
 
 ---
 
 ## 5. Orden de ejecución
 
-| Fase       | Contenido                                                                                                       | Resultado                                                         |
-| ---------- | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **1 (P0)** | E2E con aserciones reales + test de hidratación + unit de MFA/recovery + `supabase/middleware` + `robot-config` | Lo crítico de seguridad y la regresión conocida quedan protegidos |
-| **2 (P1)** | Actions restantes (account 4, projects 3, auth 3) + validaciones projects/team + fetchers de lib                | Toda action del repo tiene tests                                  |
-| **3**      | Coverage config + thresholds 70/60/70/70                                                                        | La métrica se vuelve alarma real                                  |
-| **4 (P2)** | Smoke E2E por vista pública/dashboard + arreglo del nightly con `@smoke`                                        | Monitoreo nocturno útil                                           |
+| Fase       | Contenido                                                                                                       | Estado        |
+| ---------- | --------------------------------------------------------------------------------------------------------------- | ------------- |
+| **1 (P0)** | E2E con aserciones reales + test de hidratación + unit de MFA/recovery + `supabase/middleware` + `robot-config` | ✅ Completada |
+| **2 (P1)** | Actions restantes (account, projects, auth) + validaciones projects/team + fetchers de lib                      | ✅ Completada |
+| **3**      | Coverage config + thresholds 90/78/90/90                                                                        | ✅ Completada |
+| **4 (P2)** | Smoke E2E por vista pública/dashboard + E2E de team/projects desde UI                                           | ⬜ Pendiente  |
 
 ---
 
-## 6. Prompts para Claude Code (uno por fase)
+## 6. Prompts para Claude Code
 
-**Fase 1:**
+**Fase 4 (pendiente):**
 
-> Lee TESTING-PLAN.md. Ejecuta la Fase 1: (a) corrige las aserciones débiles de los E2E listados en la sección 2 (asertar mensajes visibles, no URLs); (b) agrega el test de sanidad de hidratación descrito; (c) escribe unit tests para verifyMfaAction y verifyRecoveryAction siguiendo las convenciones de la sección 3; (d) tests para src/lib/supabase/middleware.ts y src/lib/robot-config.ts con los casos listados. Corre pnpm test y pnpm lint al final. Un commit por punto, conventional commits. No toques src/proxy.ts ni crees middleware.ts.
+> Lee TESTING-PLAN.md secciones 2 y 3. Agrega: (a) un spec `src/test/e2e/public.spec.ts` con un test `@smoke` de render por página pública (home, pricing, product, solutions, contact) que aserte el heading principal visible; (b) tests E2E autenticados para dashboard/team (invitar miembro con email válido → mensaje de éxito; remover miembro) y dashboard/projects (crear proyecto desde el dialog → aparece en el listado), usando el fixture de `src/test/e2e/fixtures/auth.ts`. Corre pnpm lint y pnpm typecheck al final. Un commit por punto, conventional commits. No toques src/proxy.ts ni crees middleware.ts.
 
-**Fase 2:**
+**Mantenimiento continuo:**
 
-> Lee TESTING-PLAN.md sección 2. Escribe los unit tests marcados P1: las 4 actions de account sin cobertura, createProject/createDocument/saveDocument, updatePasswordAction/forgotPasswordAction/magicLinkAction, y los schemas validation/projects.ts y validation/team.ts. Sigue las convenciones de la sección 3 y el patrón de mocks de dashboard/account/**tests**/actions.test.ts. pnpm test y pnpm lint al final.
-
-**Fase 3:**
-
-> Lee TESTING-PLAN.md sección 4. Aplica esa configuración de coverage en vitest.config.ts, corre pnpm test:coverage, y ajusta los thresholds al máximo nivel que pase con margen de 5 puntos. Actualiza la sección 4 del documento con los valores finales.
-
-**Fase 4:**
-
-> Lee TESTING-PLAN.md secciones 2 y 5. Agrega tests E2E @smoke de render para las vistas públicas y de dashboard listadas como P2, etiqueta los E2E existentes que sean seguros contra producción, y corrige .github/workflows/nightly.yml para correr solo --grep @smoke (el filtro actual "email is delivered" no matchea ningún test).
+> Al agregar una server action nueva, crea sus tests en el mismo PR siguiendo la sección 3 (validación + no-auth + error + camino feliz). Si el coverage cae bajo los thresholds, agrega tests — no bajes los thresholds.
