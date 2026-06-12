@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useActionState, useEffect, useRef, useState } from 'react';
+import React, { useActionState, useRef, useState } from 'react';
 import { CheckCircle, FolderOpen, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -60,17 +60,7 @@ export function ProfileTab({ profile, email, role }: Props) {
   const [hasFile, setHasFile] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [isProfileDirty, setIsProfileDirty] = useState(false);
   const [isEmailDirty, setIsEmailDirty] = useState(false);
-  const profileFormRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    const form = profileFormRef.current;
-    if (!form) return;
-    const markDirty = () => setIsProfileDirty(true);
-    form.addEventListener('input', markDirty);
-    return () => form.removeEventListener('input', markDirty);
-  }, []);
 
   const profileError = translateError(t, profileState.error);
   const emailError = translateError(t, emailState.error);
@@ -151,11 +141,7 @@ export function ProfileTab({ profile, email, role }: Props) {
           <CardTitle>{t('profile.heading')}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form
-            ref={profileFormRef}
-            action={profileAction}
-            noValidate
-            className="grid gap-5 md:grid-cols-2">
+          <form action={profileAction} noValidate className="grid gap-5 md:grid-cols-2">
             {/* Name */}
             <div className="space-y-1.5">
               <Label htmlFor="given_name">{t('profile.given_name')}</Label>
@@ -386,13 +372,13 @@ export function ProfileTab({ profile, email, role }: Props) {
                   {profileError}
                 </p>
               )}
-              {profileState.success === 'profile_updated' && !isProfileDirty && (
+              {profileState.success === 'profile_updated' && !profilePending && (
                 <div className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
                   <CheckCircle size={18} strokeWidth={1.75} />
                   {t('profile.success.profile_updated')}
                 </div>
               )}
-              <Button type="submit" disabled={profilePending || !isProfileDirty}>
+              <Button type="submit" disabled={profilePending}>
                 {profilePending ? t('profile.saving') : t('profile.save_changes')}
               </Button>
             </div>
