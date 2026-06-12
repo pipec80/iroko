@@ -18,6 +18,10 @@ on:
     # Lunes a las 6 AM UTC — análisis semanal completo
     - cron: '0 6 * * 1'
 
+env:
+  NODE_VERSION: '24'
+  PNPM_VERSION: '10'
+
 jobs:
   analyze:
     name: CodeQL Analysis
@@ -29,17 +33,34 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
-          # Queries adicionales de seguridad y calidad
           queries: security-and-quality
 
-      - name: Build (requerido para análisis completo de TypeScript)
-        uses: github/codeql-action/autobuild@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: placeholder-key
+          SITE_URL: https://placeholder.example.com
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
