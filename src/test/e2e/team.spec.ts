@@ -1,8 +1,29 @@
+import { execSync } from 'node:child_process';
+
 import { type Page, test as base, expect } from '@playwright/test';
 
 import { test as authTest } from './fixtures/auth';
 
 const SUPABASE_URL = 'http://127.0.0.1:54321';
+
+/**
+ * Inserta filas directo en Postgres vía el contenedor Docker de Supabase.
+ *
+ * Necesario porque el hardening de grants (migrations 040000/190000) deja a
+ * service_role SIN privilegios sobre accounts_memberships — toda mutación va
+ * por RPCs SECURITY DEFINER. Para seeding de tests, psql como postgres dentro
+ * del contenedor es la vía soportada que no relaja los grants de producción.
+ */
+function execSqlAsPostgres(sql: string): void {
+  const container = execSync('docker ps --filter "name=supabase_db" --format "{{.Names}}"')
+    .toString()
+    .trim()
+    .split('\n')[0];
+  if (!container) {
+    throw new Error('supabase_db container not found — is `supabase start` running?');
+  }
+  execSync(`docker exec ${container} psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "${sql}"`);
+}
 
 /**
  * Team management E2E tests.
@@ -87,15 +108,16 @@ const teamMgmtTest = base.extend<TeamMgmtFixtures>({
     }
 
     // 4. Insert member into owner's account as active non-owner member.
-    //    Fail loudly: a swallowed error here surfaces later as a confusing
-    //    "row not visible" assertion in the test body.
-    const insertRes = await request.post(`${SUPABASE_URL}/rest/v1/accounts_memberships`, {
-      headers: { ...adminHeaders, Prefer: 'return=minimal' },
-      data: { account_id: accountId, user_id: memberId, role: 'member' },
-    });
-    if (!insertRes.ok()) {
-      throw new Error(`seed membership failed (${insertRes.status()}): ${await insertRes.text()}`);
+    //    Via psql/postgres: service_role no tiene grants sobre esta tabla
+    //    (REST devuelve 42501) y no existe RPC para añadir miembros directos.
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRe.test(accountId) || !uuidRe.test(memberId)) {
+      throw new Error(`unexpected non-UUID ids: account=${accountId} member=${memberId}`);
     }
+    execSqlAsPostgres(
+      `INSERT INTO public.accounts_memberships (account_id, user_id, role) ` +
+        `VALUES ('${accountId}', '${memberId}', 'member')`,
+    );
 
     // 5. Login as owner via UI
     await page.goto('/es/login');
