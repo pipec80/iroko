@@ -55,17 +55,21 @@ const teamMgmtTest = base.extend<TeamMgmtFixtures>({
     if (!memberBody.id) throw new Error(`create member failed: ${JSON.stringify(memberBody)}`);
     const memberId = memberBody.id;
 
-    // 3. Wait briefly for triggers to complete (synchronous but needs a tick in local DB)
-    await new Promise((r) => setTimeout(r, 800));
-
-    // 4. Resolve owner's personal account_id via service_role (bypasses RLS)
-    const acctRes = await request.get(
-      `${SUPABASE_URL}/rest/v1/accounts_memberships?user_id=eq.${ownerId}&select=account_id`,
-      { headers: readHeaders },
-    );
-    const acctRows: Array<{ account_id: string }> = await acctRes.json();
-    const accountId = acctRows[0]?.account_id;
-    if (!accountId) throw new Error(`owner account not found for ${ownerId}`);
+    // 3. Poll for owner's account_id — the on_auth_user_created trigger chain
+    //    (handle_new_user → handle_new_profile) can take a few hundred ms in CI.
+    //    Retry up to 6 × 600 ms = 3.6 s before giving up.
+    let accountId: string | undefined;
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await new Promise((r) => setTimeout(r, 600));
+      const acctRes = await request.get(
+        `${SUPABASE_URL}/rest/v1/accounts_memberships?user_id=eq.${ownerId}&select=account_id`,
+        { headers: readHeaders },
+      );
+      const acctRows: Array<{ account_id: string }> = await acctRes.json();
+      accountId = acctRows[0]?.account_id;
+      if (accountId) break;
+    }
+    if (!accountId) throw new Error(`owner account not found for ${ownerId} after 6 attempts`);
 
     // 5. Insert member into owner's account as active non-owner member
     await request.post(`${SUPABASE_URL}/rest/v1/accounts_memberships`, {
