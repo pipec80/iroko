@@ -1,7 +1,7 @@
 # Plan de Testing — Iroko
 
 > Documento de planificación: qué se testea, dónde, con qué prioridad y en qué orden.
-> Última actualización: 2026-06-12 — **Fases 1, 2 y 3 completadas** (310+ unit tests, 19 E2E).
+> Última actualización: 2026-06-12 — **Fases 1, 2, 3 y 4 completadas** (310+ unit tests, 24 E2E).
 > Marca los checkboxes a medida que avances. Cada fase tiene un prompt listo para Claude Code al final.
 
 ---
@@ -49,21 +49,21 @@ Leyenda: ✅ cubierto · 🟡 parcial · ❌ sin tests · P0/P1/P2 prioridad
 
 ### `src/app/[locale]/` — vistas y server actions
 
-| Vista / actions                                                                              | Unit (actions)                                | E2E                                                              | Pendiente                                            |
-| -------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------- | ---------------------------------------------------- |
-| `(auth)/login`                                                                               | ✅ signIn, verifyMfa, magicLink               | ✅ render @smoke, credenciales malas → error visible             | `oauthAction` (P2, requiere mock de URL externa)     |
-| `(auth)/signup`                                                                              | ✅ (anti-enumeración incluida)                | ✅ weak password → error inline visible                          | —                                                    |
-| `(auth)/forgot-password`                                                                     | ✅                                            | ✅ flujo OTP completo                                            | —                                                    |
-| `(auth)/reset-password`                                                                      | ✅ updatePassword                             | ✅                                                               | —                                                    |
-| `(auth)/confirmation`                                                                        | ✅ resend, verifyRecovery                     | ✅ parcial                                                       | —                                                    |
-| `auth/*` route handlers                                                                      | —                                             | ✅ rechazos sin token @smoke                                     | Suficiente vía E2E                                   |
-| `dashboard/account`                                                                          | ✅ 10/10 actions                              | ✅ guard @smoke, error inline, **camino feliz con persistencia** | —                                                    |
-| `dashboard/team`                                                                             | ✅                                            | ❌                                                               | [ ] E2E invitar/remover miembro (P1)                 |
-| `dashboard/projects`                                                                         | ✅ createProject (slug, duplicados, contexto) | ❌                                                               | [ ] E2E crear proyecto desde UI (P1)                 |
-| `dashboard/projects/[slug]/doc`                                                              | ✅ createDocument, saveDocument               | ❌                                                               | [ ] E2E editor (P2)                                  |
-| `dashboard/operations/robot`                                                                 | ✅ (lógica en lib)                            | ❌                                                               | [ ] E2E upload Excel (P2)                            |
-| `dashboard` home, `billing`, `inventory`, `members`, `operations`, `org/settings`, `reports` | —                                             | ❌                                                               | [ ] 1 E2E `@smoke` de render por vista (P2, Fase 4)  |
-| `(public)` home, pricing, product, solutions, contact                                        | —                                             | ❌                                                               | [ ] 1 E2E `@smoke` de render por página (P2, Fase 4) |
+| Vista / actions                                                                              | Unit (actions)                                | E2E                                                              | Pendiente                                           |
+| -------------------------------------------------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------- |
+| `(auth)/login`                                                                               | ✅ signIn, verifyMfa, magicLink               | ✅ render @smoke, credenciales malas → error visible             | `oauthAction` (P2, requiere mock de URL externa)    |
+| `(auth)/signup`                                                                              | ✅ (anti-enumeración incluida)                | ✅ weak password → error inline visible                          | —                                                   |
+| `(auth)/forgot-password`                                                                     | ✅                                            | ✅ flujo OTP completo                                            | —                                                   |
+| `(auth)/reset-password`                                                                      | ✅ updatePassword                             | ✅                                                               | —                                                   |
+| `(auth)/confirmation`                                                                        | ✅ resend, verifyRecovery                     | ✅ parcial                                                       | —                                                   |
+| `auth/*` route handlers                                                                      | —                                             | ✅ rechazos sin token @smoke                                     | Suficiente vía E2E                                  |
+| `dashboard/account`                                                                          | ✅ 10/10 actions                              | ✅ guard @smoke, error inline, **camino feliz con persistencia** | —                                                   |
+| `dashboard/team`                                                                             | ✅                                            | ✅ invitar/remover miembro                                       | —                                                   |
+| `dashboard/projects`                                                                         | ✅ createProject (slug, duplicados, contexto) | ✅ crear proyecto desde UI → aparece en grid                     | —                                                   |
+| `dashboard/projects/[slug]/doc`                                                              | ✅ createDocument, saveDocument               | ❌                                                               | [ ] E2E editor (P2)                                 |
+| `dashboard/operations/robot`                                                                 | ✅ (lógica en lib)                            | ❌                                                               | [ ] E2E upload Excel (P2)                           |
+| `dashboard` home, `billing`, `inventory`, `members`, `operations`, `org/settings`, `reports` | —                                             | ❌                                                               | [ ] 1 E2E `@smoke` de render por vista (P2, Fase 5) |
+| `(public)` home, pricing, product, solutions, contact                                        | —                                             | ✅ `@smoke` render por página                                    | —                                                   |
 
 ### `src/components/`
 
@@ -111,7 +111,7 @@ Regla de trinquete: **nunca bajarlos**; subirlos cuando una fase agregue cobertu
 | **1 (P0)** | E2E con aserciones reales + test de hidratación + unit de MFA/recovery + `supabase/middleware` + `robot-config` | ✅ Completada |
 | **2 (P1)** | Actions restantes (account, projects, auth) + validaciones projects/team + fetchers de lib                      | ✅ Completada |
 | **3**      | Coverage config + thresholds 90/78/90/90                                                                        | ✅ Completada |
-| **4 (P2)** | Smoke E2E por vista pública/dashboard + E2E de team/projects desde UI                                           | ⬜ Pendiente  |
+| **4 (P2)** | Smoke E2E por vista pública/dashboard + E2E de team/projects desde UI                                           | ✅ Completada |
 
 ---
 
