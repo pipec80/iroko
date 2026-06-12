@@ -12,7 +12,7 @@ import { deleteUserByEmail, fetchLatestMessageTo, uniqueEmail } from './helpers'
  */
 
 test.describe('Auth flow', () => {
-  test('redirects unauthenticated users to /es/login', async ({ page }) => {
+  test('redirects unauthenticated users to /es/login @smoke', async ({ page }) => {
     const response = await page.goto('/es/dashboard', { waitUntil: 'commit' });
     await page.waitForURL(/\/es\/login/);
     expect(response?.status()).toBeLessThan(400);
@@ -20,7 +20,7 @@ test.describe('Auth flow', () => {
     expect(page.url()).toContain('next=%2Fes%2Fdashboard');
   });
 
-  test('login page renders both forms and switcher', async ({ page }) => {
+  test('login page renders both forms and switcher @smoke', async ({ page }) => {
     await page.goto('/es/login');
     await expect(page.getByRole('heading', { name: /vuelve a tu tronco/i })).toBeVisible();
     await expect(page.locator('input[name="email"][type="email"]')).toBeVisible();
@@ -29,15 +29,31 @@ test.describe('Auth flow', () => {
     await expect(page.getByRole('button', { name: /enlace mágico/i })).toBeVisible();
   });
 
+  test('login with wrong password shows the generic credentials error', async ({ page }) => {
+    await page.goto('/es/login');
+    // [type="email"]: el form de enlace mágico duplica name="email" en un hidden.
+    await page.locator('input[name="email"][type="email"]').fill('nadie@saasboilerplate.local');
+    await page.locator('input[name="password"]').fill('WrongPass123!');
+    await page.getByRole('button', { name: /iniciar sesión/i }).click();
+
+    // Error genérico — no distingue "usuario no existe" de "contraseña mala".
+    await expect(page.getByText('Credenciales incorrectas.')).toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/es\/login/);
+  });
+
   test('signup shows inline field errors on weak password', async ({ page }) => {
     await page.goto('/es/signup');
     await page.locator('input[name="first_name"]').fill('Test');
     await page.locator('input[name="last_name"]').fill('User');
     await page.locator('input[name="email"]').fill(uniqueEmail());
-    // Weak: too short + no uppercase + no digit
+    // Débil: corta, sin mayúscula ni dígito. El form usa noValidate, así que
+    // la validación corre en el server action y vuelve como error inline.
     await page.locator('input[name="password"]').fill('weak');
     await page.locator('form button[type="submit"]').click();
-    // Form stays on the same page; password input has html5 minLength validation.
+
+    await expect(page.getByText('La contraseña debe tener al menos 10 caracteres.')).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page).toHaveURL(/\/es\/signup/);
   });
 
@@ -74,7 +90,7 @@ test.describe('Auth flow', () => {
     await deleteUserByEmail(request, email, serviceKey);
   });
 
-  test('logout endpoint redirects to login', async ({ request }) => {
+  test('logout endpoint redirects to login @smoke', async ({ request }) => {
     const res = await request.post('/es/auth/logout', {
       maxRedirects: 0,
       failOnStatusCode: false,
@@ -83,7 +99,7 @@ test.describe('Auth flow', () => {
     expect(res.headers()['location']).toMatch(/\/es\/login/);
   });
 
-  test('callback rejects requests without code', async ({ request }) => {
+  test('callback rejects requests without code @smoke', async ({ request }) => {
     const res = await request.get('/es/auth/callback', {
       maxRedirects: 0,
       failOnStatusCode: false,
@@ -92,7 +108,7 @@ test.describe('Auth flow', () => {
     expect(res.headers()['location']).toMatch(/error=missing_code/);
   });
 
-  test('confirm rejects requests without token_hash', async ({ request }) => {
+  test('confirm rejects requests without token_hash @smoke', async ({ request }) => {
     const res = await request.get('/es/auth/confirm', {
       maxRedirects: 0,
       failOnStatusCode: false,

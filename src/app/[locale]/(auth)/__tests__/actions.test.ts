@@ -4,7 +4,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => ({
   signUp: vi.fn(),
   signInWithPassword: vi.fn(),
+  signInWithOtp: vi.fn(),
+  resetPasswordForEmail: vi.fn(),
+  updateUser: vi.fn(),
+  resend: vi.fn(),
   listFactors: vi.fn(),
+  mfaChallenge: vi.fn(),
+  mfaVerify: vi.fn(),
+  rpc: vi.fn(),
   redirect: vi.fn(),
 }));
 
@@ -13,8 +20,17 @@ vi.mock('@/lib/supabase/server', () => ({
     auth: {
       signUp: mocks.signUp,
       signInWithPassword: mocks.signInWithPassword,
-      mfa: { listFactors: mocks.listFactors },
+      signInWithOtp: mocks.signInWithOtp,
+      resetPasswordForEmail: mocks.resetPasswordForEmail,
+      updateUser: mocks.updateUser,
+      resend: mocks.resend,
+      mfa: {
+        listFactors: mocks.listFactors,
+        challenge: mocks.mfaChallenge,
+        verify: mocks.mfaVerify,
+      },
     },
+    rpc: mocks.rpc,
   }),
 }));
 
@@ -37,7 +53,16 @@ vi.mock('@/env', () => ({
   },
 }));
 
-import { signUpAction, signInAction } from '../actions';
+import {
+  signUpAction,
+  signInAction,
+  verifyMfaAction,
+  verifyRecoveryAction,
+  magicLinkAction,
+  forgotPasswordAction,
+  updatePasswordAction,
+  resendConfirmationAction,
+} from '../actions';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -45,6 +70,13 @@ function makeFormData(fields: Record<string, string>): FormData {
   const fd = new FormData();
   for (const [k, v] of Object.entries(fields)) fd.set(k, v);
   return fd;
+}
+
+/** El mock de redirect lanza, igual que el redirect real de next-intl/Next.js. */
+function mockRedirectThrows() {
+  mocks.redirect.mockImplementation(() => {
+    throw new Error('NEXT_REDIRECT');
+  });
 }
 
 const validSignupData = {
@@ -66,9 +98,7 @@ const PREV = {};
 describe('signUpAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.redirect.mockImplementation(() => {
-      throw new Error('NEXT_REDIRECT');
-    });
+    mockRedirectThrows();
   });
 
   describe('validation', () => {
@@ -155,9 +185,7 @@ describe('signUpAction', () => {
 describe('signInAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.redirect.mockImplementation(() => {
-      throw new Error('NEXT_REDIRECT');
-    });
+    mockRedirectThrows();
     mocks.listFactors.mockResolvedValue({ data: { all: [] } });
   });
 
@@ -231,5 +259,276 @@ describe('signInAction', () => {
       expect(result.success).toBe('mfa_required');
       expect(result.mfaFactorId).toBe('factor-totp');
     });
+  });
+});
+
+// ─── verifyMfaAction ─────────────────────────────────────────────────────────
+
+describe('verifyMfaAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRedirectThrows();
+  });
+
+  describe('validation', () => {
+    it('returns fieldErrors when code is not 6 digits', async () => {
+      const fd = makeFormData({ code: '123', factorId: 'factor-1' });
+      const result = await verifyMfaAction(PREV, fd);
+      expect(result.fieldErrors?.code).toBeDefined();
+      expect(mocks.mfaChallenge).not.toHaveBeenCalled();
+    });
+
+    it('returns fieldErrors when factorId is missing', async () => {
+      const fd = makeFormData({ code: '123456', factorId: '' });
+      const result = await verifyMfaAction(PREV, fd);
+      expect(result.fieldErrors?.factorId).toBeDefined();
+    });
+  });
+
+  it('returns mfa_challenge_failed when challenge creation fails', async () => {
+    mocks.mfaChallenge.mockResolvedValue({ data: null, error: { code: 'factor_not_found' } });
+
+    const fd = makeFormData({ code: '123456', factorId: 'factor-1' });
+    const result = await verifyMfaAction(PREV, fd);
+
+    expect(result.error).toBe('mfa_challenge_failed');
+    expect(mocks.mfaVerify).not.toHaveBeenCalled();
+  });
+
+  it('returns invalid_mfa_code when verification fails — generic, no detail leak', async () => {
+    mocks.mfaChallenge.mockResolvedValue({ data: { id: 'challenge-1' }, error: null });
+    mocks.mfaVerify.mockResolvedValue({ error: { code: 'mfa_verification_failed' } });
+
+    const fd = makeFormData({ code: '000000', factorId: 'factor-1' });
+    const result = await verifyMfaAction(PREV, fd);
+
+    expect(result.error).toBe('invalid_mfa_code');
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it('verifies against the challenge and redirects to /dashboard on success', async () => {
+    mocks.mfaChallenge.mockResolvedValue({ data: { id: 'challenge-1' }, error: null });
+    mocks.mfaVerify.mockResolvedValue({ error: null });
+
+    const fd = makeFormData({ code: '123456', factorId: 'factor-1' });
+    await expect(verifyMfaAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(mocks.mfaVerify).toHaveBeenCalledWith({
+      factorId: 'factor-1',
+      challengeId: 'challenge-1',
+      code: '123456',
+    });
+    expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+  });
+});
+
+// ─── verifyRecoveryAction ────────────────────────────────────────────────────
+
+describe('verifyRecoveryAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRedirectThrows();
+  });
+
+  it('returns fieldErrors for malformed recovery code', async () => {
+    const fd = makeFormData({ code: 'not-a-code' });
+    const result = await verifyRecoveryAction(PREV, fd);
+    expect(result.fieldErrors?.code).toBeDefined();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('normalizes lowercase input before consuming (trim + uppercase)', async () => {
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+
+    const fd = makeFormData({ code: '  ab12-cd34  ' });
+    await expect(verifyRecoveryAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(mocks.rpc).toHaveBeenCalledWith('consume_recovery_code', { p_code: 'AB12-CD34' });
+  });
+
+  it('returns recovery_invalid when the RPC errors — same response as wrong code', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'P0001' } });
+
+    const fd = makeFormData({ code: 'AB12-CD34' });
+    const result = await verifyRecoveryAction(PREV, fd);
+
+    expect(result.error).toBe('recovery_invalid');
+  });
+
+  it('returns recovery_invalid when the code was not consumed (already used / unknown)', async () => {
+    mocks.rpc.mockResolvedValue({ data: false, error: null });
+
+    const fd = makeFormData({ code: 'AB12-CD34' });
+    const result = await verifyRecoveryAction(PREV, fd);
+
+    expect(result.error).toBe('recovery_invalid');
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it('redirects to security tab with reenroll flag on success', async () => {
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+
+    const fd = makeFormData({ code: 'AB12-CD34' });
+    await expect(verifyRecoveryAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(mocks.redirect).toHaveBeenCalledWith({
+      href: '/dashboard/account?tab=security&reenroll=1',
+      locale: 'es',
+    });
+  });
+});
+
+// ─── magicLinkAction ─────────────────────────────────────────────────────────
+
+describe('magicLinkAction', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns fieldErrors for invalid email', async () => {
+    const fd = makeFormData({ email: 'not-an-email' });
+    const result = await magicLinkAction(PREV, fd);
+    expect(result.fieldErrors?.email).toBeDefined();
+  });
+
+  it('never creates users via magic link (anti-enumeration)', async () => {
+    mocks.signInWithOtp.mockResolvedValue({ error: null });
+
+    const fd = makeFormData({ email: 'ana@example.com' });
+    await magicLinkAction(PREV, fd);
+
+    expect(mocks.signInWithOtp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({ shouldCreateUser: false }),
+      }),
+    );
+  });
+
+  it('returns the Supabase error code when sending fails', async () => {
+    mocks.signInWithOtp.mockResolvedValue({ error: { code: 'over_email_send_rate_limit' } });
+
+    const fd = makeFormData({ email: 'ana@example.com' });
+    const result = await magicLinkAction(PREV, fd);
+
+    expect(result.error).toBe('over_email_send_rate_limit');
+  });
+
+  it('returns magic_link_sent on success', async () => {
+    mocks.signInWithOtp.mockResolvedValue({ error: null });
+
+    const fd = makeFormData({ email: 'ana@example.com' });
+    const result = await magicLinkAction(PREV, fd);
+
+    expect(result.success).toBe('magic_link_sent');
+  });
+});
+
+// ─── forgotPasswordAction ────────────────────────────────────────────────────
+
+describe('forgotPasswordAction', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns fieldErrors for invalid email', async () => {
+    const fd = makeFormData({ email: 'x' });
+    const result = await forgotPasswordAction(PREV, fd);
+    expect(result.fieldErrors?.email).toBeDefined();
+  });
+
+  it('sends the reset link with redirect to /auth/confirm → /reset-password', async () => {
+    mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
+
+    const fd = makeFormData({ email: 'ana@example.com' });
+    const result = await forgotPasswordAction(PREV, fd);
+
+    expect(result.success).toBe('reset_link_sent');
+    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith(
+      'ana@example.com',
+      expect.objectContaining({
+        redirectTo: expect.stringContaining('/auth/confirm?next=/es/reset-password'),
+      }),
+    );
+  });
+
+  it('returns the Supabase error code when sending fails', async () => {
+    mocks.resetPasswordForEmail.mockResolvedValue({ error: { code: 'over_request_rate_limit' } });
+
+    const fd = makeFormData({ email: 'ana@example.com' });
+    const result = await forgotPasswordAction(PREV, fd);
+
+    expect(result.error).toBe('over_request_rate_limit');
+  });
+});
+
+// ─── updatePasswordAction ────────────────────────────────────────────────────
+
+describe('updatePasswordAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRedirectThrows();
+  });
+
+  it('returns fieldErrors when passwords do not match', async () => {
+    const fd = makeFormData({ password: 'StrongPass1!', confirm_password: 'Different1!x' });
+    const result = await updatePasswordAction(PREV, fd);
+    expect(result.fieldErrors?.confirm_password).toBeDefined();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('returns fieldErrors when password violates the policy even if both match', async () => {
+    const fd = makeFormData({ password: 'weak', confirm_password: 'weak' });
+    const result = await updatePasswordAction(PREV, fd);
+    expect(result.fieldErrors?.password).toBeDefined();
+  });
+
+  it('returns the Supabase error code when update fails (e.g. same_password)', async () => {
+    mocks.updateUser.mockResolvedValue({ error: { code: 'same_password' } });
+
+    const fd = makeFormData({ password: 'StrongPass1!', confirm_password: 'StrongPass1!' });
+    const result = await updatePasswordAction(PREV, fd);
+
+    expect(result.error).toBe('same_password');
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it('redirects to /dashboard on success — session is already established', async () => {
+    mocks.updateUser.mockResolvedValue({ error: null });
+
+    const fd = makeFormData({ password: 'StrongPass1!', confirm_password: 'StrongPass1!' });
+    await expect(updatePasswordAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(mocks.updateUser).toHaveBeenCalledWith({ password: 'StrongPass1!' });
+    expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+  });
+});
+
+// ─── resendConfirmationAction ────────────────────────────────────────────────
+
+describe('resendConfirmationAction', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('returns invalid_email for malformed input', async () => {
+    const fd = makeFormData({ email: 'nope' });
+    const result = await resendConfirmationAction(PREV, fd);
+    expect(result.error).toBe('invalid_email');
+    expect(mocks.resend).not.toHaveBeenCalled();
+  });
+
+  it('returns the Supabase error code when resend fails', async () => {
+    mocks.resend.mockResolvedValue({ error: { code: 'over_email_send_rate_limit' } });
+
+    const fd = makeFormData({ email: 'ana@example.com' });
+    const result = await resendConfirmationAction(PREV, fd);
+
+    expect(result.error).toBe('over_email_send_rate_limit');
+  });
+
+  it('resends the signup confirmation and reports success', async () => {
+    mocks.resend.mockResolvedValue({ error: null });
+
+    const fd = makeFormData({ email: 'ana@example.com' });
+    const result = await resendConfirmationAction(PREV, fd);
+
+    expect(result.success).toBe('confirmation_resent');
+    expect(mocks.resend).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'signup', email: 'ana@example.com' }),
+    );
   });
 });

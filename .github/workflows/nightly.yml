@@ -4,8 +4,9 @@
 # Detecta fallos externos al código: webhooks caídos, cambios en DNS,
 # Supabase Auth fuera de servicio, redirecciones rotas, etc.
 #
-# Se omite el test "email is delivered" porque requiere Mailpit local.
-# El resto de los tests en auth.spec.ts funcionan contra producción.
+# Solo corren los tests etiquetados @smoke: lecturas puras (renders, route
+# guards, sanidad de assets). Los flujos que crean usuarios o necesitan
+# Mailpit/service key locales NO llevan la etiqueta y quedan fuera.
 #
 # Secrets requeridos (nivel repositorio):
 #   SITE_URL  →  URL de producción, ej. https://iroko.vercel.app
@@ -52,7 +53,7 @@ jobs:
 
       - name: Run smoke tests against production
         run: |
-          pnpm test:e2e --grep-invert "email is delivered"
+          pnpm test:e2e --grep "@smoke"
         env:
           # PLAYWRIGHT_BASE_URL desactiva el webServer local en playwright.config.ts
           PLAYWRIGHT_BASE_URL: ${{ secrets.SITE_URL }}
