@@ -146,7 +146,7 @@ export function ProfileTab({ profile, email, role }: Props) {
             action={profileAction}
             noValidate
             className="grid gap-5 md:grid-cols-2"
-            onChange={() => setIsProfileDirty(true)}>
+            onInput={() => setIsProfileDirty(true)}>
             {/* Name */}
             <div className="space-y-1.5">
               <Label htmlFor="given_name">{t('profile.given_name')}</Label>
