@@ -119,3 +119,4 @@ Use `cn()` from `@/lib/utils` to merge Tailwind classes. Material Symbols icons 
 - Vitest config: `vitest.config.ts` — jsdom environment, globals enabled, setup in `src/test/setup.ts`
 - Playwright config: `playwright.config.ts` — tests in `src/test/e2e/`, auto-starts dev server on port 3000
 - Path alias `@` maps to `src/` in both test configs
+- **Test roadmap: `TESTING-PLAN.md`** — per-folder inventory of what needs tests, priorities (P0-P2), conventions (mock patterns, assertion rules), and phase prompts. Read it before writing or modifying tests.
