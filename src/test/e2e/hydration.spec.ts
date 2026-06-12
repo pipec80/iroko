@@ -17,6 +17,9 @@ test.describe('Asset & hydration sanity', () => {
 
     page.on('response', (response) => {
       const url = new URL(response.url());
+      // /_vercel/*: scripts de Analytics/SpeedInsights que solo existen en
+      // infraestructura de Vercel — en CI y self-hosting su 404 es esperado.
+      if (url.pathname.startsWith('/_vercel/')) return;
       const isOwnAsset =
         url.pathname.startsWith('/_next/') ||
         /\.(js|css|svg|png|ico|webmanifest|woff2?)$/.test(url.pathname);
@@ -39,7 +42,7 @@ test.describe('Asset & hydration sanity', () => {
     const magicButton = page.getByRole('button', { name: /enlace mágico/i });
     await expect(magicButton).toBeDisabled();
 
-    await page.locator('input[name="email"]').fill('hydration-check@example.com');
+    await page.locator('input[name="email"][type="email"]').fill('hydration-check@example.com');
 
     await expect(magicButton).toBeEnabled({ timeout: 10_000 });
   });

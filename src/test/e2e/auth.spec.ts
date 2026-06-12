@@ -31,7 +31,8 @@ test.describe('Auth flow', () => {
 
   test('login with wrong password shows the generic credentials error', async ({ page }) => {
     await page.goto('/es/login');
-    await page.locator('input[name="email"]').fill('nadie@saasboilerplate.local');
+    // [type="email"]: el form de enlace mágico duplica name="email" en un hidden.
+    await page.locator('input[name="email"][type="email"]').fill('nadie@saasboilerplate.local');
     await page.locator('input[name="password"]').fill('WrongPass123!');
     await page.getByRole('button', { name: /iniciar sesión/i }).click();
 
