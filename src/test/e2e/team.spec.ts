@@ -55,29 +55,49 @@ const teamMgmtTest = base.extend<TeamMgmtFixtures>({
     if (!memberBody.id) throw new Error(`create member failed: ${JSON.stringify(memberBody)}`);
     const memberId = memberBody.id;
 
-    // 3. Poll for owner's account_id — the on_auth_user_created trigger chain
-    //    (handle_new_user → handle_new_profile) can take a few hundred ms in CI.
-    //    Retry up to 6 × 600 ms = 3.6 s before giving up.
-    let accountId: string | undefined;
-    for (let attempt = 0; attempt < 6; attempt++) {
-      await new Promise((r) => setTimeout(r, 600));
-      const acctRes = await request.get(
-        `${SUPABASE_URL}/rest/v1/accounts_memberships?user_id=eq.${ownerId}&select=account_id`,
-        { headers: readHeaders },
-      );
-      const acctRows: Array<{ account_id: string }> = await acctRes.json();
-      accountId = acctRows[0]?.account_id;
-      if (accountId) break;
+    // 3. Resolve the owner's account_id through the app's own path:
+    //    password-grant login + get_my_account_id() RPC (SECURITY DEFINER,
+    //    granted to authenticated). Direct REST reads of accounts_memberships
+    //    return an error object (grants hardening) that silently parses as
+    //    "no rows" — never query that table directly here.
+    const tokenRes = await request.post(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+      headers: { apikey: serviceKey, 'Content-Type': 'application/json' },
+      data: { email: ownerEmail, password },
+    });
+    const tokenBody: { access_token?: string } = await tokenRes.json();
+    if (!tokenBody.access_token) {
+      throw new Error(`owner password login failed: ${JSON.stringify(tokenBody)}`);
     }
-    if (!accountId) throw new Error(`owner account not found for ${ownerId} after 6 attempts`);
 
-    // 5. Insert member into owner's account as active non-owner member
-    await request.post(`${SUPABASE_URL}/rest/v1/accounts_memberships`, {
+    const rpcRes = await request.post(`${SUPABASE_URL}/rest/v1/rpc/get_my_account_id`, {
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${tokenBody.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      data: {},
+    });
+    const rpcText = await rpcRes.text();
+    if (!rpcRes.ok()) {
+      throw new Error(`get_my_account_id failed (${rpcRes.status()}): ${rpcText}`);
+    }
+    const accountId = JSON.parse(rpcText) as string | null;
+    if (!accountId) {
+      throw new Error(`owner ${ownerId} has no account — handle_new_profile trigger missing?`);
+    }
+
+    // 4. Insert member into owner's account as active non-owner member.
+    //    Fail loudly: a swallowed error here surfaces later as a confusing
+    //    "row not visible" assertion in the test body.
+    const insertRes = await request.post(`${SUPABASE_URL}/rest/v1/accounts_memberships`, {
       headers: { ...adminHeaders, Prefer: 'return=minimal' },
       data: { account_id: accountId, user_id: memberId, role: 'member' },
     });
+    if (!insertRes.ok()) {
+      throw new Error(`seed membership failed (${insertRes.status()}): ${await insertRes.text()}`);
+    }
 
-    // 6. Login as owner via UI
+    // 5. Login as owner via UI
     await page.goto('/es/login');
     await page.locator('input[name="email"][type="email"]').fill(ownerEmail);
     await page.locator('input[name="password"]').fill(password);
