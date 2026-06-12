@@ -23,22 +23,25 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      include: ['src/lib/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}', 'src/hooks/**/*.{ts,tsx}'],
+      // Se mide solo código con lógica: lib + server actions. La UI (shadcn,
+      // layouts, providers) se cubre vía E2E, no con coverage unitario.
+      include: ['src/lib/**/*.ts', 'src/app/**/actions.ts'],
       exclude: [
         'src/test/**',
         'src/types/**',
         'src/**/*.d.ts',
-        'src/app/**/layout.tsx',
-        'src/app/**/loading.tsx',
-        'src/app/**/error.tsx',
-        'src/app/**/not-found.tsx',
-        'src/app/**/page.tsx',
+        // Wrappers triviales del SDK: solo instancian el cliente con cookies.
+        'src/lib/supabase/client.ts',
+        'src/lib/supabase/server.ts',
+        'src/lib/supabase/admin.ts',
       ],
+      // Trinquete: nunca bajarlos. Subirlos al cerrar cada fase de TESTING-PLAN.md.
+      // Real al calibrar (2026-06-12): 96.5 / 83.8 / 96 / 97 — margen ~5 puntos.
       thresholds: {
-        statements: 5,
-        branches: 4,
-        functions: 3,
-        lines: 5,
+        statements: 90,
+        branches: 78,
+        functions: 90,
+        lines: 90,
       },
     },
   },
