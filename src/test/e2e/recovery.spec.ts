@@ -16,7 +16,7 @@ import { createConfirmedUser, deleteUserById, fetchLatestMessageTo, uniqueEmail 
 // ─── Render / smoke tests (no Supabase needed) ───────────────────────────────
 
 test.describe('Forgot password page', () => {
-  test('renders form with email input and submit button', async ({ page }) => {
+  test('renders form with email input and submit button @smoke', async ({ page }) => {
     await page.goto('/es/forgot-password');
     await expect(page.getByRole('heading', { name: /restablecer contraseña/i })).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
@@ -25,7 +25,7 @@ test.describe('Forgot password page', () => {
 });
 
 test.describe('Reset password page', () => {
-  test('redirects unauthenticated users to login', async ({ page }) => {
+  test('redirects unauthenticated users to login @smoke', async ({ page }) => {
     await page.goto('/es/reset-password');
     await expect(page).toHaveURL(/\/es\/login\?next=%2Fes%2Freset-password/);
   });
