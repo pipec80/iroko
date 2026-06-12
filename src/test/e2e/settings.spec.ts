@@ -70,14 +70,15 @@ authTest.describe('Settings page — authenticated', () => {
       await page.waitForURL(/\/es\/dashboard\/account/);
 
       // El fixture crea el usuario sin given_name, así que el campo empieza vacío.
-      // fill('') sobre un campo vacío no dispara onChange → isProfileDirty sigue false → botón disabled.
-      // Primero llenar con un valor para activar el botón, luego borrar para probar la validación.
+      // fill() no dispara input events burbujeantes en el build de producción.
+      // pressSequentially simula keystrokes reales que sí activan el listener nativo.
       const profileForm = page
         .locator('form')
         .filter({ has: page.locator('input[name="given_name"]') });
 
       await expect(async () => {
-        await page.locator('input[name="given_name"]').fill('Temp');
+        await page.locator('input[name="given_name"]').fill('');
+        await page.locator('input[name="given_name"]').pressSequentially('T');
         await expect(profileForm.locator('button[type="submit"]')).toBeEnabled({ timeout: 1000 });
       }).toPass({ timeout: 10_000 });
 
