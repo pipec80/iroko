@@ -55,10 +55,14 @@ vi.mock('@sentry/nextjs', () => ({
 import {
   updateProfileAction,
   updateEmailAction,
+  updatePasswordFromSettingsAction,
+  uploadAvatarAction,
+  requestPasswordResetFromSettingsAction,
   deleteAccountAction,
   generateRecoveryCodesAction,
   revokeSessionAction,
   revokeAllOtherSessionsAction,
+  listMySessions,
 } from '../actions';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -312,5 +316,213 @@ describe('revokeAllOtherSessionsAction', () => {
     const result = await revokeAllOtherSessionsAction();
     expect(result.success).toBe('other_sessions_revoked');
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+  });
+});
+
+// ─── updatePasswordFromSettingsAction ────────────────────────────────────────
+
+describe('updatePasswordFromSettingsAction', () => {
+  const validPasswords = {
+    current_password: 'OldPass1234',
+    password: 'NewPass1234',
+    confirm_password: 'NewPass1234',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthenticated();
+  });
+
+  it('should return fieldErrors when confirm does not match', async () => {
+    const fd = makeFormData({ ...validPasswords, confirm_password: 'Other1234X' });
+    const result = await updatePasswordFromSettingsAction(PREV, fd);
+    expect(result.fieldErrors?.confirm_password).toBeDefined();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('should return fieldErrors when new password equals current', async () => {
+    const fd = makeFormData({
+      current_password: 'SamePass1234',
+      password: 'SamePass1234',
+      confirm_password: 'SamePass1234',
+    });
+    const result = await updatePasswordFromSettingsAction(PREV, fd);
+    expect(result.fieldErrors).toBeDefined();
+  });
+
+  it('should return not_authenticated when no session', async () => {
+    mockUnauthenticated();
+    const fd = makeFormData(validPasswords);
+    const result = await updatePasswordFromSettingsAction(PREV, fd);
+    expect(result.error).toBe('not_authenticated');
+  });
+
+  it('should return Supabase error code when current password is wrong', async () => {
+    mocks.updateUser.mockResolvedValue({ error: { code: 'invalid_credentials' } });
+    const fd = makeFormData(validPasswords);
+    const result = await updatePasswordFromSettingsAction(PREV, fd);
+    expect(result.error).toBe('invalid_credentials');
+  });
+
+  it('should pass currentPassword to enforce secure_password_change and succeed', async () => {
+    mocks.updateUser.mockResolvedValue({ error: null });
+    const fd = makeFormData(validPasswords);
+    const result = await updatePasswordFromSettingsAction(PREV, fd);
+
+    expect(result.success).toBe('password_updated');
+    expect(mocks.updateUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        password: 'NewPass1234',
+        currentPassword: 'OldPass1234',
+      }),
+    );
+  });
+});
+
+// ─── uploadAvatarAction ──────────────────────────────────────────────────────
+
+describe('uploadAvatarAction', () => {
+  function makeAvatarForm(file?: File): FormData {
+    const fd = new FormData();
+    if (file) fd.set('avatar', file);
+    return fd;
+  }
+
+  function makeFile(size: number, type: string, name = 'avatar.png'): File {
+    return new File([new Uint8Array(size)], name, { type });
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthenticated();
+    mocks.rpc.mockResolvedValue({ error: null });
+    mocks.storageUpload.mockResolvedValue({ error: null });
+  });
+
+  it('should return no_file when avatar field is missing', async () => {
+    const result = await uploadAvatarAction(PREV, makeAvatarForm());
+    expect(result.error).toBe('no_file');
+  });
+
+  it('should return invalid_mime for unsupported file types', async () => {
+    const result = await uploadAvatarAction(PREV, makeAvatarForm(makeFile(100, 'application/pdf')));
+    expect(result.error).toBe('invalid_mime');
+    expect(mocks.storageUpload).not.toHaveBeenCalled();
+  });
+
+  it('should return not_authenticated when no session', async () => {
+    mockUnauthenticated();
+    const result = await uploadAvatarAction(PREV, makeAvatarForm(makeFile(100, 'image/png')));
+    expect(result.error).toBe('not_authenticated');
+  });
+
+  it('should return upload_failed when storage upload errors', async () => {
+    mocks.storageUpload.mockResolvedValue({ error: { message: 'bucket full' } });
+    const result = await uploadAvatarAction(PREV, makeAvatarForm(makeFile(100, 'image/png')));
+    expect(result.error).toBe('upload_failed');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('should return RPC error code when profile avatar_url update fails', async () => {
+    mocks.rpc.mockResolvedValue({ error: { code: 'P0001' } });
+    const result = await uploadAvatarAction(PREV, makeAvatarForm(makeFile(100, 'image/png')));
+    expect(result.error).toBe('P0001');
+  });
+
+  it('should upload under the user folder, store db path and revalidate', async () => {
+    const result = await uploadAvatarAction(
+      PREV,
+      makeAvatarForm(makeFile(100, 'image/png', 'me.PNG')),
+    );
+
+    expect(result.success).toBe('avatar_updated');
+    // Path namespaced por usuario: evita sobrescribir avatares ajenos.
+    expect(mocks.storageUpload).toHaveBeenCalledWith(
+      'user-uuid-123/avatar.png',
+      expect.any(File),
+      expect.objectContaining({ upsert: true }),
+    );
+    expect(mocks.rpc).toHaveBeenCalledWith('update_my_profile', {
+      p_avatar_url: 'avatars/user-uuid-123/avatar.png',
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+  });
+});
+
+// ─── requestPasswordResetFromSettingsAction ──────────────────────────────────
+
+describe('requestPasswordResetFromSettingsAction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockAuthenticated();
+    mocks.getUser.mockResolvedValue({ data: { user: { email: 'ana@example.com' } } });
+  });
+
+  it('should return not_authenticated when no session', async () => {
+    mockUnauthenticated();
+    const result = await requestPasswordResetFromSettingsAction(PREV, new FormData());
+    expect(result.error).toBe('not_authenticated');
+  });
+
+  it('should return no_email_on_account when the user has no email', async () => {
+    mocks.getUser.mockResolvedValue({ data: { user: { email: undefined } } });
+    const result = await requestPasswordResetFromSettingsAction(PREV, new FormData());
+    expect(result.error).toBe('no_email_on_account');
+  });
+
+  it('should return Supabase error code when sending fails', async () => {
+    mocks.resetPasswordForEmail.mockResolvedValue({ error: { code: 'over_request_rate_limit' } });
+    const result = await requestPasswordResetFromSettingsAction(PREV, new FormData());
+    expect(result.error).toBe('over_request_rate_limit');
+  });
+
+  it('should send the reset link to the session email — never to client input', async () => {
+    mocks.resetPasswordForEmail.mockResolvedValue({ error: null });
+    const result = await requestPasswordResetFromSettingsAction(PREV, new FormData());
+
+    expect(result.success).toBe('reset_link_sent');
+    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith(
+      'ana@example.com',
+      expect.objectContaining({
+        redirectTo: expect.stringContaining('/auth/confirm?next=/es/reset-password'),
+      }),
+    );
+  });
+});
+
+// ─── listMySessions ──────────────────────────────────────────────────────────
+
+describe('listMySessions', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('should return empty array when not authenticated — never throws to the UI', async () => {
+    mockUnauthenticated();
+    const result = await listMySessions();
+    expect(result).toEqual([]);
+  });
+
+  it('should return empty array when the RPC fails', async () => {
+    mockAuthenticated();
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'P0001' } });
+    const result = await listMySessions();
+    expect(result).toEqual([]);
+  });
+
+  it('should return the session rows on success', async () => {
+    mockAuthenticated();
+    const rows = [
+      {
+        id: 'session-1',
+        created_at: '2026-01-01',
+        updated_at: null,
+        not_after: null,
+        user_agent: 'Mozilla/5.0',
+        ip: '203.0.113.1',
+        aal: 'aal1',
+      },
+    ];
+    mocks.rpc.mockResolvedValue({ data: rows, error: null });
+    const result = await listMySessions();
+    expect(result).toEqual(rows);
   });
 });
