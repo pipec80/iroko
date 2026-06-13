@@ -2,6 +2,17 @@
   "Common": {
     "skipToContent": "Skip to main content"
   },
+  "UserMenu": {
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "shortcuts": "Shortcuts",
+    "theme": "Change theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "language": "Language",
+    "logout": "Sign out"
+  },
   "HomePage": {
     "title": "Iroko — the shared trunk for your micro-SaaS",
     "description": "The template you refuse to rewrite. Auth, billing, teams and deploy ready on day one."
