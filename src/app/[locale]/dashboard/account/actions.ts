@@ -88,6 +88,28 @@ export const updateProfileAction = withServerAction(async function updateProfile
   return { success: 'profile_updated' };
 });
 
+export const updateLocalePreferenceAction = withServerAction(
+  async function updateLocalePreferenceAction(localeInput: string): Promise<SettingsActionState> {
+    const parsed = z.enum(['en', 'es']).safeParse(localeInput);
+    if (!parsed.success) return { error: 'invalid_locale' };
+
+    const { supabase, userId } = await requireUserId();
+    // Guests can still switch locale via URL/cookie; nothing to persist.
+    if (!userId) return {};
+
+    const { error } = await supabase.rpc('update_my_profile', { p_locale: parsed.data });
+    if (error) {
+      logger.warn(
+        { userId, action: 'settings.updateLocale', code: error.code },
+        'Locale update failed',
+      );
+      return { error: error.code ?? 'update_failed' };
+    }
+
+    return { success: 'profile_updated' };
+  },
+);
+
 export const updateEmailAction = withServerAction(async function updateEmailAction(
   _prev: SettingsActionState,
   formData: FormData,

@@ -1,7 +1,21 @@
 'use client';
 
 import React from 'react';
-import { Bell, Globe, Keyboard, LogOut, Menu, Moon, Search, Settings, User } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useTranslations } from 'next-intl';
+import {
+  Bell,
+  Globe,
+  Keyboard,
+  LogOut,
+  Menu,
+  Monitor,
+  Moon,
+  Search,
+  Settings,
+  Sun,
+  User,
+} from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -9,7 +23,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -19,7 +38,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { Link, usePathname } from '@/i18n/routing';
+import { updateLocalePreferenceAction } from '@/app/[locale]/dashboard/account/actions';
+import { Link, usePathname, useRouter } from '@/i18n/routing';
 import type { OrgAccount } from './app-sidebar-client';
 import { AppSidebarClient } from './app-sidebar-client';
 
@@ -65,9 +85,25 @@ function userInitials(displayName: string): string {
 
 export function AppTopbarClient({ user, locale, orgs }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+  const t = useTranslations('UserMenu');
+  const { theme, setTheme } = useTheme();
   const pageTitle = getPageTitle(pathname);
   const firstOrg = orgs[0];
   const orgLabel = firstOrg?.name.toUpperCase() ?? 'IROKO';
+
+  function handleChangeLocale(next: string) {
+    if (next === locale) return;
+    // Persist to the profile (no-op for guests); don't block the navigation.
+    void updateLocalePreferenceAction(next);
+    // next-intl swaps the URL locale and sets the NEXT_LOCALE cookie.
+    router.replace(pathname, { locale: next });
+  }
+
+  const ThemeIcon =
+    theme === 'light' ? Sun
+    : theme === 'dark' ? Moon
+    : Monitor;
 
   return (
     <header
@@ -203,18 +239,18 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
             <Link href="/dashboard/account?tab=profile">
               <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
                 <User style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Perfil</span>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('profile')}</span>
               </DropdownMenuItem>
             </Link>
 
             <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
               <Settings style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Preferencias</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('preferences')}</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
               <Keyboard style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Atajos</span>
+              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('shortcuts')}</span>
               <span
                 className="font-mono"
                 style={{ fontSize: 10, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}>
@@ -224,20 +260,60 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
 
             <DropdownMenuSeparator style={{ margin: '4px -2px' }} />
 
-            <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
-              <Moon style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Cambiar tema</span>
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+                <ThemeIcon style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('theme')}</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent style={{ borderRadius: 8, padding: 6 }}>
+                <DropdownMenuRadioGroup value={theme} onValueChange={setTheme}>
+                  <DropdownMenuRadioItem
+                    value="system"
+                    style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
+                    <Monitor style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+                    {t('themeSystem')}
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="light"
+                    style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
+                    <Sun style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+                    {t('themeLight')}
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="dark"
+                    style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
+                    <Moon style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+                    {t('themeDark')}
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
-            <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
-              <Globe style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
-              <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>Idioma</span>
-              <span
-                className="font-mono uppercase"
-                style={{ fontSize: 10, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}>
-                {locale}
-              </span>
-            </DropdownMenuItem>
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+                <Globe style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('language')}</span>
+                <span
+                  className="font-mono uppercase"
+                  style={{ fontSize: 10, color: 'var(--text-tertiary)', letterSpacing: '0.08em' }}>
+                  {locale}
+                </span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent style={{ borderRadius: 8, padding: 6 }}>
+                <DropdownMenuRadioGroup value={locale} onValueChange={handleChangeLocale}>
+                  <DropdownMenuRadioItem
+                    value="es"
+                    style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
+                    Español
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem
+                    value="en"
+                    style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
+                    English
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
             <DropdownMenuSeparator style={{ margin: '4px -2px' }} />
 
@@ -251,7 +327,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                 />
                 <span
                   style={{ flex: 1, fontSize: 13, fontWeight: 500, color: 'var(--color-poppy)' }}>
-                  Cerrar sesión
+                  {t('logout')}
                 </span>
               </button>
             </form>
