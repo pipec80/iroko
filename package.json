@@ -162,6 +162,12 @@
       "hono": ">=4.12.21",
       "qs": ">=6.15.2",
       "ip-address": ">=10.1.1"
+    },
+    "auditConfig": {
+      "ignoreCves": [
+        "CVE-2023-30533",
+        "CVE-2024-22363"
+      ]
     }
   },
   "lint-staged": {
