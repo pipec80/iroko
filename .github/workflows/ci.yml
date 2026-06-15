@@ -76,7 +76,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install ${{ github.actor == 'dependabot[bot]' && '--no-frozen-lockfile' || '--frozen-lockfile' }}
 
       - name: TypeScript check
         run: pnpm typecheck
@@ -115,7 +115,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install ${{ github.actor == 'dependabot[bot]' && '--no-frozen-lockfile' || '--frozen-lockfile' }}
 
       # --prod omite devDependencies; --audit-level=high falla solo en high/critical
       - name: Audit production dependencies
@@ -143,7 +143,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install ${{ github.actor == 'dependabot[bot]' && '--no-frozen-lockfile' || '--frozen-lockfile' }}
 
       - name: Run unit tests with coverage
         run: pnpm test:coverage
@@ -285,9 +285,10 @@ jobs:
       # tests de confirmación no pueden extraerla.
       SITE_URL: http://localhost:3000
     if: |
-      github.event_name == 'pull_request' ||
+      !startsWith(github.head_ref, 'dependabot/') &&
+      (github.event_name == 'pull_request' ||
       github.ref == 'refs/heads/main' ||
-      github.event_name == 'workflow_dispatch'
+      github.event_name == 'workflow_dispatch')
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -304,7 +305,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install ${{ github.actor == 'dependabot[bot]' && '--no-frozen-lockfile' || '--frozen-lockfile' }}
 
       - name: Cache Playwright browsers
         id: playwright-cache
@@ -431,7 +432,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install ${{ github.actor == 'dependabot[bot]' && '--no-frozen-lockfile' || '--frozen-lockfile' }}
 
       - name: Build
         run: pnpm build
