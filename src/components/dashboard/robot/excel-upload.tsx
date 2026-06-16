@@ -17,12 +17,11 @@ export function ExcelUploadDropzone() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function validateAndSetFile(selected: File) {
     setError(null);
     setSuccess(false);
-    const selected = e.target.files?.[0];
-    if (!selected) return;
     if (!selected.name.endsWith('.xlsx')) {
       setError('Por seguridad, solo se permiten archivos .xlsx (sin macros).');
       return;
@@ -32,6 +31,31 @@ export function ExcelUploadDropzone() {
       return;
     }
     setFile(selected);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (selected) validateAndSetFile(selected);
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) validateAndSetFile(dropped);
   }
 
   function handleUpload() {
@@ -124,10 +148,18 @@ export function ExcelUploadDropzone() {
       <CardContent className="space-y-4">
         {/* Dropzone — horizontal, rectangular */}
         <div
-          className="hover:bg-muted/40 flex cursor-pointer items-center gap-4 rounded-lg border-2 border-dashed px-5 py-4 transition-colors"
-          onClick={() => fileInputRef.current?.click()}>
-          <div className="bg-muted flex h-9 w-9 shrink-0 items-center justify-center rounded-md">
-            <UploadCloud className="text-muted-foreground h-4 w-4" />
+          className={`flex cursor-pointer items-center gap-4 rounded-lg border-2 border-dashed px-5 py-4 transition-colors ${
+            isDragging ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'
+          }`}
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}>
+          <div
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors ${isDragging ? 'bg-primary/10' : 'bg-muted'}`}>
+            <UploadCloud
+              className={`h-4 w-4 transition-colors ${isDragging ? 'text-primary' : 'text-muted-foreground'}`}
+            />
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">

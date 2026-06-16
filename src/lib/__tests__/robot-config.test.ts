@@ -53,7 +53,7 @@ async function makeXlsxFile(
   for (const [sheetName, rows] of Object.entries(sheets)) {
     const ws = wb.addWorksheet(sheetName);
     if (rows.length > 0) {
-      const headers = Object.keys(rows[0]!);
+      const headers = Object.keys(rows[0] ?? {});
       ws.addRow(headers);
       for (const row of rows) {
         ws.addRow(headers.map((h) => row[h] ?? null));
