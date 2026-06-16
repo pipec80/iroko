@@ -1,7 +1,8 @@
 'use server';
 
 import { randomUUID } from 'crypto';
-import * as xlsx from 'xlsx';
+import { Readable } from 'stream';
+import ExcelJS from 'exceljs';
 
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
@@ -16,7 +17,7 @@ export type RobotConfigUploadState = {
   success?: boolean;
 };
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MiB para Excel estricto
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 async function requireContext() {
@@ -28,8 +29,14 @@ async function requireContext() {
 }
 
 function parseExcelTime(value: unknown): string {
+  // ExcelJS returns time-formatted cells as Date objects
+  if (value instanceof Date) {
+    const h = String(value.getUTCHours()).padStart(2, '0');
+    const m = String(value.getUTCMinutes()).padStart(2, '0');
+    const s = String(value.getUTCSeconds()).padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  }
   if (typeof value === 'number') {
-    // Si es mayor a 1, es una fecha+hora. Tomamos solo la fracción (hora).
     const fraction = value % 1;
     let totalSeconds = Math.round(fraction * 24 * 3600);
     const hours = Math.floor(totalSeconds / 3600);
@@ -38,18 +45,35 @@ function parseExcelTime(value: unknown): string {
     const seconds = totalSeconds % 60;
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   }
-  if (typeof value === 'string') {
-    // Si ya viene como texto (ej. "10:00"), lo devolvemos limpio
-    return value.trim();
-  }
+  if (typeof value === 'string') return value.trim();
   return '00:00:00';
+}
+
+function wsToJson(ws: ExcelJS.Worksheet): Record<string, unknown>[] {
+  const headers: string[] = [];
+  const rows: Record<string, unknown>[] = [];
+
+  ws.eachRow((row, rowIndex) => {
+    if (rowIndex === 1) {
+      row.eachCell((cell) => headers.push(String(cell.value ?? '')));
+    } else {
+      const obj: Record<string, unknown> = {};
+      row.eachCell({ includeEmpty: true }, (cell, colIndex) => {
+        const h = headers[colIndex - 1];
+        if (h) obj[h] = cell.value;
+      });
+      if (Object.keys(obj).length > 0) rows.push(obj);
+    }
+  });
+
+  return rows;
 }
 
 /**
  * Procesa la subida del Excel de Iroko:
  * 1. Validación de seguridad (OWASP)
  * 2. Guarda el original en Storage (Backup/Auditoría)
- * 3. Parsea el Excel de forma segura (ignora macros/formulas)
+ * 3. Parsea el Excel de forma segura
  * 4. Inserta los datos estructurados en Postgres.
  */
 export async function uploadRobotConfigAction(
@@ -60,7 +84,6 @@ export async function uploadRobotConfigAction(
 
   if (!(file instanceof File) || file.size === 0) return { error: 'no_file' };
 
-  // OWASP: Verificación estricta de MIME y extensión
   if (file.type !== ALLOWED_MIME) return { error: 'invalid_type' };
   if (!file.name.toLowerCase().endsWith('.xlsx')) return { error: 'invalid_extension' };
   if (file.size > MAX_FILE_SIZE) return { error: 'file_too_large' };
@@ -69,7 +92,6 @@ export async function uploadRobotConfigAction(
   if (!userId || !accountId) return { error: 'not_authenticated' };
 
   try {
-    // 1. Guardar original en Storage con nombre seguro
     const path = `${accountId}/${randomUUID()}.xlsx`;
     const { error: uploadError } = await supabase.storage
       .from('robot_configs')
@@ -80,29 +102,28 @@ export async function uploadRobotConfigAction(
       return { error: 'upload_failed' };
     }
 
-    // 2. Parsear el Excel de forma segura
-    const buffer = await file.arrayBuffer();
-    // cellText = true, cellFormula = false evitan ejecución de macros o inyecciones
-    const workbook = xlsx.read(buffer, { type: 'buffer', cellFormula: false, cellText: true });
+    const workbook = new ExcelJS.Workbook();
+    const stream = Readable.from(Buffer.from(await file.arrayBuffer()));
+    await workbook.xlsx.read(stream);
 
     const requiredSheets = ['Rutinas', 'Contactos', 'Memoria'];
-    const missingSheets = requiredSheets.filter((sheet) => !workbook.SheetNames.includes(sheet));
+    const sheetNames = workbook.worksheets.map((ws) => ws.name);
+    const missingSheets = requiredSheets.filter((name) => !sheetNames.includes(name));
 
     if (missingSheets.length > 0) {
       return { error: `missing_sheets: ${missingSheets.join(', ')}` };
     }
 
-    // 3. Extraer Datos
-    const rutinasWs = workbook.Sheets['Rutinas'];
-    const contactosWs = workbook.Sheets['Contactos'];
-    const memoriaWs = workbook.Sheets['Memoria'];
+    const rutinasWs = workbook.getWorksheet('Rutinas');
+    const contactosWs = workbook.getWorksheet('Contactos');
+    const memoriaWs = workbook.getWorksheet('Memoria');
+
     if (!rutinasWs || !contactosWs || !memoriaWs) return { error: 'missing_sheets: internal' };
 
-    const routinesSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(rutinasWs);
-    const contactsSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(contactosWs);
-    const memoriesSheet = xlsx.utils.sheet_to_json<Record<string, unknown>>(memoriaWs);
+    const routinesSheet = wsToJson(rutinasWs);
+    const contactsSheet = wsToJson(contactosWs);
+    const memoriesSheet = wsToJson(memoriaWs);
 
-    // Mapeo a las tablas
     const routines: RobotRoutineInsert[] = routinesSheet.map((r) => ({
       account_id: accountId,
       time: parseExcelTime(r['Hora']),
@@ -126,23 +147,18 @@ export async function uploadRobotConfigAction(
       key_fact: (m['Dato'] as string) || '',
     }));
 
-    // 4. Sincronización Transaccional (Reemplazo Total - YAGNI)
-    // Borramos lo viejo
     await supabase.from('robot_routines').delete().eq('account_id', accountId);
     await supabase.from('robot_contacts').delete().eq('account_id', accountId);
     await supabase.from('robot_memories').delete().eq('account_id', accountId);
 
-    // Insertamos lo nuevo
     if (routines.length > 0) {
       const { error: rErr } = await supabase.from('robot_routines').insert(routines);
       if (rErr) throw rErr;
     }
-
     if (contacts.length > 0) {
       const { error: cErr } = await supabase.from('robot_contacts').insert(contacts);
       if (cErr) throw cErr;
     }
-
     if (memories.length > 0) {
       const { error: mErr } = await supabase.from('robot_memories').insert(memories);
       if (mErr) throw mErr;
@@ -164,7 +180,6 @@ export async function getDownloadUrl(path: string): Promise<{ url?: string; erro
   const { supabase, userId, accountId } = await requireContext();
   if (!userId || !accountId) return { error: 'not_authenticated' };
 
-  // path ya viene como `accountId/uuid.xlsx`
   if (!path.startsWith(`${accountId}/`)) return { error: 'unauthorized' };
 
   const { data, error } = await supabase.storage.from('robot_configs').createSignedUrl(path, 60);

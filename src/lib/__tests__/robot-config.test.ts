@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as xlsx from 'xlsx';
+import ExcelJS from 'exceljs';
 
 const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
@@ -44,13 +44,24 @@ const PREV = {};
 type SheetRows = Record<string, Array<Record<string, unknown>>>;
 
 /** Construye un .xlsx real en memoria — el parseo del action se prueba de verdad. */
-function makeXlsxFile(sheets: SheetRows, name = 'config.xlsx', type = XLSX_MIME): File {
-  const wb = xlsx.utils.book_new();
+async function makeXlsxFile(
+  sheets: SheetRows,
+  name = 'config.xlsx',
+  type = XLSX_MIME,
+): Promise<File> {
+  const wb = new ExcelJS.Workbook();
   for (const [sheetName, rows] of Object.entries(sheets)) {
-    xlsx.utils.book_append_sheet(wb, xlsx.utils.json_to_sheet(rows), sheetName);
+    const ws = wb.addWorksheet(sheetName);
+    if (rows.length > 0) {
+      const headers = Object.keys(rows[0] ?? {});
+      ws.addRow(headers);
+      for (const row of rows) {
+        ws.addRow(headers.map((h) => row[h] ?? null));
+      }
+    }
   }
-  const buffer = xlsx.write(wb, { type: 'array', bookType: 'xlsx' }) as ArrayBuffer;
-  return new File([buffer], name, { type });
+  const buffer = await wb.xlsx.writeBuffer();
+  return new File([buffer as ArrayBuffer], name, { type });
 }
 
 const validSheets: SheetRows = {
@@ -97,13 +108,13 @@ describe('uploadRobotConfigAction', () => {
     });
 
     it('rejects files with a non-xlsx MIME type', async () => {
-      const file = makeXlsxFile(validSheets, 'config.xlsx', 'text/csv');
+      const file = await makeXlsxFile(validSheets, 'config.xlsx', 'text/csv');
       const result = await uploadRobotConfigAction(PREV, makeUploadForm(file));
       expect(result.error).toBe('invalid_type');
     });
 
     it('rejects correct MIME with a non-.xlsx extension (double-extension trick)', async () => {
-      const file = makeXlsxFile(validSheets, 'config.xlsx.exe');
+      const file = await makeXlsxFile(validSheets, 'config.xlsx.exe');
       const result = await uploadRobotConfigAction(PREV, makeUploadForm(file));
       expect(result.error).toBe('invalid_extension');
     });
@@ -118,7 +129,10 @@ describe('uploadRobotConfigAction', () => {
 
     it('returns not_authenticated when claims are missing', async () => {
       mocks.getClaims.mockResolvedValue({ data: null });
-      const result = await uploadRobotConfigAction(PREV, makeUploadForm(makeXlsxFile(validSheets)));
+      const result = await uploadRobotConfigAction(
+        PREV,
+        makeUploadForm(await makeXlsxFile(validSheets)),
+      );
       expect(result.error).toBe('not_authenticated');
       expect(mocks.storageUpload).not.toHaveBeenCalled();
     });
@@ -126,7 +140,7 @@ describe('uploadRobotConfigAction', () => {
 
   describe('parsing', () => {
     it('reports which required sheets are missing', async () => {
-      const file = makeXlsxFile({ Rutinas: validSheets['Rutinas'] ?? [] });
+      const file = await makeXlsxFile({ Rutinas: validSheets['Rutinas'] ?? [] });
       const result = await uploadRobotConfigAction(PREV, makeUploadForm(file));
       expect(result.error).toContain('missing_sheets');
       expect(result.error).toContain('Contactos');
@@ -134,7 +148,7 @@ describe('uploadRobotConfigAction', () => {
     });
 
     it('converts Excel time fractions and keeps text times as-is', async () => {
-      await uploadRobotConfigAction(PREV, makeUploadForm(makeXlsxFile(validSheets)));
+      await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(validSheets)));
 
       const routineRows = mocks.insert.mock.calls.find(([table]) => table === 'robot_routines');
       expect(routineRows?.[1]).toEqual([
@@ -146,9 +160,9 @@ describe('uploadRobotConfigAction', () => {
     it('coerces contact phone to string and applies fallbacks for empty cells', async () => {
       const sheets: SheetRows = {
         ...validSheets,
-        Contactos: [{ Telefono: 56911112222 }], // sin Nombre/Relacion/Prioridad
+        Contactos: [{ Telefono: 56911112222 }],
       };
-      await uploadRobotConfigAction(PREV, makeUploadForm(makeXlsxFile(sheets)));
+      await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(sheets)));
 
       const contactRows = mocks.insert.mock.calls.find(([table]) => table === 'robot_contacts');
       expect(contactRows?.[1]).toEqual([
@@ -165,32 +179,40 @@ describe('uploadRobotConfigAction', () => {
   describe('persistence', () => {
     it('returns upload_failed when the storage backup fails — nothing is parsed', async () => {
       mocks.storageUpload.mockResolvedValue({ error: { message: 'bucket unavailable' } });
-      const result = await uploadRobotConfigAction(PREV, makeUploadForm(makeXlsxFile(validSheets)));
+      const result = await uploadRobotConfigAction(
+        PREV,
+        makeUploadForm(await makeXlsxFile(validSheets)),
+      );
       expect(result.error).toBe('upload_failed');
       expect(mocks.insert).not.toHaveBeenCalled();
     });
 
     it('stores the original under the account folder with a random name', async () => {
-      await uploadRobotConfigAction(PREV, makeUploadForm(makeXlsxFile(validSheets)));
+      await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(validSheets)));
       const [path] = mocks.storageUpload.mock.calls[0] ?? [];
       expect(path).toMatch(new RegExp(`^${ACCOUNT_ID}/[0-9a-f-]{36}\\.xlsx$`));
     });
 
     it('replaces existing data: deletes the three tables before inserting', async () => {
-      await uploadRobotConfigAction(PREV, makeUploadForm(makeXlsxFile(validSheets)));
+      await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(validSheets)));
       expect(mocks.deleteEq).toHaveBeenCalledTimes(3);
       expect(mocks.deleteEq).toHaveBeenCalledWith('account_id', ACCOUNT_ID);
     });
 
     it('returns processing_failed when an insert errors — no DB detail leaked', async () => {
       mocks.insert.mockResolvedValue({ error: new Error('violates foreign key') });
-      const result = await uploadRobotConfigAction(PREV, makeUploadForm(makeXlsxFile(validSheets)));
+      const result = await uploadRobotConfigAction(
+        PREV,
+        makeUploadForm(await makeXlsxFile(validSheets)),
+      );
       expect(result.error).toBe('processing_failed');
     });
 
     it('returns success after inserting routines, contacts and memories', async () => {
-      const result = await uploadRobotConfigAction(PREV, makeUploadForm(makeXlsxFile(validSheets)));
-
+      const result = await uploadRobotConfigAction(
+        PREV,
+        makeUploadForm(await makeXlsxFile(validSheets)),
+      );
       expect(result.success).toBe(true);
       const tables = mocks.insert.mock.calls.map(([table]) => table);
       expect(tables).toEqual(
@@ -232,7 +254,6 @@ describe('getDownloadUrl', () => {
       error: null,
     });
     const result = await getDownloadUrl(`${ACCOUNT_ID}/file.xlsx`);
-
     expect(result.url).toBe('https://storage/signed?token=abc');
     expect(mocks.createSignedUrl).toHaveBeenCalledWith(`${ACCOUNT_ID}/file.xlsx`, 60);
   });
