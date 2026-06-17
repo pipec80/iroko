@@ -181,7 +181,7 @@ export function MembersTable({ members }: Props) {
             <span>{t('col_member')}</span>
             <span>{t('role_label')}</span>
             <span>{t('col_status')}</span>
-            <span className="text-right">{t('col_last_access')}</span>
+            <span className="text-right">{t('col_joined')}</span>
             <span />
           </div>
 
@@ -268,11 +268,17 @@ export function MembersTable({ members }: Props) {
                     </span>
                   </div>
 
-                  {/* Last access */}
+                  {/* Joined at */}
                   <span
                     className="text-muted-foreground text-right font-mono text-xs"
                     style={{ letterSpacing: '0.02em' }}>
-                    —
+                    {member.joined_at ?
+                      new Date(member.joined_at).toLocaleDateString(undefined, {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                    : '—'}
                   </span>
 
                   <RowActions member={member} displayName={displayName} />

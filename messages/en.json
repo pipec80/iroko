@@ -308,7 +308,7 @@
     "filter_all_statuses": "All statuses",
     "col_member": "Member",
     "col_status": "Status",
-    "col_last_access": "Last access",
+    "col_joined": "Member since",
     "status_invited": "Invited"
   },
   "Errors": {

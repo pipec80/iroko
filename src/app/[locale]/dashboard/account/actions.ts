@@ -84,7 +84,13 @@ export const updateProfileAction = withServerAction(async function updateProfile
     return { error: error.code ?? 'update_failed' };
   }
 
-  revalidatePath('/dashboard/settings');
+  revalidatePath('/dashboard/account');
+
+  const currentLocale = await getLocale();
+  if (parsed.data.locale !== currentLocale) {
+    redirect({ href: '/dashboard/account', locale: parsed.data.locale });
+  }
+
   return { success: 'profile_updated' };
 });
 

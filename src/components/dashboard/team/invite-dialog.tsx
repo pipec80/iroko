@@ -60,7 +60,7 @@ export function InviteDialog() {
               id="invite-role"
               name="role"
               defaultValue="member"
-              className="bg-surface-container-low border-outline-variant/30 text-on-surface focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none">
+              className="bg-surface-container-low border-outline-variant/30 text-on-surface focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm [color-scheme:light] transition-colors focus:outline-none dark:[color-scheme:dark]">
               {INVITABLE_ROLES.map((role) => (
                 <option key={role} value={role}>
                   {t(`role_${role}`)}

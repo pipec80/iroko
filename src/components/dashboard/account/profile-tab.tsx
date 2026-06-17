@@ -192,7 +192,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                 id="locale"
                 name="locale"
                 defaultValue={profile.locale ?? 'es'}
-                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm transition-all outline-none focus-visible:ring-4">
+                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm [color-scheme:light] transition-all outline-none focus-visible:ring-4 dark:[color-scheme:dark]">
                 <option value="es">Español</option>
                 <option value="en">English</option>
               </select>
@@ -204,7 +204,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                 id="timezone"
                 name="timezone"
                 defaultValue={profile.timezone ?? 'America/Santiago'}
-                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm transition-all outline-none focus-visible:ring-4">
+                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm [color-scheme:light] transition-all outline-none focus-visible:ring-4 dark:[color-scheme:dark]">
                 <optgroup label="América del Sur">
                   <option value="America/Santiago">Santiago (Chile)</option>
                   <option value="America/Argentina/Buenos_Aires">Buenos Aires (Argentina)</option>

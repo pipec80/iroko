@@ -139,7 +139,7 @@ describe('updateProfileAction', () => {
     const fd = makeFormData(validProfileData);
     const result = await updateProfileAction(PREV, fd);
     expect(result.success).toBe('profile_updated');
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/account');
   });
 });
 

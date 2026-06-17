@@ -308,7 +308,7 @@
     "filter_all_statuses": "Todos los estados",
     "col_member": "Miembro",
     "col_status": "Estado",
-    "col_last_access": "Último acceso",
+    "col_joined": "Miembro desde",
     "status_invited": "Invitado"
   },
   "Errors": {
