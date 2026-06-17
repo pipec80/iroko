@@ -7,6 +7,7 @@ import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, UploadCloud } fro
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { uploadRobotConfigAction } from '@/lib/robot-config';
+import { appConfig } from '@/config/app.config';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -121,7 +122,7 @@ export function ExcelUploadDropzone() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'Plantilla_Iroko.xlsx';
+    a.download = `Plantilla_${appConfig.brand}.xlsx`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -132,7 +133,7 @@ export function ExcelUploadDropzone() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="text-primary h-5 w-5" />
-            <CardTitle className="text-base">Configuración de Iroko</CardTitle>
+            <CardTitle className="text-base">Configuración de {appConfig.brand}</CardTitle>
           </div>
           <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
             <Download className="h-4 w-4" />
@@ -195,7 +196,7 @@ export function ExcelUploadDropzone() {
             <div>
               <p className="text-sm leading-none font-medium">¡Éxito!</p>
               <p className="mt-1 text-xs opacity-90">
-                La configuración de Iroko fue actualizada correctamente.
+                La configuración de {appConfig.brand} fue actualizada correctamente.
               </p>
             </div>
           </div>

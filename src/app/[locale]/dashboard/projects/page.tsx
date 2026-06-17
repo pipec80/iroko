@@ -47,7 +47,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
   return (
     <div className="animate-in fade-in space-y-6 duration-700">
       {/* Header */}
-      <header className="flex items-end justify-between">
+      <header className="flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <span className="eyebrow-sm">Bosque</span>
           <h1

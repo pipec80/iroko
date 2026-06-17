@@ -83,7 +83,9 @@ export function ProfileTab({ profile, email, role }: Props) {
           <CardDescription>{t('profile.avatar_hint')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={avatarAction} className="flex items-center gap-6">
+          <form
+            action={avatarAction}
+            className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
             <div className="bg-muted relative h-20 w-20 overflow-hidden rounded-full ring-2 ring-white">
               {avatarPreview ?
                 <Image
@@ -111,7 +113,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                   if (f) setAvatarPreview(URL.createObjectURL(f));
                 }}
               />
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
                   type="button"
                   variant="outline"

@@ -80,7 +80,7 @@ export function SessionsTabClient({ sessions, locale, labels }: Props) {
 
   return (
     <Card className="border-outline-variant/10 rounded-3xl">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div>
           <CardTitle>{labels.heading}</CardTitle>
           <CardDescription>{labels.description}</CardDescription>
@@ -99,7 +99,7 @@ export function SessionsTabClient({ sessions, locale, labels }: Props) {
         {localSessions.length === 0 ?
           <p className="text-on-surface-variant text-sm">{labels.none}</p>
         : <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[600px] text-sm">
               <thead>
                 <tr className="border-outline-variant/10 text-on-surface-variant border-b text-left text-xs uppercase">
                   <th className="py-2 pr-4">{labels.device}</th>

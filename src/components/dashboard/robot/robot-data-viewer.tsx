@@ -64,7 +64,7 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="routines" className="w-full">
-          <TabsList className="mb-4 grid w-full grid-cols-4">
+          <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-2 md:grid-cols-4">
             <TabsTrigger value="routines" className="gap-2">
               <Clock className="h-4 w-4" /> Rutinas
             </TabsTrigger>

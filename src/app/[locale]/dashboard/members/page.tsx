@@ -28,7 +28,7 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <header className="flex items-end justify-between">
+      <header className="flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="eyebrow-sm">{t('title')}</p>
           <h1 className="display" style={{ fontSize: 44, marginTop: 6 }}>

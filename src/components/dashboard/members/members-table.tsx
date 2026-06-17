@@ -135,7 +135,7 @@ export function MembersTable({ members }: Props) {
   return (
     <div className="flex flex-col gap-4">
       {/* Toolbar */}
-      <div className="flex items-center gap-2.5">
+      <div className="flex flex-col gap-2.5 md:flex-row md:items-center">
         <div className="relative max-w-[360px] flex-1">
           <Search
             className="absolute top-1/2 left-3 -translate-y-1/2"
@@ -173,112 +173,114 @@ export function MembersTable({ members }: Props) {
       </div>
 
       {/* Table card */}
-      <div className="card overflow-hidden">
-        {/* Header row */}
-        <div className="col-header members-row bg-surface-2 py-3">
-          <span />
-          <span>{t('col_member')}</span>
-          <span>{t('role_label')}</span>
-          <span>{t('col_status')}</span>
-          <span className="text-right">{t('col_last_access')}</span>
-          <span />
-        </div>
-
-        {filtered.length === 0 ?
-          <div className="flex items-center justify-center px-6 py-16">
-            <p className="text-muted-foreground text-sm">{t('no_members')}</p>
+      <div className="card overflow-x-auto">
+        <div className="min-w-[800px]">
+          {/* Header row */}
+          <div className="col-header members-row bg-surface-2 py-3">
+            <span />
+            <span>{t('col_member')}</span>
+            <span>{t('role_label')}</span>
+            <span>{t('col_status')}</span>
+            <span className="text-right">{t('col_last_access')}</span>
+            <span />
           </div>
-        : filtered.map((member, idx) => {
-            const displayName = getMemberName(member);
-            const initials = getInitials(member);
-            const tone = memberTone(member.role, idx);
-            const isActive = member.status === 'active';
-            const roleKey = ROLE_LABELS[member.role] ?? 'role_member';
-            const avatarUrl = storageUrl(member.avatar_url);
 
-            return (
-              <div
-                key={member.user_id ?? `pending-${idx}`}
-                className="members-row py-[14px]"
-                style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
-                {/* Avatar */}
-                {avatarUrl ?
-                  <div className="relative size-8 overflow-hidden rounded-[6px]">
-                    <Image
-                      src={avatarUrl}
-                      alt={displayName}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                  </div>
-                : <div className="avatar-32" style={{ background: tone }}>
-                    {initials}
-                  </div>
-                }
+          {filtered.length === 0 ?
+            <div className="flex items-center justify-center px-6 py-16">
+              <p className="text-muted-foreground text-sm">{t('no_members')}</p>
+            </div>
+          : filtered.map((member, idx) => {
+              const displayName = getMemberName(member);
+              const initials = getInitials(member);
+              const tone = memberTone(member.role, idx);
+              const isActive = member.status === 'active';
+              const roleKey = ROLE_LABELS[member.role] ?? 'role_member';
+              const avatarUrl = storageUrl(member.avatar_url);
 
-                {/* Name + email */}
-                <div className="min-w-0">
-                  <div className="text-foreground truncate text-sm font-semibold">
-                    {displayName}
-                  </div>
-                  <div
-                    className="truncate font-mono text-[11px]"
-                    style={{ color: 'var(--text-tertiary)' }}>
-                    {member.email}
-                  </div>
-                </div>
+              return (
+                <div
+                  key={member.user_id ?? `pending-${idx}`}
+                  className="members-row py-[14px]"
+                  style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
+                  {/* Avatar */}
+                  {avatarUrl ?
+                    <div className="relative size-8 overflow-hidden rounded-[6px]">
+                      <Image
+                        src={avatarUrl}
+                        alt={displayName}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  : <div className="avatar-32" style={{ background: tone }}>
+                      {initials}
+                    </div>
+                  }
 
-                {/* Role chip */}
-                <div>
-                  <span
-                    className="chip chip-md"
-                    style={{
-                      background:
-                        member.role === 'owner' ? 'var(--color-poppy)'
-                        : member.role === 'admin' ? 'var(--color-poppy-wash)'
-                        : 'var(--surface-2)',
-                      color:
-                        member.role === 'owner' ? '#fff'
-                        : member.role === 'admin' ? 'var(--color-poppy)'
-                        : 'var(--text-secondary)',
-                      border:
-                        member.role !== 'owner' && member.role !== 'admin' ?
-                          '1px solid var(--border)'
-                        : 'none',
-                    }}>
-                    {t(roleKey)}
-                  </span>
-                </div>
+                  {/* Name + email */}
+                  <div className="min-w-0">
+                    <div className="text-foreground truncate text-sm font-semibold">
+                      {displayName}
+                    </div>
+                    <div
+                      className="truncate font-mono text-[11px]"
+                      style={{ color: 'var(--text-tertiary)' }}>
+                      {member.email}
+                    </div>
+                  </div>
 
-                {/* Status chip */}
-                <div>
-                  <span
-                    className="chip chip-sm"
-                    style={{
-                      background: isActive ? 'rgba(111,147,98,0.16)' : 'rgba(217,164,65,0.18)',
-                      color: isActive ? '#4f6f44' : '#a87a1f',
-                    }}>
+                  {/* Role chip */}
+                  <div>
                     <span
-                      className="inline-block size-[5px] shrink-0 rounded-full"
-                      style={{ background: isActive ? '#6f9362' : '#d9a441' }}
-                    />
-                    {isActive ? t('status_active') : t('status_invited')}
+                      className="chip chip-md"
+                      style={{
+                        background:
+                          member.role === 'owner' ? 'var(--color-poppy)'
+                          : member.role === 'admin' ? 'var(--color-poppy-wash)'
+                          : 'var(--surface-2)',
+                        color:
+                          member.role === 'owner' ? '#fff'
+                          : member.role === 'admin' ? 'var(--color-poppy)'
+                          : 'var(--text-secondary)',
+                        border:
+                          member.role !== 'owner' && member.role !== 'admin' ?
+                            '1px solid var(--border)'
+                          : 'none',
+                      }}>
+                      {t(roleKey)}
+                    </span>
+                  </div>
+
+                  {/* Status chip */}
+                  <div>
+                    <span
+                      className="chip chip-sm"
+                      style={{
+                        background: isActive ? 'rgba(111,147,98,0.16)' : 'rgba(217,164,65,0.18)',
+                        color: isActive ? '#4f6f44' : '#a87a1f',
+                      }}>
+                      <span
+                        className="inline-block size-[5px] shrink-0 rounded-full"
+                        style={{ background: isActive ? '#6f9362' : '#d9a441' }}
+                      />
+                      {isActive ? t('status_active') : t('status_invited')}
+                    </span>
+                  </div>
+
+                  {/* Last access */}
+                  <span
+                    className="text-muted-foreground text-right font-mono text-xs"
+                    style={{ letterSpacing: '0.02em' }}>
+                    —
                   </span>
+
+                  <RowActions member={member} displayName={displayName} />
                 </div>
-
-                {/* Last access */}
-                <span
-                  className="text-muted-foreground text-right font-mono text-xs"
-                  style={{ letterSpacing: '0.02em' }}>
-                  —
-                </span>
-
-                <RowActions member={member} displayName={displayName} />
-              </div>
-            );
-          })
-        }
+              );
+            })
+          }
+        </div>
       </div>
     </div>
   );

@@ -40,6 +40,7 @@ import {
 } from '@/components/ui/sheet';
 import { updateLocalePreferenceAction } from '@/app/[locale]/dashboard/account/actions';
 import { Link, usePathname, useRouter } from '@/i18n/routing';
+import { appConfig } from '@/config/app.config';
 import { useShortcut } from '@/hooks/use-shortcut';
 import { ShortcutsDialog } from './shortcuts-dialog';
 import type { OrgAccount } from './app-sidebar-client';
@@ -64,7 +65,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/billing': 'Billing',
   '/dashboard/org/settings': 'Ajustes',
   '/dashboard/account': 'Mi cuenta',
-  '/dashboard/operations/robot': 'Iroko Robot',
+  '/dashboard/robot': `${appConfig.brand} Robot`,
 };
 
 function getPageTitle(pathname: string): string {
