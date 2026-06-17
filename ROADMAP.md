@@ -45,22 +45,26 @@ la regla. Si no entra, no entra.
 
 ### Mapa "necesidad → Supabase-native, free tier"
 
-| Necesidad                     | Implementación nativa                                     | Estado     |
-| ----------------------------- | --------------------------------------------------------- | ---------- |
-| Auth (email/oauth/magic/MFA)  | Supabase Auth                                             | ✅ existe  |
-| Multi-tenant + RBAC           | Postgres + RLS + custom access token hook (JWT claims)    | ✅ core    |
-| Audit logs                    | triggers Postgres (schema `audit`)                        | ✅ existe  |
-| Notificaciones in-app         | tabla + **Realtime** (live, sin polling)                  | F2         |
-| Email transaccional           | Resend (free 3k/mes)                                      | F2         |
-| Webhooks salientes            | **Database Webhooks / pg_net**                            | F2         |
-| API keys                      | tabla hasheada + Edge Function de validación              | F2         |
-| Feature flags                 | tabla Postgres + RLS                                      | F2         |
-| Jobs / colas                  | **pg_cron + pgmq + Edge Functions**                       | F2         |
-| Storage de archivos           | Supabase Storage + RLS                                    | ✅ existe  |
-| Admin panel + impersonation   | RLS `platform_admin` + service role                       | F3         |
-| GDPR export / right-to-delete | funciones Postgres (RPC)                                  | F3         |
-| Billing (suscripciones)       | Stripe + MercadoPago, estado en Postgres, webhook en Edge | F2         |
-| Vertical IA ("IA tuneada")    | **pgvector**                                              | base lista |
+Catálogo de módulos. La columna **Superficie** indica qué UI lleva cada uno — **no todos necesitan página**.
+
+| Necesidad                     | Implementación nativa                                     | Superficie / UI                                              | Estado     |
+| ----------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ | ---------- |
+| Auth (email/oauth/magic/MFA)  | Supabase Auth                                             | 🟡 Flujos login/signup + settings MFA                        | ✅ existe  |
+| Multi-tenant + RBAC           | Postgres + RLS + custom access token hook (JWT claims)    | 🟢 Members + account switcher (RLS = enforcement, sin vista) | ✅ core    |
+| Audit logs                    | triggers Postgres (schema `audit`)                        | 🟡 Visor read-only (admin)                                   | ✅ existe  |
+| Notificaciones in-app         | tabla + **Realtime** (live, sin polling)                  | 🟡 Campanita + lista (leer/descartar) — no se "crean"        | F2         |
+| Email transaccional           | Resend (free 3k/mes)                                      | ⚪ Servicio `sendEmail()` disparado por eventos              | F2         |
+| Webhooks salientes            | **Database Webhooks / pg_net**                            | 🟢 CRUD de endpoints + log de entregas read-only             | F2         |
+| API keys                      | tabla hasheada + Edge Function de validación              | 🟢 Crear / listar / revocar (sin editar)                     | F2         |
+| Feature flags                 | tabla Postgres + RLS                                      | 🟢 Página admin (toggles + asignación)                       | F2         |
+| Jobs / colas                  | **pg_cron + pgmq + Edge Functions**                       | ⚪ Backend puro (panel de estado opcional)                   | F2         |
+| Storage de archivos           | Supabase Storage + RLS                                    | 🟡 Widgets embebidos (avatar, subir archivos)                | ✅ existe  |
+| Admin panel + impersonation   | RLS `platform_admin` + service role                       | 🟡 Páginas read + acciones (admin)                           | F3         |
+| GDPR export / right-to-delete | funciones Postgres (RPC)                                  | 🟡 2 botones en settings + confirmación                      | F3         |
+| Billing (suscripciones)       | Stripe + MercadoPago, estado en Postgres, webhook en Edge | 🟡 Plan / facturas + suscribir / cancelar                    | F2         |
+| Vertical IA ("IA tuneada")    | **pgvector**                                              | 🟢 Según el vertical                                         | base lista |
+
+**Superficie:** 🟢 página + CRUD visual · 🟡 UI sin CRUD (widget / lista / acciones) · ⚪ sin vista (backend / servicio).
 
 ### Free tier — la verdad (para no mentirle al comprador)
 
