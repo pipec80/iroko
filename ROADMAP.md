@@ -28,13 +28,13 @@ la regla. Si no entra, no entra.
 
 ### Qué está DENTRO y qué está FUERA
 
-| ✅ DENTRO (Supabase-native + free) | ❌ FUERA del repo (error de categoría) |
-| --- | --- |
-| Postgres + RLS, Auth, Storage, Realtime | SOC2 / ISO / HIPAA / PCI (son certificaciones de empresa, no código) |
-| Edge Functions, pg_cron, **pgmq** (colas), pg_net | Temporal / BullMQ / DLQ / Disaster Recovery (lo opera el comprador) |
-| pgvector (vertical IA), Vault (secrets) | Distributed tracing pesado (Datadog/OTel full) |
-| Stripe + MercadoPago (externo inevitable, free) | SAML / SCIM a mano → **"WorkOS-ready"**, no construido (add-on Enterprise) |
-| Resend email (externo inevitable, free) | Multi-moneda / POs / contratos anuales (Pro tier) |
+| ✅ DENTRO (Supabase-native + free)                | ❌ FUERA del repo (error de categoría)                                     |
+| ------------------------------------------------- | -------------------------------------------------------------------------- |
+| Postgres + RLS, Auth, Storage, Realtime           | SOC2 / ISO / HIPAA / PCI (son certificaciones de empresa, no código)       |
+| Edge Functions, pg_cron, **pgmq** (colas), pg_net | Temporal / BullMQ / DLQ / Disaster Recovery (lo opera el comprador)        |
+| pgvector (vertical IA), Vault (secrets)           | Distributed tracing pesado (Datadog/OTel full)                             |
+| Stripe + MercadoPago (externo inevitable, free)   | SAML / SCIM a mano → **"WorkOS-ready"**, no construido (add-on Enterprise) |
+| Resend email (externo inevitable, free)           | Multi-moneda / POs / contratos anuales (Pro tier)                          |
 
 ### Matriz de Tiers (estrategia de producto y pricing)
 
@@ -45,22 +45,22 @@ la regla. Si no entra, no entra.
 
 ### Mapa "necesidad → Supabase-native, free tier"
 
-| Necesidad | Implementación nativa | Estado |
-| --- | --- | --- |
-| Auth (email/oauth/magic/MFA) | Supabase Auth | ✅ existe |
-| Multi-tenant + RBAC | Postgres + RLS + custom access token hook (JWT claims) | ✅ core |
-| Audit logs | triggers Postgres (schema `audit`) | ✅ existe |
-| Notificaciones in-app | tabla + **Realtime** (live, sin polling) | F2 |
-| Email transaccional | Resend (free 3k/mes) | F2 |
-| Webhooks salientes | **Database Webhooks / pg_net** | F2 |
-| API keys | tabla hasheada + Edge Function de validación | F2 |
-| Feature flags | tabla Postgres + RLS | F2 |
-| Jobs / colas | **pg_cron + pgmq + Edge Functions** | F2 |
-| Storage de archivos | Supabase Storage + RLS | ✅ existe |
-| Admin panel + impersonation | RLS `platform_admin` + service role | F3 |
-| GDPR export / right-to-delete | funciones Postgres (RPC) | F3 |
-| Billing (suscripciones) | Stripe + MercadoPago, estado en Postgres, webhook en Edge | F2 |
-| Vertical IA ("IA tuneada") | **pgvector** | base lista |
+| Necesidad                     | Implementación nativa                                     | Estado     |
+| ----------------------------- | --------------------------------------------------------- | ---------- |
+| Auth (email/oauth/magic/MFA)  | Supabase Auth                                             | ✅ existe  |
+| Multi-tenant + RBAC           | Postgres + RLS + custom access token hook (JWT claims)    | ✅ core    |
+| Audit logs                    | triggers Postgres (schema `audit`)                        | ✅ existe  |
+| Notificaciones in-app         | tabla + **Realtime** (live, sin polling)                  | F2         |
+| Email transaccional           | Resend (free 3k/mes)                                      | F2         |
+| Webhooks salientes            | **Database Webhooks / pg_net**                            | F2         |
+| API keys                      | tabla hasheada + Edge Function de validación              | F2         |
+| Feature flags                 | tabla Postgres + RLS                                      | F2         |
+| Jobs / colas                  | **pg_cron + pgmq + Edge Functions**                       | F2         |
+| Storage de archivos           | Supabase Storage + RLS                                    | ✅ existe  |
+| Admin panel + impersonation   | RLS `platform_admin` + service role                       | F3         |
+| GDPR export / right-to-delete | funciones Postgres (RPC)                                  | F3         |
+| Billing (suscripciones)       | Stripe + MercadoPago, estado en Postgres, webhook en Edge | F2         |
+| Vertical IA ("IA tuneada")    | **pgvector**                                              | base lista |
 
 ### Free tier — la verdad (para no mentirle al comprador)
 
@@ -145,6 +145,7 @@ vuelve vendible.
 una **base profesional, genérica y re-skineable en un solo lugar.**
 
 **Done when:**
+
 - No queda ni una pantalla/string de e-commerce (ventas, inventario de almacén, reportes demo).
 - Existe `src/config/` central: cambiar nombre, marca, colores, URLs y feature toggles
   en UN lugar re-skinea toda la app.
