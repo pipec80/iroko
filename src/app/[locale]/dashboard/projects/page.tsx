@@ -7,9 +7,10 @@ import { NewProjectDialog } from '@/components/dashboard/projects/new-project-di
 
 import type { Metadata } from 'next';
 import type { Project } from '@/lib/projects';
+import { appConfig } from '@/config/app.config';
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: 'Proyectos — Iroko' };
+  return { title: `Proyectos — ${appConfig.brand}` };
 }
 
 const STATUS_TO_ENV: Record<string, string> = {
@@ -56,7 +57,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
             Tus proyectos
           </h1>
           <p className="text-muted-foreground mt-1.5 text-[15px]">
-            Cada proyecto es una rama que crece del mismo tronco Iroko.
+            Cada proyecto es una rama que crece del mismo tronco {appConfig.brand}.
           </p>
         </div>
         <NewProjectDialog />

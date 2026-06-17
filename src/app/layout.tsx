@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
 import { ThemeProvider } from '@/components/providers/theme-provider';
+import { appConfig } from '@/config/app.config';
 
 import './globals.css';
 
@@ -25,15 +26,15 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: 'Iroko',
-    template: '%s | Iroko',
+    default: appConfig.name,
+    template: `%s | ${appConfig.name}`,
   },
-  description: 'El tronco común para tus micro-SaaS.',
+  description: appConfig.description,
   metadataBase: new URL(process.env.SITE_URL ?? 'http://localhost:3000'),
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
-    siteName: 'Iroko',
+    siteName: appConfig.name,
   },
   icons: {
     icon: [

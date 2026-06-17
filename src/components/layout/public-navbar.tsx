@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
+import { appConfig } from '@/config/app.config';
 
 const NAV_LINKS = [
   { label: 'Producto', href: '/product' },
@@ -41,7 +42,7 @@ export function PublicNavbar() {
             />
             <circle cx="16" cy="16" r="3.5" fill="var(--color-cobalt)" />
           </svg>
-          <span className="wordmark text-foreground text-[20px]">Iroko</span>
+          <span className="wordmark text-foreground text-[20px]">{appConfig.brand}</span>
         </Link>
 
         <nav className="hidden grow items-center gap-6 lg:flex">

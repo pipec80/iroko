@@ -2,9 +2,10 @@ import { setRequestLocale } from 'next-intl/server';
 import { BillingTab } from '@/components/dashboard/org/billing-tab';
 
 import type { Metadata } from 'next';
+import { appConfig } from '@/config/app.config';
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: 'Billing — Iroko' };
+  return { title: `Billing — ${appConfig.brand}` };
 }
 
 export default async function BillingPage({ params }: { params: Promise<{ locale: string }> }) {

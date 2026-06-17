@@ -3,12 +3,13 @@ import { Check, Code2, Layers, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
+import { appConfig } from '@/config/app.config';
 
 const USE_CASES = [
   {
     Icon: Code2,
     title: 'SaaS en solitario',
-    desc: 'Un developer, una idea, un tarde. Iroko te da la base completa para que te centres en el diferenciador de tu producto.',
+    desc: `Un developer, una idea, una tarde. ${appConfig.name} te da la base completa para que te centres en el diferenciador de tu producto.`,
     items: ['Auth lista desde el commit 1', 'Dashboard con layout ya diseñado'],
     featured: false,
   },
@@ -53,8 +54,8 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
             Un boilerplate, <span style={{ color: 'var(--color-poppy)' }}>infinitas ramas.</span>
           </h1>
           <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-xl leading-relaxed">
-            Iroko se adapta a la escala y contexto de cada proyecto. Desde el indie hacker hasta el
-            equipo de producto consolidado.
+            {appConfig.name} se adapta a la escala y contexto de cada proyecto. Desde el indie
+            hacker hasta el equipo de producto consolidado.
           </p>
           <Button
             asChild

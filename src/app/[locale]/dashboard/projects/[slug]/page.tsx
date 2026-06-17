@@ -10,6 +10,7 @@ import { NewDocumentDialog } from '@/components/dashboard/projects/new-document-
 
 import type { Metadata } from 'next';
 import type { ProjectDocument } from '@/lib/project-documents';
+import { appConfig } from '@/config/app.config';
 
 interface ProjectDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -17,7 +18,7 @@ interface ProjectDetailPageProps {
 
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  return { title: `${slug} — Iroko` };
+  return { title: `${slug} — ${appConfig.brand}` };
 }
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {

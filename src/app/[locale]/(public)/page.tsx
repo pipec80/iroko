@@ -3,6 +3,7 @@ import { Building2, Check, CreditCard, Database, Globe, Moon, ShieldCheck } from
 
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
+import { appConfig } from '@/config/app.config';
 
 const FEATURES = [
   {
@@ -110,9 +111,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             <span style={{ color: 'var(--color-poppy)' }}>micro-saas.</span>
           </h1>
           <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-xl leading-relaxed">
-            Iroko es el template que rehúsas reescribir cada vez. Autenticación, organizaciones,
-            billing, internacionalización — todo cableado a Supabase y listo para que rebrandees y
-            despliegues tu siguiente proyecto en una tarde.
+            {appConfig.name} es el template que rehúsas reescribir cada vez. Autenticación,
+            organizaciones, billing, internacionalización — todo cableado a Supabase y listo para
+            que rebrandees y despliegues tu siguiente proyecto en una tarde.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button

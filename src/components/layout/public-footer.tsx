@@ -1,4 +1,5 @@
 import { Link } from '@/i18n/routing';
+import { appConfig } from '@/config/app.config';
 
 const FOOTER_LINKS = {
   producto: [
@@ -42,7 +43,7 @@ export function PublicFooter() {
                 <circle cx="16" cy="16" r="3.5" fill="var(--color-cobalt)" />
               </svg>
               <span className="wordmark text-[20px]" style={{ color: 'var(--color-bone)' }}>
-                Iroko
+                {appConfig.brand}
               </span>
             </Link>
             <p className="text-sm leading-relaxed" style={{ color: 'rgba(245,236,218,0.5)' }}>
@@ -50,7 +51,7 @@ export function PublicFooter() {
               todo cableado y listo para desplegar.
             </p>
             <p className="font-mono text-xs" style={{ color: 'rgba(245,236,218,0.3)' }}>
-              © 2026 pipec · v1.0
+              © 2026 {appConfig.brand} · v1.0
             </p>
           </div>
 
@@ -108,7 +109,8 @@ export function PublicFooter() {
           className="mt-16 flex flex-col items-center justify-between gap-4 border-t pt-8 sm:flex-row"
           style={{ borderColor: 'rgba(245,236,218,0.1)' }}>
           <p className="font-mono text-xs" style={{ color: 'rgba(245,236,218,0.25)' }}>
-            IROKO · MICRO-SAAS BOILERPLATE · MADE WITH NEXT.JS 16 + SUPABASE
+            {appConfig.name.toUpperCase()} · MICRO-SAAS BOILERPLATE · MADE WITH NEXT.JS 16 +
+            SUPABASE
           </p>
           <p className="font-mono text-xs" style={{ color: 'rgba(245,236,218,0.25)' }}>
             BUILD · REBRAND · DEPLOY · REPEAT

@@ -15,6 +15,7 @@ import {
 import { createProject } from '@/app/[locale]/dashboard/projects/actions';
 import { PROJECT_TONES, TONE_TO_COLOR } from '@/lib/validation/projects';
 import type { ProjectTone } from '@/lib/validation/projects';
+import { appConfig } from '@/config/app.config';
 
 type ProjectType = 'docs' | 'automation' | 'agent';
 
@@ -105,7 +106,7 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
         <DialogHeader>
           <DialogTitle>Nuevo proyecto</DialogTitle>
           <DialogDescription>
-            Cada proyecto es una rama que crece del mismo tronco Iroko.
+            Cada proyecto es una rama que crece del mismo tronco {appConfig.brand}.
           </DialogDescription>
         </DialogHeader>
 
