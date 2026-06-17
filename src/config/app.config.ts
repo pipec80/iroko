@@ -25,9 +25,9 @@ export type AppConfig = {
   /** Primary support email address. */
   supportEmail: string;
   /** Default i18n locale. */
-  defaultLocale: 'es' | 'en';
+  defaultLocale: 'es' | 'en' | 'pt' | 'fr';
   /** All available locales. */
-  locales: readonly ('es' | 'en')[];
+  locales: readonly ('es' | 'en' | 'pt' | 'fr')[];
   /**
    * Feature toggles — set to false to hide a module or vertical.
    * These are build-time constants; never read process.env here.
@@ -69,7 +69,7 @@ export const appConfig: AppConfig = {
   },
   supportEmail: 'support@iroko.vercel.app',
   defaultLocale: 'es',
-  locales: ['es', 'en'],
+  locales: ['es', 'en', 'pt', 'fr'],
   features: {
     billing: true,
     projects: true,

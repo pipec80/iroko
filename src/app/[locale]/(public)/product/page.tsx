@@ -1,4 +1,4 @@
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import {
   Building2,
   Check,
@@ -13,75 +13,55 @@ import {
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 
-const FEATURES = [
-  {
-    Icon: ShieldCheck,
-    title: 'Auth completa',
-    desc: 'Email/contraseña, OAuth Google, magic link, MFA TOTP, recovery codes. Todo wired a Supabase Auth con RLS por usuario.',
-  },
-  {
-    Icon: Building2,
-    title: 'Multi-tenant',
-    desc: 'Organizaciones con roles (owner/admin/member), invitaciones por email y aislamiento de datos a nivel de base de datos.',
-  },
-  {
-    Icon: CreditCard,
-    title: 'Stripe integrado',
-    desc: 'Webhooks, portales de cliente, upgrade/downgrade de plan. Los planes se gestionan desde la DB, no desde el código.',
-  },
-  {
-    Icon: Globe,
-    title: 'i18n con next-intl',
-    desc: 'Rutas localizadas, mensajes tipados, soporte ES/EN. Añadir un idioma nuevo es cambiar un archivo JSON.',
-  },
-  {
-    Icon: Moon,
-    title: 'Dark mode nativo',
-    desc: 'Tokens Material Design 3 como CSS variables. El tema se adapta al sistema sin flash ni hidratación incorrecta.',
-  },
-  {
-    Icon: Database,
-    title: 'Schema declarativo',
-    desc: 'SQL en /supabase/schemas/, migraciones automáticas via CLI, RLS policies con InitPlan optimization lista.',
-  },
-];
-
-const TECH_STACK = [
-  { label: 'Next.js 16', sub: 'App Router + Turbopack' },
-  { label: 'React 19', sub: 'Compiler habilitado' },
-  { label: 'TypeScript', sub: 'strict mode + no any' },
-  { label: 'Tailwind 4', sub: 'M3 tokens como CSS vars' },
-  { label: 'Supabase', sub: 'DB + Auth + Storage' },
-  { label: 'Vitest + Playwright', sub: 'unit + E2E' },
-];
-
 export default async function ProductPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
+
+  const t = await getTranslations('PublicProduct');
+
+  const features = [
+    { Icon: ShieldCheck, title: t('feature_auth_title'), desc: t('feature_auth_desc') },
+    { Icon: Building2, title: t('feature_multitenant_title'), desc: t('feature_multitenant_desc') },
+    { Icon: CreditCard, title: t('feature_stripe_title'), desc: t('feature_stripe_desc') },
+    { Icon: Globe, title: t('feature_i18n_title'), desc: t('feature_i18n_desc') },
+    { Icon: Moon, title: t('feature_dark_title'), desc: t('feature_dark_desc') },
+    { Icon: Database, title: t('feature_schema_title'), desc: t('feature_schema_desc') },
+  ];
+
+  const techStack = [
+    { label: 'Next.js 16', sub: t('tech_nextjs_sub') },
+    { label: 'React 19', sub: t('tech_react_sub') },
+    { label: 'TypeScript', sub: t('tech_ts_sub') },
+    { label: 'Tailwind 4', sub: t('tech_tailwind_sub') },
+    { label: 'Supabase', sub: t('tech_supabase_sub') },
+    { label: 'Vitest + Playwright', sub: t('tech_testing_sub') },
+  ];
+
+  const proofItems = [t('cta_proof_no_card'), t('cta_proof_deploy'), t('cta_proof_code')];
 
   return (
     <>
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-8 pt-16 pb-24 lg:pt-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="eyebrow text-muted-foreground mb-6 block">Stack · Arquitectura</span>
+          <span className="eyebrow text-muted-foreground mb-6 block">{t('hero_eyebrow')}</span>
           <h1 className="text-foreground mb-6 text-5xl leading-[1.1] font-extrabold tracking-tighter md:text-6xl">
-            Construido para que lo <span style={{ color: 'var(--color-poppy)' }}>rebrandees,</span>{' '}
-            no para que lo entiendas.
+            {t('hero_title_1')}{' '}
+            <span style={{ color: 'var(--color-poppy)' }}>{t('hero_title_emphasis')}</span>{' '}
+            {t('hero_title_2')}
           </h1>
           <p className="text-muted-foreground mx-auto mb-10 max-w-xl text-xl leading-relaxed">
-            Cada decisión de arquitectura está documentada y justificada. Sin magia negra, sin
-            abstracciones innecesarias. Solo código que puedes leer, modificar y desplegar.
+            {t('hero_lead')}
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button
               asChild
               className="h-12 px-8 text-base"
               style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
-              <Link href="/signup">Empezar gratis →</Link>
+              <Link href="/signup">{t('hero_btn_started')}</Link>
             </Button>
             <Button asChild variant="outline" className="h-12 px-8 text-base">
-              <Link href="/pricing">Ver planes</Link>
+              <Link href="/pricing">{t('hero_btn_pricing')}</Link>
             </Button>
           </div>
         </div>
@@ -92,16 +72,13 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
         <div className="mx-auto max-w-7xl px-8">
           <div className="mb-16 text-center">
             <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
-              Módulos incluidos desde el día uno.
+              {t('features_title')}
             </h2>
-            <p className="text-muted-foreground mx-auto max-w-2xl">
-              No son demos ni ejemplos. Son módulos de producción, con tests, tipado estricto y
-              manejo de errores completo.
-            </p>
+            <p className="text-muted-foreground mx-auto max-w-2xl">{t('features_lead')}</p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ Icon, title, desc }) => (
+            {features.map(({ Icon, title, desc }) => (
               <div
                 key={title}
                 className="border-border bg-background rounded-xl border p-8 transition-transform duration-200 hover:-translate-y-1">
@@ -127,18 +104,15 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
         <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2">
           <div className="space-y-8">
             <div>
-              <span className="eyebrow text-muted-foreground mb-3 block">El stack</span>
+              <span className="eyebrow text-muted-foreground mb-3 block">{t('tech_eyebrow')}</span>
               <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
-                Tecnología que ya conoces, lista para producción.
+                {t('tech_title')}
               </h2>
-              <p className="text-muted-foreground text-lg">
-                Sin frameworks inventados. Sin librerías de nicho. Solo las herramientas que el
-                ecosistema ya ha validado.
-              </p>
+              <p className="text-muted-foreground text-lg">{t('tech_lead')}</p>
             </div>
 
             <ul className="space-y-4">
-              {TECH_STACK.map(({ label, sub }) => (
+              {techStack.map(({ label, sub }) => (
                 <li key={label} className="flex items-center gap-4">
                   <div
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
@@ -220,24 +194,22 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
       <section className="bg-surface-2 border-border border-t py-24">
         <div className="mx-auto max-w-3xl px-8 text-center">
           <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
-            ¿Listo para lanzar tu próximo producto?
+            {t('cta_title')}
           </h2>
-          <p className="text-muted-foreground mb-10 text-lg">
-            Todo lo que necesitas, nada que no. Clona, rebrandea, despliega.
-          </p>
+          <p className="text-muted-foreground mb-10 text-lg">{t('cta_lead')}</p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Button
               asChild
               className="h-12 px-8 text-base"
               style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
-              <Link href="/signup">Empezar gratis →</Link>
+              <Link href="/signup">{t('cta_btn_started')}</Link>
             </Button>
             <Button asChild variant="outline" className="h-12 px-8 text-base">
-              <Link href="/pricing">Ver precios</Link>
+              <Link href="/pricing">{t('cta_btn_pricing')}</Link>
             </Button>
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-6">
-            {['Sin tarjeta de crédito', 'Deploy en < 30 min', 'Código 100% tuyo'].map((item) => (
+            {proofItems.map((item) => (
               <span key={item} className="flex items-center gap-2 text-sm">
                 <Check
                   className="size-4"

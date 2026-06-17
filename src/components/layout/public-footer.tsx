@@ -1,28 +1,32 @@
+import { getTranslations } from 'next-intl/server';
+
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
 
-const FOOTER_LINKS = {
-  producto: [
-    { label: 'Características', href: '/product' },
-    { label: 'Precios', href: '/pricing' },
-    { label: 'Changelog', href: '#' },
-    { label: 'Roadmap', href: '#' },
-  ],
-  recursos: [
-    { label: 'Documentación', href: '#' },
-    { label: 'Guía de inicio', href: '#' },
-    { label: 'Blog', href: '#' },
-    { label: 'Estado del servicio', href: '#' },
-  ],
-  compania: [
-    { label: 'Acerca de', href: '#' },
-    { label: 'Contacto', href: '/contact' },
-    { label: 'Privacidad', href: '#' },
-    { label: 'Términos', href: '#' },
-  ],
-};
+export async function PublicFooter() {
+  const t = await getTranslations('PublicFooter');
 
-export function PublicFooter() {
+  const footerLinks = {
+    product: [
+      { label: t('link_features'), href: '/product' },
+      { label: t('link_pricing'), href: '/pricing' },
+      { label: t('link_changelog'), href: '#' },
+      { label: t('link_roadmap'), href: '#' },
+    ],
+    resources: [
+      { label: t('link_docs'), href: '#' },
+      { label: t('link_getting_started'), href: '#' },
+      { label: t('link_blog'), href: '#' },
+      { label: t('link_status'), href: '#' },
+    ],
+    company: [
+      { label: t('link_about'), href: '#' },
+      { label: t('link_contact'), href: '/contact' },
+      { label: t('link_privacy'), href: '#' },
+      { label: t('link_terms'), href: '#' },
+    ],
+  };
+
   return (
     <footer style={{ background: 'var(--color-ink)' }}>
       <div className="mx-auto max-w-7xl px-8 py-16">
@@ -47,20 +51,19 @@ export function PublicFooter() {
               </span>
             </Link>
             <p className="text-sm leading-relaxed" style={{ color: 'rgba(245,236,218,0.5)' }}>
-              El tronco común para tus micro-SaaS. Autenticación, organizaciones, billing e i18n —
-              todo cableado y listo para desplegar.
+              {t('brand_description')}
             </p>
             <p className="font-mono text-xs" style={{ color: 'rgba(245,236,218,0.3)' }}>
               © 2026 {appConfig.brand} · v1.0
             </p>
           </div>
 
-          {/* Producto */}
+          {/* Product */}
           <div className="flex flex-col gap-4">
             <p className="eyebrow text-xs" style={{ color: 'var(--color-gold)' }}>
-              Producto
+              {t('section_product')}
             </p>
-            {FOOTER_LINKS.producto.map(({ label, href }) => (
+            {footerLinks.product.map(({ label, href }) => (
               <Link
                 key={label}
                 href={href}
@@ -71,12 +74,12 @@ export function PublicFooter() {
             ))}
           </div>
 
-          {/* Recursos */}
+          {/* Resources */}
           <div className="flex flex-col gap-4">
             <p className="eyebrow text-xs" style={{ color: 'var(--color-gold)' }}>
-              Recursos
+              {t('section_resources')}
             </p>
-            {FOOTER_LINKS.recursos.map(({ label, href }) => (
+            {footerLinks.resources.map(({ label, href }) => (
               <Link
                 key={label}
                 href={href}
@@ -87,12 +90,12 @@ export function PublicFooter() {
             ))}
           </div>
 
-          {/* Compañía */}
+          {/* Company */}
           <div className="flex flex-col gap-4">
             <p className="eyebrow text-xs" style={{ color: 'var(--color-gold)' }}>
-              Compañía
+              {t('section_company')}
             </p>
-            {FOOTER_LINKS.compania.map(({ label, href }) => (
+            {footerLinks.company.map(({ label, href }) => (
               <Link
                 key={label}
                 href={href}

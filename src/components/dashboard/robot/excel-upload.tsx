@@ -2,6 +2,7 @@
 
 import { useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, UploadCloud } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { appConfig } from '@/config/app.config';
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 export function ExcelUploadDropzone() {
+  const t = useTranslations('Robot');
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
@@ -24,11 +26,11 @@ export function ExcelUploadDropzone() {
     setError(null);
     setSuccess(false);
     if (!selected.name.endsWith('.xlsx')) {
-      setError('Por seguridad, solo se permiten archivos .xlsx (sin macros).');
+      setError(t('error_only_xlsx'));
       return;
     }
     if (selected.size > 5 * 1024 * 1024) {
-      setError('El archivo excede el tamaño máximo permitido (5MB).');
+      setError(t('error_file_too_large'));
       return;
     }
     setFile(selected);
@@ -67,7 +69,7 @@ export function ExcelUploadDropzone() {
       formData.append('file', file);
       const result = await uploadRobotConfigAction({}, formData);
       if (result.error) {
-        setError(`Error procesando archivo: ${result.error}`);
+        setError(t('error_processing', { error: result.error }));
       } else if (result.success) {
         setSuccess(true);
         setFile(null);
@@ -133,21 +135,20 @@ export function ExcelUploadDropzone() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <FileSpreadsheet className="text-primary h-5 w-5" />
-            <CardTitle className="text-base">Configuración de {appConfig.brand}</CardTitle>
+            <CardTitle className="text-base">
+              {t('card_title', { brand: appConfig.brand })}
+            </CardTitle>
           </div>
           <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
             <Download className="h-4 w-4" />
-            Descargar Plantilla
+            {t('download_template')}
           </Button>
         </div>
-        <CardDescription>
-          Sube el archivo Excel (.xlsx) con las rutinas, contactos y memoria del robot. Los datos
-          anteriores serán reemplazados.
-        </CardDescription>
+        <CardDescription>{t('card_description')}</CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Dropzone — horizontal, rectangular */}
+        {/* Dropzone */}
         <div
           className={`flex cursor-pointer items-center gap-4 rounded-lg border-2 border-dashed px-5 py-4 transition-colors ${
             isDragging ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'
@@ -164,10 +165,10 @@ export function ExcelUploadDropzone() {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">
-              {file ? file.name : 'Haz clic o arrastra un archivo aquí'}
+              {file ? file.name : t('dropzone_placeholder')}
             </p>
             <p className="text-muted-foreground text-xs">
-              {file ? `${(file.size / 1024).toFixed(1)} KB` : 'Excel (.xlsx) · máx. 5 MB'}
+              {file ? `${(file.size / 1024).toFixed(1)} KB` : t('dropzone_hint')}
             </p>
           </div>
           {file && <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />}
@@ -184,7 +185,7 @@ export function ExcelUploadDropzone() {
           <div className="border-destructive/50 text-destructive bg-destructive/10 flex items-start gap-3 rounded-lg border px-4 py-3">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
-              <p className="text-sm leading-none font-medium">Error</p>
+              <p className="text-sm leading-none font-medium">{t('error_title')}</p>
               <p className="mt-1 text-xs opacity-90">{error}</p>
             </div>
           </div>
@@ -194,9 +195,9 @@ export function ExcelUploadDropzone() {
           <div className="flex items-start gap-3 rounded-lg border border-green-500/50 bg-green-500/10 px-4 py-3 text-green-700 dark:text-green-400">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
             <div>
-              <p className="text-sm leading-none font-medium">¡Éxito!</p>
+              <p className="text-sm leading-none font-medium">{t('success_title')}</p>
               <p className="mt-1 text-xs opacity-90">
-                La configuración de {appConfig.brand} fue actualizada correctamente.
+                {t('success_desc', { brand: appConfig.brand })}
               </p>
             </div>
           </div>
@@ -204,7 +205,7 @@ export function ExcelUploadDropzone() {
 
         <div className="flex justify-end">
           <Button onClick={handleUpload} disabled={!file || isPending} size="sm">
-            {isPending ? 'Procesando...' : 'Subir Configuración'}
+            {isPending ? t('processing') : t('upload_btn')}
           </Button>
         </div>
       </CardContent>

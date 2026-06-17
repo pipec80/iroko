@@ -1,17 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
 
-const NAV_LINKS = [
-  { label: 'Producto', href: '/product' },
-  { label: 'Precios', href: '/pricing' },
-];
-
 export function PublicNavbar() {
+  const t = useTranslations('PublicNav');
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -19,6 +16,11 @@ export function PublicNavbar() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  const navLinks = [
+    { label: t('link_product'), href: '/product' },
+    { label: t('link_pricing'), href: '/pricing' },
+  ];
 
   return (
     <header
@@ -46,7 +48,7 @@ export function PublicNavbar() {
         </Link>
 
         <nav className="hidden grow items-center gap-6 lg:flex">
-          {NAV_LINKS.map(({ label, href }) => (
+          {navLinks.map(({ label, href }) => (
             <Link
               key={href}
               href={href}
@@ -58,13 +60,13 @@ export function PublicNavbar() {
 
         <div className="ml-auto flex items-center gap-2">
           <Button variant="ghost" asChild className="h-9 text-sm">
-            <Link href="/login">Iniciar sesión</Link>
+            <Link href="/login">{t('login')}</Link>
           </Button>
           <Button
             asChild
             className="h-9 text-sm"
             style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
-            <Link href="/signup">Empezar gratis →</Link>
+            <Link href="/signup">{t('get_started')}</Link>
           </Button>
         </div>
       </div>

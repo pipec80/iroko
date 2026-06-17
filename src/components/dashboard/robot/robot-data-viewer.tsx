@@ -1,6 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Download, FileSpreadsheet, Clock, Users, BrainCircuit } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -29,22 +30,23 @@ type Props = {
 };
 
 export function RobotDataViewer({ routines, contacts, memories, history, accountId }: Props) {
+  const t = useTranslations('Robot');
+  const locale = useLocale();
   const [isPending, startTransition] = useTransition();
 
   const handleDownload = (fileName: string) => {
     startTransition(async () => {
       const { url, error } = await getDownloadUrl(`${accountId}/${fileName}`);
       if (error || !url) {
-        alert('Error al generar enlace de descarga.');
+        alert(t('alert_download_error'));
         return;
       }
-      // Abrir en nueva pestaña para descargar
       window.open(url, '_blank');
     });
   };
 
   const formatLocalTime = (isoString: string) => {
-    return new Intl.DateTimeFormat('es-CL', {
+    return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -56,26 +58,23 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
   return (
     <Card className="mt-8">
       <CardHeader>
-        <CardTitle>Estado Actual & Historial</CardTitle>
-        <CardDescription>
-          Revisa la configuración cargada actualmente en la memoria del robot y descarga versiones
-          anteriores.
-        </CardDescription>
+        <CardTitle>{t('viewer_title')}</CardTitle>
+        <CardDescription>{t('viewer_desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="routines" className="w-full">
           <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-2 md:grid-cols-4">
             <TabsTrigger value="routines" className="gap-2">
-              <Clock className="h-4 w-4" /> Rutinas
+              <Clock className="h-4 w-4" /> {t('tab_routines')}
             </TabsTrigger>
             <TabsTrigger value="contacts" className="gap-2">
-              <Users className="h-4 w-4" /> Contactos
+              <Users className="h-4 w-4" /> {t('tab_contacts')}
             </TabsTrigger>
             <TabsTrigger value="memories" className="gap-2">
-              <BrainCircuit className="h-4 w-4" /> Memoria
+              <BrainCircuit className="h-4 w-4" /> {t('tab_memories')}
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
-              <FileSpreadsheet className="h-4 w-4" /> Historial
+              <FileSpreadsheet className="h-4 w-4" /> {t('tab_history')}
             </TabsTrigger>
           </TabsList>
 
@@ -84,17 +83,17 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Hora</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead>Mensaje</TableHead>
+                    <TableHead>{t('col_time')}</TableHead>
+                    <TableHead>{t('col_type')}</TableHead>
+                    <TableHead>{t('col_description')}</TableHead>
+                    <TableHead>{t('col_message')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {routines.length === 0 ?
                     <TableRow>
                       <TableCell colSpan={4} className="text-muted-foreground py-4 text-center">
-                        No hay rutinas cargadas.
+                        {t('empty_routines')}
                       </TableCell>
                     </TableRow>
                   : routines.map((r) => (
@@ -118,17 +117,17 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Prioridad</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Relación</TableHead>
-                    <TableHead>Teléfono</TableHead>
+                    <TableHead>{t('col_priority')}</TableHead>
+                    <TableHead>{t('col_name')}</TableHead>
+                    <TableHead>{t('col_relationship')}</TableHead>
+                    <TableHead>{t('col_phone')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {contacts.length === 0 ?
                     <TableRow>
                       <TableCell colSpan={4} className="text-muted-foreground py-4 text-center">
-                        No hay contactos cargados.
+                        {t('empty_contacts')}
                       </TableCell>
                     </TableRow>
                   : contacts.map((c) => (
@@ -150,16 +149,16 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Entidad</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Dato Clave</TableHead>
+                    <TableHead>{t('col_entity')}</TableHead>
+                    <TableHead>{t('col_name')}</TableHead>
+                    <TableHead>{t('col_key_fact')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {memories.length === 0 ?
                     <TableRow>
                       <TableCell colSpan={3} className="text-muted-foreground py-4 text-center">
-                        No hay memoria cargada.
+                        {t('empty_memories')}
                       </TableCell>
                     </TableRow>
                   : memories.map((m) => (
@@ -180,16 +179,16 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Fecha de Subida (Local)</TableHead>
-                    <TableHead>Archivo</TableHead>
-                    <TableHead className="text-right">Acción</TableHead>
+                    <TableHead>{t('col_upload_date')}</TableHead>
+                    <TableHead>{t('col_file')}</TableHead>
+                    <TableHead className="text-right">{t('col_action')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {history.length === 0 ?
                     <TableRow>
                       <TableCell colSpan={3} className="text-muted-foreground py-4 text-center">
-                        No hay historial de subidas.
+                        {t('empty_history')}
                       </TableCell>
                     </TableRow>
                   : history.map((h) => (
@@ -205,7 +204,7 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
                             disabled={isPending}
                             onClick={() => handleDownload(h.name)}>
                             <Download className="mr-2 h-4 w-4" />
-                            Descargar
+                            {t('download_btn')}
                           </Button>
                         </TableCell>
                       </TableRow>

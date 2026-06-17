@@ -1,94 +1,100 @@
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Check } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 
-const PRICING_TIERS = [
-  {
-    name: 'Personal',
-    price: 'Gratis',
-    period: 'para siempre',
-    desc: 'Para proyectos en solitario y experimentos rápidos.',
-    cta: 'Clonar el repo',
-    href: '#',
-    featured: false,
-    items: [
-      '1 organización',
-      'Usuarios ilimitados',
-      'Auth completa + MFA',
-      'Dashboard base',
-      'Soporte via GitHub Issues',
-    ],
-  },
-  {
-    name: 'Studio',
-    price: '$79',
-    period: '/mes',
-    desc: 'Para equipos que construyen y lanzan productos reales.',
-    cta: 'Empezar gratis →',
-    href: '/signup',
-    featured: true,
-    items: [
-      'Organizaciones ilimitadas',
-      'Usuarios ilimitados',
-      'Billing Stripe incluido',
-      'Soporte prioritario',
-      'Updates mensuales',
-      'Canal privado Discord',
-    ],
-  },
-  {
-    name: 'Custom',
-    price: 'Hablemos',
-    period: '',
-    desc: 'Para agencias y equipos con necesidades específicas.',
-    cta: 'Contactar',
-    href: '/contact',
-    featured: false,
-    items: [
-      'Todo en Studio',
-      'Implementación guiada',
-      'Customización de arquitectura',
-      'Revisión de PRs',
-      'SLA garantizado',
-    ],
-  },
-];
-
-const COMPARISON = [
-  { feature: 'Organizaciones', personal: '1', studio: 'Ilimitadas', custom: 'Ilimitadas' },
-  { feature: 'Auth + MFA', personal: true, studio: true, custom: true },
-  { feature: 'Billing Stripe', personal: false, studio: true, custom: true },
-  { feature: 'i18n ES/EN', personal: true, studio: true, custom: true },
-  { feature: 'Dark mode', personal: true, studio: true, custom: true },
-  { feature: 'Updates del boilerplate', personal: false, studio: true, custom: true },
-  { feature: 'Canal Discord privado', personal: false, studio: true, custom: true },
-  { feature: 'Implementación guiada', personal: false, studio: false, custom: true },
-  { feature: 'SLA garantizado', personal: false, studio: false, custom: true },
-];
-
 export default async function PricingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
+
+  const t = await getTranslations('PublicPricing');
+
+  const pricingTiers = [
+    {
+      name: t('tier_personal_name'),
+      price: t('tier_personal_price'),
+      period: t('tier_personal_period'),
+      desc: t('tier_personal_desc'),
+      cta: t('tier_personal_cta'),
+      href: '#',
+      featured: false,
+      items: [
+        t('tier_personal_item_1'),
+        t('tier_personal_item_2'),
+        t('tier_personal_item_3'),
+        t('tier_personal_item_4'),
+        t('tier_personal_item_5'),
+      ],
+    },
+    {
+      name: t('tier_studio_name'),
+      price: t('tier_studio_price'),
+      period: t('tier_studio_period'),
+      desc: t('tier_studio_desc'),
+      cta: t('tier_studio_cta'),
+      href: '/signup',
+      featured: true,
+      items: [
+        t('tier_studio_item_1'),
+        t('tier_studio_item_2'),
+        t('tier_studio_item_3'),
+        t('tier_studio_item_4'),
+        t('tier_studio_item_5'),
+        t('tier_studio_item_6'),
+      ],
+    },
+    {
+      name: t('tier_custom_name'),
+      price: t('tier_custom_price'),
+      period: '',
+      desc: t('tier_custom_desc'),
+      cta: t('tier_custom_cta'),
+      href: '/contact',
+      featured: false,
+      items: [
+        t('tier_custom_item_1'),
+        t('tier_custom_item_2'),
+        t('tier_custom_item_3'),
+        t('tier_custom_item_4'),
+        t('tier_custom_item_5'),
+      ],
+    },
+  ];
+
+  const comparison = [
+    {
+      feature: t('comparison_feature_orgs'),
+      personal: t('comparison_orgs_personal'),
+      studio: t('comparison_orgs_studio'),
+      custom: t('comparison_orgs_custom'),
+    },
+    { feature: t('comparison_feature_auth'), personal: true, studio: true, custom: true },
+    { feature: t('comparison_feature_billing'), personal: false, studio: true, custom: true },
+    { feature: t('comparison_feature_i18n'), personal: true, studio: true, custom: true },
+    { feature: t('comparison_feature_dark'), personal: true, studio: true, custom: true },
+    { feature: t('comparison_feature_updates'), personal: false, studio: true, custom: true },
+    { feature: t('comparison_feature_discord'), personal: false, studio: true, custom: true },
+    { feature: t('comparison_feature_onboarding'), personal: false, studio: false, custom: true },
+    { feature: t('comparison_feature_sla'), personal: false, studio: false, custom: true },
+  ];
 
   return (
     <>
       <section className="mx-auto w-full max-w-7xl px-8 pt-16 pb-24 lg:pt-24">
         {/* Header */}
         <div className="mx-auto mb-20 max-w-3xl text-center">
-          <span className="eyebrow text-muted-foreground mb-4 block">Planes</span>
+          <span className="eyebrow text-muted-foreground mb-4 block">{t('header_eyebrow')}</span>
           <h1 className="text-foreground mb-4 text-5xl font-extrabold tracking-tighter md:text-6xl">
-            Precios honestos, <span style={{ color: 'var(--color-poppy)' }}>sin sorpresas.</span>
+            {t('header_title_1')}{' '}
+            <span style={{ color: 'var(--color-poppy)' }}>{t('header_title_2')}</span>
           </h1>
-          <p className="text-muted-foreground text-xl">
-            Empieza gratis. Escala cuando tu producto lo necesite.
-          </p>
+          <p className="text-muted-foreground text-xl">{t('header_lead')}</p>
         </div>
 
         {/* Pricing cards */}
         <div className="mx-auto mb-24 grid max-w-5xl grid-cols-1 items-center gap-6 md:grid-cols-3">
-          {PRICING_TIERS.map((tier) => (
+          {pricingTiers.map((tier) => (
             <div
               key={tier.name}
               className="relative flex flex-col rounded-2xl p-8 transition-all duration-300"
@@ -108,7 +114,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
                 <div
                   className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 font-mono text-xs font-bold tracking-wider uppercase"
                   style={{ background: 'var(--color-gold)', color: 'var(--color-ink)' }}>
-                  Más popular
+                  {t('tier_popular_badge')}
                 </div>
               )}
 
@@ -183,29 +189,31 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
             className="border-border border-b px-6 py-4"
             style={{ background: 'var(--color-ink)' }}>
             <h3 className="font-mono text-sm font-semibold" style={{ color: 'var(--color-bone)' }}>
-              Comparativa completa
+              {t('comparison_title')}
             </h3>
           </div>
           <table className="w-full">
             <thead>
               <tr className="bg-surface-2 border-border border-b">
                 <th className="text-muted-foreground px-6 py-4 text-left text-sm font-semibold">
-                  Característica
+                  {t('comparison_feature_col')}
                 </th>
-                {['Personal', 'Studio', 'Custom'].map((col) => (
-                  <th
-                    key={col}
-                    className="px-4 py-4 text-center text-sm font-semibold"
-                    style={{
-                      color: col === 'Studio' ? 'var(--color-poppy)' : undefined,
-                    }}>
-                    {col}
-                  </th>
-                ))}
+                {[t('tier_personal_name'), t('tier_studio_name'), t('tier_custom_name')].map(
+                  (col) => (
+                    <th
+                      key={col}
+                      className="px-4 py-4 text-center text-sm font-semibold"
+                      style={{
+                        color: col === t('tier_studio_name') ? 'var(--color-poppy)' : undefined,
+                      }}>
+                      {col}
+                    </th>
+                  ),
+                )}
               </tr>
             </thead>
             <tbody>
-              {COMPARISON.map((row, i) => (
+              {comparison.map((row, i) => (
                 <tr
                   key={row.feature}
                   className="border-border border-b last:border-0"
@@ -249,24 +257,24 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
             <h2
               className="mb-4 text-3xl font-bold tracking-tight"
               style={{ color: 'var(--color-bone)' }}>
-              Tu próximo micro-SaaS empieza esta tarde.
+              {t('cta_title')}
             </h2>
             <p className="mb-8 text-lg" style={{ color: 'rgba(245,236,218,0.6)' }}>
-              Sin tarjeta de crédito. Sin lock-in. El código es tuyo.
+              {t('cta_lead')}
             </p>
             <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button
                 asChild
                 className="h-12 px-8 text-base"
                 style={{ background: 'var(--color-bone)', color: 'var(--color-ink)' }}>
-                <Link href="/signup">Empezar gratis →</Link>
+                <Link href="/signup">{t('cta_btn_started')}</Link>
               </Button>
               <Button
                 asChild
                 variant="ghost"
                 className="h-12 px-8 text-base"
                 style={{ color: 'rgba(245,236,218,0.6)' }}>
-                <Link href="/contact">Hablar con el equipo</Link>
+                <Link href="/contact">{t('cta_btn_team')}</Link>
               </Button>
             </div>
           </div>

@@ -1,67 +1,66 @@
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Check, Code2, Layers, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
 
-const USE_CASES = [
-  {
-    Icon: Code2,
-    title: 'SaaS en solitario',
-    desc: `Un developer, una idea, una tarde. ${appConfig.name} te da la base completa para que te centres en el diferenciador de tu producto.`,
-    items: ['Auth lista desde el commit 1', 'Dashboard con layout ya diseñado'],
-    featured: false,
-  },
-  {
-    Icon: Layers,
-    title: 'Agencias y estudios',
-    desc: 'Lanza proyectos de cliente con la misma arquitectura cada vez. Rebrandea tokens, cambia copy, despliega en horas.',
-    items: ['Rebranding en una tarde', 'Multi-tenant out-of-the-box', 'Billing configurable'],
-    featured: true,
-  },
-  {
-    Icon: Users,
-    title: 'Equipos de producto',
-    desc: 'Olvida el scaffolding y salta directo a las features que importan. CI/CD, testing y calidad de código ya configurados.',
-    items: [
-      'Vitest + Playwright listos',
-      'ESLint + Prettier + commitlint',
-      'SLA garantizado (Custom)',
-    ],
-    featured: false,
-  },
-];
-
-const STATS = [
-  { val: '< 30 min', label: 'De clon a primer deploy' },
-  { val: '6+', label: 'Módulos de producción' },
-  { val: '100%', label: 'Código en tu repo' },
-  { val: '∞', label: 'Proyectos posibles' },
-];
-
 export default async function SolutionsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
+
+  const t = await getTranslations('PublicSolutions');
+  const tMarketing = await getTranslations('Marketing');
+
+  const useCases = [
+    {
+      Icon: Code2,
+      title: t('case_solo_title'),
+      desc: t('case_solo_desc', { brand: appConfig.name }),
+      items: [t('case_solo_item_1'), t('case_solo_item_2')],
+      featured: false,
+    },
+    {
+      Icon: Layers,
+      title: t('case_agency_title'),
+      desc: t('case_agency_desc'),
+      items: [t('case_agency_item_1'), t('case_agency_item_2'), t('case_agency_item_3')],
+      featured: true,
+    },
+    {
+      Icon: Users,
+      title: t('case_teams_title'),
+      desc: t('case_teams_desc'),
+      items: [t('case_teams_item_1'), t('case_teams_item_2'), t('case_teams_item_3')],
+      featured: false,
+    },
+  ];
+
+  const stats = [
+    { val: t('stat_deploy_val'), label: t('stat_deploy_label') },
+    { val: t('stat_modules_val'), label: t('stat_modules_label') },
+    { val: t('stat_code_val'), label: t('stat_code_label') },
+    { val: t('stat_projects_val'), label: t('stat_projects_label') },
+  ];
 
   return (
     <>
       {/* Hero */}
       <section className="mx-auto max-w-7xl px-8 pt-16 pb-24 lg:pt-24">
         <div className="mx-auto max-w-3xl text-center">
-          <span className="eyebrow text-muted-foreground mb-6 block">Casos de uso</span>
+          <span className="eyebrow text-muted-foreground mb-6 block">{t('hero_eyebrow')}</span>
           <h1 className="text-foreground mb-6 text-5xl leading-[1.1] font-extrabold tracking-tighter md:text-6xl">
-            Un boilerplate, <span style={{ color: 'var(--color-poppy)' }}>infinitas ramas.</span>
+            {t('hero_title_1')}{' '}
+            <span style={{ color: 'var(--color-poppy)' }}>{t('hero_title_2')}</span>
           </h1>
           <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-xl leading-relaxed">
-            {appConfig.name} se adapta a la escala y contexto de cada proyecto. Desde el indie
-            hacker hasta el equipo de producto consolidado.
+            {t('hero_lead', { brand: appConfig.name })}
           </p>
           <Button
             asChild
             className="h-12 px-8 text-base"
             style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
-            <Link href="/signup">Empezar gratis →</Link>
+            <Link href="/signup">{t('hero_btn_started')}</Link>
           </Button>
         </div>
       </section>
@@ -70,7 +69,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
       <section className="bg-surface-2 border-border border-y py-12">
         <div className="mx-auto max-w-7xl px-8">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {STATS.map(({ val, label }) => (
+            {stats.map(({ val, label }) => (
               <div key={label} className="text-center">
                 <div
                   className="mb-1 font-mono text-3xl font-semibold"
@@ -88,16 +87,13 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
       <section className="mx-auto max-w-7xl px-8 py-24">
         <div className="mb-16 text-center">
           <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
-            Adaptabilidad por diseño.
+            {t('section_title')}
           </h2>
-          <p className="text-muted-foreground mx-auto max-w-2xl">
-            El mismo tronco soporta proyectos muy distintos. La diferencia está en cómo lo
-            rebrandeas y qué construyes encima.
-          </p>
+          <p className="text-muted-foreground mx-auto max-w-2xl">{t('section_lead')}</p>
         </div>
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {USE_CASES.map(({ Icon, title, desc, items, featured }) => (
+          {useCases.map(({ Icon, title, desc, items, featured }) => (
             <div
               key={title}
               className="relative flex flex-col rounded-2xl p-8 transition-all duration-300"
@@ -170,43 +166,38 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
         </div>
       </section>
 
-      {/* Quote / Testimonial */}
+      {/* Quote */}
       <section className="bg-surface-2 border-border border-y py-20">
         <div className="mx-auto max-w-3xl px-8 text-center">
-          <span className="eyebrow text-muted-foreground mb-6 block">Proverbio Akan</span>
+          <span className="eyebrow text-muted-foreground mb-6 block">{t('quote_eyebrow')}</span>
           <blockquote
             className="mb-8 font-sans text-xl leading-[1.5] font-bold italic md:text-2xl"
             style={{ color: 'var(--color-ink)' }}>
-            &ldquo;Antes de cortar el iroko, se le pide permiso al espíritu del árbol — porque sin
-            tronco, no hay ramas.&rdquo;
+            &ldquo;{tMarketing('Quote.proverb')}&rdquo;
           </blockquote>
           <hr
             className="mx-auto mb-6"
             style={{ width: 64, borderTopWidth: 1, borderColor: 'rgba(217,164,65,0.4)' }}
           />
           <p className="text-muted-foreground font-mono text-xs tracking-widest uppercase">
-            Sabiduría Akan · Ghana y Costa de Marfil
+            {t('quote_attribution')}
           </p>
         </div>
       </section>
 
       {/* CTA */}
       <section className="mx-auto max-w-4xl px-8 py-24 text-center">
-        <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight">
-          ¿Listo para lanzar en una tarde?
-        </h2>
-        <p className="text-muted-foreground mb-10 text-lg">
-          Sin tarjeta de crédito. Sin lock-in. El código es completamente tuyo.
-        </p>
+        <h2 className="text-foreground mb-4 text-3xl font-bold tracking-tight">{t('cta_title')}</h2>
+        <p className="text-muted-foreground mb-10 text-lg">{t('cta_lead')}</p>
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Button
             asChild
             className="h-12 px-8 text-base"
             style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
-            <Link href="/signup">Empezar gratis →</Link>
+            <Link href="/signup">{t('cta_btn_started')}</Link>
           </Button>
           <Button asChild variant="outline" className="h-12 px-8 text-base">
-            <Link href="/contact">Hablar con el equipo</Link>
+            <Link href="/contact">{t('cta_btn_contact')}</Link>
           </Button>
         </div>
       </section>

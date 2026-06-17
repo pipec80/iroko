@@ -1,36 +1,36 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Settings, Shield, Plug, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const TABS = [
-  { id: 'general', label: 'General', Icon: Settings },
-  { id: 'security', label: 'Seguridad', Icon: Shield },
-  { id: 'integrations', label: 'Integraciones', Icon: Plug },
-  { id: 'danger', label: 'Zona peligrosa', Icon: AlertTriangle },
-] as const;
-
-type TabId = (typeof TABS)[number]['id'];
+type TabId = 'general' | 'security' | 'integrations' | 'danger';
 
 export default function OrgSettingsPage() {
+  const t = useTranslations('OrgSettings');
   const [active, setActive] = useState<TabId>('general');
+
+  const tabs: { id: TabId; label: string; Icon: React.ElementType }[] = [
+    { id: 'general', label: t('tab_general'), Icon: Settings },
+    { id: 'security', label: t('tab_security'), Icon: Shield },
+    { id: 'integrations', label: t('tab_integrations'), Icon: Plug },
+    { id: 'danger', label: t('tab_danger'), Icon: AlertTriangle },
+  ];
 
   return (
     <div className="animate-in fade-in space-y-6 duration-700">
       {/* Header */}
       <header className="space-y-1">
         <h1 className="text-foreground text-3xl font-extrabold tracking-tight">
-          Configuración de organización
+          {t('page_title')}
         </h1>
-        <p className="text-muted-foreground text-sm">
-          Administra los ajustes generales, seguridad e integraciones de tu workspace.
-        </p>
+        <p className="text-muted-foreground text-sm">{t('page_description')}</p>
       </header>
 
       {/* Tab nav */}
       <nav className="border-border flex gap-1 border-b pb-0">
-        {TABS.map(({ id, label, Icon }) => (
+        {tabs.map(({ id, label, Icon }) => (
           <button
             key={id}
             type="button"
@@ -66,25 +66,35 @@ export default function OrgSettingsPage() {
 }
 
 function GeneralTab() {
+  const t = useTranslations('OrgSettings');
   return (
     <div className="space-y-6">
-      {/* Org info */}
       <div className="card space-y-5 p-6">
-        <h2 className="text-foreground text-[14px] font-semibold">
-          Información de la organización
-        </h2>
+        <h2 className="text-foreground text-[14px] font-semibold">{t('general_section_title')}</h2>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Field label="Nombre" placeholder="Nombre de la organización" />
-          <Field label="Slug" placeholder="mi-organización" />
-          <Field label="Sitio web" placeholder="https://ejemplo.com" />
-          <Field label="País" placeholder="Chile" />
+          <Field
+            label={t('general_field_name')}
+            placeholder={t('general_field_name_placeholder')}
+          />
+          <Field
+            label={t('general_field_slug')}
+            placeholder={t('general_field_slug_placeholder')}
+          />
+          <Field
+            label={t('general_field_website')}
+            placeholder={t('general_field_website_placeholder')}
+          />
+          <Field
+            label={t('general_field_country')}
+            placeholder={t('general_field_country_placeholder')}
+          />
         </div>
         <div className="flex justify-end">
           <button
             type="button"
             className="rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
             style={{ background: 'var(--color-cobalt)' }}>
-            Guardar cambios
+            {t('general_save_btn')}
           </button>
         </div>
       </div>
@@ -93,21 +103,19 @@ function GeneralTab() {
 }
 
 function SecurityTab() {
+  const t = useTranslations('OrgSettings');
   return (
     <div className="card space-y-5 p-6">
-      <h2 className="text-foreground text-[14px] font-semibold">Seguridad del workspace</h2>
+      <h2 className="text-foreground text-[14px] font-semibold">{t('security_section_title')}</h2>
       <div className="space-y-4">
+        <ToggleRow title={t('security_toggle_mfa_title')} desc={t('security_toggle_mfa_desc')} />
         <ToggleRow
-          title="Autenticación de dos factores obligatoria"
-          desc="Todos los miembros deben activar 2FA para acceder al workspace."
+          title={t('security_toggle_sessions_title')}
+          desc={t('security_toggle_sessions_desc')}
         />
         <ToggleRow
-          title="Sesiones únicas"
-          desc="Cierra sesiones duplicadas cuando el mismo usuario inicia sesión desde otro dispositivo."
-        />
-        <ToggleRow
-          title="Auditoría de acciones"
-          desc="Registra todas las acciones críticas realizadas en la plataforma."
+          title={t('security_toggle_audit_title')}
+          desc={t('security_toggle_audit_desc')}
         />
       </div>
     </div>
@@ -115,15 +123,14 @@ function SecurityTab() {
 }
 
 function IntegrationsTab() {
+  const t = useTranslations('OrgSettings');
   return (
     <div className="card space-y-4 p-6">
-      <h2 className="text-foreground text-[14px] font-semibold">Integraciones disponibles</h2>
-      <p className="text-muted-foreground text-[12px]">
-        Conecta herramientas externas a tu workspace. Las integraciones se configuran aquí.
-      </p>
+      <h2 className="text-foreground text-[14px] font-semibold">{t('integrations_title')}</h2>
+      <p className="text-muted-foreground text-[12px]">{t('integrations_lead')}</p>
       <div className="flex items-center justify-center rounded-xl border border-dashed py-16">
         <span className="text-muted-foreground font-mono text-[10px] tracking-widest uppercase opacity-40">
-          Próximamente
+          {t('integrations_coming_soon')}
         </span>
       </div>
     </div>
@@ -131,22 +138,21 @@ function IntegrationsTab() {
 }
 
 function DangerTab() {
+  const t = useTranslations('OrgSettings');
   return (
     <div className="space-y-4">
       <div className="card danger-zone flex items-center justify-between p-6">
         <div className="space-y-1">
           <h3 className="text-[14px] font-semibold" style={{ color: 'var(--color-poppy)' }}>
-            Eliminar organización
+            {t('danger_delete_title')}
           </h3>
-          <p className="text-muted-foreground max-w-sm text-[12px]">
-            Esta acción es permanente. Todos los datos, proyectos y miembros serán eliminados.
-          </p>
+          <p className="text-muted-foreground max-w-sm text-[12px]">{t('danger_delete_desc')}</p>
         </div>
         <button
           type="button"
           className="shrink-0 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
           style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
-          Eliminar organización
+          {t('danger_delete_btn')}
         </button>
       </div>
     </div>
