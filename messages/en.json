@@ -675,7 +675,10 @@
     "form_color_label": "Color",
     "btn_cancel": "Cancel",
     "btn_creating": "Creating…",
-    "btn_create": "Create project"
+    "btn_create": "Create project",
+    "detail_project_label": "Project",
+    "detail_empty_title": "No documents",
+    "detail_empty_desc": "Create the first one to start documenting this project."
   },
   "Shortcuts": {
     "dialog_title": "Keyboard shortcuts",

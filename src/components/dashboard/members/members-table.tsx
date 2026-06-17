@@ -2,7 +2,7 @@
 
 import { useState, useActionState } from 'react';
 import Image from 'next/image';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { MoreHorizontal, Search } from 'lucide-react';
 
 import {
@@ -115,10 +115,11 @@ const ROLE_LABELS: Record<string, 'role_owner' | 'role_admin' | 'role_member' | 
   viewer: 'role_viewer',
 };
 
-type Props = { members: TeamMember[] };
+type Props = { members: TeamMember[]; timezone?: string };
 
-export function MembersTable({ members }: Props) {
+export function MembersTable({ members, timezone = 'UTC' }: Props) {
   const t = useTranslations('Team');
+  const locale = useLocale();
   const [q, setQ] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -273,11 +274,12 @@ export function MembersTable({ members }: Props) {
                     className="text-muted-foreground text-right font-mono text-xs"
                     style={{ letterSpacing: '0.02em' }}>
                     {member.joined_at ?
-                      new Date(member.joined_at).toLocaleDateString(undefined, {
+                      new Intl.DateTimeFormat(locale, {
                         day: 'numeric',
                         month: 'short',
                         year: 'numeric',
-                      })
+                        timeZone: timezone,
+                      }).format(new Date(member.joined_at))
                     : '—'}
                   </span>
 

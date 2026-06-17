@@ -5,6 +5,17 @@ Sentry.init({
 
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-  // No mostrar logs de Sentry en consola
+  tracePropagationTargets: [
+    'localhost',
+    /^https:\/\/[^/]+\.supabase\.co/,
+    /^https:\/\/iroko\.vercel\.app/,
+  ],
+
+  beforeSend(event) {
+    const msg = event.exception?.values?.[0]?.value ?? '';
+    if (/ChunkLoadError|Loading chunk|NetworkError/.test(msg)) return null;
+    return event;
+  },
+
   debug: false,
 });

@@ -1,3 +1,8 @@
+import { routing } from '@/i18n/routing-config';
+
+/** Single source of truth for locale types — derived from routing.ts. */
+export type AppLocale = (typeof routing.locales)[number];
+
 /**
  * Central application configuration.
  * Change values here to re-skin the entire app without touching individual components.
@@ -25,9 +30,9 @@ export type AppConfig = {
   /** Primary support email address. */
   supportEmail: string;
   /** Default i18n locale. */
-  defaultLocale: 'es' | 'en' | 'pt' | 'fr';
+  defaultLocale: AppLocale;
   /** All available locales. */
-  locales: readonly ('es' | 'en' | 'pt' | 'fr')[];
+  locales: typeof routing.locales;
   /**
    * Feature toggles — set to false to hide a module or vertical.
    * These are build-time constants; never read process.env here.
@@ -68,8 +73,8 @@ export const appConfig: AppConfig = {
     twitter: 'https://twitter.com/iroko_saas',
   },
   supportEmail: 'support@iroko.vercel.app',
-  defaultLocale: 'es',
-  locales: ['es', 'en', 'pt', 'fr'],
+  defaultLocale: routing.defaultLocale,
+  locales: routing.locales,
   features: {
     billing: true,
     projects: true,

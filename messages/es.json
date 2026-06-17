@@ -675,7 +675,10 @@
     "form_color_label": "Color",
     "btn_cancel": "Cancelar",
     "btn_creating": "Creando…",
-    "btn_create": "Crear proyecto"
+    "btn_create": "Crear proyecto",
+    "detail_project_label": "Proyecto",
+    "detail_empty_title": "Sin documentos",
+    "detail_empty_desc": "Crea el primero para empezar a documentar este proyecto."
   },
   "Shortcuts": {
     "dialog_title": "Atajos de teclado",

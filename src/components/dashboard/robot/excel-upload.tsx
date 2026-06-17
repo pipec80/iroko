@@ -150,10 +150,15 @@ export function ExcelUploadDropzone() {
       <CardContent className="space-y-4">
         {/* Dropzone */}
         <div
+          role="button"
+          tabIndex={0}
           className={`flex cursor-pointer items-center gap-4 rounded-lg border-2 border-dashed px-5 py-4 transition-colors ${
             isDragging ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'
           }`}
           onClick={() => fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
+          }}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}>
