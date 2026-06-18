@@ -176,7 +176,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: 2.26.1
+          version: 2.107.0
 
       - name: Restore Supabase Docker image cache
         id: supabase-cache-db-types
@@ -227,7 +227,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: 2.26.1
+          version: 2.107.0
 
       - name: Restore Supabase Docker image cache
         id: supabase-cache-db-tests
@@ -325,7 +325,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2
         with:
-          version: 2.26.1
+          version: 2.107.0
 
       # Caché de imágenes Docker de Supabase — evita la descarga de ~2 GB en cada run
       - name: Restore Supabase Docker image cache
