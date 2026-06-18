@@ -15,7 +15,6 @@ const nextConfig: NextConfig = {
     process.env.NODE_ENV === 'development' ?
       { fetches: { fullUrl: true }, browserToTerminal: true }
     : undefined,
-  output: 'standalone',
   pageExtensions: ['ts', 'tsx'],
   images: {
     // Node.js uses its own CA bundle (not the Windows cert store), so in dev

@@ -113,7 +113,7 @@ describe('updateProfileAction', () => {
 
   it('should return fieldErrors when locale is unsupported', async () => {
     mockAuthenticated();
-    const fd = makeFormData({ ...validProfileData, locale: 'fr' });
+    const fd = makeFormData({ ...validProfileData, locale: 'de' });
     const result = await updateProfileAction(PREV, fd);
     expect(result.fieldErrors?.locale).toBeDefined();
   });
@@ -139,7 +139,7 @@ describe('updateProfileAction', () => {
     const fd = makeFormData(validProfileData);
     const result = await updateProfileAction(PREV, fd);
     expect(result.success).toBe('profile_updated');
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/account');
   });
 });
 

@@ -482,6 +482,11 @@
     color: var(--text-secondary);
     font-family: var(--font-mono);
     font-size: 12px;
+    color-scheme: light;
+  }
+
+  .dark .toolbar-control {
+    color-scheme: dark;
   }
 
   /* ── Members table row grid ── */

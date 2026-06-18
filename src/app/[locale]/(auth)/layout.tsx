@@ -1,6 +1,7 @@
 import React from 'react';
 import { setRequestLocale } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
+import { appConfig } from '@/config/app.config';
 
 export default async function AuthLayout({
   children,
@@ -31,7 +32,7 @@ export default async function AuthLayout({
               />
               <circle cx="16" cy="16" r="3.5" fill="var(--color-cobalt)" />
             </svg>
-            <span className="wordmark text-foreground text-[22px]">Iroko</span>
+            <span className="wordmark text-foreground text-[22px]">{appConfig.brand}</span>
           </Link>
 
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">{children}</div>

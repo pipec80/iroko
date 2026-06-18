@@ -4,12 +4,21 @@ import nextTs from 'eslint-config-next/typescript';
 import prettierConfig from 'eslint-config-prettier';
 import unicorn from 'eslint-plugin-unicorn';
 import noSecrets from 'eslint-plugin-no-secrets';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 
 /** @type {import('eslint').Linter.Config[]} */
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   prettierConfig,
+
+  // ──────────────────────────────────────────────────────────────
+  // jsx-a11y: plugin already registered by eslint-config-next;
+  // only extend rules here to avoid duplicate plugin registration
+  // ──────────────────────────────────────────────────────────────
+  {
+    rules: jsxA11y.configs.recommended.rules,
+  },
 
   // ──────────────────────────────────────────────────────────────
   // no-secrets: detecta credentials y tokens hardcodeados en código

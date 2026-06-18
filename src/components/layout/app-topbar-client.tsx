@@ -39,7 +39,16 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { updateLocalePreferenceAction } from '@/app/[locale]/dashboard/account/actions';
+import { routing } from '@/i18n/routing-config';
 import { Link, usePathname, useRouter } from '@/i18n/routing';
+import { appConfig } from '@/config/app.config';
+
+const LOCALE_LABELS: Record<(typeof routing.locales)[number], string> = {
+  es: 'Español',
+  en: 'English',
+  pt: 'Português',
+  fr: 'Français',
+};
 import { useShortcut } from '@/hooks/use-shortcut';
 import { ShortcutsDialog } from './shortcuts-dialog';
 import type { OrgAccount } from './app-sidebar-client';
@@ -64,7 +73,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/billing': 'Billing',
   '/dashboard/org/settings': 'Ajustes',
   '/dashboard/account': 'Mi cuenta',
-  '/dashboard/operations/robot': 'Iroko Robot',
+  '/dashboard/robot': `${appConfig.brand} Robot`,
 };
 
 function getPageTitle(pathname: string): string {
@@ -332,16 +341,14 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                 </DropdownMenuSubTrigger>
                 <DropdownMenuSubContent style={{ borderRadius: 8, padding: 6 }}>
                   <DropdownMenuRadioGroup value={locale} onValueChange={handleChangeLocale}>
-                    <DropdownMenuRadioItem
-                      value="es"
-                      style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
-                      Español
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem
-                      value="en"
-                      style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
-                      English
-                    </DropdownMenuRadioItem>
+                    {routing.locales.map((loc) => (
+                      <DropdownMenuRadioItem
+                        key={loc}
+                        value={loc}
+                        style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
+                        {LOCALE_LABELS[loc]}
+                      </DropdownMenuRadioItem>
+                    ))}
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>

@@ -40,9 +40,15 @@ describe('updateProfileSchema', () => {
     );
   });
 
+  it('should accept all supported locales', () => {
+    for (const loc of ['en', 'es', 'pt', 'fr'] as const) {
+      expect(updateProfileSchema.safeParse({ ...base, locale: loc }).success).toBe(true);
+    }
+  });
+
   it('should reject unknown locale', () => {
     expect(
-      updateProfileSchema.safeParse({ ...base, locale: 'fr' as unknown as 'es' }).success,
+      updateProfileSchema.safeParse({ ...base, locale: 'de' as unknown as 'es' }).success,
     ).toBe(false);
   });
 

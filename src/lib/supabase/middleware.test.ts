@@ -135,4 +135,26 @@ describe('updateSession', () => {
       );
     });
   });
+
+  describe('locale extraction fallback', () => {
+    it('uses defaultLocale when the path has no recognized locale prefix', async () => {
+      mockNoSession();
+      const response = await updateSession(makeRequest('/dashboard'));
+
+      expect(response.status).toBe(307);
+      const location = new URL(response.headers.get('location') ?? '');
+      // Should fall back to 'es' (the mocked defaultLocale)
+      expect(location.pathname).toBe('/es/login');
+      expect(location.searchParams.get('next')).toBe('/dashboard');
+    });
+
+    it('passes through when path has unrecognized locale-like prefix (not matched as protected)', async () => {
+      mockNoSession();
+      const response = await updateSession(makeRequest('/fr/dashboard'));
+
+      // 'fr' is not in mocked locales → pathWithoutLocale = '/fr/dashboard'
+      // which doesn't start with '/dashboard', so it's not protected → pass-through
+      expect(response.headers.get('location')).toBeNull();
+    });
+  });
 });

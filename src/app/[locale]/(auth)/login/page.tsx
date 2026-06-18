@@ -89,7 +89,7 @@ export default function LoginPage() {
                 placeholder="000000"
                 required
                 className="bg-surface-2 border-border h-16 rounded-md text-center font-mono text-3xl tracking-[0.3em]"
-                autoFocus
+                autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- sole-purpose OTP step; focus is expected
                 maxLength={6}
               />
             </div>
@@ -133,7 +133,7 @@ export default function LoginPage() {
                 placeholder="XXXX-XXXX"
                 required
                 className="bg-surface-2 border-border h-16 rounded-md text-center font-mono text-2xl tracking-widest uppercase"
-                autoFocus
+                autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- sole-purpose recovery step
                 maxLength={9}
               />
             </div>

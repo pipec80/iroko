@@ -16,6 +16,7 @@ import { useTranslations } from 'next-intl';
 import { Link, usePathname } from '@/i18n/routing';
 import type { Database } from '@/types/database';
 import { cn } from '@/lib/utils';
+import { appConfig } from '@/config/app.config';
 
 type MembershipRole = Database['public']['Enums']['membership_role'];
 type AccountType = Database['public']['Enums']['account_type'];
@@ -57,10 +58,18 @@ export function AppSidebarClient({ orgs }: Props) {
 
   const navItems = [
     { id: 'overview', Icon: LayoutGrid, label: t('nav_overview'), href: '/dashboard' },
-    { id: 'projects', Icon: FolderTree, label: t('nav_projects'), href: '/dashboard/projects' },
-    { id: 'iroko', Icon: Bot, label: 'Iroko Robot', href: '/dashboard/operations/robot' },
-    { id: 'members', Icon: Users, label: t('nav_members'), href: '/dashboard/members' },
-    { id: 'billing', Icon: CreditCard, label: t('nav_billing'), href: '/dashboard/billing' },
+    ...(appConfig.features.projects ?
+      [{ id: 'projects', Icon: FolderTree, label: t('nav_projects'), href: '/dashboard/projects' }]
+    : []),
+    ...(appConfig.features.verticals.robot ?
+      [{ id: 'robot', Icon: Bot, label: `${appConfig.brand} Robot`, href: '/dashboard/robot' }]
+    : []),
+    ...(appConfig.features.members ?
+      [{ id: 'members', Icon: Users, label: t('nav_members'), href: '/dashboard/members' }]
+    : []),
+    ...(appConfig.features.billing ?
+      [{ id: 'billing', Icon: CreditCard, label: t('nav_billing'), href: '/dashboard/billing' }]
+    : []),
     { id: 'settings', Icon: Settings, label: t('nav_settings'), href: '/dashboard/org/settings' },
   ];
 
@@ -93,7 +102,7 @@ export function AppSidebarClient({ orgs }: Props) {
               />
             </svg>
           </div>
-          <span className="brand-wordmark">Iroko</span>
+          <span className="brand-wordmark">{appConfig.brand}</span>
         </Link>
       </div>
 

@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
+import { appConfig } from '@/config/app.config';
 
 const VALID_TYPES = new Set<string>([
   'signup',
@@ -72,7 +73,7 @@ export default async function AuthClickPage({
           />
           <circle cx="16" cy="16" r="3.5" fill="var(--color-cobalt)" />
         </svg>
-        <span className="wordmark text-foreground text-[22px]">Iroko</span>
+        <span className="wordmark text-foreground text-[22px]">{appConfig.brand}</span>
       </Link>
 
       <div className="border-border bg-card animate-in fade-in slide-in-from-bottom-4 w-full max-w-sm rounded-2xl border p-8 duration-500">

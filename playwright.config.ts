@@ -53,8 +53,9 @@ export default defineConfig({
     {}
   : {
       webServer: {
-        command: process.env.CI ? 'pnpm build && pnpm start' : 'pnpm dev',
-        url: 'http://localhost:3000',
+        command:
+          'cross-env NODE_ENV=production pnpm build && cross-env NODE_ENV=production pnpm start',
+        url: 'http://localhost:3000/es/login',
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
         stdout: 'pipe',

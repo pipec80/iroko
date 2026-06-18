@@ -4,6 +4,8 @@ import { getLocale } from 'next-intl/server';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { routing } from '@/i18n/routing-config';
+
 import { env } from '@/env';
 import { redirect } from '@/i18n/routing';
 import { logger } from '@/lib/logger';
@@ -84,13 +86,19 @@ export const updateProfileAction = withServerAction(async function updateProfile
     return { error: error.code ?? 'update_failed' };
   }
 
-  revalidatePath('/dashboard/settings');
+  revalidatePath('/dashboard/account');
+
+  const currentLocale = await getLocale();
+  if (parsed.data.locale !== currentLocale) {
+    redirect({ href: '/dashboard/account', locale: parsed.data.locale });
+  }
+
   return { success: 'profile_updated' };
 });
 
 export const updateLocalePreferenceAction = withServerAction(
   async function updateLocalePreferenceAction(localeInput: string): Promise<SettingsActionState> {
-    const parsed = z.enum(['en', 'es']).safeParse(localeInput);
+    const parsed = z.enum(routing.locales).safeParse(localeInput);
     if (!parsed.success) return { error: 'invalid_locale' };
 
     const { supabase, userId } = await requireUserId();

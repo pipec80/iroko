@@ -386,7 +386,7 @@ verde + `pnpm knip` limpio. Commits convencionales atómicos.
 
 ### Checklist de progreso
 
-- [ ] **F1** — Fundación limpia + DX
+- [x] **F1** — Fundación limpia + DX
 - [ ] **F2** — Módulos Supabase-native (2A billing · 2B email · 2C notifs · 2D webhooks/API keys · 2E flags · 2F jobs)
 - [ ] **F3** — Admin + Compliance + Onboarding
 - [ ] **F4** — Producto vendible (docs · landing · distribución)

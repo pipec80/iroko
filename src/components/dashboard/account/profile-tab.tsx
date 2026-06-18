@@ -16,8 +16,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { routing } from '@/i18n/routing-config';
 import { storageUrl } from '@/lib/storage';
 import { PhoneCountryInput } from './phone-country-input';
+
+const LOCALE_LABELS: Record<(typeof routing.locales)[number], string> = {
+  es: 'Español',
+  en: 'English',
+  pt: 'Português',
+  fr: 'Français',
+};
 import type { ProfileSnapshot } from './account-tabs';
 
 const initialState: SettingsActionState = {};
@@ -83,7 +91,9 @@ export function ProfileTab({ profile, email, role }: Props) {
           <CardDescription>{t('profile.avatar_hint')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={avatarAction} className="flex items-center gap-6">
+          <form
+            action={avatarAction}
+            className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
             <div className="bg-muted relative h-20 w-20 overflow-hidden rounded-full ring-2 ring-white">
               {avatarPreview ?
                 <Image
@@ -111,7 +121,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                   if (f) setAvatarPreview(URL.createObjectURL(f));
                 }}
               />
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <Button
                   type="button"
                   variant="outline"
@@ -190,9 +200,12 @@ export function ProfileTab({ profile, email, role }: Props) {
                 id="locale"
                 name="locale"
                 defaultValue={profile.locale ?? 'es'}
-                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm transition-all outline-none focus-visible:ring-4">
-                <option value="es">Español</option>
-                <option value="en">English</option>
+                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm [color-scheme:light] transition-all outline-none focus-visible:ring-4 dark:[color-scheme:dark]">
+                {routing.locales.map((loc) => (
+                  <option key={loc} value={loc}>
+                    {LOCALE_LABELS[loc]}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -202,7 +215,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                 id="timezone"
                 name="timezone"
                 defaultValue={profile.timezone ?? 'America/Santiago'}
-                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm transition-all outline-none focus-visible:ring-4">
+                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm [color-scheme:light] transition-all outline-none focus-visible:ring-4 dark:[color-scheme:dark]">
                 <optgroup label="América del Sur">
                   <option value="America/Santiago">Santiago (Chile)</option>
                   <option value="America/Argentina/Buenos_Aires">Buenos Aires (Argentina)</option>

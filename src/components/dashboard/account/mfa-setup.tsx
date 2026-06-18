@@ -301,7 +301,7 @@ export function MfaSetup() {
                           setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))
                         }
                         className="bg-background border-border h-14 rounded-xl text-center font-mono text-2xl tracking-[0.2em]"
-                        autoFocus
+                        autoFocus // eslint-disable-line jsx-a11y/no-autofocus -- sole-purpose MFA verify step
                       />
                     </div>
                   </div>

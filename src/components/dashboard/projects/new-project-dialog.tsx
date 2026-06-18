@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { FileText, Zap, Bot, Plus } from 'lucide-react';
 
 import {
@@ -15,34 +16,9 @@ import {
 import { createProject } from '@/app/[locale]/dashboard/projects/actions';
 import { PROJECT_TONES, TONE_TO_COLOR } from '@/lib/validation/projects';
 import type { ProjectTone } from '@/lib/validation/projects';
+import { appConfig } from '@/config/app.config';
 
 type ProjectType = 'docs' | 'automation' | 'agent';
-
-const PROJECT_TYPES: {
-  value: ProjectType;
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-}[] = [
-  {
-    value: 'docs',
-    label: 'Documentación',
-    description: 'Wiki, notas y contexto del proyecto',
-    icon: <FileText size={15} strokeWidth={1.5} />,
-  },
-  {
-    value: 'automation',
-    label: 'Automatización',
-    description: 'Rutinas programadas y workflows',
-    icon: <Zap size={15} strokeWidth={1.5} />,
-  },
-  {
-    value: 'agent',
-    label: 'Agente',
-    description: 'Bot con memoria y contexto propio',
-    icon: <Bot size={15} strokeWidth={1.5} />,
-  },
-];
 
 const TONE_LABELS: Record<ProjectTone, string> = {
   iron: 'Iron',
@@ -56,10 +32,37 @@ interface NewProjectDialogProps {
 }
 
 export function NewProjectDialog({ variant }: NewProjectDialogProps) {
+  const t = useTranslations('Projects');
   const [open, setOpen] = useState(false);
   const [tone, setTone] = useState<ProjectTone>('iron');
   const [projectType, setProjectType] = useState<ProjectType>('docs');
   const formRef = useRef<HTMLFormElement>(null);
+
+  const projectTypes: {
+    value: ProjectType;
+    label: string;
+    description: string;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      value: 'docs',
+      label: t('form_type_docs_label'),
+      description: t('form_type_docs_desc'),
+      icon: <FileText size={15} strokeWidth={1.5} />,
+    },
+    {
+      value: 'automation',
+      label: t('form_type_automation_label'),
+      description: t('form_type_automation_desc'),
+      icon: <Zap size={15} strokeWidth={1.5} />,
+    },
+    {
+      value: 'agent',
+      label: t('form_type_agent_label'),
+      description: t('form_type_agent_desc'),
+      icon: <Bot size={15} strokeWidth={1.5} />,
+    },
+  ];
 
   const [state, action, isPending] = useActionState(
     async (_prev: { error?: string; success?: boolean }, formData: FormData) => {
@@ -89,12 +92,12 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
           <Plus size={14} style={{ color: 'var(--color-iron)' }} strokeWidth={1.5} />
         </div>
         <span className="text-muted-foreground group-hover:text-foreground text-[13px] font-medium transition-colors">
-          Nuevo proyecto
+          {t('new_project_btn')}
         </span>
       </button>
     : <button type="button" className="btn btn-iron" style={{ padding: '10px 18px', fontSize: 13 }}>
         <Plus size={14} strokeWidth={1.5} />
-        Nuevo proyecto
+        {t('new_project_btn')}
       </button>;
 
   return (
@@ -103,17 +106,15 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Nuevo proyecto</DialogTitle>
-          <DialogDescription>
-            Cada proyecto es una rama que crece del mismo tronco Iroko.
-          </DialogDescription>
+          <DialogTitle>{t('dialog_title')}</DialogTitle>
+          <DialogDescription>{t('dialog_desc', { brand: appConfig.brand })}</DialogDescription>
         </DialogHeader>
 
         <form ref={formRef} action={action} className="space-y-4">
-          {/* Nombre */}
+          {/* Name */}
           <div className="space-y-2">
             <label htmlFor="project-name" className="text-on-surface text-sm font-semibold">
-              Nombre
+              {t('form_name_label')}
             </label>
             <input
               id="project-name"
@@ -121,32 +122,34 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
               type="text"
               required
               maxLength={80}
-              placeholder="ej. ace-jewelry, maker-lab-cl"
+              placeholder={t('form_name_placeholder')}
               className="bg-surface-container-low border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none"
             />
           </div>
 
-          {/* Descripción */}
+          {/* Description */}
           <div className="space-y-2">
             <label htmlFor="project-desc" className="text-on-surface text-sm font-semibold">
-              Descripción{' '}
-              <span className="text-on-surface-variant font-normal opacity-60">(opcional)</span>
+              {t('form_desc_label')}{' '}
+              <span className="text-on-surface-variant font-normal opacity-60">
+                {t('form_desc_optional')}
+              </span>
             </label>
             <textarea
               id="project-desc"
               name="description"
               rows={2}
               maxLength={300}
-              placeholder="ej. Checkout v2 + analytics realtime"
+              placeholder={t('form_desc_placeholder')}
               className="bg-surface-container-low border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none"
             />
           </div>
 
-          {/* Tipo de proyecto */}
+          {/* Project type */}
           <div className="space-y-2">
-            <span className="text-on-surface text-sm font-semibold">Tipo</span>
+            <span className="text-on-surface text-sm font-semibold">{t('form_type_label')}</span>
             <div className="grid grid-cols-3 gap-2">
-              {PROJECT_TYPES.map((pt) => {
+              {projectTypes.map((pt) => {
                 const isSelected = projectType === pt.value;
                 return (
                   <button
@@ -186,25 +189,25 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
 
           {/* Color / Tone */}
           <div className="space-y-2">
-            <span className="text-on-surface text-sm font-semibold">Color</span>
+            <span className="text-on-surface text-sm font-semibold">{t('form_color_label')}</span>
             <div className="flex gap-3">
-              {PROJECT_TONES.map((t) => (
+              {PROJECT_TONES.map((toneName) => (
                 <button
-                  key={t}
+                  key={toneName}
                   type="button"
-                  onClick={() => setTone(t)}
-                  title={TONE_LABELS[t]}
+                  onClick={() => setTone(toneName)}
+                  title={TONE_LABELS[toneName]}
                   className="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-all"
                   style={{
-                    background: tone === t ? TONE_TO_COLOR[t] : 'var(--surface-2)',
-                    color: tone === t ? '#fff' : 'var(--text-secondary)',
-                    border: tone === t ? '0' : '1px solid var(--border)',
+                    background: tone === toneName ? TONE_TO_COLOR[toneName] : 'var(--surface-2)',
+                    color: tone === toneName ? '#fff' : 'var(--text-secondary)',
+                    border: tone === toneName ? '0' : '1px solid var(--border)',
                   }}>
                   <span
                     className="h-2.5 w-2.5 rounded-full"
-                    style={{ background: TONE_TO_COLOR[t] }}
+                    style={{ background: TONE_TO_COLOR[toneName] }}
                   />
-                  {TONE_LABELS[t]}
+                  {TONE_LABELS[toneName]}
                 </button>
               ))}
             </div>
@@ -221,13 +224,13 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
               type="button"
               onClick={() => setOpen(false)}
               className="border-outline-variant/30 text-on-surface hover:bg-surface-container-high rounded-lg border px-4 py-2 text-sm font-medium transition-colors">
-              Cancelar
+              {t('btn_cancel')}
             </button>
             <button
               type="submit"
               disabled={isPending}
               className="bg-primary text-on-primary rounded-lg px-4 py-2 text-sm font-bold shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50">
-              {isPending ? 'Creando…' : 'Crear proyecto'}
+              {isPending ? t('btn_creating') : t('btn_create')}
             </button>
           </DialogFooter>
         </form>

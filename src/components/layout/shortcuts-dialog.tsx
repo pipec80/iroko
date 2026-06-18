@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import {
   Dialog,
   DialogContent,
@@ -7,17 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-
-interface Shortcut {
-  keys: string[];
-  description: string;
-}
-
-const SHORTCUTS: Shortcut[] = [
-  { keys: ['⌘', 'K'], description: 'Enfocar búsqueda' },
-  { keys: ['⌘', '/'], description: 'Ver atajos de teclado' },
-  { keys: ['Esc'], description: 'Cerrar panel' },
-];
 
 function KbdBadge({ children }: { children: React.ReactNode }) {
   return (
@@ -44,20 +35,26 @@ interface Props {
 }
 
 export function ShortcutsDialog({ open, onOpenChange }: Props) {
+  const t = useTranslations('Shortcuts');
+
+  const shortcuts = [
+    { keys: ['⌘', 'K'], description: t('shortcut_search') },
+    { keys: ['⌘', '/'], description: t('shortcut_shortcuts') },
+    { keys: ['Esc'], description: t('shortcut_close') },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xs" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
-            Atajos de teclado
+            {t('dialog_title')}
           </DialogTitle>
-          <DialogDescription className="sr-only">
-            Lista de atajos de teclado disponibles en la aplicación.
-          </DialogDescription>
+          <DialogDescription className="sr-only">{t('dialog_desc')}</DialogDescription>
         </DialogHeader>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
-          {SHORTCUTS.map((s) => (
+          {shortcuts.map((s) => (
             <div
               key={s.description}
               className="flex items-center justify-between rounded"

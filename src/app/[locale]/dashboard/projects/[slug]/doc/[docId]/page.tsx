@@ -8,6 +8,7 @@ import { MarkdownEditor } from '@/components/dashboard/projects/markdown-editor'
 import { saveDocument } from './actions';
 
 import type { Metadata } from 'next';
+import { appConfig } from '@/config/app.config';
 
 interface DocEditorPageProps {
   params: Promise<{ locale: string; slug: string; docId: string }>;
@@ -16,7 +17,7 @@ interface DocEditorPageProps {
 export async function generateMetadata({ params }: DocEditorPageProps): Promise<Metadata> {
   const { docId } = await params;
   const doc = await getById(docId).catch(() => null);
-  return { title: doc ? `${doc.name} — Iroko` : 'Documento — Iroko' };
+  return { title: doc ? `${doc.name} — ${appConfig.brand}` : `Documento — ${appConfig.brand}` };
 }
 
 export default async function DocEditorPage({ params }: DocEditorPageProps) {

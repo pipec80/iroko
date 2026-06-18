@@ -62,27 +62,27 @@ export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
       <div className="border-border w-full overflow-x-auto overflow-y-hidden border-b pb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <TabsList
           variant="line"
-          className="flex h-auto w-max justify-start gap-6 bg-transparent p-0">
+          className="flex h-auto w-full justify-start gap-1 bg-transparent p-0 sm:w-max sm:gap-6">
           <TabsTrigger
             value="profile"
             disabled={isPending}
-            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
-            <User size={16} strokeWidth={1.75} />
-            {t('profile')}
+            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex flex-1 items-center justify-center gap-1.5 rounded-none border-none! bg-transparent! px-1 py-3 text-[13px] font-medium transition-all data-[state=active]:shadow-none sm:flex-none sm:gap-2 sm:text-sm">
+            <User size={16} strokeWidth={1.75} className="shrink-0" />
+            <span className="truncate">{t('profile')}</span>
           </TabsTrigger>
           <TabsTrigger
             value="security"
             disabled={isPending}
-            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
-            <Shield size={16} strokeWidth={1.75} />
-            {t('security')}
+            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex flex-1 items-center justify-center gap-1.5 rounded-none border-none! bg-transparent! px-1 py-3 text-[13px] font-medium transition-all data-[state=active]:shadow-none sm:flex-none sm:gap-2 sm:text-sm">
+            <Shield size={16} strokeWidth={1.75} className="shrink-0" />
+            <span className="truncate">{t('security')}</span>
           </TabsTrigger>
           <TabsTrigger
             value="sessions"
             disabled={isPending}
-            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex items-center justify-center gap-2 rounded-none border-none! bg-transparent! px-1 py-3 text-sm font-medium transition-all data-[state=active]:shadow-none">
-            <Monitor size={16} strokeWidth={1.75} />
-            {t('sessions')}
+            className="data-[state=active]:text-primary text-muted-foreground hover:text-foreground flex flex-1 items-center justify-center gap-1.5 rounded-none border-none! bg-transparent! px-1 py-3 text-[13px] font-medium transition-all data-[state=active]:shadow-none sm:flex-none sm:gap-2 sm:text-sm">
+            <Monitor size={16} strokeWidth={1.75} className="shrink-0" />
+            <span className="truncate">{t('sessions')}</span>
           </TabsTrigger>
         </TabsList>
       </div>

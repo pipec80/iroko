@@ -4,6 +4,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getTeamMembers } from '../team/actions';
 import { InviteDialog } from '@/components/dashboard/team/invite-dialog';
 import { MembersTable } from '@/components/dashboard/members/members-table';
+import { createClient } from '@/lib/supabase/server';
+import { getUserTimezone } from '@/lib/user-timezone';
 
 export async function generateMetadata({
   params,
@@ -20,7 +22,11 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
   setRequestLocale(locale);
 
   const t = await getTranslations('Team');
-  const { data: members } = await getTeamMembers();
+  const supabase = await createClient();
+  const [{ data: members }, timezone] = await Promise.all([
+    getTeamMembers(),
+    getUserTimezone(supabase),
+  ]);
 
   const activeCount = members.filter((m) => m.status === 'active').length;
   const pendingCount = members.filter((m) => m.status === 'pending').length;
@@ -28,7 +34,7 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <header className="flex items-end justify-between">
+      <header className="flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between">
         <div>
           <p className="eyebrow-sm">{t('title')}</p>
           <h1 className="display" style={{ fontSize: 44, marginTop: 6 }}>
@@ -42,7 +48,7 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
       </header>
 
       {/* Table with toolbar */}
-      <MembersTable members={members} />
+      <MembersTable members={members} timezone={timezone} />
     </div>
   );
 }

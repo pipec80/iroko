@@ -92,8 +92,8 @@ authTest.describe('Settings page — authenticated', () => {
     async ({ authenticatedPage: page }) => {
       await page.goto('/es/dashboard/account?tab=profile');
       await page.waitForURL(/\/es\/dashboard\/account/);
-      // Espera a que termine la hidratación: un click durante esa ventana se pierde.
-      await page.waitForLoadState('networkidle');
+      // Esperamos que el formulario esté visible para asegurar que cargó el DOM inicial
+      await expect(page.locator('input[name="given_name"]')).toBeVisible();
 
       const profileForm = page
         .locator('form')

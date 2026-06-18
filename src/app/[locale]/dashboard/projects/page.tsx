@@ -1,4 +1,4 @@
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Folder, Users, GitBranch } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { listByAccount } from '@/lib/projects';
@@ -7,9 +7,10 @@ import { NewProjectDialog } from '@/components/dashboard/projects/new-project-di
 
 import type { Metadata } from 'next';
 import type { Project } from '@/lib/projects';
+import { appConfig } from '@/config/app.config';
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: 'Proyectos — Iroko' };
+  return { title: `Proyectos — ${appConfig.brand}` };
 }
 
 const STATUS_TO_ENV: Record<string, string> = {
@@ -34,6 +35,8 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
   const { locale } = await params;
   setRequestLocale(locale);
 
+  const t = await getTranslations('Projects');
+
   const supabase = await createClient();
 
   // Direct SELECT on accounts_memberships is revoked for authenticated — use RPC.
@@ -47,16 +50,16 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
   return (
     <div className="animate-in fade-in space-y-6 duration-700">
       {/* Header */}
-      <header className="flex items-end justify-between">
+      <header className="flex flex-col items-start gap-4 md:flex-row md:items-end md:justify-between">
         <div>
-          <span className="eyebrow-sm">Bosque</span>
+          <span className="eyebrow-sm">{t('page_eyebrow')}</span>
           <h1
             className="display-italic text-foreground mt-1.5"
             style={{ fontSize: 44, lineHeight: 1 }}>
-            Tus proyectos
+            {t('page_title')}
           </h1>
           <p className="text-muted-foreground mt-1.5 text-[15px]">
-            Cada proyecto es una rama que crece del mismo tronco Iroko.
+            {t('page_lead', { brand: appConfig.brand })}
           </p>
         </div>
         <NewProjectDialog />
@@ -65,7 +68,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
       {/* Grid */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {projects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
+          <ProjectCard key={project.id} project={project} locale={locale} />
         ))}
 
         <NewProjectDialog variant="card" />
@@ -74,7 +77,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
   );
 }
 
-function ProjectCard({ project }: { project: Project }) {
+function ProjectCard({ project, locale }: { project: Project; locale: string }) {
   const env = STATUS_TO_ENV[project.status] ?? 'preview';
   const color = project.color ?? 'var(--color-iron)';
 
@@ -118,7 +121,7 @@ function ProjectCard({ project }: { project: Project }) {
           </span>
           <span className="text-muted-foreground ml-auto font-mono text-[11px]">
             {project.updated_at ?
-              new Date(project.updated_at).toLocaleDateString('es', {
+              new Date(project.updated_at).toLocaleDateString(locale, {
                 day: 'numeric',
                 month: 'short',
               })

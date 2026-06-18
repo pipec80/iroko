@@ -1,15 +1,17 @@
 import { notFound } from 'next/navigation';
-import { setRequestLocale } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Folder, FileText } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { getBySlug } from '@/lib/projects';
 import { listByProject } from '@/lib/project-documents';
+import { getUserTimezone } from '@/lib/user-timezone';
 import { Link } from '@/i18n/routing';
 import { NewDocumentDialog } from '@/components/dashboard/projects/new-document-dialog';
 
 import type { Metadata } from 'next';
 import type { ProjectDocument } from '@/lib/project-documents';
+import { appConfig } from '@/config/app.config';
 
 interface ProjectDetailPageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -17,18 +19,22 @@ interface ProjectDetailPageProps {
 
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  return { title: `${slug} — Iroko` };
+  return { title: `${slug} — ${appConfig.brand}` };
 }
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
   const { locale, slug } = await params;
   setRequestLocale(locale);
 
+  const t = await getTranslations('Projects');
   const supabase = await createClient();
   const { data: accountId } = await supabase.rpc('get_my_account_id');
   if (!accountId) notFound();
 
-  const project = await getBySlug(accountId, slug).catch(() => null);
+  const [project, timezone] = await Promise.all([
+    getBySlug(accountId, slug).catch(() => null),
+    getUserTimezone(supabase),
+  ]);
   if (!project) notFound();
 
   const documents = await listByProject(project.id).catch(() => []);
@@ -44,7 +50,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             <Folder size={16} strokeWidth={1.5} />
           </span>
           <div>
-            <span className="eyebrow-sm">Proyecto</span>
+            <span className="eyebrow-sm">{t('detail_project_label')}</span>
             <h1
               className="display-italic text-foreground mt-0.5"
               style={{ fontSize: 32, lineHeight: 1 }}>
@@ -60,10 +66,10 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
       {/* Documents grid */}
       {documents.length === 0 ?
-        <EmptyState projectId={project.id} projectSlug={slug} />
+        <EmptyState projectId={project.id} projectSlug={slug} t={t} />
       : <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {documents.map((doc) => (
-            <DocumentCard key={doc.id} doc={doc} slug={slug} />
+            <DocumentCard key={doc.id} doc={doc} slug={slug} locale={locale} timezone={timezone} />
           ))}
           <NewDocumentDialog projectId={project.id} projectSlug={slug} variant="card" />
         </div>
@@ -72,7 +78,17 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   );
 }
 
-function DocumentCard({ doc, slug }: { doc: ProjectDocument; slug: string }) {
+function DocumentCard({
+  doc,
+  slug,
+  locale,
+  timezone,
+}: {
+  doc: ProjectDocument;
+  slug: string;
+  locale: string;
+  timezone: string;
+}) {
   const preview = doc.content.slice(0, 120);
 
   return (
@@ -94,11 +110,12 @@ function DocumentCard({ doc, slug }: { doc: ProjectDocument; slug: string }) {
       <div className="border-border mt-auto border-t pt-3">
         <span className="text-muted-foreground font-mono text-[11px]">
           {doc.updated_at ?
-            new Date(doc.updated_at).toLocaleDateString('es', {
+            new Intl.DateTimeFormat(locale, {
               day: 'numeric',
               month: 'short',
               year: 'numeric',
-            })
+              timeZone: timezone,
+            }).format(new Date(doc.updated_at))
           : '—'}
         </span>
       </div>
@@ -106,7 +123,15 @@ function DocumentCard({ doc, slug }: { doc: ProjectDocument; slug: string }) {
   );
 }
 
-function EmptyState({ projectId, projectSlug }: { projectId: string; projectSlug: string }) {
+function EmptyState({
+  projectId,
+  projectSlug,
+  t,
+}: {
+  projectId: string;
+  projectSlug: string;
+  t: Awaited<ReturnType<typeof getTranslations<'Projects'>>>;
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
       <div
@@ -115,10 +140,8 @@ function EmptyState({ projectId, projectSlug }: { projectId: string; projectSlug
         <FileText size={20} strokeWidth={1.5} className="text-muted-foreground" />
       </div>
       <div>
-        <p className="text-foreground text-[15px] font-semibold">Sin documentos</p>
-        <p className="text-muted-foreground mt-1 text-[13px]">
-          Crea el primero para empezar a documentar este proyecto.
-        </p>
+        <p className="text-foreground text-[15px] font-semibold">{t('detail_empty_title')}</p>
+        <p className="text-muted-foreground mt-1 text-[13px]">{t('detail_empty_desc')}</p>
       </div>
       <NewDocumentDialog projectId={projectId} projectSlug={projectSlug} variant="card" />
     </div>
