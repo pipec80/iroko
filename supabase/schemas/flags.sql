@@ -82,6 +82,7 @@ CREATE POLICY "feature_flag_overrides_deny_direct"
   WITH CHECK (false);
 
 REVOKE SELECT, INSERT, UPDATE, DELETE ON public.feature_flag_overrides FROM anon;
+REVOKE SELECT, INSERT, UPDATE, DELETE ON public.feature_flags FROM anon;
 
 CREATE OR REPLACE FUNCTION private.resolve_flag(
   p_flag_name  text,
@@ -98,7 +99,7 @@ AS $$
        FROM public.feature_flag_overrides
       WHERE flag_name  = p_flag_name
         AND account_id = p_account_id),
-    (SELECT (p.features ->> p_flag_name)::boolean
+    (SELECT (p.features -> p_flag_name = to_jsonb(true))
        FROM billing.subscriptions s
        JOIN billing.plans     p ON p.id = s.plan_id
        JOIN billing.customers c ON c.id = s.customer_id
