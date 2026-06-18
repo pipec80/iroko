@@ -46,6 +46,7 @@ authTest.describe('Settings page — authenticated', () => {
     async ({ authenticatedPage: page }) => {
       await page.goto('/es/dashboard/account?tab=security');
       await page.waitForURL(/\/es\/dashboard\/account/);
+      await page.waitForLoadState('networkidle');
 
       await expect(page.locator('input[name="current_password"]')).toBeVisible();
       await expect(page.locator('input[name="password"]')).toBeVisible();

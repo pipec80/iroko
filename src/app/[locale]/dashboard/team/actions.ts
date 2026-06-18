@@ -104,7 +104,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     'Members invited',
   );
 
-  revalidatePath('/dashboard/team');
+  revalidatePath('/[locale]/dashboard/team');
   return { success: true, count: data as number };
 });
 
@@ -143,6 +143,6 @@ export const removeMember = withServerAction(async function removeMember(
     'Member removed',
   );
 
-  revalidatePath('/dashboard/team');
+  revalidatePath('/[locale]/dashboard/team');
   return { success: true };
 });
