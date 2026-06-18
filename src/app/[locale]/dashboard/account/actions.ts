@@ -4,6 +4,8 @@ import { getLocale } from 'next-intl/server';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { routing } from '@/i18n/routing-config';
+
 import { env } from '@/env';
 import { redirect } from '@/i18n/routing';
 import { logger } from '@/lib/logger';
@@ -96,7 +98,7 @@ export const updateProfileAction = withServerAction(async function updateProfile
 
 export const updateLocalePreferenceAction = withServerAction(
   async function updateLocalePreferenceAction(localeInput: string): Promise<SettingsActionState> {
-    const parsed = z.enum(['en', 'es']).safeParse(localeInput);
+    const parsed = z.enum(routing.locales).safeParse(localeInput);
     if (!parsed.success) return { error: 'invalid_locale' };
 
     const { supabase, userId } = await requireUserId();

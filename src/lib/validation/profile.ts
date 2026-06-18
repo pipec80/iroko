@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
-// Keep this list in sync with src/i18n/routing.ts `locales`.
-const SUPPORTED_LOCALES = ['en', 'es'] as const;
+import { routing } from '@/i18n/routing-config';
+
+// Derived from routing-config — add/remove locales there, not here.
+const SUPPORTED_LOCALES = routing.locales;
 
 // IANA timezone names (loose: just a non-empty string, DB is the source of truth).
 const timezoneSchema = z.string().min(1).max(80);
