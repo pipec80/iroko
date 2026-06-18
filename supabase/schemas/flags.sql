@@ -25,6 +25,12 @@ COMMENT ON COLUMN public.feature_flags.description IS
   'Descripción legible; se muestra en el admin UI (F3).';
 COMMENT ON COLUMN public.feature_flags.enabled IS
   'Default global. Puede ser sobreescrito por plan (billing.plans.features) y por cuenta (feature_flag_overrides).';
+COMMENT ON COLUMN public.feature_flags.id IS
+  'Clave primaria UUID generada automáticamente.';
+COMMENT ON COLUMN public.feature_flags.created_at IS
+  'Timestamp de creación del flag (inmutable).';
+COMMENT ON COLUMN public.feature_flags.updated_at IS
+  'Timestamp de última modificación; actualizado automáticamente por trigger.';
 
 CREATE TABLE IF NOT EXISTS public.feature_flag_overrides (
   id         uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -48,9 +54,12 @@ COMMENT ON COLUMN public.feature_flag_overrides.account_id IS
   'Cuenta a la que aplica el override; cascada al borrar la cuenta.';
 COMMENT ON COLUMN public.feature_flag_overrides.enabled IS
   'true = forzar habilitado sin importar el plan; false = forzar deshabilitado.';
-
-CREATE INDEX IF NOT EXISTS idx_feature_flags_name
-  ON public.feature_flags (name);
+COMMENT ON COLUMN public.feature_flag_overrides.id IS
+  'Clave primaria UUID generada automáticamente.';
+COMMENT ON COLUMN public.feature_flag_overrides.created_at IS
+  'Timestamp de creación del override (inmutable).';
+COMMENT ON COLUMN public.feature_flag_overrides.updated_at IS
+  'Timestamp de última modificación; actualizado automáticamente por trigger.';
 
 CREATE INDEX IF NOT EXISTS idx_feature_flag_overrides_account_flag
   ON public.feature_flag_overrides (account_id, flag_name);
@@ -102,6 +111,8 @@ AS $$
     false
   )
 $$;
+
+REVOKE EXECUTE ON FUNCTION private.resolve_flag(text, uuid) FROM PUBLIC;
 
 CREATE OR REPLACE FUNCTION public.is_flag_enabled(
   p_flag_name  text,
