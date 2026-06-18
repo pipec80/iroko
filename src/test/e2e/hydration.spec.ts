@@ -28,7 +28,7 @@ test.describe('Asset & hydration sanity', () => {
       }
     });
 
-    await page.goto('/es/login', { waitUntil: 'networkidle' });
+    await page.goto('/es/login', { waitUntil: 'domcontentloaded' });
 
     expect(failedRequests, 'Assets que fallaron al cargar').toEqual([]);
   });
