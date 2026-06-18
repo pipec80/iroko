@@ -113,7 +113,7 @@ describe('updateProfileAction', () => {
 
   it('should return fieldErrors when locale is unsupported', async () => {
     mockAuthenticated();
-    const fd = makeFormData({ ...validProfileData, locale: 'fr' });
+    const fd = makeFormData({ ...validProfileData, locale: 'de' });
     const result = await updateProfileAction(PREV, fd);
     expect(result.fieldErrors?.locale).toBeDefined();
   });
