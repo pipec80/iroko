@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useActionState, useRef, useState } from 'react';
 
-import { UserPlus } from 'lucide-react';
+import { ChevronDown, Check, UserPlus } from 'lucide-react';
 
 import {
   Dialog,
@@ -14,12 +14,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { inviteMembers } from '@/app/[locale]/dashboard/team/actions';
 import { INVITABLE_ROLES } from '@/lib/validation/team';
+
+type InvitableRole = (typeof INVITABLE_ROLES)[number];
 
 export function InviteDialog() {
   const t = useTranslations('Team');
   const [open, setOpen] = useState(false);
+  const [roleOpen, setRoleOpen] = useState(false);
+  const [role, setRole] = useState<InvitableRole>('member');
   const formRef = useRef<HTMLFormElement>(null);
 
   const [state, action, isPending] = useActionState(
@@ -27,6 +37,7 @@ export function InviteDialog() {
       const result = await inviteMembers(formData);
       if (result.success) {
         formRef.current?.reset();
+        setRole('member');
         setOpen(false);
       }
       return result;
@@ -53,20 +64,32 @@ export function InviteDialog() {
         <form ref={formRef} action={action} className="space-y-4">
           {/* Role selector */}
           <div className="space-y-2">
-            <label htmlFor="invite-role" className="text-on-surface text-sm font-semibold">
-              {t('role_label')}
-            </label>
-            <select
-              id="invite-role"
-              name="role"
-              defaultValue="member"
-              className="bg-surface-container-low border-outline-variant/30 text-on-surface focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm [color-scheme:light] transition-colors focus:outline-none dark:[color-scheme:dark]">
-              {INVITABLE_ROLES.map((role) => (
-                <option key={role} value={role}>
-                  {t(`role_${role}`)}
-                </option>
-              ))}
-            </select>
+            <label className="text-on-surface text-sm font-semibold">{t('role_label')}</label>
+            <input type="hidden" name="role" value={role} />
+            <DropdownMenu open={roleOpen} onOpenChange={setRoleOpen}>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="bg-surface-container-low border-outline-variant/30 text-on-surface focus:border-primary flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none">
+                  <span>{t(`role_${role}`)}</span>
+                  <ChevronDown
+                    className="text-on-surface-variant h-4 w-4 opacity-60"
+                    aria-hidden="true"
+                  />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+                {INVITABLE_ROLES.map((r) => (
+                  <DropdownMenuItem
+                    key={r}
+                    onSelect={() => setRole(r)}
+                    className="flex items-center justify-between">
+                    <span>{t(`role_${r}`)}</span>
+                    {role === r && <Check className="h-4 w-4" aria-hidden="true" />}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Email textarea */}

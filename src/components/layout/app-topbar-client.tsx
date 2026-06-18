@@ -345,7 +345,12 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                       <DropdownMenuRadioItem
                         key={loc}
                         value={loc}
-                        style={{ borderRadius: 4, padding: '7px 10px', gap: 10, fontSize: 13 }}>
+                        style={{
+                          borderRadius: 4,
+                          padding: '7px 32px 7px 10px',
+                          gap: 10,
+                          fontSize: 13,
+                        }}>
                         {LOCALE_LABELS[loc]}
                       </DropdownMenuRadioItem>
                     ))}
