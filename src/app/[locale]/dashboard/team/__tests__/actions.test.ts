@@ -216,11 +216,11 @@ describe('inviteMembers', () => {
     expect(mockSendInvitationEmail).toHaveBeenCalledTimes(2);
     expect(mockSendInvitationEmail).toHaveBeenCalledWith(
       'alice@example.com',
-      expect.objectContaining({ inviterEmail: 'owner@example.com', role: 'member' }),
+      expect.objectContaining({ inviterEmail: 'owner@example.com', teamRole: 'member' }),
     );
     expect(mockSendInvitationEmail).toHaveBeenCalledWith(
       'bob@example.com',
-      expect.objectContaining({ inviterEmail: 'owner@example.com', role: 'member' }),
+      expect.objectContaining({ inviterEmail: 'owner@example.com', teamRole: 'member' }),
     );
   });
 
