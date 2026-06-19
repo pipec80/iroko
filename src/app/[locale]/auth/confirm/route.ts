@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { after, NextResponse, type NextRequest } from 'next/server';
 
 import { env } from '@/env';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
@@ -60,18 +60,22 @@ export async function GET(
     return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?error=confirmation_failed`);
   }
 
-  // Enviar email de bienvenida al completar el registro — fire and forget.
+  // Enviar email de bienvenida al completar el registro — después de responder.
   if (type === 'signup') {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (user?.email) {
+      const email = user.email;
+      const userId = user.id;
       const firstName = (user.user_metadata?.given_name as string | undefined) ?? '';
-      sendWelcomeEmail(user.email, firstName).catch((err: unknown) => {
-        logger.error(
-          { userId: user.id, action: 'welcome_email' },
-          err instanceof Error ? err.message : 'Unknown error',
-        );
+      after(() => {
+        sendWelcomeEmail(email, firstName).catch((err: unknown) => {
+          logger.error(
+            { userId, action: 'welcome_email' },
+            err instanceof Error ? err.message : 'Unknown error',
+          );
+        });
       });
     }
   }

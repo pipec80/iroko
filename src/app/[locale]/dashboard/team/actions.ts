@@ -1,5 +1,6 @@
 'use server';
 
+import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
 import { appConfig } from '@/config/app.config';
@@ -88,6 +89,8 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   const accountId = await getAccountId();
   if (!accountId) return { error: 'no_account' };
 
+  const invitedAt = new Date().toISOString();
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('invite_members', {
     p_account_id: accountId,
@@ -110,24 +113,28 @@ export const inviteMembers = withServerAction(async function inviteMembers(
 
   revalidatePath('/[locale]/dashboard/team');
 
-  // Enviar emails de invitación — fire and forget (no bloquea la respuesta).
+  // Enviar emails de invitación — después de responder, solo a las recién creadas.
   if ((data as number) > 0) {
     const {
       data: { user: caller },
     } = await supabase.auth.getUser();
     const inviterEmail = caller?.email ?? 'un miembro del equipo';
 
-    const adminClient = createAdminClient();
-    const { data: invitations, error: fetchError } = await adminClient
-      .from('invitations')
-      .select('email, token, role')
-      .eq('account_id', accountId)
-      .in('email', parsed.data.emails)
-      .eq('status', 'pending');
+    after(async () => {
+      const adminClient = createAdminClient();
+      const { data: invitations, error: fetchError } = await adminClient
+        .from('invitations')
+        .select('email, token, role')
+        .eq('account_id', accountId)
+        .in('email', parsed.data.emails)
+        .eq('status', 'pending')
+        .gte('created_at', invitedAt);
 
-    if (fetchError) {
-      logger.warn({ action: 'team.invite.fetch_tokens' }, fetchError.message);
-    } else {
+      if (fetchError) {
+        logger.warn({ action: 'team.invite.fetch_tokens' }, fetchError.message);
+        return;
+      }
+
       for (const inv of invitations ?? []) {
         const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
         sendInvitationEmail(inv.email, {
@@ -141,7 +148,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
           );
         });
       }
-    }
+    });
   }
 
   return { success: true, count: data as number };

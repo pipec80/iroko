@@ -56,7 +56,7 @@ export function NotificationEmail({
       link.startsWith('http') ?
         link
       : `${env.SITE_URL}${link}`
-    : `${env.SITE_URL}/es/dashboard`;
+    : `${env.SITE_URL}/${appConfig.defaultLocale}/dashboard`;
 
   return (
     <Html lang="es">

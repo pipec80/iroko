@@ -1,3 +1,5 @@
+import { after } from 'next/server';
+
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { sendNotificationEmail } from '@/lib/email';
@@ -45,9 +47,9 @@ export async function notify(userId: string, payload: NotificationPayload): Prom
     throw error;
   }
 
-  // Entrega por email — fire and forget.
+  // Entrega por email — después de responder para garantizar ejecución en serverless.
   if (payload.emailDelivery) {
-    void (async () => {
+    after(async () => {
       try {
         const {
           data: { user },
@@ -66,6 +68,6 @@ export async function notify(userId: string, payload: NotificationPayload): Prom
           err instanceof Error ? err.message : 'Unknown error',
         );
       }
-    })();
+    });
   }
 }

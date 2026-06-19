@@ -21,6 +21,10 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
+vi.mock('next/server', () => ({
+  after: vi.fn().mockImplementation((fn: () => unknown) => void fn()),
+}));
+
 vi.mock('@/env', () => ({
   env: {
     SITE_URL: 'http://localhost:3000',
@@ -169,7 +173,9 @@ describe('inviteMembers', () => {
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           in: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: [], error: null }),
+            eq: vi.fn().mockReturnValue({
+              gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+            }),
           }),
         }),
       }),
@@ -194,7 +200,9 @@ describe('inviteMembers', () => {
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           in: vi.fn().mockReturnValue({
-            eq: vi.fn().mockResolvedValue({ data: fakeInvitations, error: null }),
+            eq: vi.fn().mockReturnValue({
+              gte: vi.fn().mockResolvedValue({ data: fakeInvitations, error: null }),
+            }),
           }),
         }),
       }),

@@ -55,7 +55,9 @@ export function WelcomeEmail({ firstName }: WelcomeEmailProps): React.ReactEleme
             las funcionalidades.
           </Text>
           <Section>
-            <Button href={`${env.SITE_URL}/es/dashboard`} style={STYLES.button}>
+            <Button
+              href={`${env.SITE_URL}/${appConfig.defaultLocale}/dashboard`}
+              style={STYLES.button}>
               Ir al Dashboard
             </Button>
           </Section>

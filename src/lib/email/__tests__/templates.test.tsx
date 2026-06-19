@@ -39,6 +39,15 @@ describe('WelcomeEmail', () => {
     expect(element).toBeTruthy();
     expect(element.props.firstName).toBe('Alice');
   });
+
+  it('renderiza con el nombre del usuario', async () => {
+    const { WelcomeEmail } = await import('../templates/welcome');
+    // Llamar el componente como función ejecuta el cuerpo y detecta errores runtime
+    const tree = WelcomeEmail({ firstName: 'Ana' });
+    const serialized = JSON.stringify(tree);
+    expect(serialized).toContain('Ana');
+    expect(serialized).toContain('/es/dashboard');
+  });
 });
 
 describe('InvitationEmail', () => {
@@ -50,6 +59,18 @@ describe('InvitationEmail', () => {
       inviteUrl: 'http://localhost:3000/es/auth/accept-invitation?token=abc123',
     });
     expect(element).toBeTruthy();
+  });
+
+  it('renderiza con la URL de invitación', async () => {
+    const { InvitationEmail } = await import('../templates/invitation');
+    const tree = InvitationEmail({
+      inviterEmail: 'admin@example.com',
+      role: 'member',
+      inviteUrl: 'https://example.com/accept?token=test-token',
+    });
+    const serialized = JSON.stringify(tree);
+    expect(serialized).toContain('admin@example.com');
+    expect(serialized).toContain('test-token');
   });
 });
 

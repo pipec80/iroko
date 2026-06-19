@@ -24,6 +24,10 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
+vi.mock('next/server', () => ({
+  after: vi.fn().mockImplementation((fn: () => unknown) => void fn()),
+}));
+
 import { notify } from '../index';
 
 const USER_ID = 'user-uuid-123';
