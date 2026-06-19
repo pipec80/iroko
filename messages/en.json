@@ -717,5 +717,12 @@
     "danger_delete_title": "Delete organization",
     "danger_delete_desc": "This action is permanent. All data, projects and members will be deleted.",
     "danger_delete_btn": "Delete organization"
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "empty": "You have no new notifications.",
+    "mark_all_read": "Mark all as read",
+    "just_now": "Just now",
+    "view_all": "View all"
   }
 }
