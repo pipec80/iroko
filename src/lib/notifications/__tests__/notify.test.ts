@@ -4,15 +4,28 @@ const mocks = vi.hoisted(() => {
   const insertResult = { current: { error: null as Error | null } };
   const insert = vi.fn().mockImplementation(() => Promise.resolve(insertResult.current));
   const from = vi.fn().mockReturnValue({ insert });
-  return { from, insert, insertResult };
+  const mockGetUserById = vi.fn();
+  const mockSendNotificationEmail = vi.fn();
+  return { from, insert, insertResult, mockGetUserById, mockSendNotificationEmail };
 });
 
 vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: vi.fn().mockReturnValue({ from: mocks.from }),
+  createAdminClient: vi.fn().mockReturnValue({
+    from: mocks.from,
+    auth: { admin: { getUserById: mocks.mockGetUserById } },
+  }),
+}));
+
+vi.mock('@/lib/email', () => ({
+  sendNotificationEmail: mocks.mockSendNotificationEmail,
 }));
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+}));
+
+vi.mock('next/server', () => ({
+  after: vi.fn().mockImplementation((fn: () => unknown) => void fn()),
 }));
 
 import { notify } from '../index';
@@ -67,5 +80,61 @@ describe('notify', () => {
       expect.objectContaining({ userId: USER_ID, action: 'notify' }),
       'insert_failed',
     );
+  });
+
+  it('envía email cuando emailDelivery es true y el usuario tiene email', async () => {
+    mocks.insertResult.current = { error: null };
+    mocks.mockGetUserById.mockResolvedValue({
+      data: { user: { email: 'user@example.com' } },
+      error: null,
+    });
+
+    mocks.mockSendNotificationEmail.mockResolvedValue(undefined as unknown);
+
+    await notify(USER_ID, {
+      type: 'info',
+      title: 'Título',
+      body: 'Cuerpo',
+      emailDelivery: true,
+    });
+
+    expect(mocks.mockSendNotificationEmail).toHaveBeenCalledWith('user@example.com', {
+      type: 'info',
+      title: 'Título',
+      body: 'Cuerpo',
+      link: undefined,
+    });
+  });
+
+  it('NO envía email cuando emailDelivery es false o no se pasa', async () => {
+    mocks.insertResult.current = { error: null };
+
+    await notify(USER_ID, { type: 'info', title: 'Título' });
+
+    expect(mocks.mockSendNotificationEmail).not.toHaveBeenCalled();
+  });
+
+  it('loguea el error pero no lanza si sendNotificationEmail falla', async () => {
+    mocks.insertResult.current = { error: null };
+    mocks.mockGetUserById.mockResolvedValue({
+      data: { user: { email: 'user@example.com' } },
+      error: null,
+    });
+    mocks.mockSendNotificationEmail.mockRejectedValue(new Error('Resend down'));
+
+    await expect(
+      notify(USER_ID, { type: 'error', title: 'Error', emailDelivery: true }),
+    ).resolves.toBeUndefined();
+  });
+
+  it('loguea el error pero no lanza si getUserById falla', async () => {
+    mocks.insertResult.current = { error: null };
+    mocks.mockGetUserById.mockRejectedValue(new Error('Auth admin unavailable'));
+
+    const { logger } = await import('@/lib/logger');
+    await expect(
+      notify('user-id-123', { type: 'info', title: 'Título', emailDelivery: true }),
+    ).resolves.toBeUndefined();
+    expect(logger.error).toHaveBeenCalled();
   });
 });
