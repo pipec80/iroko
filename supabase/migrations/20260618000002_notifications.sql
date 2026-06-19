@@ -53,13 +53,12 @@ CREATE POLICY "notifications_deny_direct_insert"
   FOR INSERT
   WITH CHECK (false);
 
-CREATE POLICY "notifications_update_own_read_at"
-  ON public.notifications
-  FOR UPDATE TO authenticated
-  USING (user_id = (SELECT auth.uid()))
-  WITH CHECK (user_id = (SELECT auth.uid()));
+-- ELIMINADA: el marcado de leído va solo por RPC mark_notifications_read
+-- CREATE POLICY "notifications_update_own_read_at" ...
 
 REVOKE SELECT, INSERT, UPDATE, DELETE ON public.notifications FROM anon;
+-- Bloquear UPDATE directo desde authenticated: solo la RPC SECURITY DEFINER puede actualizar
+REVOKE UPDATE ON public.notifications FROM authenticated;
 
 CREATE OR REPLACE FUNCTION private.notify_on_insert()
 RETURNS TRIGGER
@@ -69,8 +68,6 @@ SET search_path = ''
 AS $$
 BEGIN
   PERFORM realtime.send(
-    'user:' || NEW.user_id::text || ':notifications',
-    'notification_created',
     jsonb_build_object(
       'id',         NEW.id,
       'type',       NEW.type,
@@ -80,6 +77,8 @@ BEGIN
       'read_at',    NEW.read_at,
       'created_at', NEW.created_at
     ),
+    'notification_created',
+    'user:' || NEW.user_id::text || ':notifications',
     true
   );
   RETURN NEW;

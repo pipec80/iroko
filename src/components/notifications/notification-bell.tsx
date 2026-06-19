@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Notification } from '@/hooks/use-notifications';
 import { useNotifications } from '@/hooks/use-notifications';
+import { logger } from '@/lib/logger';
 
 const TYPE_ICON: Record<
   Notification['type'],
@@ -78,11 +79,18 @@ export function NotificationBell({ userId }: Props) {
   const t = useTranslations('Notifications');
   const { notifications, unreadCount, markAllRead } = useNotifications(userId);
 
-  async function handleOpenChange(open: boolean) {
+  const handleOpenChange = async (open: boolean) => {
     if (open && unreadCount > 0) {
-      await markAllRead();
+      try {
+        await markAllRead();
+      } catch (err) {
+        logger.error(
+          { userId, action: 'mark_all_read' },
+          err instanceof Error ? err.message : 'Unknown error',
+        );
+      }
     }
-  }
+  };
 
   return (
     <DropdownMenu onOpenChange={handleOpenChange}>
@@ -123,7 +131,14 @@ export function NotificationBell({ userId }: Props) {
           </span>
           {unreadCount > 0 && (
             <button
-              onClick={() => void markAllRead()}
+              onClick={() => {
+                markAllRead().catch((err: unknown) => {
+                  logger.error(
+                    { userId, action: 'mark_all_read' },
+                    err instanceof Error ? err.message : 'Unknown error',
+                  );
+                });
+              }}
               className="text-[11px] transition-opacity hover:opacity-70"
               style={{
                 color: 'var(--text-tertiary)',
