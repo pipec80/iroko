@@ -85,7 +85,7 @@ describe('sendEmail', () => {
 
     await sendInvitationEmail('bob@example.com', {
       inviterEmail: 'admin@example.com',
-      role: 'member',
+      teamRole: 'member',
       inviteUrl: 'http://localhost:3000/es/auth/accept-invitation?token=abc123',
     });
 

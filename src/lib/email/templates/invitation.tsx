@@ -15,7 +15,7 @@ import { appConfig } from '@/config/app.config';
 
 type InvitationEmailProps = {
   inviterEmail: string;
-  role: string;
+  teamRole: string;
   inviteUrl: string;
 };
 
@@ -55,7 +55,7 @@ const STYLES = {
 /** Email de invitación a unirse a un equipo. */
 export function InvitationEmail({
   inviterEmail,
-  role,
+  teamRole,
   inviteUrl,
 }: InvitationEmailProps): React.ReactElement {
   return (
@@ -66,7 +66,7 @@ export function InvitationEmail({
           <Text style={STYLES.heading}>Te han invitado a {appConfig.name}</Text>
           <Text style={STYLES.body_text}>
             <strong>{inviterEmail}</strong> te ha invitado a unirte como{' '}
-            <span style={STYLES.role_badge}>{role}</span>.
+            <span style={STYLES.role_badge}>{teamRole}</span>.
           </Text>
           <Text style={STYLES.body_text}>
             Haz clic en el botón para aceptar la invitación. El enlace expira en 7 días.

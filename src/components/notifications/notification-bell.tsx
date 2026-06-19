@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Notification } from '@/hooks/use-notifications';
 import { useNotifications } from '@/hooks/use-notifications';
-import { logger } from '@/lib/logger';
 
 const TYPE_ICON: Record<
   Notification['type'],
@@ -84,10 +83,7 @@ export function NotificationBell({ userId }: Props) {
       try {
         await markAllRead();
       } catch (err) {
-        logger.error(
-          { userId, action: 'mark_all_read' },
-          err instanceof Error ? err.message : 'Unknown error',
-        );
+        console.error('[NotificationBell] mark_all_read failed:', err);
       }
     }
   };
@@ -133,10 +129,7 @@ export function NotificationBell({ userId }: Props) {
             <button
               onClick={() => {
                 markAllRead().catch((err: unknown) => {
-                  logger.error(
-                    { userId, action: 'mark_all_read' },
-                    err instanceof Error ? err.message : 'Unknown error',
-                  );
+                  console.error('[NotificationBell] mark_all_read failed:', err);
                 });
               }}
               className="text-[11px] transition-opacity hover:opacity-70"

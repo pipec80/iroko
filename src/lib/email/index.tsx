@@ -13,8 +13,8 @@ import { WelcomeEmail } from './templates/welcome';
 export type InvitationEmailOpts = {
   /** Email de quien invita. */
   inviterEmail: string;
-  /** Rol asignado al invitado. */
-  role: string;
+  /** Rol asignado al invitado en el equipo. */
+  teamRole: string;
   /** URL de aceptación con el token. */
   inviteUrl: string;
 };

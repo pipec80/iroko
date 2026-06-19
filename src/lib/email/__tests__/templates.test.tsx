@@ -55,7 +55,7 @@ describe('InvitationEmail', () => {
     const { InvitationEmail } = await import('../templates/invitation');
     const element = React.createElement(InvitationEmail, {
       inviterEmail: 'admin@example.com',
-      role: 'member',
+      teamRole: 'member',
       inviteUrl: 'http://localhost:3000/es/auth/accept-invitation?token=abc123',
     });
     expect(element).toBeTruthy();
@@ -65,7 +65,7 @@ describe('InvitationEmail', () => {
     const { InvitationEmail } = await import('../templates/invitation');
     const tree = InvitationEmail({
       inviterEmail: 'admin@example.com',
-      role: 'member',
+      teamRole: 'member',
       inviteUrl: 'https://example.com/accept?token=test-token',
     });
     const serialized = JSON.stringify(tree);

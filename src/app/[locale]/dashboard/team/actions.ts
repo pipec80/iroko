@@ -139,7 +139,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
         const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
         sendInvitationEmail(inv.email, {
           inviterEmail,
-          role: inv.role,
+          teamRole: inv.role,
           inviteUrl,
         }).catch((err: unknown) => {
           logger.error(
