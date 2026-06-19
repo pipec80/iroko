@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { env } from '@/env';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
+import { sendWelcomeEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import type { Database } from '@/types/database';
 
@@ -57,6 +58,22 @@ export async function GET(
       'OTP verify failed',
     );
     return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?error=confirmation_failed`);
+  }
+
+  // Enviar email de bienvenida al completar el registro — fire and forget.
+  if (type === 'signup') {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.email) {
+      const firstName = (user.user_metadata?.given_name as string | undefined) ?? '';
+      sendWelcomeEmail(user.email, firstName).catch((err: unknown) => {
+        logger.error(
+          { userId: user.id, action: 'welcome_email' },
+          err instanceof Error ? err.message : 'Unknown error',
+        );
+      });
+    }
   }
 
   return response;

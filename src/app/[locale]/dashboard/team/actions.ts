@@ -2,8 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { appConfig } from '@/config/app.config';
+import { env } from '@/env';
+import { sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { inviteSchema, removeMemberSchema } from '@/lib/validation/team';
 
@@ -105,6 +109,41 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   );
 
   revalidatePath('/[locale]/dashboard/team');
+
+  // Enviar emails de invitación — fire and forget (no bloquea la respuesta).
+  if ((data as number) > 0) {
+    const {
+      data: { user: caller },
+    } = await supabase.auth.getUser();
+    const inviterEmail = caller?.email ?? 'un miembro del equipo';
+
+    const adminClient = createAdminClient();
+    const { data: invitations, error: fetchError } = await adminClient
+      .from('invitations')
+      .select('email, token, role')
+      .eq('account_id', accountId)
+      .in('email', parsed.data.emails)
+      .eq('status', 'pending');
+
+    if (fetchError) {
+      logger.warn({ action: 'team.invite.fetch_tokens' }, fetchError.message);
+    } else {
+      for (const inv of invitations ?? []) {
+        const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
+        sendInvitationEmail(inv.email, {
+          inviterEmail,
+          role: inv.role,
+          inviteUrl,
+        }).catch((err: unknown) => {
+          logger.error(
+            { action: 'invitation_email', email: inv.email },
+            err instanceof Error ? err.message : 'Unknown error',
+          );
+        });
+      }
+    }
+  }
+
   return { success: true, count: data as number };
 });
 
