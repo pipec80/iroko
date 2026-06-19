@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { sendNotificationEmail } from '@/lib/email';
 
 /** Tipo de notificación. Controla el color del ícono en el cliente. */
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
@@ -14,18 +15,20 @@ export type NotificationPayload = {
   body?: string;
   /** URL de navegación al hacer click. */
   link?: string;
+  /**
+   * Si `true`, además de la notificación in-app también se envía un email al usuario.
+   * Fire-and-forget: un fallo en el envío no cancela la notificación in-app.
+   */
+  emailDelivery?: boolean;
 };
 
 /**
  * Crea una notificación in-app para el usuario indicado.
- *
- * Usa el cliente admin (service role) para bypassar RLS, ya que las
- * notificaciones se crean desde el servidor en nombre de otros usuarios.
- * El trigger `notifications_broadcast` emite el evento Realtime automáticamente.
+ * Opcionalmente también entrega la notificación por email.
  *
  * @param userId - UUID del usuario destinatario (`auth.users.id`)
- * @param payload - Contenido de la notificación
- * @throws si Supabase devuelve un error al insertar
+ * @param payload - Contenido y opciones de entrega
+ * @throws si Supabase devuelve un error al insertar la notificación in-app
  */
 export async function notify(userId: string, payload: NotificationPayload): Promise<void> {
   const supabase = createAdminClient();
@@ -40,5 +43,25 @@ export async function notify(userId: string, payload: NotificationPayload): Prom
   if (error) {
     logger.error({ userId, action: 'notify' }, error.message);
     throw error;
+  }
+
+  // Entrega por email — fire and forget.
+  if (payload.emailDelivery) {
+    const {
+      data: { user },
+    } = await supabase.auth.admin.getUserById(userId);
+    if (user?.email) {
+      sendNotificationEmail(user.email, {
+        type: payload.type,
+        title: payload.title,
+        body: payload.body,
+        link: payload.link,
+      }).catch((err: unknown) => {
+        logger.error(
+          { userId, action: 'notification_email' },
+          err instanceof Error ? err.message : 'Unknown error',
+        );
+      });
+    }
   }
 }
