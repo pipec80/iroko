@@ -7,6 +7,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      // `server-only` throws if imported outside Next.js build; in Vitest
+      // (jsdom/Node) we just need a no-op shim so the module resolves.
+      'server-only': path.resolve(__dirname, './src/test/server-only-shim.ts'),
     },
   },
   test: {

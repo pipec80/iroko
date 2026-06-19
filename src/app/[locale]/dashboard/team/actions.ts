@@ -135,19 +135,21 @@ export const inviteMembers = withServerAction(async function inviteMembers(
         return;
       }
 
-      for (const inv of invitations ?? []) {
-        const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
-        sendInvitationEmail(inv.email, {
-          inviterEmail,
-          teamRole: inv.role,
-          inviteUrl,
-        }).catch((err: unknown) => {
-          logger.error(
-            { action: 'invitation_email', email: inv.email },
-            err instanceof Error ? err.message : 'Unknown error',
-          );
-        });
-      }
+      await Promise.allSettled(
+        (invitations ?? []).map((inv) => {
+          const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
+          return sendInvitationEmail(inv.email, {
+            inviterEmail,
+            teamRole: inv.role,
+            inviteUrl,
+          }).catch((err: unknown) => {
+            logger.error(
+              { action: 'invitation_email', email: inv.email },
+              err instanceof Error ? err.message : 'Unknown error',
+            );
+          });
+        }),
+      );
     });
   }
 

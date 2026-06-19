@@ -30,33 +30,29 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
   const totalSeats = 10; // TODO: derive from billing plan limits
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col gap-8 p-8 duration-700">
+    <div className="animate-in fade-in slide-in-from-bottom-4 flex flex-col gap-8 duration-700">
       <header className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="font-headline text-on-surface text-3xl font-extrabold tracking-tight">
-            {t('title')}
-          </h1>
-          <p className="text-on-surface-variant text-sm font-medium opacity-60">
-            {t('description')}
-          </p>
+          <h1 className="text-foreground text-3xl font-extrabold tracking-tight">{t('title')}</h1>
+          <p className="text-muted-foreground text-sm font-medium">{t('description')}</p>
         </div>
         <InviteDialog />
       </header>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Members List */}
-        <div className="bg-surface-container-low ambient-shadow border-outline-variant/5 overflow-hidden rounded-3xl border lg:col-span-2">
-          <div className="border-outline-variant/5 bg-surface-container-highest/10 border-b px-8 py-6">
-            <h3 className="text-on-surface-variant font-mono text-[10px] font-black tracking-[0.2em] uppercase opacity-60">
+        <div className="card overflow-hidden lg:col-span-2">
+          <div className="border-border bg-muted/30 border-b px-6 py-4">
+            <h3 className="text-muted-foreground font-mono text-[10px] font-bold tracking-[0.2em] uppercase">
               {t('workspace_members')}
             </h3>
           </div>
 
           {members.length === 0 ?
-            <div className="flex items-center justify-center px-8 py-16">
-              <p className="text-on-surface-variant text-sm opacity-60">{t('no_members')}</p>
+            <div className="flex items-center justify-center px-6 py-16">
+              <p className="text-muted-foreground text-sm">{t('no_members')}</p>
             </div>
-          : <div className="divide-outline-variant/5 divide-y">
+          : <div className="divide-border divide-y">
               {members.map((m, i) => {
                 const given = m.given_name?.trim();
                 const family = m.family_name?.trim();
@@ -68,9 +64,9 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
                 return (
                   <div
                     key={m.user_id ?? `pending-${i}`}
-                    className="hover:bg-surface-container-high/20 flex items-center justify-between px-8 py-5 transition-colors">
-                    <div className="flex items-center gap-5">
-                      <div className="relative h-12 w-12">
+                    className="hover:bg-surface-1 flex items-center justify-between px-6 py-4 transition-colors">
+                    <div className="flex items-center gap-4">
+                      <div className="relative h-10 w-10 shrink-0">
                         <Image
                           src={
                             storageUrl(m.avatar_url) ??
@@ -79,32 +75,34 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
                           alt={name}
                           fill
                           unoptimized
-                          className="bg-surface-container-highest border-outline-variant/10 rounded-full border-2 object-cover p-1 shadow-inner"
+                          className="border-border rounded-full border-2 object-cover p-0.5"
                         />
                         {m.status === 'active' && (
-                          <div className="bg-primary border-surface-container-low absolute right-0 bottom-0 h-3 w-3 rounded-full border-2" />
+                          <div
+                            className="border-background absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full border-2"
+                            style={{ background: 'var(--color-cobalt)' }}
+                          />
                         )}
                       </div>
                       <div className="flex flex-col">
-                        <p className="text-on-surface text-sm font-bold">{name}</p>
-                        <p className="text-on-surface-variant font-mono text-[9px] font-bold tracking-wider uppercase opacity-50">
+                        <p className="text-foreground text-sm font-semibold">{name}</p>
+                        <p className="text-muted-foreground font-mono text-[10px] font-bold tracking-wider uppercase">
                           {t(`role_${m.role}`, { defaultValue: m.role })}
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
                       <span
                         className={cn(
-                          'rounded-full px-3 py-1 text-[9px] font-black tracking-wider uppercase',
+                          'rounded-full px-2.5 py-0.5 font-mono text-[9px] font-bold tracking-wider uppercase',
                           m.status === 'active' ?
                             'bg-primary/10 text-primary'
-                          : 'bg-tertiary-container/30 text-tertiary',
+                          : 'bg-muted text-muted-foreground',
                         )}>
                         {t(m.status === 'active' ? 'status_active' : 'status_pending')}
                       </span>
 
-                      {/* Only show remove for active non-owner members */}
                       {m.status === 'active' && m.role !== 'owner' && m.user_id && (
                         <RemoveMemberDialog userId={m.user_id} displayName={name} />
                       )}
@@ -118,36 +116,36 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
 
         {/* Info/Stats Sidebar */}
         <div className="space-y-6">
-          <div className="bg-primary/5 border-primary/10 rounded-3xl border p-8">
-            <div className="bg-primary shadow-primary/20 mb-8 flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl">
-              <span className="material-symbols-outlined text-primary-foreground text-3xl">
-                verified_user
-              </span>
+          <div className="card card-pad space-y-4">
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{ background: 'var(--color-cobalt)', color: '#fff' }}>
+              <span className="material-symbols-outlined text-2xl">verified_user</span>
             </div>
-            <h2 className="text-on-surface mb-3 text-xl leading-tight font-bold tracking-tight">
+            <h2 className="text-foreground text-lg leading-tight font-bold tracking-tight">
               {t('security_rbac_title')}
             </h2>
-            <p className="text-on-surface-variant mb-8 text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm leading-relaxed">
               {t('security_rbac_description')}
             </p>
-            <button className="bg-surface-container-low text-primary border-primary/10 hover:bg-primary/5 w-full rounded-xl border py-4 text-[10px] font-black tracking-widest uppercase transition-all active:scale-95">
+            <button className="border-border text-muted-foreground hover:bg-surface-1 w-full rounded-lg border py-3 font-mono text-[10px] font-bold tracking-widest uppercase transition-colors active:scale-95">
               {t('configure_permissions')}
             </button>
           </div>
 
-          <div className="bg-surface-container-low ambient-shadow border-outline-variant/5 rounded-3xl border p-8">
-            <h4 className="text-on-surface-variant font-mono text-[10px] font-black tracking-widest uppercase opacity-60">
+          <div className="card card-pad space-y-4">
+            <h4 className="text-muted-foreground font-mono text-[10px] font-bold tracking-widest uppercase">
               {t('usage_status')}
             </h4>
-            <div className="mt-4 flex items-end gap-2">
-              <span className="text-on-surface text-3xl font-extrabold tracking-tighter">
+            <div className="flex items-end gap-2">
+              <span className="text-foreground text-3xl font-extrabold tracking-tighter">
                 {activeCount}/{totalSeats}
               </span>
-              <span className="text-on-surface-variant mb-1 text-sm font-medium opacity-60">
+              <span className="text-muted-foreground mb-1 text-sm font-medium">
                 {t('seats_filled')}
               </span>
             </div>
-            <div className="bg-muted mt-6 h-2 w-full overflow-hidden rounded-full">
+            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
               <div
                 className="bg-primary h-full rounded-full transition-all"
                 style={{ width: `${Math.min((activeCount / totalSeats) * 100, 100)}%` }}

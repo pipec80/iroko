@@ -69,14 +69,14 @@ export async function GET(
       const email = user.email;
       const userId = user.id;
       const firstName = (user.user_metadata?.given_name as string | undefined) ?? '';
-      after(() => {
+      after(() =>
         sendWelcomeEmail(email, firstName).catch((err: unknown) => {
           logger.error(
             { userId, action: 'welcome_email' },
             err instanceof Error ? err.message : 'Unknown error',
           );
-        });
-      });
+        }),
+      );
     }
   }
 

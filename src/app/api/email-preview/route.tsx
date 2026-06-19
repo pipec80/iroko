@@ -1,11 +1,16 @@
 import React from 'react';
 import { type NextRequest, NextResponse } from 'next/server';
 
+import { env } from '@/env';
 import { InvitationEmail } from '@/lib/email/templates/invitation';
 import { NotificationEmail } from '@/lib/email/templates/notification';
 import { WelcomeEmail } from '@/lib/email/templates/welcome';
 
 export async function GET(request: NextRequest) {
+  if (env.NODE_ENV !== 'development') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   // Dynamic import bypasses Turbopack's static react-dom/server ban
   const { renderToStaticMarkup } = (await import('react-dom/server')) as {
     renderToStaticMarkup: (element: React.ReactElement) => string;

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
-import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
 import type { NotificationType } from '@/lib/notifications';
 
@@ -44,7 +43,7 @@ export function useNotifications(userId: string) {
         .limit(MAX_NOTIFICATIONS);
 
       if (error) {
-        logger.warn({ userId, action: 'load_notifications' }, error.message);
+        console.warn('[useNotifications] load failed:', error.message);
         return;
       }
       if (!cancelled && data) {
