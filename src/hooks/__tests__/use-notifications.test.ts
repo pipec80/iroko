@@ -48,6 +48,10 @@ const mocks = vi.hoisted(() => {
   };
 });
 
+vi.mock('@/lib/logger', () => ({
+  logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+}));
+
 vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn().mockReturnValue({
     from: mocks.from,

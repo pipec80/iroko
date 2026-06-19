@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
+import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/client';
 import type { NotificationType } from '@/lib/notifications';
 
@@ -35,13 +36,17 @@ export function useNotifications(userId: string) {
     let cancelled = false;
 
     async function loadInitial() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('notifications')
         .select('id, type, title, body, link, read_at, created_at')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(MAX_NOTIFICATIONS);
 
+      if (error) {
+        logger.warn({ userId, action: 'load_notifications' }, error.message);
+        return;
+      }
       if (!cancelled && data) {
         setNotifications(data as Notification[]);
       }
@@ -92,7 +97,8 @@ export function useNotifications(userId: string) {
    */
   async function markAsRead(ids: string[]): Promise<void> {
     if (!ids.length) return;
-    await supabase.rpc('mark_notifications_read', { p_ids: ids });
+    const { error } = await supabase.rpc('mark_notifications_read', { p_ids: ids });
+    if (error) throw error;
     setNotifications((prev) =>
       prev.map((n) => (ids.includes(n.id) ? { ...n, read_at: new Date().toISOString() } : n)),
     );
