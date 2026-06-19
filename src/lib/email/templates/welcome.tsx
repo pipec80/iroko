@@ -1,4 +1,14 @@
-import { Body, Button, Container, Head, Hr, Html, Section, Text } from '@react-email/components';
+import {
+  Body,
+  Button,
+  Container,
+  Head,
+  Hr,
+  Html,
+  Link,
+  Section,
+  Text,
+} from '@react-email/components';
 import React from 'react';
 
 import { appConfig } from '@/config/app.config';
@@ -52,7 +62,7 @@ export function WelcomeEmail({ firstName }: WelcomeEmailProps): React.ReactEleme
           <Hr style={STYLES.hr} />
           <Text style={STYLES.footer}>
             ¿Tienes alguna duda? Escríbenos a{' '}
-            <a href={`mailto:${appConfig.supportEmail}`}>{appConfig.supportEmail}</a>
+            <Link href={`mailto:${appConfig.supportEmail}`}>{appConfig.supportEmail}</Link>
           </Text>
         </Container>
       </Body>

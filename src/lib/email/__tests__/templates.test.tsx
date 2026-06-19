@@ -1,7 +1,8 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
-// React Email usa APIs de React que vitest puede no tener — mocking ligero
+// React Email usa APIs de React que vitest puede no tener — mocking ligero.
+// vi.mock() factories are self-contained — no external variables needed (vi.hoisted not required).
 vi.mock('@react-email/components', () => ({
   Html: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Head: () => null,
