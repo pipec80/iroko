@@ -47,21 +47,25 @@ export async function notify(userId: string, payload: NotificationPayload): Prom
 
   // Entrega por email — fire and forget.
   if (payload.emailDelivery) {
-    const {
-      data: { user },
-    } = await supabase.auth.admin.getUserById(userId);
-    if (user?.email) {
-      sendNotificationEmail(user.email, {
-        type: payload.type,
-        title: payload.title,
-        body: payload.body,
-        link: payload.link,
-      }).catch((err: unknown) => {
+    void (async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.admin.getUserById(userId);
+        if (user?.email) {
+          await sendNotificationEmail(user.email, {
+            type: payload.type,
+            title: payload.title,
+            body: payload.body,
+            link: payload.link,
+          });
+        }
+      } catch (err: unknown) {
         logger.error(
           { userId, action: 'notification_email' },
           err instanceof Error ? err.message : 'Unknown error',
         );
-      });
-    }
+      }
+    })();
   }
 }
