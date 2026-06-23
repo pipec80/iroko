@@ -69,7 +69,12 @@ export async function sendWelcomeEmail(to: string, firstName: string): Promise<v
   await sendEmail(
     to,
     `¡Bienvenido a ${appConfig.name}!`,
-    React.createElement(WelcomeEmail, { firstName }),
+    React.createElement(WelcomeEmail, {
+      firstName,
+      appName: appConfig.name,
+      dashboardUrl: `${env.SITE_URL}/${appConfig.defaultLocale}/dashboard`,
+      supportEmail: appConfig.supportEmail,
+    }),
   );
 }
 
@@ -83,7 +88,11 @@ export async function sendInvitationEmail(to: string, opts: InvitationEmailOpts)
   await sendEmail(
     to,
     `Te han invitado a unirte a ${appConfig.name}`,
-    React.createElement(InvitationEmail, { ...opts }),
+    React.createElement(InvitationEmail, {
+      ...opts,
+      appName: appConfig.name,
+      supportEmail: appConfig.supportEmail,
+    }),
   );
 }
 
@@ -97,5 +106,14 @@ export async function sendNotificationEmail(
   to: string,
   opts: NotificationEmailOpts,
 ): Promise<void> {
-  await sendEmail(to, opts.title, React.createElement(NotificationEmail, { ...opts }));
+  await sendEmail(
+    to,
+    opts.title,
+    React.createElement(NotificationEmail, {
+      ...opts,
+      appName: appConfig.name,
+      siteUrl: env.SITE_URL,
+      defaultLocale: appConfig.defaultLocale,
+    }),
+  );
 }

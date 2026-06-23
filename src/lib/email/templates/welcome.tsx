@@ -3,70 +3,64 @@ import {
   Button,
   Container,
   Head,
-  Hr,
   Html,
-  Link,
+  Preview,
   Section,
   Text,
 } from '@react-email/components';
 import React from 'react';
 
-import { appConfig } from '@/config/app.config';
-import { env } from '@/env';
+import { EmailLogo, EmailOrnament, S } from './_shared';
 
-type WelcomeEmailProps = {
-  firstName: string;
+export type WelcomeEmailProps = {
+  firstName?: string;
+  /** App name shown in subject and body. Default shown in preview server. */
+  appName?: string;
+  /** Full dashboard URL. Default shown in preview server. */
+  dashboardUrl?: string;
+  /** Support email address. Default shown in preview server. */
+  supportEmail?: string;
 };
 
-const STYLES = {
-  body: { backgroundColor: '#f4f4f5', fontFamily: 'sans-serif', margin: 0, padding: 0 },
-  container: {
-    maxWidth: '600px',
-    margin: '40px auto',
-    backgroundColor: '#ffffff',
-    borderRadius: '8px',
-    padding: '40px',
-  },
-  heading: { fontSize: '24px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 8px' },
-  body_text: { fontSize: '15px', color: '#52525b', lineHeight: '1.6', margin: '0 0 24px' },
-  button: {
-    backgroundColor: '#e84545',
-    color: '#ffffff',
-    padding: '12px 28px',
-    borderRadius: '6px',
-    fontWeight: 'bold',
-    textDecoration: 'none',
-    display: 'inline-block',
-  },
-  footer: { fontSize: '12px', color: '#a1a1aa', margin: '24px 0 0' },
-  hr: { borderColor: '#e4e4e7', margin: '24px 0' },
-} as const;
-
 /** Email de bienvenida enviado tras el primer login confirmado. */
-export function WelcomeEmail({ firstName }: WelcomeEmailProps): React.ReactElement {
+export function WelcomeEmail({
+  firstName = 'allí',
+  appName = 'Iroko',
+  dashboardUrl = 'http://localhost:3000/es/dashboard',
+  supportEmail = 'support@iroko.vercel.app',
+}: WelcomeEmailProps): React.ReactElement {
   return (
     <Html lang="es">
       <Head />
-      <Body style={STYLES.body}>
-        <Container style={STYLES.container}>
-          <Text style={STYLES.heading}>¡Hola, {firstName || 'allí'}! 👋</Text>
-          <Text style={STYLES.body_text}>
-            Tu cuenta en {appConfig.name} está lista. Explora tu dashboard y empieza a usar todas
-            las funcionalidades.
-          </Text>
-          <Section>
-            <Button
-              href={`${env.SITE_URL}/${appConfig.defaultLocale}/dashboard`}
-              style={STYLES.button}>
-              Ir al Dashboard
-            </Button>
-          </Section>
-          <Hr style={STYLES.hr} />
-          <Text style={STYLES.footer}>
-            ¿Tienes alguna duda? Escríbenos a{' '}
-            <Link href={`mailto:${appConfig.supportEmail}`}>{appConfig.supportEmail}</Link>
-          </Text>
+      <Preview>¡Tu cuenta en {appName} está lista para explorar!</Preview>
+      <Body style={S.body}>
+        <Container style={S.container}>
+          <div style={S.header}>
+            <EmailLogo brand={appName} />
+          </div>
+          <div style={S.content}>
+            <Text style={S.h1}>¡Hola, {firstName}! 👋</Text>
+            <Text style={S.p}>
+              Tu cuenta en <strong>{appName}</strong> está lista. Explorá tu dashboard y empezá a
+              usar todas las funcionalidades.
+            </Text>
+            <Section style={S.section}>
+              <Button href={dashboardUrl} style={S.button}>
+                Ir al Dashboard
+              </Button>
+            </Section>
+          </div>
+          <EmailOrnament />
+          <div style={S.footerWrap}>
+            <Text style={S.footerText}>
+              ¿Tenés alguna duda? Escribinos a{' '}
+              <a href={`mailto:${supportEmail}`} style={S.link}>
+                {supportEmail}
+              </a>
+            </Text>
+          </div>
         </Container>
+        <p style={S.tagline}>Saas · Template · Engine</p>
       </Body>
     </Html>
   );

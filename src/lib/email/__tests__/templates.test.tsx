@@ -2,10 +2,10 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 
 // React Email usa APIs de React que vitest puede no tener — mocking ligero.
-// vi.mock() factories are self-contained — no external variables needed (vi.hoisted not required).
 vi.mock('@react-email/components', () => ({
   Html: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Head: () => null,
+  Preview: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   Body: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Container: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Text: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
@@ -19,19 +19,6 @@ vi.mock('@react-email/components', () => ({
   ),
 }));
 
-vi.mock('@/config/app.config', () => ({
-  appConfig: {
-    name: 'Iroko',
-    brand: 'Iroko',
-    supportEmail: 'support@iroko.vercel.app',
-    defaultLocale: 'es',
-  },
-}));
-
-vi.mock('@/env', () => ({
-  env: { SITE_URL: 'http://localhost:3000' },
-}));
-
 describe('WelcomeEmail', () => {
   it('renderiza sin lanzar error', async () => {
     const { WelcomeEmail } = await import('../templates/welcome');
@@ -40,13 +27,22 @@ describe('WelcomeEmail', () => {
     expect(element.props.firstName).toBe('Alice');
   });
 
-  it('renderiza con el nombre del usuario', async () => {
+  it('renderiza con el nombre del usuario y la URL del dashboard', async () => {
     const { WelcomeEmail } = await import('../templates/welcome');
-    // Llamar el componente como función ejecuta el cuerpo y detecta errores runtime
-    const tree = WelcomeEmail({ firstName: 'Ana' });
+    const tree = WelcomeEmail({
+      firstName: 'Ana',
+      dashboardUrl: 'http://localhost:3000/es/dashboard',
+    });
     const serialized = JSON.stringify(tree);
     expect(serialized).toContain('Ana');
     expect(serialized).toContain('/es/dashboard');
+  });
+
+  it('usa defaults cuando no se pasan props', async () => {
+    const { WelcomeEmail } = await import('../templates/welcome');
+    const tree = WelcomeEmail({});
+    const serialized = JSON.stringify(tree);
+    expect(serialized).toContain('Iroko');
   });
 });
 
@@ -61,7 +57,7 @@ describe('InvitationEmail', () => {
     expect(element).toBeTruthy();
   });
 
-  it('renderiza con la URL de invitación', async () => {
+  it('renderiza con la URL de invitación y el email del invitador', async () => {
     const { InvitationEmail } = await import('../templates/invitation');
     const tree = InvitationEmail({
       inviterEmail: 'admin@example.com',
@@ -93,5 +89,17 @@ describe('NotificationEmail', () => {
       title: 'Error en el proceso',
     });
     expect(element).toBeTruthy();
+  });
+
+  it('construye la URL absoluta a partir de un link relativo', async () => {
+    const { NotificationEmail } = await import('../templates/notification');
+    const tree = NotificationEmail({
+      type: 'success',
+      title: 'Archivo listo',
+      link: '/files/123',
+      siteUrl: 'https://app.example.com',
+    });
+    const serialized = JSON.stringify(tree);
+    expect(serialized).toContain('https://app.example.com/files/123');
   });
 });
