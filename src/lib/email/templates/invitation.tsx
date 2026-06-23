@@ -79,3 +79,5 @@ export function InvitationEmail({
     </Html>
   );
 }
+
+export default InvitationEmail;

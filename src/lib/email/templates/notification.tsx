@@ -94,3 +94,5 @@ export function NotificationEmail({
     </Html>
   );
 }
+
+export default NotificationEmail;
