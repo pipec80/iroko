@@ -56,6 +56,7 @@ CREATE POLICY "notifications_deny_direct_insert"
 -- ELIMINADA: el marcado de leído va solo por RPC mark_notifications_read
 -- CREATE POLICY "notifications_update_own_read_at" ...
 
+GRANT SELECT, INSERT ON public.notifications TO authenticated;
 REVOKE SELECT, INSERT, UPDATE, DELETE ON public.notifications FROM anon;
 -- Bloquear UPDATE directo desde authenticated: solo la RPC SECURITY DEFINER puede actualizar
 REVOKE UPDATE ON public.notifications FROM authenticated;
