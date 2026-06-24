@@ -184,7 +184,7 @@ describe('inviteMembers', () => {
     const result = await inviteMembers(fd);
     expect(result.success).toBe(true);
     expect(result.count).toBe(2);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team', 'page');
   });
 
   it('should send invitation emails after successful RPC', async () => {
@@ -270,6 +270,6 @@ describe('removeMember', () => {
     const fd = makeFormData({ userId: '550e8400-e29b-41d4-a716-446655440000' });
     const result = await removeMember(fd);
     expect(result.success).toBe(true);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team', 'page');
   });
 });

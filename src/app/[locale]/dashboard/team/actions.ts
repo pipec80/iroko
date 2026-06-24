@@ -111,7 +111,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     'Members invited',
   );
 
-  revalidatePath('/[locale]/dashboard/team');
+  revalidatePath('/[locale]/dashboard/team', 'page');
 
   // Enviar emails de invitación — después de responder, solo a las recién creadas.
   if ((data as number) > 0) {
@@ -191,6 +191,6 @@ export const removeMember = withServerAction(async function removeMember(
     'Member removed',
   );
 
-  revalidatePath('/[locale]/dashboard/team');
+  revalidatePath('/[locale]/dashboard/team', 'page');
   return { success: true };
 });

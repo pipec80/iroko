@@ -499,8 +499,8 @@
     padding-right: 22px;
   }
 
-  /* ── Danger zone card — .card.danger-zone wins cascade over plain .card ── */
-  .card.danger-zone {
+  /* ── Danger zone card ── */
+  [data-slot='card'].danger-zone {
     background: rgba(217, 33, 33, 0.12);
     border-color: rgba(217, 33, 33, 0.4);
   }
