@@ -1,9 +1,14 @@
 'use server';
 
+import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
+import { appConfig } from '@/config/app.config';
+import { env } from '@/env';
+import { sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { inviteSchema, removeMemberSchema } from '@/lib/validation/team';
 
@@ -84,6 +89,8 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   const accountId = await getAccountId();
   if (!accountId) return { error: 'no_account' };
 
+  const invitedAt = new Date().toISOString();
+
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('invite_members', {
     p_account_id: accountId,
@@ -105,6 +112,47 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   );
 
   revalidatePath('/[locale]/dashboard/team');
+
+  // Enviar emails de invitación — después de responder, solo a las recién creadas.
+  if ((data as number) > 0) {
+    const {
+      data: { user: caller },
+    } = await supabase.auth.getUser();
+    const inviterEmail = caller?.email ?? 'un miembro del equipo';
+
+    after(async () => {
+      const adminClient = createAdminClient();
+      const { data: invitations, error: fetchError } = await adminClient
+        .from('invitations')
+        .select('email, token, role')
+        .eq('account_id', accountId)
+        .in('email', parsed.data.emails)
+        .eq('status', 'pending')
+        .gte('created_at', invitedAt);
+
+      if (fetchError) {
+        logger.warn({ action: 'team.invite.fetch_tokens' }, fetchError.message);
+        return;
+      }
+
+      await Promise.allSettled(
+        (invitations ?? []).map((inv) => {
+          const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
+          return sendInvitationEmail(inv.email, {
+            inviterEmail,
+            teamRole: inv.role,
+            inviteUrl,
+          }).catch((err: unknown) => {
+            logger.error(
+              { action: 'invitation_email', email: inv.email },
+              err instanceof Error ? err.message : 'Unknown error',
+            );
+          });
+        }),
+      );
+    });
+  }
+
   return { success: true, count: data as number };
 });
 

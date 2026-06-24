@@ -32,6 +32,15 @@ export function MarkdownEditor({
   const [status, setStatus] = useState<SaveStatus>('idle');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef(initialContent);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Set placeholder client-side: newlines in HTML attributes are normalized to
+  // spaces during SSR serialization, causing a React hydration mismatch.
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.placeholder = '# Título del documento\n\nEscribe aquí en Markdown...';
+    }
+  }, []);
 
   const save = useCallback(
     async (value: string) => {
@@ -122,10 +131,10 @@ export function MarkdownEditor({
             </span>
           </div>
           <textarea
+            ref={textareaRef}
             value={content}
             onChange={(e) => handleChange(e.target.value)}
             spellCheck={false}
-            placeholder="# Título del documento&#10;&#10;Escribe aquí en Markdown..."
             className="min-h-0 flex-1 resize-none p-5 font-mono text-[13px] leading-relaxed focus:outline-none"
             style={{
               background: 'var(--surface-base)',

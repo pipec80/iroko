@@ -235,8 +235,8 @@ otp_expiry = 3600
 # port = 587
 # user = "resend"
 # pass = "env(RESEND_API_KEY)"
-# admin_email = "no-reply@retailanalytics.com"
-# sender_name = "Retail Analytics"
+# admin_email = "no-reply@iroko.vercel.app"
+# sender_name = "Iroko"
 
 # ----------------------------------------------------------------------------
 # Email templates custom — enlaces van DIRECTO a /auth/confirm de Next.js,

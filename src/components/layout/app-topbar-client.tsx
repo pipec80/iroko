@@ -4,7 +4,6 @@ import React, { useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import {
-  Bell,
   Globe,
   Keyboard,
   LogOut,
@@ -50,11 +49,13 @@ const LOCALE_LABELS: Record<(typeof routing.locales)[number], string> = {
   fr: 'Français',
 };
 import { useShortcut } from '@/hooks/use-shortcut';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 import { ShortcutsDialog } from './shortcuts-dialog';
 import type { OrgAccount } from './app-sidebar-client';
 import { AppSidebarClient } from './app-sidebar-client';
 
 export type TopbarUser = {
+  id: string;
   displayName: string;
   email: string;
 };
@@ -211,25 +212,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
           </div>
 
           {/* Bell */}
-          <button
-            className="relative flex items-center justify-center rounded-[6px] transition-colors"
-            style={{ width: 32, height: 32, background: 'transparent', border: 0 }}>
-            <Bell
-              style={{ width: 17, height: 17, color: 'var(--text-secondary)', strokeWidth: 1.5 }}
-            />
-            <span
-              className="absolute rounded-full"
-              style={{
-                top: 6,
-                right: 6,
-                width: 6,
-                height: 6,
-                background: 'var(--color-poppy)',
-                border: '2px solid var(--background)',
-              }}
-            />
-            <span className="sr-only">Notificaciones</span>
-          </button>
+          <NotificationBell userId={user.id} />
 
           {/* Avatar dropdown */}
           <DropdownMenu>

@@ -6,14 +6,24 @@ const mocks = vi.hoisted(() => ({
   revalidatePath: vi.fn(),
 }));
 
+const { mockSendInvitationEmail, mockGetUser, mockAdminFrom } = vi.hoisted(() => ({
+  mockSendInvitationEmail: vi.fn(() => Promise.resolve() as Promise<void>),
+  mockGetUser: vi.fn(),
+  mockAdminFrom: vi.fn(),
+}));
+
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
-    auth: { getClaims: mocks.getClaims },
+    auth: { getClaims: mocks.getClaims, getUser: mockGetUser },
     rpc: mocks.rpc,
   }),
 }));
 
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
+
+vi.mock('next/server', () => ({
+  after: vi.fn().mockImplementation((fn: () => unknown) => void fn()),
+}));
 
 vi.mock('@/env', () => ({
   env: {
@@ -29,6 +39,16 @@ vi.mock('@/env', () => ({
 vi.mock('@sentry/nextjs', () => ({
   withScope: vi.fn(),
   captureException: vi.fn(),
+}));
+
+vi.mock('@/lib/email', () => ({
+  sendInvitationEmail: mockSendInvitationEmail,
+}));
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn().mockReturnValue({
+    from: mockAdminFrom,
+  }),
 }));
 
 import { getTeamMembers, inviteMembers, removeMember } from '../actions';
@@ -148,11 +168,73 @@ describe('inviteMembers', () => {
   it('should return success with count and revalidate on happy path', async () => {
     mockAuthenticatedWithAccount();
     mocks.rpc.mockResolvedValue({ data: 2, error: null });
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockAdminFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          in: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              gte: vi.fn().mockResolvedValue({ data: [], error: null }),
+            }),
+          }),
+        }),
+      }),
+    });
     const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
     const result = await inviteMembers(fd);
     expect(result.success).toBe(true);
     expect(result.count).toBe(2);
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team');
+  });
+
+  it('should send invitation emails after successful RPC', async () => {
+    // Arrange
+    const fakeInvitations = [
+      { email: 'alice@example.com', token: 'tok-a', role: 'member' },
+      { email: 'bob@example.com', token: 'tok-b', role: 'member' },
+    ];
+    mockAuthenticatedWithAccount();
+    mocks.rpc.mockResolvedValue({ data: 2, error: null });
+    mockGetUser.mockResolvedValue({ data: { user: { email: 'owner@example.com' } } });
+    mockAdminFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          in: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              gte: vi.fn().mockResolvedValue({ data: fakeInvitations, error: null }),
+            }),
+          }),
+        }),
+      }),
+    });
+    const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
+
+    // Act
+    await inviteMembers(fd);
+
+    // Assert
+    expect(mockSendInvitationEmail).toHaveBeenCalledTimes(2);
+    expect(mockSendInvitationEmail).toHaveBeenCalledWith(
+      'alice@example.com',
+      expect.objectContaining({ inviterEmail: 'owner@example.com', teamRole: 'member' }),
+    );
+    expect(mockSendInvitationEmail).toHaveBeenCalledWith(
+      'bob@example.com',
+      expect.objectContaining({ inviterEmail: 'owner@example.com', teamRole: 'member' }),
+    );
+  });
+
+  it('should not send emails when RPC returns 0 invitations created', async () => {
+    // Arrange
+    mockAuthenticatedWithAccount();
+    mocks.rpc.mockResolvedValue({ data: 0, error: null });
+    const fd = makeFormData({ emails: 'alice@example.com', role: 'member' });
+
+    // Act
+    await inviteMembers(fd);
+
+    // Assert
+    expect(mockSendInvitationEmail).not.toHaveBeenCalled();
   });
 });
 

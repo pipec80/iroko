@@ -1,8 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import { after, NextResponse, type NextRequest } from 'next/server';
 
 import { env } from '@/env';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
+import { sendWelcomeEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import type { Database } from '@/types/database';
 
@@ -57,6 +58,26 @@ export async function GET(
       'OTP verify failed',
     );
     return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?error=confirmation_failed`);
+  }
+
+  // Enviar email de bienvenida al completar el registro — después de responder.
+  if (type === 'signup') {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user?.email) {
+      const email = user.email;
+      const userId = user.id;
+      const firstName = (user.user_metadata?.given_name as string | undefined) ?? '';
+      after(() =>
+        sendWelcomeEmail(email, firstName).catch((err: unknown) => {
+          logger.error(
+            { userId, action: 'welcome_email' },
+            err instanceof Error ? err.message : 'Unknown error',
+          );
+        }),
+      );
+    }
   }
 
   return response;

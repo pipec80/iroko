@@ -26,7 +26,7 @@ export async function AppTopbar() {
   const userId = claimsData?.claims.sub;
   const email = (claimsData?.claims.email as string | undefined) ?? '';
 
-  let user: TopbarUser = { displayName: email.split('@')[0] ?? 'User', email };
+  let user: TopbarUser = { id: userId ?? '', displayName: email.split('@')[0] ?? 'User', email };
 
   if (userId) {
     const { data: profile } = await supabase
@@ -36,6 +36,7 @@ export async function AppTopbar() {
       .maybeSingle();
 
     user = {
+      id: userId,
       displayName: buildDisplayName(profile, email),
       email,
     };

@@ -718,6 +718,75 @@ export type Database = {
           },
         ]
       }
+      feature_flag_overrides: {
+        Row: {
+          account_id: string
+          created_at: string
+          enabled: boolean
+          flag_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          enabled: boolean
+          flag_name: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          enabled?: boolean
+          flag_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flag_overrides_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flag_overrides_flag_name_fkey"
+            columns: ["flag_name"]
+            isOneToOne: false
+            referencedRelation: "feature_flags"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string
+          enabled: boolean
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          enabled?: boolean
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           account_id: string
@@ -771,6 +840,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1071,6 +1173,10 @@ export type Database = {
         }
         Returns: number
       }
+      is_flag_enabled: {
+        Args: { p_account_id: string; p_flag_name: string }
+        Returns: boolean
+      }
       list_my_sessions: {
         Args: never
         Returns: {
@@ -1097,6 +1203,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
       remove_member: {
         Args: { p_account_id: string; p_user_id: string }
         Returns: boolean
