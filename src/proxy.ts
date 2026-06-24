@@ -1,6 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { env } from '@/env';
 import { routing } from './i18n/routing';
 import { updateSession } from './lib/supabase/middleware';
 
@@ -87,7 +88,7 @@ function applySecurityHeaders(response: { headers: Headers }, cspHeader: string)
 }
 
 export async function proxy(request: NextRequest) {
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = env.NODE_ENV === 'development';
   const cspHeader = buildCspHeader(isDev);
 
   const supabaseResponse = await updateSession(request);

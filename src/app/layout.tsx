@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 
+import { env } from '@/env';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { appConfig } from '@/config/app.config';
 
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
     template: `%s | ${appConfig.name}`,
   },
   description: appConfig.description,
-  metadataBase: new URL(process.env.SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(env.SITE_URL),
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
