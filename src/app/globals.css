@@ -499,12 +499,6 @@
     padding-right: 22px;
   }
 
-  /* ── Danger zone card ── */
-  [data-slot='card'].danger-zone {
-    background: rgba(217, 33, 33, 0.12);
-    border-color: rgba(217, 33, 33, 0.4);
-  }
-
   /* ── Wordmark — brand name treatment ── */
   .brand-wordmark {
     font-size: 22px;
@@ -561,6 +555,14 @@
     border: 1px solid var(--border);
     border-radius: 10px;
   }
+
+  /* ── Danger zone card — cubre Card component (data-slot) y divs con clase .card ── */
+  [data-slot='card'].danger-zone,
+  .card.danger-zone {
+    background: rgba(217, 33, 33, 0.12);
+    border-color: rgba(217, 33, 33, 0.4);
+  }
+
   .card-pad {
     padding: 24px;
   }
