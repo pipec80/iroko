@@ -31,7 +31,14 @@ export type NotificationEmailOpts = {
   link?: string;
 };
 
-const resend = new Resend(env.RESEND_API_KEY);
+let resendClient: Resend | null = null;
+
+function getResend(): Resend {
+  if (!resendClient) {
+    resendClient = new Resend(env.RESEND_API_KEY);
+  }
+  return resendClient;
+}
 
 /**
  * Envía un email transaccional vía Resend.
@@ -46,7 +53,7 @@ export async function sendEmail(
   subject: string,
   react: React.ReactElement,
 ): Promise<void> {
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: env.FROM_EMAIL,
     to,
     subject,
