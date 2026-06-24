@@ -2,6 +2,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Folder, Users, GitBranch } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { listByAccount } from '@/lib/projects';
+import { logger } from '@/lib/logger';
 import { Link } from '@/i18n/routing';
 import { NewProjectDialog } from '@/components/dashboard/projects/new-project-dialog';
 
@@ -44,7 +45,13 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
 
   let projects: Project[] = [];
   if (accountId) {
-    projects = await listByAccount(accountId).catch(() => []);
+    projects = await listByAccount(accountId).catch((err: unknown) => {
+      logger.error(
+        { action: 'list_projects', accountId },
+        err instanceof Error ? err.message : 'Failed to fetch projects',
+      );
+      return [];
+    });
   }
 
   return (
