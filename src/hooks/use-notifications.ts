@@ -5,6 +5,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js';
 
 import { createClient } from '@/lib/supabase/client';
 import type { NotificationType } from '@/lib/notifications';
+import { logClient } from '@/lib/logger-client';
 
 /** Notificación in-app tal como viene de la base de datos. */
 export type Notification = {
@@ -43,7 +44,10 @@ export function useNotifications(userId: string) {
         .limit(MAX_NOTIFICATIONS);
 
       if (error) {
-        console.warn('[useNotifications] load failed:', error.message);
+        logClient.warn(
+          { action: 'load_notifications', component: 'useNotifications' },
+          error.message,
+        );
         return;
       }
       if (!cancelled && data) {
