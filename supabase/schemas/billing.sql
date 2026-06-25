@@ -65,6 +65,21 @@ CREATE TYPE "billing"."subscription_status" AS ENUM (
 
 ALTER TYPE "billing"."subscription_status" OWNER TO "postgres";
 
+
+CREATE TYPE "billing"."subscription_item_type" AS ENUM (
+    'flat',
+    'per_seat',
+    'metered',
+    'tiered'
+);
+
+
+ALTER TYPE "billing"."subscription_item_type" OWNER TO "postgres";
+
+COMMENT ON TYPE "billing"."subscription_item_type" IS
+  'Modelo de precio de un item de suscripción: flat=precio fijo, per_seat=por usuario, '
+  'metered=por uso, tiered=escalado por volumen.';
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -192,7 +207,7 @@ CREATE TABLE IF NOT EXISTS "billing"."subscription_items" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "subscription_id" "uuid" NOT NULL,
     "description" "text" NOT NULL,
-    "type" "text" DEFAULT 'flat'::"text" NOT NULL,
+    "type" "billing"."subscription_item_type" DEFAULT 'flat'::"billing"."subscription_item_type" NOT NULL,
     "quantity" integer DEFAULT 1,
     "unit_price" integer DEFAULT 0 NOT NULL,
     "currency" character(3) DEFAULT 'USD'::"bpchar",

@@ -394,7 +394,7 @@ export type Database = {
           id: string
           quantity: number | null
           subscription_id: string
-          type: string
+          type: Database["billing"]["Enums"]["subscription_item_type"]
           unit_price: number
           updated_at: string | null
         }
@@ -405,7 +405,7 @@ export type Database = {
           id?: string
           quantity?: number | null
           subscription_id: string
-          type?: string
+          type?: Database["billing"]["Enums"]["subscription_item_type"]
           unit_price?: number
           updated_at?: string | null
         }
@@ -416,7 +416,7 @@ export type Database = {
           id?: string
           quantity?: number | null
           subscription_id?: string
-          type?: string
+          type?: Database["billing"]["Enums"]["subscription_item_type"]
           unit_price?: number
           updated_at?: string | null
         }
@@ -520,6 +520,7 @@ export type Database = {
       invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible"
       payment_method_type: "card" | "bank_transfer" | "wallet" | "other"
       plan_interval: "month" | "year" | "one_time"
+      subscription_item_type: "flat" | "per_seat" | "metered" | "tiered"
       subscription_status:
         | "trialing"
         | "active"
@@ -1407,6 +1408,7 @@ export const Constants = {
       invoice_status: ["draft", "open", "paid", "void", "uncollectible"],
       payment_method_type: ["card", "bank_transfer", "wallet", "other"],
       plan_interval: ["month", "year", "one_time"],
+      subscription_item_type: ["flat", "per_seat", "metered", "tiered"],
       subscription_status: [
         "trialing",
         "active",
