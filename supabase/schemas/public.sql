@@ -1027,6 +1027,14 @@ CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."projects" 
 
 
 
+CREATE TRIGGER "trg_enforce_account_owner"
+  BEFORE UPDATE OF "role" OR DELETE
+  ON "public"."accounts_memberships"
+  FOR EACH ROW
+  EXECUTE FUNCTION "private"."enforce_single_owner_per_account"();
+
+
+
 ALTER TABLE ONLY "public"."accounts"
     ADD CONSTRAINT "accounts_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
