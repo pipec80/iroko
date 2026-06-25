@@ -1,6 +1,7 @@
 import { getLocale } from 'next-intl/server';
 
 import { createClient } from '@/lib/supabase/server';
+import { storageUrl } from '@/lib/storage';
 
 import { AppTopbarClient, type TopbarUser } from './app-topbar-client';
 import type { OrgAccount } from './app-sidebar-client';
@@ -26,12 +27,17 @@ export async function AppTopbar() {
   const userId = claimsData?.claims.sub;
   const email = (claimsData?.claims.email as string | undefined) ?? '';
 
-  let user: TopbarUser = { id: userId ?? '', displayName: email.split('@')[0] ?? 'User', email };
+  let user: TopbarUser = {
+    id: userId ?? '',
+    displayName: email.split('@')[0] ?? 'User',
+    email,
+    avatarUrl: null,
+  };
 
   if (userId) {
     const { data: profile } = await supabase
       .from('profiles')
-      .select('display_name, given_name, family_name')
+      .select('display_name, given_name, family_name, avatar_url')
       .eq('id', userId)
       .maybeSingle();
 
@@ -39,6 +45,7 @@ export async function AppTopbar() {
       id: userId,
       displayName: buildDisplayName(profile, email),
       email,
+      avatarUrl: storageUrl(profile?.avatar_url),
     };
   }
 

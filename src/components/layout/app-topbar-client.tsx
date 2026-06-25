@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
+import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import {
@@ -58,6 +59,7 @@ export type TopbarUser = {
   id: string;
   displayName: string;
   email: string;
+  avatarUrl: string | null;
 };
 
 type Props = {
@@ -220,11 +222,23 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                 aria-label={user.displayName}
                 className="focus-visible:ring-primary/30 flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-[8px] focus-visible:ring-2 focus-visible:outline-none"
                 style={{ background: 'transparent', border: 0 }}>
-                <span
-                  className="avatar-32 font-mono text-[12px] font-bold"
-                  style={{ background: 'var(--color-poppy)' }}>
-                  {userInitials(user.displayName)}
-                </span>
+                {user.avatarUrl ?
+                  <div className="avatar-32 overflow-hidden">
+                    <Image
+                      src={user.avatarUrl}
+                      alt={user.displayName}
+                      width={32}
+                      height={32}
+                      className="h-full w-full object-cover"
+                      unoptimized
+                    />
+                  </div>
+                : <span
+                    className="avatar-32 font-mono text-[12px] font-bold"
+                    style={{ background: 'var(--color-poppy)' }}>
+                    {userInitials(user.displayName)}
+                  </span>
+                }
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
