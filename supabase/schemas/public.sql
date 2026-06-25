@@ -818,7 +818,8 @@ CREATE TABLE IF NOT EXISTS "public"."documents" (
     "created_by" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "deleted_at" timestamp with time zone
+    "deleted_at" timestamp with time zone,
+    CONSTRAINT "documents_content_max_size" CHECK (("octet_length"("content") <= 10485760))
 );
 
 
