@@ -624,9 +624,9 @@ BEGIN
 
   UPDATE public.profiles
   SET
-    deleted_at = now(),
-    metadata   = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('pending_deletion', true),
-    updated_at = now()
+    deleted_at       = now(),
+    pending_deletion = true,
+    updated_at       = now()
   WHERE id = v_uid;
 
   UPDATE public.accounts
@@ -694,6 +694,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "bio" "text",
     "website_url" "text",
     "company" "text",
+    "pending_deletion" boolean DEFAULT false NOT NULL,
     CONSTRAINT "profiles_bio_check" CHECK (("char_length"("bio") <= 500)),
     CONSTRAINT "profiles_company_check" CHECK (("char_length"("company") <= 100)),
     CONSTRAINT "profiles_website_url_check" CHECK (("char_length"("website_url") <= 255))

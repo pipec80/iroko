@@ -890,6 +890,7 @@ export type Database = {
           locale: string | null
           metadata: Json | null
           onboarding_completed: boolean | null
+          pending_deletion: boolean
           phone_number: string | null
           timezone: string | null
           updated_at: string | null
@@ -909,6 +910,7 @@ export type Database = {
           locale?: string | null
           metadata?: Json | null
           onboarding_completed?: boolean | null
+          pending_deletion?: boolean
           phone_number?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -928,6 +930,7 @@ export type Database = {
           locale?: string | null
           metadata?: Json | null
           onboarding_completed?: boolean | null
+          pending_deletion?: boolean
           phone_number?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -1238,6 +1241,7 @@ export type Database = {
           locale: string | null
           metadata: Json | null
           onboarding_completed: boolean | null
+          pending_deletion: boolean
           phone_number: string | null
           timezone: string | null
           updated_at: string | null
