@@ -301,6 +301,7 @@
     "remove_description": "Remover {name} da equipe? Esta ação não pode ser desfeita.",
     "confirm_remove": "Remover",
     "removing": "Removendo...",
+    "member_actions": "Ações para {name}",
     "members_page_title": "Membros da organização",
     "members_subtitle": "{active} ativos · {pending} pendentes",
     "search_members": "Buscar membros…",

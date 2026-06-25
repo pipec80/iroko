@@ -36,7 +36,7 @@ export default async function LocaleLayout({
       <LocaleHtmlLang locale={locale} />
       <a
         href="#main-content"
-        className="focus:bg-primary focus:text-on-primary sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:shadow-lg">
+        className="focus:bg-primary sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-lg focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-white focus:shadow-lg">
         {t('skipToContent')}
       </a>
       <Suspense fallback={null}>

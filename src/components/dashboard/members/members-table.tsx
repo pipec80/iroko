@@ -61,12 +61,16 @@ function RowActions({ member, displayName }: RowActionsProps) {
   );
 
   if (!member.user_id || member.role === 'owner') {
-    return <span className="btn-icon" style={{ width: 28, height: 28 }} />;
+    return <span className="btn-icon" style={{ width: 44, height: 44 }} />;
   }
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="btn-icon" style={{ width: 28, height: 28 }}>
+      <button
+        onClick={() => setOpen(true)}
+        className="btn-icon"
+        aria-label={t('member_actions', { name: displayName })}
+        style={{ width: 44, height: 44 }}>
         <MoreHorizontal
           style={{ width: 15, height: 15, color: 'var(--text-tertiary)', strokeWidth: 1.5 }}
         />

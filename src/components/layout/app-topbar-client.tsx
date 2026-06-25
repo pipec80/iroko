@@ -184,7 +184,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
               ref={searchInputRef}
               type="text"
               placeholder="Buscar..."
-              className="focus-visible:outline-none"
+              className="focus-visible:ring-primary/30 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:outline-none"
               style={{
                 height: 32,
                 width: 240,
@@ -193,7 +193,6 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                 border: '1px solid var(--border)',
                 borderRadius: 6,
                 fontSize: 13,
-                outline: 'none',
                 color: 'var(--text-primary)',
               }}
             />
@@ -218,9 +217,14 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
-                className="avatar-32 cursor-pointer font-mono text-[12px] font-bold"
-                style={{ background: 'var(--color-poppy)', border: 0 }}>
-                {userInitials(user.displayName)}
+                aria-label={user.displayName}
+                className="focus-visible:ring-primary/30 flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-[8px] focus-visible:ring-2 focus-visible:outline-none"
+                style={{ background: 'transparent', border: 0 }}>
+                <span
+                  className="avatar-32 font-mono text-[12px] font-bold"
+                  style={{ background: 'var(--color-poppy)' }}>
+                  {userInitials(user.displayName)}
+                </span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -287,11 +291,13 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                   ).map(({ value, Icon, label }) => (
                     <button
                       key={value}
-                      title={label}
+                      aria-label={label}
+                      aria-pressed={theme === value}
                       onClick={() => setTheme(value)}
+                      className="focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:outline-none"
                       style={{
-                        width: 26,
-                        height: 26,
+                        width: 32,
+                        height: 32,
                         borderRadius: 5,
                         border: '1px solid',
                         borderColor: theme === value ? 'var(--border)' : 'transparent',

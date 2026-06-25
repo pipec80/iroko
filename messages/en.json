@@ -301,6 +301,7 @@
     "remove_description": "Remove {name} from the team? This action cannot be undone.",
     "confirm_remove": "Remove",
     "removing": "Removing...",
+    "member_actions": "Actions for {name}",
     "members_page_title": "Organization members",
     "members_subtitle": "{active} active · {pending} pending",
     "search_members": "Search members…",

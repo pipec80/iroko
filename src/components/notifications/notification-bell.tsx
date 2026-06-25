@@ -98,8 +98,8 @@ export function NotificationBell({ userId }: Props) {
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t('title')}
-          className="relative flex items-center justify-center rounded-[6px] transition-colors hover:bg-[var(--surface-2)]"
-          style={{ width: 32, height: 32, background: 'transparent', border: 0 }}>
+          className="focus-visible:ring-primary/30 relative flex items-center justify-center rounded-[6px] transition-colors hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:outline-none"
+          style={{ width: 40, height: 40, background: 'transparent', border: 0 }}>
           <Bell
             style={{ width: 17, height: 17, color: 'var(--text-secondary)', strokeWidth: 1.5 }}
           />
