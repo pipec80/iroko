@@ -288,6 +288,53 @@ ALTER FUNCTION "private"."enforce_single_owner_per_account"() OWNER TO "postgres
 REVOKE ALL ON FUNCTION "private"."enforce_single_owner_per_account"() FROM PUBLIC;
 
 
+CREATE OR REPLACE FUNCTION "private"."track_membership_changes"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_action text;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    v_action := 'joined';
+  ELSIF TG_OP = 'DELETE' THEN
+    v_action := 'removed';
+  ELSIF TG_OP = 'UPDATE' THEN
+    IF OLD.role = NEW.role THEN
+      RETURN NEW;
+    END IF;
+    v_action := CASE
+      WHEN OLD.role = 'viewer'  AND NEW.role IN ('member','admin','owner') THEN 'role_upgraded'
+      WHEN OLD.role = 'member'  AND NEW.role IN ('admin','owner')          THEN 'role_upgraded'
+      WHEN OLD.role = 'admin'   AND NEW.role = 'owner'                    THEN 'role_upgraded'
+      ELSE 'role_downgraded'
+    END;
+  END IF;
+
+  INSERT INTO public.memberships_history (
+    account_id, user_id, role, action, actor_id, metadata
+  ) VALUES (
+    COALESCE(NEW.account_id, OLD.account_id),
+    COALESCE(NEW.user_id,    OLD.user_id),
+    COALESCE(NEW.role,       OLD.role),
+    v_action,
+    auth.uid(),
+    jsonb_build_object(
+      'old_role', OLD.role,
+      'new_role', NEW.role
+    )
+  );
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+
+ALTER FUNCTION "private"."track_membership_changes"() OWNER TO "postgres";
+
+REVOKE ALL ON FUNCTION "private"."track_membership_changes"() FROM PUBLIC;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";

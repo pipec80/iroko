@@ -843,6 +843,39 @@ export type Database = {
           },
         ]
       }
+      memberships_history: {
+        Row: {
+          account_id: string
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: number
+          metadata: Json | null
+          role: Database["public"]["Enums"]["membership_role"]
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          metadata?: Json | null
+          role: Database["public"]["Enums"]["membership_role"]
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          metadata?: Json | null
+          role?: Database["public"]["Enums"]["membership_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null

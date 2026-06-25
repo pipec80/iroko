@@ -1359,6 +1359,52 @@ GRANT ALL ON TABLE "public"."projects" TO "service_role";
 
 
 
+-- memberships_history: append-only audit trail (SOC2 CC6.2, CC6.3)
+CREATE TABLE IF NOT EXISTS "public"."memberships_history" (
+  "id"          bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  "account_id"  uuid        NOT NULL,
+  "user_id"     uuid        NOT NULL,
+  "role"        "public"."membership_role" NOT NULL,
+  "action"      text        NOT NULL,
+  "actor_id"    uuid,
+  "metadata"    jsonb       DEFAULT '{}',
+  "created_at"  timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT "memberships_history_action_check"
+    CHECK ("action" IN ('joined', 'left', 'removed', 'role_upgraded', 'role_downgraded', 'invited'))
+);
+
+ALTER TABLE "public"."memberships_history" OWNER TO "postgres";
+
+CREATE INDEX "idx_memberships_history_account"
+  ON "public"."memberships_history" ("account_id", "created_at" DESC);
+
+CREATE INDEX "idx_memberships_history_user"
+  ON "public"."memberships_history" ("user_id", "created_at" DESC);
+
+CREATE INDEX "idx_memberships_history_created_brin"
+  ON "public"."memberships_history" USING BRIN ("created_at");
+
+CREATE OR REPLACE TRIGGER "memberships_history_immutable"
+  BEFORE DELETE OR UPDATE ON "public"."memberships_history"
+  FOR EACH ROW EXECUTE FUNCTION "private"."deny_mutation"();
+
+CREATE TRIGGER "trg_memberships_history"
+  AFTER INSERT OR UPDATE OF "role" OR DELETE
+  ON "public"."accounts_memberships"
+  FOR EACH ROW
+  EXECUTE FUNCTION "private"."track_membership_changes"();
+
+ALTER TABLE "public"."memberships_history" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "memberships_history_deny_all"
+  ON "public"."memberships_history" AS RESTRICTIVE
+  USING (false)
+  WITH CHECK (false);
+
+REVOKE SELECT, INSERT, UPDATE, DELETE ON "public"."memberships_history" FROM "anon", "authenticated";
+GRANT ALL ON TABLE "public"."memberships_history" TO "service_role";
+
+
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT UPDATE ON SEQUENCES TO "authenticated";
