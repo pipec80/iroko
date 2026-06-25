@@ -426,11 +426,11 @@ BEGIN
     RAISE EXCEPTION 'Maximum 20 emails per batch';
   END IF;
 
-  -- Insert invitations, skip duplicates
+  -- Insert invitations, skip if a pending one already exists (allows re-invite after expiry/revocation)
   FOREACH v_email IN ARRAY p_emails LOOP
     INSERT INTO public.invitations (account_id, email, role, invited_by)
     VALUES (p_account_id, lower(trim(v_email)), p_role, (SELECT auth.uid()))
-    ON CONFLICT (account_id, email) DO NOTHING;
+    ON CONFLICT (account_id, email) WHERE status = 'pending' DO NOTHING;
 
     IF FOUND THEN
       v_inserted := v_inserted + 1;
@@ -886,8 +886,7 @@ ALTER TABLE ONLY "public"."documents"
 
 
 
-ALTER TABLE ONLY "public"."invitations"
-    ADD CONSTRAINT "invitations_account_id_email_key" UNIQUE ("account_id", "email");
+-- invitations_account_id_email_key eliminado: reemplazado por idx_invitations_pending_unique (índice parcial)
 
 
 
@@ -949,6 +948,12 @@ CREATE INDEX "idx_invitations_invited_by" ON "public"."invitations" USING "btree
 
 
 CREATE INDEX "idx_invitations_token" ON "public"."invitations" USING "btree" ("token") WHERE ("status" = 'pending'::"public"."invitation_status");
+
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_invitations_pending_unique"
+  ON "public"."invitations" ("account_id", "email")
+  WHERE "status" = 'pending'::"public"."invitation_status";
 
 
 
