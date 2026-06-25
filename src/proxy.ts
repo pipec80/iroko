@@ -72,13 +72,6 @@ function applySecurityHeaders(response: { headers: Headers }, cspHeader: string)
   });
 
   response.headers.set('Content-Security-Policy', cspHeader);
-  // Report-only: collect Trusted Types violations before enforcing.
-  // Violations appear in Sentry via the existing csp-endpoint.
-  // Once clean for ≥1 week in prod, move to the main CSP.
-  response.headers.set(
-    'Content-Security-Policy-Report-Only',
-    "require-trusted-types-for 'script'; trusted-types nextjs; report-to csp-endpoint",
-  );
   response.headers.set('Cache-Control', 'private, no-store');
   response.headers.set('Report-To', reportToValue);
   response.headers.set('Reporting-Endpoints', `csp-endpoint="${SENTRY_REPORT_URI}"`);

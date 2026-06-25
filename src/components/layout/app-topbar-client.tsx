@@ -230,6 +230,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                       width={32}
                       height={32}
                       className="h-full w-full object-cover"
+                      priority
                       unoptimized
                     />
                   </div>
