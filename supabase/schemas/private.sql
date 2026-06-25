@@ -420,5 +420,20 @@ ALTER TABLE "private"."rate_limits" OWNER TO "postgres";
 CREATE INDEX "idx_rate_limits_ip_request_at" ON "private"."rate_limits" USING "btree" ("ip", "request_at" DESC);
 
 
+CREATE TABLE IF NOT EXISTS "private"."rate_limit_counters" (
+    "ip"           "inet"        NOT NULL,
+    "window_start" timestamptz   NOT NULL,
+    "count"        integer       NOT NULL DEFAULT 1,
+    CONSTRAINT "rate_limit_counters_pkey" PRIMARY KEY ("ip", "window_start")
+);
+
+
+ALTER TABLE "private"."rate_limit_counters" OWNER TO "postgres";
+
+
+CREATE INDEX IF NOT EXISTS "idx_rate_limit_counters_ip_window"
+  ON "private"."rate_limit_counters" ("ip", "window_start" DESC);
+
+
 
 

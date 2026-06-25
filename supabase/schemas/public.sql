@@ -125,34 +125,44 @@ CREATE OR REPLACE FUNCTION "public"."check_request"() RETURNS "void"
     SET "search_path" TO ''
     AS $$
 DECLARE
-  v_method text := current_setting('request.method', true);
-  v_ip_str text := split_part(
-    current_setting('request.headers', true)::json->>'x-forwarded-for',
-    ',', 1
-  );
-  v_ip     inet;
-  v_count  integer;
+  v_method  text := current_setting('request.method', true);
+  v_ip_str  text;
+  v_ip      inet;
+  v_window  timestamptz;
+  v_total   integer;
 BEGIN
   IF v_method IN ('GET', 'HEAD') OR v_method IS NULL THEN
     RETURN;
   END IF;
 
-  IF v_ip_str IS NULL OR v_ip_str = '' THEN
+  v_ip_str := trim(split_part(
+    COALESCE(current_setting('request.headers', true)::json->>'x-forwarded-for', ''),
+    ',', 1
+  ));
+
+  IF v_ip_str = '' THEN
     RETURN;
   END IF;
 
   BEGIN
-    v_ip := trim(v_ip_str)::inet;
+    v_ip := v_ip_str::inet;
   EXCEPTION WHEN OTHERS THEN
     RETURN;
   END;
 
-  SELECT count(*)::integer INTO v_count
-  FROM private.rate_limits
-  WHERE ip = v_ip
-    AND request_at > now() - INTERVAL '5 minutes';
+  v_window := date_trunc('minute', now());
 
-  IF v_count >= 100 THEN
+  INSERT INTO private.rate_limit_counters (ip, window_start, count)
+  VALUES (v_ip, v_window, 1)
+  ON CONFLICT (ip, window_start)
+  DO UPDATE SET count = private.rate_limit_counters.count + 1;
+
+  SELECT COALESCE(SUM(count), 0) INTO v_total
+  FROM private.rate_limit_counters
+  WHERE ip = v_ip
+    AND window_start >= date_trunc('minute', now()) - INTERVAL '4 minutes';
+
+  IF v_total > 100 THEN
     RAISE SQLSTATE 'PGRST' USING
       message = json_build_object(
         'code',    '429',
@@ -162,14 +172,6 @@ BEGIN
         'status',      429,
         'status_text', 'Too Many Requests')::text;
   END IF;
-
-  BEGIN
-    INSERT INTO private.rate_limits (ip) VALUES (v_ip);
-  EXCEPTION WHEN read_only_sql_transaction THEN
-    -- PostgREST ejecuta RPCs STABLE en transacción read-only incluso via POST.
-    -- El rate limiting no aplica a lecturas — saltar silenciosamente.
-    RETURN;
-  END;
 END;
 $$;
 
