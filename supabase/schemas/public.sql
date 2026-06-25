@@ -1394,6 +1394,32 @@ CREATE TRIGGER "trg_memberships_history"
   FOR EACH ROW
   EXECUTE FUNCTION "private"."track_membership_changes"();
 
+
+
+CREATE TRIGGER "trg_profiles_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."profiles"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_accounts_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."accounts"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_memberships_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."accounts_memberships"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_invitations_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."invitations"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_projects_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."projects"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_documents_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."documents"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
 ALTER TABLE "public"."memberships_history" ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "memberships_history_deny_all"

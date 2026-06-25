@@ -335,6 +335,74 @@ ALTER FUNCTION "private"."track_membership_changes"() OWNER TO "postgres";
 REVOKE ALL ON FUNCTION "private"."track_membership_changes"() FROM PUBLIC;
 
 
+CREATE OR REPLACE FUNCTION "private"."audit_log"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_action      audit.action_type;
+  v_account_id  uuid;
+  v_resource_id text;
+  v_row         jsonb;
+BEGIN
+  v_action := CASE TG_OP
+    WHEN 'INSERT' THEN 'create'
+    WHEN 'UPDATE' THEN 'update'
+    WHEN 'DELETE' THEN 'delete'
+  END::audit.action_type;
+
+  v_row := to_jsonb(COALESCE(NEW, OLD));
+
+  BEGIN
+    v_account_id := (v_row ->> 'account_id')::uuid;
+  EXCEPTION WHEN OTHERS THEN
+    v_account_id := NULL;
+  END;
+
+  IF v_account_id IS NULL AND TG_TABLE_NAME = 'profiles' THEN
+    v_account_id := (v_row ->> 'id')::uuid;
+  END IF;
+
+  v_resource_id := COALESCE(v_row ->> 'id', v_row ->> 'account_id', '');
+
+  INSERT INTO audit.logs (
+    actor_id,
+    action,
+    resource_type,
+    resource_id,
+    account_id,
+    old_data,
+    new_data,
+    ip_address,
+    user_agent
+  ) VALUES (
+    auth.uid(),
+    v_action,
+    TG_TABLE_NAME,
+    v_resource_id,
+    v_account_id,
+    CASE WHEN TG_OP IN ('UPDATE', 'DELETE') THEN to_jsonb(OLD) ELSE NULL END,
+    CASE WHEN TG_OP IN ('INSERT', 'UPDATE') THEN to_jsonb(NEW) ELSE NULL END,
+    NULLIF(
+      trim(split_part(
+        COALESCE(current_setting('request.headers', true)::json->>'x-forwarded-for', ''),
+        ',', 1
+      )),
+      ''
+    )::inet,
+    current_setting('request.headers', true)::json->>'user-agent'
+  );
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+
+ALTER FUNCTION "private"."audit_log"() OWNER TO "postgres";
+
+REVOKE ALL ON FUNCTION "private"."audit_log"() FROM PUBLIC;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
