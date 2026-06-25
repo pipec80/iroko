@@ -80,15 +80,19 @@ CREATE OR REPLACE FUNCTION "public"."accept_invitation"("p_token" "text") RETURN
     AS $$
 DECLARE
   v_invitation public.invitations%ROWTYPE;
-  v_user_id uuid := (SELECT auth.uid());
+  v_user_id    uuid := (SELECT auth.uid());
+  v_token_hash text;
 BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
+  -- Hashear el token recibido antes de buscar (nunca comparar plaintext)
+  v_token_hash := encode(extensions.digest(p_token, 'sha256'), 'hex');
+
   SELECT * INTO v_invitation
   FROM public.invitations
-  WHERE token = p_token
+  WHERE token_hash = v_token_hash
     AND status = 'pending'
     AND expires_at > now();
 
@@ -398,16 +402,16 @@ COMMENT ON FUNCTION "public"."get_my_accounts"() IS 'Returns accounts the curren
 
 
 
-CREATE OR REPLACE FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role" DEFAULT 'member'::"public"."membership_role") RETURNS integer
+CREATE OR REPLACE FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role" DEFAULT 'member'::"public"."membership_role") RETURNS TABLE("email" "text", "token" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 DECLARE
   v_caller_role public.membership_role;
-  v_inserted    integer := 0;
   v_email       text;
+  v_raw_token   text;
+  v_token_hash  text;
 BEGIN
-  -- Check caller role
   SELECT role INTO v_caller_role
   FROM public.accounts_memberships
   WHERE account_id = p_account_id AND user_id = (SELECT auth.uid());
@@ -416,28 +420,30 @@ BEGIN
     RAISE EXCEPTION 'Only owner or admin can invite members';
   END IF;
 
-  -- Cannot invite as owner
   IF p_role = 'owner' THEN
     RAISE EXCEPTION 'Cannot invite as owner';
   END IF;
 
-  -- Limit batch size to prevent abuse
   IF array_length(p_emails, 1) > 20 THEN
     RAISE EXCEPTION 'Maximum 20 emails per batch';
   END IF;
 
-  -- Insert invitations, skip if a pending one already exists (allows re-invite after expiry/revocation)
   FOREACH v_email IN ARRAY p_emails LOOP
-    INSERT INTO public.invitations (account_id, email, role, invited_by)
-    VALUES (p_account_id, lower(trim(v_email)), p_role, (SELECT auth.uid()))
+    -- Generar token aleatorio y almacenar solo el hash
+    v_raw_token  := encode(extensions.gen_random_bytes(32), 'hex');
+    v_token_hash := encode(extensions.digest(v_raw_token, 'sha256'), 'hex');
+
+    INSERT INTO public.invitations (account_id, email, role, invited_by, token_hash)
+    VALUES (p_account_id, lower(trim(v_email)), p_role, (SELECT auth.uid()), v_token_hash)
     ON CONFLICT (account_id, email) WHERE status = 'pending' DO NOTHING;
 
     IF FOUND THEN
-      v_inserted := v_inserted + 1;
+      -- Asignar a las columnas de salida de la TABLE y retornar fila
+      email := lower(trim(v_email));
+      token := v_raw_token;
+      RETURN NEXT;
     END IF;
   END LOOP;
-
-  RETURN v_inserted;
 END;
 $$;
 
@@ -445,7 +451,7 @@ $$;
 ALTER FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Creates invitations for multiple emails. Only owner/admin. Cannot invite as owner. ON CONFLICT DO NOTHING for already-invited emails. Returns count of new invitations.';
+COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Crea invitaciones y retorna (email, token) pares. El token en texto plano se retorna UNA SOLA VEZ para enviarse por email. Solo el hash se almacena en BD. BREAKING CHANGE: cambió de RETURNS integer a RETURNS TABLE.';
 
 
 
@@ -831,7 +837,7 @@ CREATE TABLE IF NOT EXISTS "public"."invitations" (
     "account_id" "uuid" NOT NULL,
     "email" "text" NOT NULL,
     "role" "public"."membership_role" DEFAULT 'member'::"public"."membership_role" NOT NULL,
-    "token" "text" DEFAULT "encode"("extensions"."gen_random_bytes"(32), 'hex'::"text") NOT NULL,
+    "token_hash" "text" NOT NULL,
     "status" "public"."invitation_status" DEFAULT 'pending'::"public"."invitation_status",
     "invited_by" "uuid",
     "expires_at" timestamp with time zone DEFAULT ("now"() + '7 days'::interval),
@@ -949,7 +955,9 @@ CREATE INDEX "idx_invitations_invited_by" ON "public"."invitations" USING "btree
 
 
 
-CREATE INDEX "idx_invitations_token" ON "public"."invitations" USING "btree" ("token") WHERE ("status" = 'pending'::"public"."invitation_status");
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_invitations_token_hash_pending"
+  ON "public"."invitations" ("token_hash")
+  WHERE ("status" = 'pending'::"public"."invitation_status");
 
 
 

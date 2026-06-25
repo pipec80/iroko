@@ -799,7 +799,7 @@ export type Database = {
           invited_by: string | null
           role: Database["public"]["Enums"]["membership_role"]
           status: Database["public"]["Enums"]["invitation_status"] | null
-          token: string
+          token_hash: string
           updated_at: string | null
         }
         Insert: {
@@ -811,7 +811,7 @@ export type Database = {
           invited_by?: string | null
           role?: Database["public"]["Enums"]["membership_role"]
           status?: Database["public"]["Enums"]["invitation_status"] | null
-          token?: string
+          token_hash: string
           updated_at?: string | null
         }
         Update: {
@@ -823,7 +823,7 @@ export type Database = {
           invited_by?: string | null
           role?: Database["public"]["Enums"]["membership_role"]
           status?: Database["public"]["Enums"]["invitation_status"] | null
-          token?: string
+          token_hash?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -1176,7 +1176,10 @@ export type Database = {
           p_emails: string[]
           p_role?: Database["public"]["Enums"]["membership_role"]
         }
-        Returns: number
+        Returns: {
+          email: string
+          token: string
+        }[]
       }
       is_flag_enabled: {
         Args: { p_account_id: string; p_flag_name: string }
