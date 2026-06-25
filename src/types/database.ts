@@ -505,6 +505,7 @@ export type Database = {
         Row: {
           active_count: number | null
           currency: string | null
+          interval: Database["billing"]["Enums"]["plan_interval"] | null
           mrr_cents: number | null
           plan_name: string | null
           slug: string | null
