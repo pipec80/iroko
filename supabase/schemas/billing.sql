@@ -403,7 +403,7 @@ ALTER TABLE ONLY "billing"."customers"
 
 
 ALTER TABLE ONLY "billing"."events"
-    ADD CONSTRAINT "events_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "billing"."customers"("id");
+    ADD CONSTRAINT "events_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "billing"."customers"("id") ON DELETE SET NULL;
 
 
 

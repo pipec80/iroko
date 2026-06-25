@@ -41,6 +41,9 @@ CREATE OR REPLACE FUNCTION "private"."deny_mutation"() RETURNS "trigger"
     SET "search_path" TO ''
     AS $$
 BEGIN
+  IF pg_trigger_depth() > 0 THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
   RAISE EXCEPTION 'Mutations not allowed on append-only table %', TG_TABLE_NAME;
 END;
 $$;
