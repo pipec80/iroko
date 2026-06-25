@@ -1040,7 +1040,7 @@ ALTER TABLE ONLY "public"."documents"
 
 
 ALTER TABLE ONLY "public"."documents"
-    ADD CONSTRAINT "documents_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id");
+    ADD CONSTRAINT "documents_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
 
 
@@ -1055,7 +1055,7 @@ ALTER TABLE ONLY "public"."invitations"
 
 
 ALTER TABLE ONLY "public"."invitations"
-    ADD CONSTRAINT "invitations_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "public"."profiles"("id");
+    ADD CONSTRAINT "invitations_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
 
 
@@ -1070,7 +1070,7 @@ ALTER TABLE ONLY "public"."projects"
 
 
 ALTER TABLE ONLY "public"."projects"
-    ADD CONSTRAINT "projects_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id");
+    ADD CONSTRAINT "projects_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
 
 
