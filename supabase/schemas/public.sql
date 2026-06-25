@@ -1007,6 +1007,14 @@ CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."profiles" 
 
 
 
+CREATE OR REPLACE TRIGGER "trg_profiles_validate_locale_timezone"
+  BEFORE INSERT OR UPDATE OF "locale", "timezone"
+  ON "public"."profiles"
+  FOR EACH ROW
+  EXECUTE FUNCTION "private"."validate_profile_locale_timezone"();
+
+
+
 CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."projects" FOR EACH ROW EXECUTE FUNCTION "private"."set_updated_at"();
 
 

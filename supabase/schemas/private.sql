@@ -215,6 +215,38 @@ $$;
 
 ALTER FUNCTION "private"."user_is_member"("p_account_id" "uuid", "p_user_id" "uuid") OWNER TO "postgres";
 
+
+CREATE OR REPLACE FUNCTION "private"."validate_profile_locale_timezone"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  -- Validar locale: formato BCP47 básico (es, en, es-CL, en-US, etc.)
+  IF NEW.locale IS NOT NULL
+     AND NEW.locale !~ '^[a-z]{2,3}(-[A-Z]{2})?$' THEN
+    RAISE EXCEPTION 'locale inválido: %. Formato esperado: es, en, es-CL, en-US', NEW.locale
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  -- Validar timezone: debe existir en la base de datos de zonas horarias de PostgreSQL
+  IF NEW.timezone IS NOT NULL
+     AND NOT EXISTS (
+       SELECT 1 FROM pg_timezone_names WHERE name = NEW.timezone
+     ) THEN
+    RAISE EXCEPTION 'timezone inválido: %. Usar nombres IANA (ej: America/Santiago, Europe/Madrid)', NEW.timezone
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "private"."validate_profile_locale_timezone"() OWNER TO "postgres";
+
+REVOKE ALL ON FUNCTION "private"."validate_profile_locale_timezone"() FROM PUBLIC;
+
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
