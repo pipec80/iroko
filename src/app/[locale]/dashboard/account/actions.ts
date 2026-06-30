@@ -86,7 +86,7 @@ export const updateProfileAction = withServerAction(async function updateProfile
     return { error: error.code ?? 'update_failed' };
   }
 
-  revalidatePath('/dashboard/account');
+  revalidatePath('/[locale]/dashboard/account', 'page');
 
   const currentLocale = await getLocale();
   if (parsed.data.locale !== currentLocale) {
@@ -220,7 +220,7 @@ export const uploadAvatarAction = withServerAction(async function uploadAvatarAc
     return { error: rpcError.code ?? 'update_avatar_failed' };
   }
 
-  revalidatePath('/dashboard/settings');
+  revalidatePath('/[locale]/dashboard/account', 'page');
   return { success: 'avatar_updated' };
 });
 
@@ -300,7 +300,7 @@ export const generateRecoveryCodesAction = withServerAction(
     }
 
     logger.info({ userId, action: 'recovery_codes_generated' }, 'Recovery codes generated');
-    revalidatePath('/dashboard/account');
+    revalidatePath('/[locale]/dashboard/account', 'page');
     return { success: 'recovery_codes_generated', codes: data ?? [] };
   },
 );
@@ -321,7 +321,7 @@ export const revokeSessionAction = withServerAction(async function revokeSession
     return { error: error.code ?? 'revoke_failed' };
   }
 
-  revalidatePath('/dashboard/settings');
+  revalidatePath('/[locale]/dashboard/account', 'page');
   return { success: 'session_revoked' };
 });
 
@@ -339,7 +339,7 @@ export const revokeAllOtherSessionsAction = withServerAction(
       return { error: error.code ?? 'sign_out_others_failed' };
     }
 
-    revalidatePath('/dashboard/settings');
+    revalidatePath('/[locale]/dashboard/account', 'page');
     return { success: 'other_sessions_revoked' };
   },
 );

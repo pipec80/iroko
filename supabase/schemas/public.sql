@@ -415,6 +415,7 @@ CREATE OR REPLACE FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_e
 DECLARE
   v_caller_role public.membership_role;
   v_email       text;
+  v_norm_email  text;
   v_raw_token   text;
   v_token_hash  text;
 BEGIN
@@ -435,20 +436,19 @@ BEGIN
   END IF;
 
   FOREACH v_email IN ARRAY p_emails LOOP
-    -- Generar token aleatorio y almacenar solo el hash
+    v_norm_email := lower(trim(v_email));
     v_raw_token  := encode(extensions.gen_random_bytes(32), 'hex');
     v_token_hash := encode(extensions.digest(v_raw_token, 'sha256'), 'hex');
 
-    INSERT INTO public.invitations (account_id, email, role, invited_by, token_hash)
-    VALUES (p_account_id, lower(trim(v_email)), p_role, (SELECT auth.uid()), v_token_hash)
-    ON CONFLICT (account_id, email) WHERE status = 'pending' DO NOTHING;
-
-    IF FOUND THEN
-      -- Asignar a las columnas de salida de la TABLE y retornar fila
-      email := lower(trim(v_email));
+    BEGIN
+      INSERT INTO public.invitations (account_id, email, role, invited_by, token_hash)
+      VALUES (p_account_id, v_norm_email, p_role, (SELECT auth.uid()), v_token_hash);
+      email := v_norm_email;
       token := v_raw_token;
       RETURN NEXT;
-    END IF;
+    EXCEPTION WHEN unique_violation THEN
+      NULL;
+    END;
   END LOOP;
 END;
 $$;
@@ -457,7 +457,7 @@ $$;
 ALTER FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Crea invitaciones y retorna (email, token) pares. El token en texto plano se retorna UNA SOLA VEZ para enviarse por email. Solo el hash se almacena en BD. BREAKING CHANGE: cambió de RETURNS integer a RETURNS TABLE.';
+COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Crea invitaciones y retorna (email, token) pares. El token en texto plano se retorna UNA SOLA VEZ para enviarse por email. Solo el hash se almacena en BD.';
 
 
 
