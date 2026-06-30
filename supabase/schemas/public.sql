@@ -152,10 +152,14 @@ BEGIN
 
   v_window := date_trunc('minute', now());
 
-  INSERT INTO private.rate_limit_counters (ip, window_start, count)
-  VALUES (v_ip, v_window, 1)
-  ON CONFLICT (ip, window_start)
-  DO UPDATE SET count = private.rate_limit_counters.count + 1;
+  BEGIN
+    INSERT INTO private.rate_limit_counters (ip, window_start, count)
+    VALUES (v_ip, v_window, 1)
+    ON CONFLICT (ip, window_start)
+    DO UPDATE SET count = private.rate_limit_counters.count + 1;
+  EXCEPTION WHEN read_only_sql_transaction THEN
+    RETURN;
+  END;
 
   SELECT COALESCE(SUM(count), 0) INTO v_total
   FROM private.rate_limit_counters
