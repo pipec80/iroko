@@ -139,7 +139,7 @@ describe('updateProfileAction', () => {
     const fd = makeFormData(validProfileData);
     const result = await updateProfileAction(PREV, fd);
     expect(result.success).toBe('profile_updated');
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/account');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/account', 'page');
   });
 });
 
@@ -256,7 +256,7 @@ describe('generateRecoveryCodesAction', () => {
     const result = await generateRecoveryCodesAction(PREV, new FormData());
     expect(result.success).toBe('recovery_codes_generated');
     expect(result.codes).toEqual(['code-1', 'code-2']);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/account');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/account', 'page');
   });
 });
 
@@ -288,7 +288,7 @@ describe('revokeSessionAction', () => {
     mocks.rpc.mockResolvedValue({ error: null });
     const result = await revokeSessionAction('550e8400-e29b-41d4-a716-446655440000');
     expect(result.success).toBe('session_revoked');
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/account', 'page');
   });
 });
 
@@ -315,7 +315,7 @@ describe('revokeAllOtherSessionsAction', () => {
     mocks.signOut.mockResolvedValue({ error: null });
     const result = await revokeAllOtherSessionsAction();
     expect(result.success).toBe('other_sessions_revoked');
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/account', 'page');
   });
 });
 
@@ -445,7 +445,7 @@ describe('uploadAvatarAction', () => {
     expect(mocks.rpc).toHaveBeenCalledWith('update_my_profile', {
       p_avatar_url: 'avatars/user-uuid-123/avatar.png',
     });
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/dashboard/settings');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/account', 'page');
   });
 });
 
