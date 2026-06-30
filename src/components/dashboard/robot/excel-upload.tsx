@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { uploadRobotConfigAction } from '@/lib/robot-config';
 import { appConfig } from '@/config/app.config';
+import { cn } from '@/lib/utils';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -152,9 +153,10 @@ export function ExcelUploadDropzone() {
         <div
           role="button"
           tabIndex={0}
-          className={`flex cursor-pointer items-center gap-4 rounded-lg border-2 border-dashed px-5 py-4 transition-colors ${
-            isDragging ? 'border-primary bg-primary/5' : 'hover:bg-muted/40'
-          }`}
+          className={cn(
+            'flex cursor-pointer items-center gap-4 rounded-lg border-2 border-dashed px-5 py-4 transition-colors',
+            isDragging ? 'border-primary bg-primary/5' : 'hover:bg-muted/40',
+          )}
           onClick={() => fileInputRef.current?.click()}
           onKeyDown={(e) => {
             if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
@@ -163,9 +165,15 @@ export function ExcelUploadDropzone() {
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}>
           <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors ${isDragging ? 'bg-primary/10' : 'bg-muted'}`}>
+            className={cn(
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors',
+              isDragging ? 'bg-primary/10' : 'bg-muted',
+            )}>
             <UploadCloud
-              className={`h-4 w-4 transition-colors ${isDragging ? 'text-primary' : 'text-muted-foreground'}`}
+              className={cn(
+                'h-4 w-4 transition-colors',
+                isDragging ? 'text-primary' : 'text-muted-foreground',
+              )}
             />
           </div>
           <div className="min-w-0 flex-1">

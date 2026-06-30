@@ -301,6 +301,7 @@
     "remove_description": "Supprimer {name} de l'équipe ? Cette action est irréversible.",
     "confirm_remove": "Supprimer",
     "removing": "Suppression...",
+    "member_actions": "Actions pour {name}",
     "members_page_title": "Membres de l'organisation",
     "members_subtitle": "{active} actifs · {pending} en attente",
     "search_members": "Rechercher des membres…",

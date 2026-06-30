@@ -8,7 +8,6 @@ import { env } from '@/env';
 import { sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { inviteSchema, removeMemberSchema } from '@/lib/validation/team';
 
@@ -89,10 +88,8 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   const accountId = await getAccountId();
   if (!accountId) return { error: 'no_account' };
 
-  const invitedAt = new Date().toISOString();
-
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc('invite_members', {
+  const { data: invitations, error } = await supabase.rpc('invite_members', {
     p_account_id: accountId,
     p_emails: parsed.data.emails,
     p_role: parsed.data.role,
@@ -106,41 +103,26 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     return { error: error.message ?? 'invite_failed' };
   }
 
-  logger.info(
-    { action: 'team.invite.success', count: data, role: parsed.data.role },
-    'Members invited',
-  );
+  const count = (invitations ?? []).length;
 
-  revalidatePath('/[locale]/dashboard/team');
+  logger.info({ action: 'team.invite.success', count, role: parsed.data.role }, 'Members invited');
 
-  // Enviar emails de invitación — después de responder, solo a las recién creadas.
-  if ((data as number) > 0) {
+  revalidatePath('/[locale]/dashboard/team', 'page');
+
+  // Enviar emails con los tokens retornados directamente por el RPC (plaintext, una sola vez).
+  if (count > 0) {
     const {
       data: { user: caller },
     } = await supabase.auth.getUser();
     const inviterEmail = caller?.email ?? 'un miembro del equipo';
 
     after(async () => {
-      const adminClient = createAdminClient();
-      const { data: invitations, error: fetchError } = await adminClient
-        .from('invitations')
-        .select('email, token, role')
-        .eq('account_id', accountId)
-        .in('email', parsed.data.emails)
-        .eq('status', 'pending')
-        .gte('created_at', invitedAt);
-
-      if (fetchError) {
-        logger.warn({ action: 'team.invite.fetch_tokens' }, fetchError.message);
-        return;
-      }
-
       await Promise.allSettled(
         (invitations ?? []).map((inv) => {
           const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
           return sendInvitationEmail(inv.email, {
             inviterEmail,
-            teamRole: inv.role,
+            teamRole: parsed.data.role,
             inviteUrl,
           }).catch((err: unknown) => {
             logger.error(
@@ -153,7 +135,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     });
   }
 
-  return { success: true, count: data as number };
+  return { success: true, count };
 });
 
 /**
@@ -191,6 +173,6 @@ export const removeMember = withServerAction(async function removeMember(
     'Member removed',
   );
 
-  revalidatePath('/[locale]/dashboard/team');
+  revalidatePath('/[locale]/dashboard/team', 'page');
   return { success: true };
 });

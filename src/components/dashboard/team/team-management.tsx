@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
@@ -128,7 +129,10 @@ export function TeamManagement() {
                 <TableCell className="px-6 py-4">
                   <div className="flex items-center gap-2">
                     <span
-                      className={`h-2 w-2 rounded-full ${member.status === 'Active' ? 'bg-secondary' : 'bg-tertiary animate-pulse'}`}
+                      className={cn(
+                        'h-2 w-2 rounded-full',
+                        member.status === 'Active' ? 'bg-secondary' : 'bg-tertiary animate-pulse',
+                      )}
                     />
                     <span className="text-on-surface-variant text-xs font-bold">
                       {member.status}

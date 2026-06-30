@@ -4,6 +4,7 @@ import { Bot, CreditCard, FolderOpen, Users } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { listByAccount } from '@/lib/projects';
+import { logger } from '@/lib/logger';
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
 
@@ -39,7 +40,16 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const workspaceName = account?.name ?? '';
   const accountId = account?.account_id ?? null;
 
-  const projects = accountId ? await listByAccount(accountId).catch(() => []) : [];
+  const projects =
+    accountId ?
+      await listByAccount(accountId).catch((err: unknown) => {
+        logger.error(
+          { action: 'list_projects', accountId },
+          err instanceof Error ? err.message : 'Failed to fetch projects',
+        );
+        return [];
+      })
+    : [];
 
   type QuickLink = {
     Icon: React.ElementType;

@@ -5,6 +5,7 @@ import { Folder, FileText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { getBySlug } from '@/lib/projects';
 import { listByProject } from '@/lib/project-documents';
+import { logger } from '@/lib/logger';
 import { getUserTimezone } from '@/lib/user-timezone';
 import { Link } from '@/i18n/routing';
 import { NewDocumentDialog } from '@/components/dashboard/projects/new-document-dialog';
@@ -32,12 +33,24 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
   if (!accountId) notFound();
 
   const [project, timezone] = await Promise.all([
-    getBySlug(accountId, slug).catch(() => null),
+    getBySlug(accountId, slug).catch((err: unknown) => {
+      logger.error(
+        { action: 'get_project', accountId },
+        err instanceof Error ? err.message : 'Failed to fetch project',
+      );
+      return null;
+    }),
     getUserTimezone(supabase),
   ]);
   if (!project) notFound();
 
-  const documents = await listByProject(project.id).catch(() => []);
+  const documents = await listByProject(project.id).catch((err: unknown) => {
+    logger.error(
+      { action: 'list_documents', accountId },
+      err instanceof Error ? err.message : 'Failed to fetch documents',
+    );
+    return [];
+  });
 
   return (
     <div className="animate-in fade-in space-y-6 duration-700">

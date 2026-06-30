@@ -5,7 +5,7 @@ import { PageTransition } from './page-transition';
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-background flex min-h-screen">
+    <div className="bg-background flex h-screen overflow-hidden">
       <div className="hidden lg:block">
         <AppSidebar />
       </div>

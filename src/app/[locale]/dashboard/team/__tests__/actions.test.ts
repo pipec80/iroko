@@ -167,46 +167,30 @@ describe('inviteMembers', () => {
 
   it('should return success with count and revalidate on happy path', async () => {
     mockAuthenticatedWithAccount();
-    mocks.rpc.mockResolvedValue({ data: 2, error: null });
-    mockGetUser.mockResolvedValue({ data: { user: null } });
-    mockAdminFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          in: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              gte: vi.fn().mockResolvedValue({ data: [], error: null }),
-            }),
-          }),
-        }),
-      }),
+    mocks.rpc.mockResolvedValue({
+      data: [
+        { email: 'alice@example.com', token: 'tok-a' },
+        { email: 'bob@example.com', token: 'tok-b' },
+      ],
+      error: null,
     });
+    mockGetUser.mockResolvedValue({ data: { user: null } });
     const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
     const result = await inviteMembers(fd);
     expect(result.success).toBe(true);
     expect(result.count).toBe(2);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team', 'page');
   });
 
   it('should send invitation emails after successful RPC', async () => {
-    // Arrange
+    // Arrange — invite_members retorna tokens directamente (ya no consulta la DB)
     const fakeInvitations = [
-      { email: 'alice@example.com', token: 'tok-a', role: 'member' },
-      { email: 'bob@example.com', token: 'tok-b', role: 'member' },
+      { email: 'alice@example.com', token: 'tok-a' },
+      { email: 'bob@example.com', token: 'tok-b' },
     ];
     mockAuthenticatedWithAccount();
-    mocks.rpc.mockResolvedValue({ data: 2, error: null });
+    mocks.rpc.mockResolvedValue({ data: fakeInvitations, error: null });
     mockGetUser.mockResolvedValue({ data: { user: { email: 'owner@example.com' } } });
-    mockAdminFrom.mockReturnValue({
-      select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          in: vi.fn().mockReturnValue({
-            eq: vi.fn().mockReturnValue({
-              gte: vi.fn().mockResolvedValue({ data: fakeInvitations, error: null }),
-            }),
-          }),
-        }),
-      }),
-    });
     const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
 
     // Act
@@ -227,7 +211,7 @@ describe('inviteMembers', () => {
   it('should not send emails when RPC returns 0 invitations created', async () => {
     // Arrange
     mockAuthenticatedWithAccount();
-    mocks.rpc.mockResolvedValue({ data: 0, error: null });
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
     const fd = makeFormData({ emails: 'alice@example.com', role: 'member' });
 
     // Act
@@ -270,6 +254,6 @@ describe('removeMember', () => {
     const fd = makeFormData({ userId: '550e8400-e29b-41d4-a716-446655440000' });
     const result = await removeMember(fd);
     expect(result.success).toBe(true);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team', 'page');
   });
 });

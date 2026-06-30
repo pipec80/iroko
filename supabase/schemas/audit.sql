@@ -110,6 +110,11 @@ CREATE INDEX "idx_audit_created_brin" ON "audit"."logs" USING "brin" ("created_a
 
 
 
+CREATE INDEX IF NOT EXISTS "idx_audit_action"
+  ON "audit"."logs" ("action", "created_at" DESC);
+
+
+
 CREATE OR REPLACE TRIGGER "audit_logs_immutable" BEFORE DELETE OR UPDATE ON "audit"."logs" FOR EACH ROW EXECUTE FUNCTION "private"."deny_mutation"();
 
 
@@ -122,6 +127,9 @@ ALTER TABLE "audit"."logs" ENABLE ROW LEVEL SECURITY;
 
 
 GRANT USAGE ON SCHEMA "audit" TO "service_role";
+
+GRANT SELECT, INSERT ON "audit"."logs" TO "service_role";
+GRANT USAGE ON SEQUENCE "audit"."logs_id_seq" TO "service_role";
 
 
 

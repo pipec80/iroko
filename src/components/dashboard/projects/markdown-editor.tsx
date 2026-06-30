@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChevronLeft, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
@@ -42,33 +42,27 @@ export function MarkdownEditor({
     }
   }, []);
 
-  const save = useCallback(
-    async (value: string) => {
-      if (value === lastSavedRef.current) return;
-      setStatus('saving');
-      const result = await saveAction(docId, value);
-      if (result.success) {
-        lastSavedRef.current = value;
-        setStatus('saved');
-        setTimeout(() => setStatus('idle'), 2000);
-      } else {
-        setStatus('error');
-      }
-    },
-    [docId, saveAction],
-  );
+  async function save(value: string) {
+    if (value === lastSavedRef.current) return;
+    setStatus('saving');
+    const result = await saveAction(docId, value);
+    if (result.success) {
+      lastSavedRef.current = value;
+      setStatus('saved');
+      setTimeout(() => setStatus('idle'), 2000);
+    } else {
+      setStatus('error');
+    }
+  }
 
-  const handleChange = useCallback(
-    (value: string) => {
-      setContent(value);
-      setStatus('idle');
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        void save(value);
-      }, AUTOSAVE_DELAY);
-    },
-    [save],
-  );
+  function handleChange(value: string) {
+    setContent(value);
+    setStatus('idle');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      void save(value);
+    }, AUTOSAVE_DELAY);
+  }
 
   // Manual save with Ctrl+S / Cmd+S
   useEffect(() => {

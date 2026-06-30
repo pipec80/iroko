@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Notification } from '@/hooks/use-notifications';
 import { useNotifications } from '@/hooks/use-notifications';
+import { logClient } from '@/lib/logger-client';
 
 const TYPE_ICON: Record<
   Notification['type'],
@@ -83,7 +84,11 @@ export function NotificationBell({ userId }: Props) {
       try {
         await markAllRead();
       } catch (err) {
-        console.error('[NotificationBell] mark_all_read failed:', err);
+        logClient.error(
+          { action: 'mark_all_read', component: 'NotificationBell' },
+          'mark_all_read failed',
+          err,
+        );
       }
     }
   };
@@ -93,8 +98,8 @@ export function NotificationBell({ userId }: Props) {
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t('title')}
-          className="relative flex items-center justify-center rounded-[6px] transition-colors hover:bg-[var(--surface-2)]"
-          style={{ width: 32, height: 32, background: 'transparent', border: 0 }}>
+          className="focus-visible:ring-primary/30 relative flex items-center justify-center rounded-[6px] transition-colors hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:outline-none"
+          style={{ width: 40, height: 40, background: 'transparent', border: 0 }}>
           <Bell
             style={{ width: 17, height: 17, color: 'var(--text-secondary)', strokeWidth: 1.5 }}
           />
@@ -129,7 +134,11 @@ export function NotificationBell({ userId }: Props) {
             <button
               onClick={() => {
                 markAllRead().catch((err: unknown) => {
-                  console.error('[NotificationBell] mark_all_read failed:', err);
+                  logClient.error(
+                    { action: 'mark_all_read', component: 'NotificationBell' },
+                    'mark_all_read failed',
+                    err,
+                  );
                 });
               }}
               className="text-[11px] transition-opacity hover:opacity-70"

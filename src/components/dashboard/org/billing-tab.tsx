@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { useTranslations } from 'next-intl';
+
+import { cn } from '@/lib/utils';
 import {
   Check,
   CheckCircle,
@@ -265,7 +267,10 @@ export function BillingTab() {
                 ].map((item, idx) => (
                   <tr
                     key={idx}
-                    className={`border-border/50 hover:bg-muted/30 border-b transition-colors ${idx % 2 !== 0 ? 'bg-muted/20' : ''}`}>
+                    className={cn(
+                      'border-border/50 hover:bg-muted/30 border-b transition-colors',
+                      idx % 2 !== 0 && 'bg-muted/20',
+                    )}>
                     <td className="text-muted-foreground px-2 py-3 font-mono text-[11px]">
                       {item.date}
                     </td>
