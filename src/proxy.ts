@@ -1,6 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { env } from '@/env';
 import { routing } from './i18n/routing';
 import { updateSession } from './lib/supabase/middleware';
 
@@ -11,6 +12,7 @@ const SENTRY_REPORT_URI = `${SENTRY_INGEST_ORIGIN}/api/4511537462771713/security
 
 function buildCspHeader(isDev: boolean): string {
   const localOrigin = isDev ? 'http://127.0.0.1:54321' : '';
+  const localWsOrigin = isDev ? 'ws://127.0.0.1:54321' : '';
 
   const directives: string[] = [
     "default-src 'self'",
@@ -43,6 +45,7 @@ function buildCspHeader(isDev: boolean): string {
       'https://va.vercel-scripts.com',
       SENTRY_INGEST_ORIGIN,
       localOrigin,
+      localWsOrigin,
     ]
       .filter(Boolean)
       .join(' '),
@@ -85,7 +88,7 @@ function applySecurityHeaders(response: { headers: Headers }, cspHeader: string)
 }
 
 export async function proxy(request: NextRequest) {
-  const isDev = process.env.NODE_ENV === 'development';
+  const isDev = env.NODE_ENV === 'development';
   const cspHeader = buildCspHeader(isDev);
 
   const supabaseResponse = await updateSession(request);

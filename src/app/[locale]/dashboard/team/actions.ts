@@ -1,7 +1,11 @@
 'use server';
 
+import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
+import { appConfig } from '@/config/app.config';
+import { env } from '@/env';
+import { sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
@@ -85,7 +89,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   if (!accountId) return { error: 'no_account' };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc('invite_members', {
+  const { data: invitations, error } = await supabase.rpc('invite_members', {
     p_account_id: accountId,
     p_emails: parsed.data.emails,
     p_role: parsed.data.role,
@@ -99,13 +103,39 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     return { error: error.message ?? 'invite_failed' };
   }
 
-  logger.info(
-    { action: 'team.invite.success', count: data, role: parsed.data.role },
-    'Members invited',
-  );
+  const count = (invitations ?? []).length;
 
-  revalidatePath('/[locale]/dashboard/team');
-  return { success: true, count: data as number };
+  logger.info({ action: 'team.invite.success', count, role: parsed.data.role }, 'Members invited');
+
+  revalidatePath('/[locale]/dashboard/team', 'page');
+
+  // Enviar emails con los tokens retornados directamente por el RPC (plaintext, una sola vez).
+  if (count > 0) {
+    const {
+      data: { user: caller },
+    } = await supabase.auth.getUser();
+    const inviterEmail = caller?.email ?? 'un miembro del equipo';
+
+    after(async () => {
+      await Promise.allSettled(
+        (invitations ?? []).map((inv) => {
+          const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
+          return sendInvitationEmail(inv.email, {
+            inviterEmail,
+            teamRole: parsed.data.role,
+            inviteUrl,
+          }).catch((err: unknown) => {
+            logger.error(
+              { action: 'invitation_email', email: inv.email },
+              err instanceof Error ? err.message : 'Unknown error',
+            );
+          });
+        }),
+      );
+    });
+  }
+
+  return { success: true, count };
 });
 
 /**
@@ -143,6 +173,6 @@ export const removeMember = withServerAction(async function removeMember(
     'Member removed',
   );
 
-  revalidatePath('/[locale]/dashboard/team');
+  revalidatePath('/[locale]/dashboard/team', 'page');
   return { success: true };
 });

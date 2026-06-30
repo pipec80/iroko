@@ -394,7 +394,7 @@ export type Database = {
           id: string
           quantity: number | null
           subscription_id: string
-          type: string
+          type: Database["billing"]["Enums"]["subscription_item_type"]
           unit_price: number
           updated_at: string | null
         }
@@ -405,7 +405,7 @@ export type Database = {
           id?: string
           quantity?: number | null
           subscription_id: string
-          type?: string
+          type?: Database["billing"]["Enums"]["subscription_item_type"]
           unit_price?: number
           updated_at?: string | null
         }
@@ -416,7 +416,7 @@ export type Database = {
           id?: string
           quantity?: number | null
           subscription_id?: string
-          type?: string
+          type?: Database["billing"]["Enums"]["subscription_item_type"]
           unit_price?: number
           updated_at?: string | null
         }
@@ -505,6 +505,7 @@ export type Database = {
         Row: {
           active_count: number | null
           currency: string | null
+          interval: Database["billing"]["Enums"]["plan_interval"] | null
           mrr_cents: number | null
           plan_name: string | null
           slug: string | null
@@ -519,6 +520,7 @@ export type Database = {
       invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible"
       payment_method_type: "card" | "bank_transfer" | "wallet" | "other"
       plan_interval: "month" | "year" | "one_time"
+      subscription_item_type: "flat" | "per_seat" | "metered" | "tiered"
       subscription_status:
         | "trialing"
         | "active"
@@ -718,6 +720,75 @@ export type Database = {
           },
         ]
       }
+      feature_flag_overrides: {
+        Row: {
+          account_id: string
+          created_at: string
+          enabled: boolean
+          flag_name: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          enabled: boolean
+          flag_name: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          enabled?: boolean
+          flag_name?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feature_flag_overrides_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feature_flag_overrides_flag_name_fkey"
+            columns: ["flag_name"]
+            isOneToOne: false
+            referencedRelation: "feature_flags"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
+      feature_flags: {
+        Row: {
+          created_at: string
+          description: string
+          enabled: boolean
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          enabled?: boolean
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           account_id: string
@@ -728,7 +799,7 @@ export type Database = {
           invited_by: string | null
           role: Database["public"]["Enums"]["membership_role"]
           status: Database["public"]["Enums"]["invitation_status"] | null
-          token: string
+          token_hash: string
           updated_at: string | null
         }
         Insert: {
@@ -740,7 +811,7 @@ export type Database = {
           invited_by?: string | null
           role?: Database["public"]["Enums"]["membership_role"]
           status?: Database["public"]["Enums"]["invitation_status"] | null
-          token?: string
+          token_hash: string
           updated_at?: string | null
         }
         Update: {
@@ -752,7 +823,7 @@ export type Database = {
           invited_by?: string | null
           role?: Database["public"]["Enums"]["membership_role"]
           status?: Database["public"]["Enums"]["invitation_status"] | null
-          token?: string
+          token_hash?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -772,6 +843,72 @@ export type Database = {
           },
         ]
       }
+      memberships_history: {
+        Row: {
+          account_id: string
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: number
+          metadata: Json | null
+          role: Database["public"]["Enums"]["membership_role"]
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          metadata?: Json | null
+          role: Database["public"]["Enums"]["membership_role"]
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: never
+          metadata?: Json | null
+          role?: Database["public"]["Enums"]["membership_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          link: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          link?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -787,6 +924,7 @@ export type Database = {
           locale: string | null
           metadata: Json | null
           onboarding_completed: boolean | null
+          pending_deletion: boolean
           phone_number: string | null
           timezone: string | null
           updated_at: string | null
@@ -806,6 +944,7 @@ export type Database = {
           locale?: string | null
           metadata?: Json | null
           onboarding_completed?: boolean | null
+          pending_deletion?: boolean
           phone_number?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -825,6 +964,7 @@ export type Database = {
           locale?: string | null
           metadata?: Json | null
           onboarding_completed?: boolean | null
+          pending_deletion?: boolean
           phone_number?: string | null
           timezone?: string | null
           updated_at?: string | null
@@ -1069,7 +1209,14 @@ export type Database = {
           p_emails: string[]
           p_role?: Database["public"]["Enums"]["membership_role"]
         }
-        Returns: number
+        Returns: {
+          email: string
+          token: string
+        }[]
+      }
+      is_flag_enabled: {
+        Args: { p_account_id: string; p_flag_name: string }
+        Returns: boolean
       }
       list_my_sessions: {
         Args: never
@@ -1097,6 +1244,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
       remove_member: {
         Args: { p_account_id: string; p_user_id: string }
         Returns: boolean
@@ -1130,6 +1278,7 @@ export type Database = {
           locale: string | null
           metadata: Json | null
           onboarding_completed: boolean | null
+          pending_deletion: boolean
           phone_number: string | null
           timezone: string | null
           updated_at: string | null
@@ -1295,6 +1444,7 @@ export const Constants = {
       invoice_status: ["draft", "open", "paid", "void", "uncollectible"],
       payment_method_type: ["card", "bank_transfer", "wallet", "other"],
       plan_interval: ["month", "year", "one_time"],
+      subscription_item_type: ["flat", "per_seat", "metered", "tiered"],
       subscription_status: [
         "trialing",
         "active",

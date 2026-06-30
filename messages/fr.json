@@ -301,6 +301,7 @@
     "remove_description": "Supprimer {name} de l'équipe ? Cette action est irréversible.",
     "confirm_remove": "Supprimer",
     "removing": "Suppression...",
+    "member_actions": "Actions pour {name}",
     "members_page_title": "Membres de l'organisation",
     "members_subtitle": "{active} actifs · {pending} en attente",
     "search_members": "Rechercher des membres…",
@@ -717,5 +718,12 @@
     "danger_delete_title": "Supprimer l'organisation",
     "danger_delete_desc": "Cette action est permanente. Toutes les données, projets et membres seront supprimés.",
     "danger_delete_btn": "Supprimer l'organisation"
+  },
+  "Notifications": {
+    "title": "Notifications",
+    "empty": "Vous n'avez pas de nouvelles notifications.",
+    "mark_all_read": "Tout marquer comme lu",
+    "just_now": "À l'instant",
+    "view_all": "Tout voir"
   }
 }

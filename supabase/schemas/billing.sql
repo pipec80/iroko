@@ -65,6 +65,21 @@ CREATE TYPE "billing"."subscription_status" AS ENUM (
 
 ALTER TYPE "billing"."subscription_status" OWNER TO "postgres";
 
+
+CREATE TYPE "billing"."subscription_item_type" AS ENUM (
+    'flat',
+    'per_seat',
+    'metered',
+    'tiered'
+);
+
+
+ALTER TYPE "billing"."subscription_item_type" OWNER TO "postgres";
+
+COMMENT ON TYPE "billing"."subscription_item_type" IS
+  'Modelo de precio de un item de suscripción: flat=precio fijo, per_seat=por usuario, '
+  'metered=por uso, tiered=escalado por volumen.';
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -192,7 +207,7 @@ CREATE TABLE IF NOT EXISTS "billing"."subscription_items" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "subscription_id" "uuid" NOT NULL,
     "description" "text" NOT NULL,
-    "type" "text" DEFAULT 'flat'::"text" NOT NULL,
+    "type" "billing"."subscription_item_type" DEFAULT 'flat'::"billing"."subscription_item_type" NOT NULL,
     "quantity" integer DEFAULT 1,
     "unit_price" integer DEFAULT 0 NOT NULL,
     "currency" character(3) DEFAULT 'USD'::"bpchar",
@@ -229,13 +244,21 @@ ALTER TABLE "billing"."subscriptions" OWNER TO "postgres";
 CREATE OR REPLACE VIEW "billing"."v_mrr_by_plan" AS
  SELECT "p"."name" AS "plan_name",
     "p"."slug",
+    "p"."interval",
     "count"(*) AS "active_count",
-    "sum"("p"."price") AS "mrr_cents",
+    "sum"(
+      CASE "p"."interval"
+        WHEN 'month'    THEN "p"."price"
+        WHEN 'year'     THEN "p"."price" / 12
+        WHEN 'one_time' THEN 0
+        ELSE 0
+      END
+    ) AS "mrr_cents",
     "p"."currency"
    FROM ("billing"."subscriptions" "s"
      JOIN "billing"."plans" "p" ON (("p"."id" = "s"."plan_id")))
   WHERE ("s"."status" = 'active'::"billing"."subscription_status")
-  GROUP BY "p"."id", "p"."name", "p"."slug", "p"."currency";
+  GROUP BY "p"."id", "p"."name", "p"."slug", "p"."interval", "p"."currency";
 
 
 ALTER VIEW "billing"."v_mrr_by_plan" OWNER TO "postgres";
@@ -380,7 +403,7 @@ ALTER TABLE ONLY "billing"."customers"
 
 
 ALTER TABLE ONLY "billing"."events"
-    ADD CONSTRAINT "events_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "billing"."customers"("id");
+    ADD CONSTRAINT "events_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "billing"."customers"("id") ON DELETE SET NULL;
 
 
 

@@ -80,15 +80,19 @@ CREATE OR REPLACE FUNCTION "public"."accept_invitation"("p_token" "text") RETURN
     AS $$
 DECLARE
   v_invitation public.invitations%ROWTYPE;
-  v_user_id uuid := (SELECT auth.uid());
+  v_user_id    uuid := (SELECT auth.uid());
+  v_token_hash text;
 BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
 
+  -- Hashear el token recibido antes de buscar (nunca comparar plaintext)
+  v_token_hash := encode(extensions.digest(p_token, 'sha256'), 'hex');
+
   SELECT * INTO v_invitation
   FROM public.invitations
-  WHERE token = p_token
+  WHERE token_hash = v_token_hash
     AND status = 'pending'
     AND expires_at > now();
 
@@ -121,34 +125,44 @@ CREATE OR REPLACE FUNCTION "public"."check_request"() RETURNS "void"
     SET "search_path" TO ''
     AS $$
 DECLARE
-  v_method text := current_setting('request.method', true);
-  v_ip_str text := split_part(
-    current_setting('request.headers', true)::json->>'x-forwarded-for',
-    ',', 1
-  );
-  v_ip     inet;
-  v_count  integer;
+  v_method  text := current_setting('request.method', true);
+  v_ip_str  text;
+  v_ip      inet;
+  v_window  timestamptz;
+  v_total   integer;
 BEGIN
   IF v_method IN ('GET', 'HEAD') OR v_method IS NULL THEN
     RETURN;
   END IF;
 
-  IF v_ip_str IS NULL OR v_ip_str = '' THEN
+  v_ip_str := trim(split_part(
+    COALESCE(current_setting('request.headers', true)::json->>'x-forwarded-for', ''),
+    ',', 1
+  ));
+
+  IF v_ip_str = '' THEN
     RETURN;
   END IF;
 
   BEGIN
-    v_ip := trim(v_ip_str)::inet;
+    v_ip := v_ip_str::inet;
   EXCEPTION WHEN OTHERS THEN
     RETURN;
   END;
 
-  SELECT count(*)::integer INTO v_count
-  FROM private.rate_limits
-  WHERE ip = v_ip
-    AND request_at > now() - INTERVAL '5 minutes';
+  v_window := date_trunc('minute', now());
 
-  IF v_count >= 100 THEN
+  INSERT INTO private.rate_limit_counters (ip, window_start, count)
+  VALUES (v_ip, v_window, 1)
+  ON CONFLICT (ip, window_start)
+  DO UPDATE SET count = private.rate_limit_counters.count + 1;
+
+  SELECT COALESCE(SUM(count), 0) INTO v_total
+  FROM private.rate_limit_counters
+  WHERE ip = v_ip
+    AND window_start >= date_trunc('minute', now()) - INTERVAL '4 minutes';
+
+  IF v_total > 100 THEN
     RAISE SQLSTATE 'PGRST' USING
       message = json_build_object(
         'code',    '429',
@@ -158,14 +172,6 @@ BEGIN
         'status',      429,
         'status_text', 'Too Many Requests')::text;
   END IF;
-
-  BEGIN
-    INSERT INTO private.rate_limits (ip) VALUES (v_ip);
-  EXCEPTION WHEN read_only_sql_transaction THEN
-    -- PostgREST ejecuta RPCs STABLE en transacción read-only incluso via POST.
-    -- El rate limiting no aplica a lecturas — saltar silenciosamente.
-    RETURN;
-  END;
 END;
 $$;
 
@@ -398,16 +404,16 @@ COMMENT ON FUNCTION "public"."get_my_accounts"() IS 'Returns accounts the curren
 
 
 
-CREATE OR REPLACE FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role" DEFAULT 'member'::"public"."membership_role") RETURNS integer
+CREATE OR REPLACE FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role" DEFAULT 'member'::"public"."membership_role") RETURNS TABLE("email" "text", "token" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 DECLARE
   v_caller_role public.membership_role;
-  v_inserted    integer := 0;
   v_email       text;
+  v_raw_token   text;
+  v_token_hash  text;
 BEGIN
-  -- Check caller role
   SELECT role INTO v_caller_role
   FROM public.accounts_memberships
   WHERE account_id = p_account_id AND user_id = (SELECT auth.uid());
@@ -416,28 +422,30 @@ BEGIN
     RAISE EXCEPTION 'Only owner or admin can invite members';
   END IF;
 
-  -- Cannot invite as owner
   IF p_role = 'owner' THEN
     RAISE EXCEPTION 'Cannot invite as owner';
   END IF;
 
-  -- Limit batch size to prevent abuse
   IF array_length(p_emails, 1) > 20 THEN
     RAISE EXCEPTION 'Maximum 20 emails per batch';
   END IF;
 
-  -- Insert invitations, skip duplicates
   FOREACH v_email IN ARRAY p_emails LOOP
-    INSERT INTO public.invitations (account_id, email, role, invited_by)
-    VALUES (p_account_id, lower(trim(v_email)), p_role, (SELECT auth.uid()))
-    ON CONFLICT (account_id, email) DO NOTHING;
+    -- Generar token aleatorio y almacenar solo el hash
+    v_raw_token  := encode(extensions.gen_random_bytes(32), 'hex');
+    v_token_hash := encode(extensions.digest(v_raw_token, 'sha256'), 'hex');
+
+    INSERT INTO public.invitations (account_id, email, role, invited_by, token_hash)
+    VALUES (p_account_id, lower(trim(v_email)), p_role, (SELECT auth.uid()), v_token_hash)
+    ON CONFLICT (account_id, email) WHERE status = 'pending' DO NOTHING;
 
     IF FOUND THEN
-      v_inserted := v_inserted + 1;
+      -- Asignar a las columnas de salida de la TABLE y retornar fila
+      email := lower(trim(v_email));
+      token := v_raw_token;
+      RETURN NEXT;
     END IF;
   END LOOP;
-
-  RETURN v_inserted;
 END;
 $$;
 
@@ -445,7 +453,7 @@ $$;
 ALTER FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Creates invitations for multiple emails. Only owner/admin. Cannot invite as owner. ON CONFLICT DO NOTHING for already-invited emails. Returns count of new invitations.';
+COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Crea invitaciones y retorna (email, token) pares. El token en texto plano se retorna UNA SOLA VEZ para enviarse por email. Solo el hash se almacena en BD. BREAKING CHANGE: cambió de RETURNS integer a RETURNS TABLE.';
 
 
 
@@ -624,9 +632,9 @@ BEGIN
 
   UPDATE public.profiles
   SET
-    deleted_at = now(),
-    metadata   = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object('pending_deletion', true),
-    updated_at = now()
+    deleted_at       = now(),
+    pending_deletion = true,
+    updated_at       = now()
   WHERE id = v_uid;
 
   UPDATE public.accounts
@@ -694,6 +702,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "bio" "text",
     "website_url" "text",
     "company" "text",
+    "pending_deletion" boolean DEFAULT false NOT NULL,
     CONSTRAINT "profiles_bio_check" CHECK (("char_length"("bio") <= 500)),
     CONSTRAINT "profiles_company_check" CHECK (("char_length"("company") <= 100)),
     CONSTRAINT "profiles_website_url_check" CHECK (("char_length"("website_url") <= 255))
@@ -817,7 +826,8 @@ CREATE TABLE IF NOT EXISTS "public"."documents" (
     "created_by" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "deleted_at" timestamp with time zone
+    "deleted_at" timestamp with time zone,
+    CONSTRAINT "documents_content_max_size" CHECK (("octet_length"("content") <= 10485760))
 );
 
 
@@ -829,7 +839,7 @@ CREATE TABLE IF NOT EXISTS "public"."invitations" (
     "account_id" "uuid" NOT NULL,
     "email" "text" NOT NULL,
     "role" "public"."membership_role" DEFAULT 'member'::"public"."membership_role" NOT NULL,
-    "token" "text" DEFAULT "encode"("extensions"."gen_random_bytes"(32), 'hex'::"text") NOT NULL,
+    "token_hash" "text" NOT NULL,
     "status" "public"."invitation_status" DEFAULT 'pending'::"public"."invitation_status",
     "invited_by" "uuid",
     "expires_at" timestamp with time zone DEFAULT ("now"() + '7 days'::interval),
@@ -886,8 +896,7 @@ ALTER TABLE ONLY "public"."documents"
 
 
 
-ALTER TABLE ONLY "public"."invitations"
-    ADD CONSTRAINT "invitations_account_id_email_key" UNIQUE ("account_id", "email");
+-- invitations_account_id_email_key eliminado: reemplazado por idx_invitations_pending_unique (índice parcial)
 
 
 
@@ -948,7 +957,15 @@ CREATE INDEX "idx_invitations_invited_by" ON "public"."invitations" USING "btree
 
 
 
-CREATE INDEX "idx_invitations_token" ON "public"."invitations" USING "btree" ("token") WHERE ("status" = 'pending'::"public"."invitation_status");
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_invitations_token_hash_pending"
+  ON "public"."invitations" ("token_hash")
+  WHERE ("status" = 'pending'::"public"."invitation_status");
+
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS "idx_invitations_pending_unique"
+  ON "public"."invitations" ("account_id", "email")
+  WHERE "status" = 'pending'::"public"."invitation_status";
 
 
 
@@ -1000,7 +1017,23 @@ CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."profiles" 
 
 
 
+CREATE OR REPLACE TRIGGER "trg_profiles_validate_locale_timezone"
+  BEFORE INSERT OR UPDATE OF "locale", "timezone"
+  ON "public"."profiles"
+  FOR EACH ROW
+  EXECUTE FUNCTION "private"."validate_profile_locale_timezone"();
+
+
+
 CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."projects" FOR EACH ROW EXECUTE FUNCTION "private"."set_updated_at"();
+
+
+
+CREATE TRIGGER "trg_enforce_account_owner"
+  BEFORE UPDATE OF "role" OR DELETE
+  ON "public"."accounts_memberships"
+  FOR EACH ROW
+  EXECUTE FUNCTION "private"."enforce_single_owner_per_account"();
 
 
 
@@ -1035,7 +1068,7 @@ ALTER TABLE ONLY "public"."documents"
 
 
 ALTER TABLE ONLY "public"."documents"
-    ADD CONSTRAINT "documents_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id");
+    ADD CONSTRAINT "documents_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
 
 
@@ -1050,7 +1083,7 @@ ALTER TABLE ONLY "public"."invitations"
 
 
 ALTER TABLE ONLY "public"."invitations"
-    ADD CONSTRAINT "invitations_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "public"."profiles"("id");
+    ADD CONSTRAINT "invitations_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
 
 
@@ -1065,7 +1098,7 @@ ALTER TABLE ONLY "public"."projects"
 
 
 ALTER TABLE ONLY "public"."projects"
-    ADD CONSTRAINT "projects_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id");
+    ADD CONSTRAINT "projects_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
 
 
 
@@ -1326,6 +1359,78 @@ GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."projects" TO "anon
 GRANT ALL ON TABLE "public"."projects" TO "authenticated";
 GRANT ALL ON TABLE "public"."projects" TO "service_role";
 
+
+
+-- memberships_history: append-only audit trail (SOC2 CC6.2, CC6.3)
+CREATE TABLE IF NOT EXISTS "public"."memberships_history" (
+  "id"          bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  "account_id"  uuid        NOT NULL,
+  "user_id"     uuid        NOT NULL,
+  "role"        "public"."membership_role" NOT NULL,
+  "action"      text        NOT NULL,
+  "actor_id"    uuid,
+  "metadata"    jsonb       DEFAULT '{}',
+  "created_at"  timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT "memberships_history_action_check"
+    CHECK ("action" IN ('joined', 'left', 'removed', 'role_upgraded', 'role_downgraded', 'invited'))
+);
+
+ALTER TABLE "public"."memberships_history" OWNER TO "postgres";
+
+CREATE INDEX "idx_memberships_history_account"
+  ON "public"."memberships_history" ("account_id", "created_at" DESC);
+
+CREATE INDEX "idx_memberships_history_user"
+  ON "public"."memberships_history" ("user_id", "created_at" DESC);
+
+CREATE INDEX "idx_memberships_history_created_brin"
+  ON "public"."memberships_history" USING BRIN ("created_at");
+
+CREATE OR REPLACE TRIGGER "memberships_history_immutable"
+  BEFORE DELETE OR UPDATE ON "public"."memberships_history"
+  FOR EACH ROW EXECUTE FUNCTION "private"."deny_mutation"();
+
+CREATE TRIGGER "trg_memberships_history"
+  AFTER INSERT OR UPDATE OF "role" OR DELETE
+  ON "public"."accounts_memberships"
+  FOR EACH ROW
+  EXECUTE FUNCTION "private"."track_membership_changes"();
+
+
+
+CREATE TRIGGER "trg_profiles_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."profiles"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_accounts_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."accounts"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_memberships_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."accounts_memberships"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_invitations_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."invitations"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_projects_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."projects"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+CREATE TRIGGER "trg_documents_audit"
+  AFTER INSERT OR UPDATE OR DELETE ON "public"."documents"
+  FOR EACH ROW EXECUTE FUNCTION "private"."audit_log"();
+
+ALTER TABLE "public"."memberships_history" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "memberships_history_deny_all"
+  ON "public"."memberships_history" AS RESTRICTIVE
+  USING (false)
+  WITH CHECK (false);
+
+REVOKE SELECT, INSERT, UPDATE, DELETE ON "public"."memberships_history" FROM "anon", "authenticated";
+GRANT ALL ON TABLE "public"."memberships_history" TO "service_role";
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON SEQUENCES TO "postgres";

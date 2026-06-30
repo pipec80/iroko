@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChevronLeft, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
@@ -32,34 +32,37 @@ export function MarkdownEditor({
   const [status, setStatus] = useState<SaveStatus>('idle');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedRef = useRef(initialContent);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const save = useCallback(
-    async (value: string) => {
-      if (value === lastSavedRef.current) return;
-      setStatus('saving');
-      const result = await saveAction(docId, value);
-      if (result.success) {
-        lastSavedRef.current = value;
-        setStatus('saved');
-        setTimeout(() => setStatus('idle'), 2000);
-      } else {
-        setStatus('error');
-      }
-    },
-    [docId, saveAction],
-  );
+  // Set placeholder client-side: newlines in HTML attributes are normalized to
+  // spaces during SSR serialization, causing a React hydration mismatch.
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.placeholder = '# Título del documento\n\nEscribe aquí en Markdown...';
+    }
+  }, []);
 
-  const handleChange = useCallback(
-    (value: string) => {
-      setContent(value);
-      setStatus('idle');
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => {
-        void save(value);
-      }, AUTOSAVE_DELAY);
-    },
-    [save],
-  );
+  async function save(value: string) {
+    if (value === lastSavedRef.current) return;
+    setStatus('saving');
+    const result = await saveAction(docId, value);
+    if (result.success) {
+      lastSavedRef.current = value;
+      setStatus('saved');
+      setTimeout(() => setStatus('idle'), 2000);
+    } else {
+      setStatus('error');
+    }
+  }
+
+  function handleChange(value: string) {
+    setContent(value);
+    setStatus('idle');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      void save(value);
+    }, AUTOSAVE_DELAY);
+  }
 
   // Manual save with Ctrl+S / Cmd+S
   useEffect(() => {
@@ -122,10 +125,10 @@ export function MarkdownEditor({
             </span>
           </div>
           <textarea
+            ref={textareaRef}
             value={content}
             onChange={(e) => handleChange(e.target.value)}
             spellCheck={false}
-            placeholder="# Título del documento&#10;&#10;Escribe aquí en Markdown..."
             className="min-h-0 flex-1 resize-none p-5 font-mono text-[13px] leading-relaxed focus:outline-none"
             style={{
               background: 'var(--surface-base)',

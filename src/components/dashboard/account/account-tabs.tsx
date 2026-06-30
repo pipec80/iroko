@@ -45,16 +45,13 @@ export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
   const activeTab = searchParams.get('tab') || 'profile';
   const currentTab = (VALID_TABS as readonly string[]).includes(activeTab) ? activeTab : 'profile';
 
-  const handleTabChange = React.useCallback(
-    (value: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', value);
-      startTransition(() => {
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-      });
-    },
-    [pathname, router, searchParams],
-  );
+  function handleTabChange(value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', value);
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    });
+  }
 
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange} className="flex flex-col gap-6">

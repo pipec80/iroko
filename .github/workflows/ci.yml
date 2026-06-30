@@ -15,6 +15,8 @@
 #   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 #   SUPABASE_SECRET_KEY
 #   SITE_URL
+#   RESEND_API_KEY      ← añadir como Secret (permite @ en el valor)
+#   FROM_EMAIL          ← añadir como Secret (permite @ en el valor)
 #
 # Secrets adicionales SOLO en el environment "production" (main branch):
 #   NEXT_PUBLIC_SENTRY_DSN
@@ -364,6 +366,10 @@ jobs:
         run: pnpm test:e2e
         env:
           SITE_URL: http://localhost:3000
+          # Placeholders para pasar la validación de env.ts en CI.
+          # Los E2E no envían emails reales; Mailpit captura los de auth.
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
           # Sin NEXT_PUBLIC_TURNSTILE_SITE_KEY: CaptchaField no renderiza nada
           # y captchaReady arranca en true → botones habilitados desde el inicio.
           # Turnstile headless no dispara onSuccess aunque uses la test key.
@@ -411,6 +417,8 @@ jobs:
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       SITE_URL: ${{ secrets.SITE_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
+      FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
       NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
     steps:

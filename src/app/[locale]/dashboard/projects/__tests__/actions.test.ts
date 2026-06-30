@@ -128,7 +128,7 @@ describe('createProject', () => {
       const result = await createProject(makeFormData(validProject));
 
       expect(result.success).toBe(true);
-      expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/projects');
+      expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/projects', 'page');
     });
   });
 });

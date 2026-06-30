@@ -81,6 +81,6 @@ export const createProject = withServerAction(async function createProject(
     'Project created',
   );
 
-  revalidatePath('/[locale]/dashboard/projects');
+  revalidatePath('/[locale]/dashboard/projects', 'page');
   return { success: true };
 });

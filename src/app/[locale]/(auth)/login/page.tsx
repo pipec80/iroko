@@ -191,10 +191,14 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              aria-describedby={signInState.fieldErrors?.email ? 'email-error' : undefined}
+              aria-invalid={!!signInState.fieldErrors?.email}
             />
           </div>
           {signInState.fieldErrors?.email && (
-            <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
+            <p
+              id="email-error"
+              className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
               {t(`errors.${signInState.fieldErrors.email[0] ?? ''}` as 'errors.generic', {
                 default: signInState.fieldErrors.email[0] ?? '',
               })}
@@ -225,10 +229,14 @@ export default function LoginPage() {
               placeholder="••••••••"
               required
               type="password"
+              aria-describedby={signInState.fieldErrors?.password ? 'password-error' : undefined}
+              aria-invalid={!!signInState.fieldErrors?.password}
             />
           </div>
           {signInState.fieldErrors?.password && (
-            <p className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
+            <p
+              id="password-error"
+              className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
               {t(`errors.${signInState.fieldErrors.password[0] ?? ''}` as 'errors.generic', {
                 default: signInState.fieldErrors.password[0] ?? '',
               })}

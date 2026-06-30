@@ -301,6 +301,7 @@
     "remove_description": "Remover {name} da equipe? Esta ação não pode ser desfeita.",
     "confirm_remove": "Remover",
     "removing": "Removendo...",
+    "member_actions": "Ações para {name}",
     "members_page_title": "Membros da organização",
     "members_subtitle": "{active} ativos · {pending} pendentes",
     "search_members": "Buscar membros…",
@@ -717,5 +718,12 @@
     "danger_delete_title": "Excluir organização",
     "danger_delete_desc": "Esta ação é permanente. Todos os dados, projetos e membros serão excluídos.",
     "danger_delete_btn": "Excluir organização"
+  },
+  "Notifications": {
+    "title": "Notificações",
+    "empty": "Você não tem novas notificações.",
+    "mark_all_read": "Marcar todas como lidas",
+    "just_now": "Agora mesmo",
+    "view_all": "Ver todas"
   }
 }

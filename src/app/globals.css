@@ -47,9 +47,16 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-heading: var(--font-sans);
+  --font-headline: var(--font-sans);
   --font-display: var(--font-sans);
   --font-body: var(--font-sans);
   --font-label: var(--font-mono);
+
+  /* ── Semantic aliases requeridos por error.tsx y skip link ── */
+  --color-error: var(--color-poppy);
+  --color-on-surface: var(--foreground);
+  --color-on-surface-variant: var(--muted-foreground);
+  --color-on-primary: var(--primary-foreground);
 
   /* ── Radii (Iroko canonical — precise, not soft) ── */
   --radius-xs: 2px;
@@ -463,6 +470,18 @@
     border-radius: 6px;
     cursor: pointer;
     flex-shrink: 0;
+    transition: background-color 150ms;
+  }
+  .btn-icon:hover {
+    background: var(--surface-2);
+  }
+  .btn-icon:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.2);
+  }
+  .btn-icon:disabled {
+    opacity: 0.4;
+    pointer-events: none;
   }
 
   /* ── Surface card — elevated bordered container ── */
@@ -484,6 +503,10 @@
     font-size: 12px;
     color-scheme: light;
   }
+  .toolbar-control:focus-visible {
+    border-color: var(--color-iron);
+    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.16);
+  }
 
   .dark .toolbar-control {
     color-scheme: dark;
@@ -492,17 +515,11 @@
   /* ── Members table row grid ── */
   .members-row {
     display: grid;
-    grid-template-columns: 32px 2fr 1fr 1fr 1fr 32px;
+    grid-template-columns: 32px 2fr 1fr 1fr 1fr 44px;
     gap: 16px;
     align-items: center;
     padding-left: 22px;
     padding-right: 22px;
-  }
-
-  /* ── Danger zone card — .card.danger-zone wins cascade over plain .card ── */
-  .card.danger-zone {
-    background: rgba(217, 33, 33, 0.12);
-    border-color: rgba(217, 33, 33, 0.4);
   }
 
   /* ── Wordmark — brand name treatment ── */
@@ -554,6 +571,10 @@
   .nav-item--inactive:hover {
     opacity: 0.8;
   }
+  .nav-item:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -1px;
+  }
 
   /* ── Card — elevated container (border-radius 10px per original) ── */
   .card {
@@ -561,6 +582,14 @@
     border: 1px solid var(--border);
     border-radius: 10px;
   }
+
+  /* ── Danger zone card — cubre Card component (data-slot) y divs con clase .card ── */
+  [data-slot='card'].danger-zone,
+  .card.danger-zone {
+    background: rgba(217, 33, 33, 0.12);
+    border-color: rgba(217, 33, 33, 0.4);
+  }
+
   .card-pad {
     padding: 24px;
   }
@@ -591,6 +620,14 @@
   .btn-iron:hover {
     background: var(--color-iron-deep);
   }
+  .btn-iron:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.3);
+  }
+  .btn-iron:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
   .btn-outline {
     background: transparent;
     color: var(--text-primary);
@@ -605,6 +642,14 @@
   }
   .btn-outline:hover {
     background: var(--surface-2);
+  }
+  .btn-outline:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.2);
+  }
+  .btn-outline:disabled {
+    opacity: 0.5;
+    pointer-events: none;
   }
   .btn-ghost {
     background: transparent;
@@ -621,6 +666,14 @@
     background: var(--surface-2);
     color: var(--text-primary);
   }
+  .btn-ghost:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.2);
+  }
+  .btn-ghost:disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
   .btn-night {
     background: var(--color-night);
     color: var(--color-bone);
@@ -628,6 +681,20 @@
     border-radius: 6px;
     font-size: 13px;
     white-space: nowrap;
+    cursor: pointer;
+    border: 0;
+    transition: opacity 150ms;
+  }
+  .btn-night:hover {
+    opacity: 0.85;
+  }
+  .btn-night:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(14, 17, 23, 0.35);
+  }
+  .btn-night:disabled {
+    opacity: 0.5;
+    pointer-events: none;
   }
 
   /* ── Input field ── */
@@ -663,19 +730,19 @@
   }
 }
 
-/* Page transition — matches Iroko original (opacity + 4px Y slide, 400ms ease-out) */
+/* Page transition — fadeInDown */
 @keyframes iroko-fade-in {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translate3d(0, -100%, 0);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translate3d(0, 0, 0);
   }
 }
 .iroko-fade-in {
-  animation: iroko-fade-in 400ms ease-out;
+  animation: iroko-fade-in 500ms cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
 /* ── Markdown preview styles ── */
