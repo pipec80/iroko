@@ -25,7 +25,7 @@ LANGUAGE plpgsql
 SET search_path = ''
 AS $$
 BEGIN
-  IF pg_trigger_depth() > 0 THEN
+  IF pg_trigger_depth() > 1 THEN
     RETURN COALESCE(NEW, OLD);
   END IF;
   RAISE EXCEPTION 'Mutations not allowed on append-only table %', TG_TABLE_NAME;
