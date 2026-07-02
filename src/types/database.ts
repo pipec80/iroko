@@ -1245,6 +1245,15 @@ export type Database = {
         }[]
       }
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
+      replace_robot_config: {
+        Args: {
+          p_account_id: string
+          p_contacts: Json
+          p_memories: Json
+          p_routines: Json
+        }
+        Returns: undefined
+      }
       remove_member: {
         Args: { p_account_id: string; p_user_id: string }
         Returns: boolean
