@@ -152,12 +152,17 @@ allowed_mime_types = [
 enabled = true
 site_url = "env(SITE_URL)"
 # Local: SITE_URL=http://localhost:3000
-# Cloud: SITE_URL=https://iroko.vercel.app (o tu dominio custom)
+# Cloud: SITE_URL=https://project-a89lv.vercel.app (o tu dominio custom)
+# ⚠️ SECURITY: "https://*.vercel.app/**" acepta CUALQUIER app de vercel.app como
+# destino de redirect de auth (magic links, OAuth) — conveniente para previews
+# en local, pero NUNCA lo copies al allowlist de Supabase Cloud. En cloud, lista
+# solo tu dominio de produccion y el patron exacto de tus previews
+# (ej. https://iroko-git-*-pipec80-labs.vercel.app/**).
 additional_redirect_urls = [
   "http://localhost:3000",
   "http://localhost:3000/**",
   "http://127.0.0.1:3000/**",
-  "https://iroko.vercel.app/**",
+  "https://project-a89lv.vercel.app/**",
   "https://*.vercel.app/**",
 ]
 # JWT: 1h es el default recomendado. No bajar de 5 min (clock skew).

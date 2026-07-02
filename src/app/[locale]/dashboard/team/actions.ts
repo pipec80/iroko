@@ -1,9 +1,9 @@
 'use server';
 
+import { getLocale } from 'next-intl/server';
 import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
-import { appConfig } from '@/config/app.config';
 import { env } from '@/env';
 import { sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
@@ -115,11 +115,12 @@ export const inviteMembers = withServerAction(async function inviteMembers(
       data: { user: caller },
     } = await supabase.auth.getUser();
     const inviterEmail = caller?.email ?? 'un miembro del equipo';
+    const locale = await getLocale();
 
     after(async () => {
       await Promise.allSettled(
         (invitations ?? []).map((inv) => {
-          const inviteUrl = `${env.SITE_URL}/${appConfig.defaultLocale}/auth/accept-invitation?token=${inv.token}`;
+          const inviteUrl = `${env.SITE_URL}/${locale}/auth/accept-invitation?token=${inv.token}`;
           return sendInvitationEmail(inv.email, {
             inviterEmail,
             teamRole: parsed.data.role,

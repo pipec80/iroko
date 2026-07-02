@@ -1249,6 +1249,15 @@ export type Database = {
         Args: { p_account_id: string; p_user_id: string }
         Returns: boolean
       }
+      replace_robot_config: {
+        Args: {
+          p_account_id: string
+          p_contacts: Json
+          p_memories: Json
+          p_routines: Json
+        }
+        Returns: undefined
+      }
       request_account_deletion: { Args: never; Returns: undefined }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
       update_my_profile: {

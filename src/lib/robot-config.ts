@@ -6,11 +6,8 @@ import ExcelJS from 'exceljs';
 
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
-import type { Database } from '@/types/database';
 
-type RobotRoutineInsert = Database['public']['Tables']['robot_routines']['Insert'];
-type RobotContactInsert = Database['public']['Tables']['robot_contacts']['Insert'];
-type RobotMemoryInsert = Database['public']['Tables']['robot_memories']['Insert'];
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
 export type RobotConfigUploadState = {
   error?: string;
@@ -124,45 +121,43 @@ export async function uploadRobotConfigAction(
     const contactsSheet = wsToJson(contactosWs);
     const memoriesSheet = wsToJson(memoriaWs);
 
-    const routines: RobotRoutineInsert[] = routinesSheet.map((r) => ({
-      account_id: accountId,
+    const routines = routinesSheet.map((r) => ({
       time: parseExcelTime(r['Hora']),
       activity_type: (r['Tipo'] as string) || 'General',
       description: (r['Descripcion'] as string) || '',
       message: (r['Mensaje'] as string) || '',
     }));
 
-    const contacts: RobotContactInsert[] = contactsSheet.map((c) => ({
-      account_id: accountId,
+    const contacts = contactsSheet.map((c) => ({
       name: (c['Nombre'] as string) || 'Desconocido',
       relationship: (c['Relacion'] as string) || '',
       phone: String(c['Telefono'] || ''),
       priority: Number(c['Prioridad']) || 1,
     }));
 
-    const memories: RobotMemoryInsert[] = memoriesSheet.map((m) => ({
-      account_id: accountId,
+    const memories = memoriesSheet.map((m) => ({
       entity: (m['Entidad'] as string) || 'General',
       name: (m['Nombre'] as string) || '',
       key_fact: (m['Dato'] as string) || '',
     }));
 
-    await supabase.from('robot_routines').delete().eq('account_id', accountId);
-    await supabase.from('robot_contacts').delete().eq('account_id', accountId);
-    await supabase.from('robot_memories').delete().eq('account_id', accountId);
+    // Atomic replace: the RPC deletes + inserts the three tables in one
+    // transaction, so a mid-flight failure can no longer wipe the tenant.
+    const { error: rpcError } = await supabase.rpc('replace_robot_config', {
+      p_account_id: accountId,
+      p_routines: routines,
+      p_contacts: contacts,
+      p_memories: memories,
+    });
 
-    if (routines.length > 0) {
-      const { error: rErr } = await supabase.from('robot_routines').insert(routines);
-      if (rErr) throw rErr;
+    if (rpcError) {
+      logger.error({ userId, accountId, error: rpcError.message }, 'replace_robot_config failed');
+      return { error: 'processing_failed' };
     }
-    if (contacts.length > 0) {
-      const { error: cErr } = await supabase.from('robot_contacts').insert(contacts);
-      if (cErr) throw cErr;
-    }
-    if (memories.length > 0) {
-      const { error: mErr } = await supabase.from('robot_memories').insert(memories);
-      if (mErr) throw mErr;
-    }
+
+    // Prune previous raw uploads so the bucket doesn't grow unbounded (Free-tier
+    // storage cost). Best-effort: a cleanup failure must not fail the upload.
+    await pruneOldConfigs(supabase, accountId, path);
 
     logger.info({ userId, accountId, action: 'robot.config_uploaded' }, 'Robot config applied');
     return { success: true };
@@ -173,6 +168,33 @@ export async function uploadRobotConfigAction(
       'Error parsing/inserting robot config',
     );
     return { error: 'processing_failed' };
+  }
+}
+
+/**
+ * Removes every raw upload under `${accountId}/` except the one just stored.
+ * Best-effort: storage-listing/removal errors are logged, never propagated —
+ * a failed cleanup must not fail the (already-applied) config upload.
+ */
+async function pruneOldConfigs(
+  supabase: SupabaseServerClient,
+  accountId: string,
+  keepPath: string,
+): Promise<void> {
+  const { data: files, error } = await supabase.storage.from('robot_configs').list(accountId);
+  if (error || !files) {
+    if (error) logger.warn({ accountId, error: error.message }, 'robot config prune list failed');
+    return;
+  }
+
+  const keepName = keepPath.split('/').pop();
+  const stale = files.filter((f) => f.name !== keepName).map((f) => `${accountId}/${f.name}`);
+
+  if (stale.length > 0) {
+    const { error: removeError } = await supabase.storage.from('robot_configs').remove(stale);
+    if (removeError) {
+      logger.warn({ accountId, error: removeError.message }, 'robot config prune remove failed');
+    }
   }
 }
 

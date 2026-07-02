@@ -36,8 +36,10 @@ If you discover a security vulnerability in Iroko, report it privately:
 This project implements multiple layers of security:
 
 - **Database**: Row Level Security (RLS) on all tables, SECURITY DEFINER RPCs with `SET search_path = ''`
-- **Auth**: Supabase Auth with MFA (TOTP + WebAuthn), session timebox (7d), inactivity timeout (2h)
-- **Headers**: CSP with per-request nonces, HSTS (2 years + preload), COOP, CORP
+- **Auth**: Supabase Auth with MFA (TOTP; WebAuthn/phone available on Pro). MFA is enforced at the edge — a user with an enrolled factor cannot reach protected routes until the session is elevated to `aal2`.
+- **Sessions**: session timebox and inactivity timeout are configured but require the Supabase **Pro** plan; on the Free plan they are `0s` (disabled). Enable them (7d / 2h) in `supabase/config.toml` after upgrading. See the "Free tier — la verdad" section of `ROADMAP.md`.
+- **Headers**: strict CSP (`object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`) with `'unsafe-inline'` on `script-src` — per-request nonces are intentionally **not** used because they are incompatible with statically-generated pages. HSTS (2 years + preload), COOP, CORP.
+- **Rate limiting**: write requests to the Data API are capped per client IP (resolved from the un-spoofable `cf-connecting-ip` header) via a `db_pre_request` hook.
 - **Input validation**: Zod schemas on all server actions and API boundaries
 - **Secrets**: No secrets in client bundle, all server-side via validated env vars
 

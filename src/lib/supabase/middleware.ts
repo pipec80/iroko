@@ -5,6 +5,13 @@ import { env } from '@/env';
 import { routing } from '@/i18n/routing';
 import type { Database } from '@/types/database';
 
+/** Subset of the Supabase JWT claims the edge guard reads. */
+type JwtClaims = {
+  sub?: string;
+  aal?: string;
+  app_metadata?: { mfa_enrolled?: boolean } & Record<string, unknown>;
+};
+
 const PUBLIC_PATH_PREFIXES = ['/login', '/signup', '/forgot-password', '/auth'];
 
 const PROTECTED_PATH_PREFIXES = ['/dashboard', '/reset-password'];
@@ -86,10 +93,10 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // refresh token is stale (e.g. user deleted, session invalidated), the SDK
   // throws AuthApiError instead of returning { error }. We catch it here and
   // treat it as unauthenticated so the redirect logic below can run normally.
-  let claims: object | null = null;
+  let claims: JwtClaims | null = null;
   try {
     const { data } = await supabase.auth.getClaims();
-    claims = data?.claims ?? null;
+    claims = (data?.claims as JwtClaims | undefined) ?? null;
   } catch (err) {
     const isStaleToken =
       err != null &&
@@ -108,7 +115,29 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return NextResponse.redirect(url);
   }
 
-  if (claims && (isRoot(pathWithoutLocale) || isAuthOnly(pathWithoutLocale))) {
+  // MFA (AAL2) enforcement. A user with a verified factor who signed in with a
+  // password only holds an aal1 session — GoTrue considers it valid, but the
+  // MFA challenge is still pending. Without this guard, navigating straight to
+  // the app would bypass MFA. `mfa_enrolled` is injected into the JWT by
+  // custom_access_token_hook, so this stays a pure claims check (no I/O).
+  //
+  // Scope: the app itself (/dashboard). /reset-password is deliberately excluded
+  // — password recovery runs on an aal1 recovery session, and an MFA user who
+  // forgot their password cannot complete the TOTP challenge beforehand.
+  const mfaPending =
+    claims != null && claims.app_metadata?.mfa_enrolled === true && claims.aal !== 'aal2';
+
+  if (mfaPending && pathWithoutLocale.startsWith('/dashboard')) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/login`;
+    url.searchParams.set('mfa', 'required');
+    return NextResponse.redirect(url);
+  }
+
+  // Authenticated users are bounced off the marketing root and auth-only pages —
+  // unless they still owe an MFA challenge, in which case they must stay on
+  // /login to complete it (otherwise the two redirects would loop).
+  if (claims && !mfaPending && (isRoot(pathWithoutLocale) || isAuthOnly(pathWithoutLocale))) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/dashboard`;
     url.searchParams.delete('next');

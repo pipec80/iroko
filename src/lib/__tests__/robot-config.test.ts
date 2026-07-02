@@ -5,20 +5,23 @@ const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
   storageUpload: vi.fn(),
   createSignedUrl: vi.fn(),
-  deleteEq: vi.fn(),
-  insert: vi.fn(),
+  storageList: vi.fn(),
+  storageRemove: vi.fn(),
+  rpc: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
     auth: { getClaims: mocks.getClaims },
     storage: {
-      from: () => ({ upload: mocks.storageUpload, createSignedUrl: mocks.createSignedUrl }),
+      from: () => ({
+        upload: mocks.storageUpload,
+        createSignedUrl: mocks.createSignedUrl,
+        list: mocks.storageList,
+        remove: mocks.storageRemove,
+      }),
     },
-    from: (table: string) => ({
-      delete: () => ({ eq: mocks.deleteEq }),
-      insert: (rows: unknown) => mocks.insert(table, rows),
-    }),
+    rpc: (fn: string, args: unknown) => mocks.rpc(fn, args),
   }),
 }));
 
@@ -97,8 +100,9 @@ describe('uploadRobotConfigAction', () => {
     vi.clearAllMocks();
     mockAuthenticated();
     mocks.storageUpload.mockResolvedValue({ error: null });
-    mocks.deleteEq.mockResolvedValue({ error: null });
-    mocks.insert.mockResolvedValue({ error: null });
+    mocks.storageList.mockResolvedValue({ data: [], error: null });
+    mocks.storageRemove.mockResolvedValue({ error: null });
+    mocks.rpc.mockResolvedValue({ error: null });
   });
 
   describe('security validation (OWASP)', () => {
@@ -138,6 +142,17 @@ describe('uploadRobotConfigAction', () => {
     });
   });
 
+  /** Pulls the args object passed to replace_robot_config. */
+  function rpcArgs() {
+    const call = mocks.rpc.mock.calls.find(([fn]) => fn === 'replace_robot_config');
+    return call?.[1] as {
+      p_account_id: string;
+      p_routines: Array<Record<string, unknown>>;
+      p_contacts: Array<Record<string, unknown>>;
+      p_memories: Array<Record<string, unknown>>;
+    };
+  }
+
   describe('parsing', () => {
     it('reports which required sheets are missing', async () => {
       const file = await makeXlsxFile({ Rutinas: validSheets['Rutinas'] ?? [] });
@@ -150,8 +165,7 @@ describe('uploadRobotConfigAction', () => {
     it('converts Excel time fractions and keeps text times as-is', async () => {
       await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(validSheets)));
 
-      const routineRows = mocks.insert.mock.calls.find(([table]) => table === 'robot_routines');
-      expect(routineRows?.[1]).toEqual([
+      expect(rpcArgs().p_routines).toEqual([
         expect.objectContaining({ time: '10:00:00', activity_type: 'Medicación' }),
         expect.objectContaining({ time: '08:30', activity_type: 'Ejercicio' }),
       ]);
@@ -164,14 +178,8 @@ describe('uploadRobotConfigAction', () => {
       };
       await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(sheets)));
 
-      const contactRows = mocks.insert.mock.calls.find(([table]) => table === 'robot_contacts');
-      expect(contactRows?.[1]).toEqual([
-        expect.objectContaining({
-          name: 'Desconocido',
-          phone: '56911112222',
-          priority: 1,
-          account_id: ACCOUNT_ID,
-        }),
+      expect(rpcArgs().p_contacts).toEqual([
+        expect.objectContaining({ name: 'Desconocido', phone: '56911112222', priority: 1 }),
       ]);
     });
   });
@@ -184,7 +192,7 @@ describe('uploadRobotConfigAction', () => {
         makeUploadForm(await makeXlsxFile(validSheets)),
       );
       expect(result.error).toBe('upload_failed');
-      expect(mocks.insert).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
     });
 
     it('stores the original under the account folder with a random name', async () => {
@@ -193,14 +201,16 @@ describe('uploadRobotConfigAction', () => {
       expect(path).toMatch(new RegExp(`^${ACCOUNT_ID}/[0-9a-f-]{36}\\.xlsx$`));
     });
 
-    it('replaces existing data: deletes the three tables before inserting', async () => {
+    it('replaces data atomically via the account-scoped RPC (single transaction)', async () => {
       await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(validSheets)));
-      expect(mocks.deleteEq).toHaveBeenCalledTimes(3);
-      expect(mocks.deleteEq).toHaveBeenCalledWith('account_id', ACCOUNT_ID);
+      expect(mocks.rpc).toHaveBeenCalledWith(
+        'replace_robot_config',
+        expect.objectContaining({ p_account_id: ACCOUNT_ID }),
+      );
     });
 
-    it('returns processing_failed when an insert errors — no DB detail leaked', async () => {
-      mocks.insert.mockResolvedValue({ error: new Error('violates foreign key') });
+    it('returns processing_failed when the RPC errors — no DB detail leaked', async () => {
+      mocks.rpc.mockResolvedValue({ error: new Error('violates foreign key') });
       const result = await uploadRobotConfigAction(
         PREV,
         makeUploadForm(await makeXlsxFile(validSheets)),
@@ -208,16 +218,39 @@ describe('uploadRobotConfigAction', () => {
       expect(result.error).toBe('processing_failed');
     });
 
-    it('returns success after inserting routines, contacts and memories', async () => {
+    it('returns success with routines, contacts and memories in the RPC payload', async () => {
       const result = await uploadRobotConfigAction(
         PREV,
         makeUploadForm(await makeXlsxFile(validSheets)),
       );
       expect(result.success).toBe(true);
-      const tables = mocks.insert.mock.calls.map(([table]) => table);
-      expect(tables).toEqual(
-        expect.arrayContaining(['robot_routines', 'robot_contacts', 'robot_memories']),
+      const args = rpcArgs();
+      expect(args.p_routines).toHaveLength(2);
+      expect(args.p_contacts).toHaveLength(1);
+      expect(args.p_memories).toHaveLength(1);
+    });
+
+    it('prunes stale uploads, keeping the just-stored file', async () => {
+      const [uploadPath] = [`${ACCOUNT_ID}/new.xlsx`];
+      mocks.storageUpload.mockImplementation((p: string) => {
+        void p;
+        return Promise.resolve({ error: null });
+      });
+      mocks.storageList.mockResolvedValue({
+        data: [{ name: 'old-1.xlsx' }, { name: 'old-2.xlsx' }],
+        error: null,
+      });
+      // capture the real generated path
+      await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(validSheets)));
+      const generatedPath = (mocks.storageUpload.mock.calls[0]?.[0] as string) ?? uploadPath;
+      const keepName = generatedPath.split('/').pop();
+      expect(mocks.storageRemove).toHaveBeenCalledWith(
+        expect.not.arrayContaining([`${ACCOUNT_ID}/${keepName}`]),
       );
+      expect(mocks.storageRemove).toHaveBeenCalledWith([
+        `${ACCOUNT_ID}/old-1.xlsx`,
+        `${ACCOUNT_ID}/old-2.xlsx`,
+      ]);
     });
   });
 });
