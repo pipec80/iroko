@@ -78,17 +78,28 @@ BEGIN
         'status_text', 'Too Many Requests')::text;
   END IF;
 
-  INSERT INTO private.rate_limits (ip) VALUES (v_ip);
+  BEGIN
+    INSERT INTO private.rate_limits (ip) VALUES (v_ip);
+  EXCEPTION WHEN read_only_sql_transaction THEN
+    -- PostgREST runs STABLE RPCs in a read-only transaction even via POST, so
+    -- the INSERT would fail with 25006. Reads don't need rate limiting — skip
+    -- silently. (Regression guard: 20260610033405 first added this handler.)
+    RETURN;
+  END;
 END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.check_request() TO anon, authenticated;
+-- service_role calls db_pre_request during Management API operations (CLI gen
+-- types, MCP); keep its grant so those don't hit "permission denied" (42501).
+GRANT EXECUTE ON FUNCTION public.check_request() TO service_role;
 REVOKE EXECUTE ON FUNCTION public.check_request() FROM PUBLIC;
 
 COMMENT ON FUNCTION public.check_request() IS
   'db_pre_request hook on authenticator. Limits POST/PUT/PATCH/DELETE to 100 '
   'requests per client IP in 5 minutes. Client IP is resolved from the '
   'un-spoofable cf-connecting-ip header, falling back to the last X-Forwarded-For '
-  'hop; requests without a trustworthy IP (local dev) are exempt. GET/HEAD exempt.';
+  'hop; requests without a trustworthy IP (local dev) are exempt. GET/HEAD exempt. '
+  'STABLE RPCs via POST run read-only — the INSERT is skipped on 25006.';
 
 NOTIFY pgrst, 'reload config';
