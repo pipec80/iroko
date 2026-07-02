@@ -15,8 +15,18 @@ describe('storageUrl', () => {
     );
   });
 
-  it('passes through legacy absolute URLs untouched', () => {
-    expect(storageUrl('https://cdn.example.com/x.png')).toBe('https://cdn.example.com/x.png');
+  it('passes through absolute URLs from trusted origins (Supabase, Google OAuth)', () => {
+    expect(storageUrl('https://proj.supabase.co/storage/v1/object/public/avatars/x.png')).toBe(
+      'https://proj.supabase.co/storage/v1/object/public/avatars/x.png',
+    );
+    expect(storageUrl('https://lh3.googleusercontent.com/a/abc123')).toBe(
+      'https://lh3.googleusercontent.com/a/abc123',
+    );
+  });
+
+  it('returns null for absolute URLs from untrusted origins (avatar_url poisoning guard)', () => {
+    expect(storageUrl('https://evil.example.com/x.png')).toBeNull();
+    expect(storageUrl('http://proj.supabase.co/insecure.png')).toBeNull();
   });
 
   it('returns null for null, undefined and empty path', () => {

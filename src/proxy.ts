@@ -10,29 +10,43 @@ const intlMiddleware = createMiddleware(routing);
 const SENTRY_INGEST_ORIGIN = 'https://o4511537461067776.ingest.us.sentry.io';
 const SENTRY_REPORT_URI = `${SENTRY_INGEST_ORIGIN}/api/4511537462771713/security/?sentry_key=f88007bc87fbd834a3f62bfc0d256a7e`;
 
+// Image origins the template itself needs in production: our own Supabase
+// Storage CDN, Google OAuth avatars, flag icons, and Vercel/Google static assets.
+const PRODUCTION_IMG_HOSTS = [
+  'https://flagcdn.com',
+  'https://cdn.jsdelivr.net',
+  'https://lh3.googleusercontent.com',
+  'https://upload.wikimedia.org',
+  'https://www.gstatic.com',
+  'https://*.supabase.co',
+];
+
+// DEMO-ONLY placeholder avatar/photo providers used by the marketing/demo pages.
+// A buyer shipping their own product should DELETE this list — nothing in the
+// core app depends on it.
+const DEMO_IMG_HOSTS = [
+  'https://images.unsplash.com',
+  'https://api.dicebear.com',
+  'https://i.pravatar.cc',
+];
+
 function buildCspHeader(isDev: boolean): string {
   const localOrigin = isDev ? 'http://127.0.0.1:54321' : '';
   const localWsOrigin = isDev ? 'ws://127.0.0.1:54321' : '';
 
   const directives: string[] = [
     "default-src 'self'",
+    // NOTE: 'unsafe-inline' (no per-request nonce). Per-request nonces force
+    // every page into dynamic rendering, which is incompatible with this app's
+    // statically-generated marketing pages (cacheComponents). The high-value
+    // directives below (object-src 'none', base-uri, frame-ancestors) plus
+    // React's auto-escaping and zero dangerouslySetInnerHTML keep the residual
+    // XSS surface minimal. See SECURITY.md.
     isDev ?
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:"
     : "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://challenges.cloudflare.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    [
-      "img-src 'self' blob: data:",
-      'https://flagcdn.com',
-      'https://cdn.jsdelivr.net',
-      'https://images.unsplash.com',
-      'https://api.dicebear.com',
-      'https://lh3.googleusercontent.com',
-      'https://upload.wikimedia.org',
-      'https://www.gstatic.com',
-      'https://i.pravatar.cc',
-      'https://*.supabase.co',
-      localOrigin,
-    ]
+    ["img-src 'self' blob: data:", ...PRODUCTION_IMG_HOSTS, ...DEMO_IMG_HOSTS, localOrigin]
       .filter(Boolean)
       .join(' '),
     "font-src 'self' https://fonts.gstatic.com",

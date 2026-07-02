@@ -21,6 +21,8 @@ vi.mock('@/lib/supabase/server', () => ({
 
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
+vi.mock('next-intl/server', () => ({ getLocale: vi.fn().mockResolvedValue('en') }));
+
 vi.mock('next/server', () => ({
   after: vi.fn().mockImplementation((fn: () => unknown) => void fn()),
 }));
@@ -200,7 +202,12 @@ describe('inviteMembers', () => {
     expect(mockSendInvitationEmail).toHaveBeenCalledTimes(2);
     expect(mockSendInvitationEmail).toHaveBeenCalledWith(
       'alice@example.com',
-      expect.objectContaining({ inviterEmail: 'owner@example.com', teamRole: 'member' }),
+      expect.objectContaining({
+        inviterEmail: 'owner@example.com',
+        teamRole: 'member',
+        // URL uses the inviter's locale (mocked 'en'), not the hardcoded default.
+        inviteUrl: 'http://localhost:3000/en/auth/accept-invitation?token=tok-a',
+      }),
     );
     expect(mockSendInvitationEmail).toHaveBeenCalledWith(
       'bob@example.com',
