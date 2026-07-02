@@ -66,9 +66,9 @@ export const appConfig: AppConfig = {
   description:
     'The SaaS boilerplate that maximises Supabase and runs on the free tier. Auth, billing, teams and deploy — ready on day one.',
   urls: {
-    site: 'https://iroko.vercel.app',
+    site: 'https://project-a89lv.vercel.app',
     support: 'mailto:support@iroko.vercel.app',
-    docs: 'https://iroko.vercel.app/docs',
+    docs: 'https://project-a89lv.vercel.app/docs',
     github: 'https://github.com/pipec80/iroko',
     twitter: 'https://twitter.com/iroko_saas',
   },

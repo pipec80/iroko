@@ -9,7 +9,11 @@
 # Mailpit/service key locales NO llevan la etiqueta y quedan fuera.
 #
 # Secrets requeridos (nivel repositorio):
-#   SITE_URL  →  URL de producción, ej. https://iroko.vercel.app
+#   SITE_URL  →  URL de producción REAL, ej. https://project-a89lv.vercel.app
+#                ⚠️ Si apunta a otro dominio, a un deployment inexistente o a
+#                uno con Vercel Deployment Protection, TODOS los smoke tests
+#                fallan con timeouts opacos — el preflight de abajo lo detecta
+#                y falla con la causa explícita en la primera línea del log.
 #
 # Al fallar, GitHub envía notificación por email automáticamente.
 # El reporte HTML de Playwright queda disponible en Actions → Artifacts.
@@ -50,6 +54,37 @@ jobs:
 
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
+
+      # Preflight: verifica que SITE_URL exista y sirva la app ANTES de correr
+      # Playwright. Sin esto, una URL equivocada o un deployment protegido se
+      # manifiesta como 15 timeouts de 30s indistinguibles de tests rotos.
+      - name: Preflight — production URL serves the app
+        env:
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          if [ -z "$SITE_URL" ]; then
+            echo "::error::El secret SITE_URL no está definido — configúralo en Settings → Secrets → Actions."
+            exit 1
+          fi
+
+          status=$(curl -sL -o /tmp/preflight.html -w "%{http_code}" --max-time 30 "$SITE_URL/es" || echo "000")
+          echo "GET $SITE_URL/es → HTTP $status"
+
+          if [ "$status" != "200" ]; then
+            echo "::error::$SITE_URL/es respondió HTTP $status — el dominio no sirve la app. Causas típicas: secret SITE_URL apunta al dominio equivocado, deployment inexistente (404), o Vercel Deployment Protection activo (401/403)."
+            echo "--- Primeros 400 caracteres de la respuesta ---"
+            head -c 400 /tmp/preflight.html || true
+            exit 1
+          fi
+
+          # El HTML debe ser NUESTRA app, no un interstitial que responde 200.
+          if ! grep -qi "iroko" /tmp/preflight.html; then
+            echo "::error::$SITE_URL/es respondió 200 pero el HTML no contiene la marca de la app — probablemente sirve otra página (interstitial de Vercel u otro proyecto)."
+            head -c 400 /tmp/preflight.html || true
+            exit 1
+          fi
+
+          echo "✅ Producción responde y sirve la app."
 
       - name: Run smoke tests against production
         run: |
