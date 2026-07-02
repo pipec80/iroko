@@ -1245,6 +1245,10 @@ export type Database = {
         }[]
       }
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
+      remove_member: {
+        Args: { p_account_id: string; p_user_id: string }
+        Returns: boolean
+      }
       replace_robot_config: {
         Args: {
           p_account_id: string
@@ -1253,10 +1257,6 @@ export type Database = {
           p_routines: Json
         }
         Returns: undefined
-      }
-      remove_member: {
-        Args: { p_account_id: string; p_user_id: string }
-        Returns: boolean
       }
       request_account_deletion: { Args: never; Returns: undefined }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
