@@ -1166,6 +1166,26 @@ export type Database = {
       count_unused_recovery_codes: { Args: never; Returns: number }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       generate_recovery_codes: { Args: never; Returns: string[] }
+      get_account_audit_logs: {
+        Args: {
+          p_account_id: string
+          p_action?: Database["audit"]["Enums"]["action_type"]
+          p_cursor_created_at?: string
+          p_cursor_id?: number
+          p_limit?: number
+          p_resource_type?: string
+        }
+        Returns: {
+          action: Database["audit"]["Enums"]["action_type"]
+          actor_id: string
+          actor_name: string
+          avatar_url: string
+          created_at: string
+          id: number
+          resource_id: string
+          resource_type: string
+        }[]
+      }
       get_account_subscription: {
         Args: { p_account_id: string }
         Returns: {
