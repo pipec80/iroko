@@ -1,0 +1,23 @@
+-- ============================================================================
+-- Migration: drop orphaned public.rls_auto_enable()
+-- ============================================================================
+-- Cleanup (unnecessary attack surface / untracked function):
+--   Confirmed via direct pg_proc inspection on the remote project that TWO
+--   copies of this function exist: private.rls_auto_enable() (the real one,
+--   wired to the `ensure_rls` event trigger on ddl_command_end) and
+--   public.rls_auto_enable() — an untracked duplicate that no migration or
+--   schema file ever created.
+--
+--   Because it lives in the `public` schema (the only schema exposed via the
+--   Data API per supabase/config.toml `schemas = ["public"]`), PostgREST
+--   auto-exposes it as `/rest/v1/rpc/rls_auto_enable`, flagged by the
+--   database linter (0029_authenticated_security_definer_function_executable).
+--   Calling it via RPC would error — pg_event_trigger_ddl_commands() can only
+--   run inside a real event trigger context — but it's unused, untracked
+--   surface that shouldn't exist in the exposed schema.
+--
+--   The event trigger itself points at private.rls_auto_enable(), so dropping
+--   the public copy changes no behavior.
+-- ============================================================================
+
+DROP FUNCTION IF EXISTS public.rls_auto_enable();
