@@ -125,27 +125,39 @@ CREATE OR REPLACE FUNCTION "public"."check_request"() RETURNS "void"
     SET "search_path" TO ''
     AS $$
 DECLARE
-  v_method  text := current_setting('request.method', true);
+  v_headers json    := current_setting('request.headers', true)::json;
+  v_method  text    := current_setting('request.method', true);
+  v_xff     text;
   v_ip_str  text;
   v_ip      inet;
   v_window  timestamptz;
   v_total   integer;
 BEGIN
+  -- GET/HEAD run on read replicas and never reach this hook.
   IF v_method IN ('GET', 'HEAD') OR v_method IS NULL THEN
     RETURN;
   END IF;
 
-  v_ip_str := trim(split_part(
-    COALESCE(current_setting('request.headers', true)::json->>'x-forwarded-for', ''),
-    ',', 1
-  ));
+  -- 1. Cloudflare's un-spoofable client IP (single value, set by the edge).
+  v_ip_str := v_headers ->> 'cf-connecting-ip';
 
-  IF v_ip_str = '' THEN
+  -- 2. Fall back to the LAST X-Forwarded-For hop (added by the closest trusted
+  --    proxy — the client can prepend entries but cannot control the tail).
+  IF v_ip_str IS NULL OR v_ip_str = '' THEN
+    v_xff := v_headers ->> 'x-forwarded-for';
+    IF v_xff IS NOT NULL AND v_xff <> '' THEN
+      v_ip_str := trim(split_part(v_xff, ',', array_length(string_to_array(v_xff, ','), 1)));
+    END IF;
+  END IF;
+
+  -- No trustworthy IP (local dev without a proxy) → exempt.
+  IF v_ip_str IS NULL OR v_ip_str = '' THEN
     RETURN;
   END IF;
 
+  -- Parse defensively; a malformed header must not error out the request.
   BEGIN
-    v_ip := v_ip_str::inet;
+    v_ip := trim(v_ip_str)::inet;
   EXCEPTION WHEN OTHERS THEN
     RETURN;
   END;
@@ -183,7 +195,7 @@ $$;
 ALTER FUNCTION "public"."check_request"() OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."check_request"() IS 'Hook db_pre_request registrado en el rol authenticator. Limita POST/PUT/PATCH/DELETE a 100 peticiones por IP en 5 minutos. GET/HEAD están exentos. IP extraída de X-Forwarded-For. Umbral ajustable en producción según la carga real.';
+COMMENT ON FUNCTION "public"."check_request"() IS 'Hook db_pre_request registrado en el rol authenticator. Limita POST/PUT/PATCH/DELETE a 100 peticiones por IP en 5 minutos. GET/HEAD están exentos. IP resuelta desde CF-Connecting-IP (Cloudflare, no falsificable) o, si falta, desde el último hop de X-Forwarded-For (tampoco falsificable por el cliente). Umbral ajustable en producción según la carga real.';
 
 
 
@@ -249,6 +261,7 @@ DECLARE
   v_user_id    uuid := (event ->> 'user_id')::uuid;
   v_account_id uuid;
   v_role       text;
+  v_has_mfa    boolean;
   v_claims     jsonb := event -> 'claims';
   v_app_meta   jsonb := COALESCE(v_claims -> 'app_metadata', '{}'::jsonb);
 BEGIN
@@ -264,10 +277,20 @@ BEGIN
     v_app_meta := v_app_meta
       || jsonb_build_object('account_id', v_account_id)
       || jsonb_build_object('role', v_role);
-
-    v_claims := jsonb_set(v_claims, '{app_metadata}', v_app_meta, true);
   END IF;
 
+  -- Does the user have at least one verified MFA factor? The edge guard uses
+  -- this to force aal2 before granting access to protected routes.
+  SELECT EXISTS (
+    SELECT 1
+    FROM auth.mfa_factors f
+    WHERE f.user_id = v_user_id
+      AND f.status = 'verified'
+  ) INTO v_has_mfa;
+
+  v_app_meta := v_app_meta || jsonb_build_object('mfa_enrolled', v_has_mfa);
+
+  v_claims := jsonb_set(v_claims, '{app_metadata}', v_app_meta, true);
   RETURN jsonb_set(event, '{claims}', v_claims, true);
 END;
 $$;
@@ -276,7 +299,7 @@ $$;
 ALTER FUNCTION "public"."custom_access_token_hook"("event" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") IS 'Supabase Auth custom_access_token hook. Reads the user''s default membership from public.accounts_memberships and writes app_metadata.account_id + app_metadata.role into the JWT. SECURITY DEFINER because it must read accounts_memberships on behalf of supabase_auth_admin.';
+COMMENT ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") IS 'Supabase Auth custom_access_token hook. Writes app_metadata.account_id + app_metadata.role from the user''s default membership, and app_metadata.mfa_enrolled (true when a verified MFA factor exists) so the edge proxy can enforce aal2 for MFA users. SECURITY DEFINER.';
 
 
 
@@ -620,6 +643,61 @@ ALTER FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid
 
 
 COMMENT ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid") IS 'Removes a member from an account. Only owner/admin can remove. Owner cannot be removed. Admin cannot remove another admin. Cannot remove yourself (use leave team flow).';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_uid uuid := (SELECT auth.uid());
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  IF NOT private.user_is_member(p_account_id, v_uid) THEN
+    RAISE EXCEPTION 'not_a_member' USING ERRCODE = '42501';
+  END IF;
+
+  DELETE FROM public.robot_routines WHERE account_id = p_account_id;
+  DELETE FROM public.robot_contacts WHERE account_id = p_account_id;
+  DELETE FROM public.robot_memories WHERE account_id = p_account_id;
+
+  INSERT INTO public.robot_routines (account_id, time, activity_type, description, message)
+  SELECT
+    p_account_id,
+    (r ->> 'time')::time,
+    COALESCE(NULLIF(r ->> 'activity_type', ''), 'General'),
+    COALESCE(r ->> 'description', ''),
+    COALESCE(r ->> 'message', '')
+  FROM jsonb_array_elements(COALESCE(p_routines, '[]'::jsonb)) AS r;
+
+  INSERT INTO public.robot_contacts (account_id, name, relationship, phone, priority)
+  SELECT
+    p_account_id,
+    COALESCE(NULLIF(c ->> 'name', ''), 'Desconocido'),
+    COALESCE(c ->> 'relationship', ''),
+    COALESCE(c ->> 'phone', ''),
+    COALESCE((c ->> 'priority')::int, 1)
+  FROM jsonb_array_elements(COALESCE(p_contacts, '[]'::jsonb)) AS c;
+
+  INSERT INTO public.robot_memories (account_id, entity, name, key_fact)
+  SELECT
+    p_account_id,
+    COALESCE(NULLIF(m ->> 'entity', ''), 'General'),
+    COALESCE(m ->> 'name', ''),
+    COALESCE(m ->> 'key_fact', '')
+  FROM jsonb_array_elements(COALESCE(p_memories, '[]'::jsonb)) AS m;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") IS 'Atomically replaces a tenant''s robot routines/contacts/memories in a single transaction. SECURITY DEFINER with an internal membership check. Prevents the partial-write data loss of the previous delete-then-insert client flow.';
 
 
 
@@ -1138,7 +1216,9 @@ CREATE POLICY "Memberships: lectura miembros" ON "public"."accounts_memberships"
 
 
 
-CREATE POLICY "Profiles: lectura pública" ON "public"."profiles" FOR SELECT TO "authenticated", "anon" USING (("deleted_at" IS NULL));
+CREATE POLICY "Profiles: lectura propia" ON "public"."profiles" FOR SELECT TO "authenticated" USING ((("id" = ( SELECT "auth"."uid"() AS "uid")) AND ("deleted_at" IS NULL)));
+
+COMMENT ON POLICY "Profiles: lectura propia" ON "public"."profiles" IS 'Self-read only. Teammate display_name/avatar_url is exposed via the SECURITY DEFINER RPC public.list_team_members (membership-checked), never by a direct REST read. Prevents cross-tenant PII enumeration.';
 
 
 
@@ -1251,6 +1331,10 @@ REVOKE ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") FROM
 GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "service_role";
 GRANT ALL ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") TO "supabase_auth_admin";
 
+-- The hook runs as its owner (postgres) via SECURITY DEFINER and must read the
+-- verified-factor status from the auth schema.
+GRANT SELECT ON TABLE "auth"."mfa_factors" TO "supabase_auth_admin";
+
 
 
 REVOKE ALL ON FUNCTION "public"."generate_recovery_codes"() FROM PUBLIC;
@@ -1304,6 +1388,12 @@ GRANT ALL ON FUNCTION "public"."list_team_members"("p_account_id" "uuid") TO "se
 REVOKE ALL ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") FROM "anon";
+GRANT ALL ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") TO "authenticated";
 
 
 
