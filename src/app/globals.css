@@ -522,6 +522,16 @@
     padding-right: 22px;
   }
 
+  /* ── Activity log table row grid ── */
+  .activity-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr 0.8fr 1fr;
+    gap: 16px;
+    align-items: center;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
   /* ── Wordmark — brand name treatment ── */
   .brand-wordmark {
     font-size: 22px;

@@ -44,6 +44,8 @@ export type AppConfig = {
     projects: boolean;
     /** Show the Members module. */
     members: boolean;
+    /** Show the Activity module (audit log viewer, owner/admin only). */
+    activityLog: boolean;
     /** Per-vertical toggles. */
     verticals: {
       /** Demo vertical — robot configuration uploader. Set false to hide from nav. */
@@ -79,6 +81,7 @@ export const appConfig: AppConfig = {
     billing: true,
     projects: true,
     members: true,
+    activityLog: true,
     verticals: {
       robot: true,
     },

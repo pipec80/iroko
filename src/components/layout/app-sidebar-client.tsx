@@ -10,6 +10,7 @@ import {
   Settings,
   Users,
   Bot,
+  Activity,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -66,6 +67,12 @@ export function AppSidebarClient({ orgs }: Props) {
     : []),
     ...(appConfig.features.members ?
       [{ id: 'members', Icon: Users, label: t('nav_members'), href: '/dashboard/members' }]
+    : []),
+    ...((
+      appConfig.features.activityLog &&
+      (selectedOrg?.role === 'owner' || selectedOrg?.role === 'admin')
+    ) ?
+      [{ id: 'activity', Icon: Activity, label: t('nav_activity'), href: '/dashboard/activity' }]
     : []),
     ...(appConfig.features.billing ?
       [{ id: 'billing', Icon: CreditCard, label: t('nav_billing'), href: '/dashboard/billing' }]

@@ -47,22 +47,22 @@ la regla. Si no entra, no entra.
 
 Catálogo de módulos. La columna **Superficie** indica qué UI lleva cada uno — **no todos necesitan página**.
 
-| Necesidad                     | Implementación nativa                                     | Superficie / UI                                              | Estado     |
-| ----------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ | ---------- |
-| Auth (email/oauth/magic/MFA)  | Supabase Auth                                             | 🟡 Flujos login/signup + settings MFA                        | ✅ existe  |
-| Multi-tenant + RBAC           | Postgres + RLS + custom access token hook (JWT claims)    | 🟢 Members + account switcher (RLS = enforcement, sin vista) | ✅ core    |
-| Audit logs                    | triggers Postgres (schema `audit`)                        | 🟡 Visor read-only (admin)                                   | ✅ existe  |
-| Notificaciones in-app         | tabla + **Realtime** (live, sin polling)                  | 🟡 Campanita + lista (leer/descartar) — no se "crean"        | F2         |
-| Email transaccional           | Resend (free 3k/mes)                                      | ⚪ Servicio `sendEmail()` disparado por eventos              | F2         |
-| Webhooks salientes            | **Database Webhooks / pg_net**                            | 🟢 CRUD de endpoints + log de entregas read-only             | F2         |
-| API keys                      | tabla hasheada + Edge Function de validación              | 🟢 Crear / listar / revocar (sin editar)                     | F2         |
-| Feature flags                 | tabla Postgres + RLS                                      | 🟢 Página admin (toggles + asignación)                       | F2         |
-| Jobs / colas                  | **pg_cron + pgmq + Edge Functions**                       | ⚪ Backend puro (panel de estado opcional)                   | F2         |
-| Storage de archivos           | Supabase Storage + RLS                                    | 🟡 Widgets embebidos (avatar, subir archivos)                | ✅ existe  |
-| Admin panel + impersonation   | RLS `platform_admin` + service role                       | 🟡 Páginas read + acciones (admin)                           | F3         |
-| GDPR export / right-to-delete | funciones Postgres (RPC)                                  | 🟡 2 botones en settings + confirmación                      | F3         |
-| Billing (suscripciones)       | Stripe + MercadoPago, estado en Postgres, webhook en Edge | 🟡 Plan / facturas + suscribir / cancelar                    | F2         |
-| Vertical IA ("IA tuneada")    | **pgvector**                                              | 🟢 Según el vertical                                         | base lista |
+| Necesidad                     | Implementación nativa                                     | Superficie / UI                                                   | Estado     |
+| ----------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
+| Auth (email/oauth/magic/MFA)  | Supabase Auth                                             | 🟡 Flujos login/signup + settings MFA                             | ✅ existe  |
+| Multi-tenant + RBAC           | Postgres + RLS + custom access token hook (JWT claims)    | 🟢 Members + account switcher (RLS = enforcement, sin vista)      | ✅ core    |
+| Audit logs                    | triggers Postgres (schema `audit`) + `v_recent_activity`  | 🟢 Visor por cuenta en `dashboard/activity`, filtros + paginación | ✅ F2 (2G) |
+| Notificaciones in-app         | tabla + **Realtime** (live, sin polling)                  | 🟡 Campanita + lista (leer/descartar) — no se "crean"             | F2         |
+| Email transaccional           | Resend (free 3k/mes)                                      | ⚪ Servicio `sendEmail()` disparado por eventos                   | F2         |
+| Webhooks salientes            | **Database Webhooks / pg_net**                            | 🟢 CRUD de endpoints + log de entregas read-only                  | F2         |
+| API keys                      | tabla hasheada + Edge Function de validación              | 🟢 Crear / listar / revocar (sin editar)                          | F2         |
+| Feature flags                 | tabla Postgres + RLS                                      | 🟢 Página admin (toggles + asignación)                            | F2         |
+| Jobs / colas                  | **pg_cron + pgmq + Edge Functions**                       | ⚪ Backend puro (panel de estado opcional)                        | F2         |
+| Storage de archivos           | Supabase Storage + RLS                                    | 🟡 Widgets embebidos (avatar, subir archivos)                     | ✅ existe  |
+| Admin panel + impersonation   | RLS `platform_admin` + service role                       | 🟡 Páginas read + acciones (admin)                                | F3         |
+| GDPR export / right-to-delete | funciones Postgres (RPC)                                  | 🟡 2 botones en settings + confirmación                           | F3         |
+| Billing (suscripciones)       | Stripe + MercadoPago, estado en Postgres, webhook en Edge | 🟡 Plan / facturas + suscribir / cancelar                         | F2         |
+| Vertical IA ("IA tuneada")    | **pgvector**                                              | 🟢 Según el vertical                                              | base lista |
 
 **Superficie:** 🟢 página + CRUD visual · 🟡 UI sin CRUD (widget / lista / acciones) · ⚪ sin vista (backend / servicio).
 
@@ -72,6 +72,9 @@ Catálogo de módulos. La columna **Superficie** indica qué UI lleva cada uno �
   Se **pausa a los 7 días de inactividad** (importa para demos, no para SaaS con usuarios).
 - **Vercel Hobby:** gratis pero **no-comercial**. Al monetizar → Vercel Pro (~USD 20/mes).
 - **Resend:** 3.000 mails/mes free. **Stripe/MercadoPago:** sin fee mensual (comisión por venta).
+- **Auth Pro-gated:** session timebox / inactivity timeout (`0s` en Free, se activan en `config.toml`
+  tras upgrade) y **leaked password protection** (HaveIBeenPwned, toggle en Dashboard → Authentication
+  → Sign In / Providers, sin equivalente declarable en `config.toml`) requieren plan Pro.
 
 El pitch es honesto: **"gratis para partir; escalás a pago cuando crecés"**.
 
@@ -244,6 +247,12 @@ migraciones, tipos regenerados, tests y JSDoc.
 - **2F · Jobs / colas.** Patrón de referencia: cola con **pgmq**, scheduler con **pg_cron**,
   y un worker **Edge Function** (ej. procesar cola de emails o limpieza). Documentar el patrón
   como "así se hacen jobs sin infra externa".
+- **2G · Audit Log Viewer.** La DB ya existe (`audit.logs`, `audit.v_recent_activity`, 6 triggers
+  activos, inmutabilidad garantizada). Lo que falta: RPC `get_account_audit_logs(account_id, limit,
+cursor)` `SECURITY DEFINER` que valida que el caller es `owner` o `admin` de esa cuenta (vía
+  `private.user_is_member`). UI en `dashboard/settings/activity`: tabla paginada con filtros por
+  `action` y `resource_type`, columnas actor + acción + recurso + fecha. Accesible solo para roles
+  `owner`/`admin`; la vista cross-account (plataforma) queda para F3.
 
 **🤖 Prompt para Claude Code — F2 (ejecutar sub-módulo por sub-módulo, no todo junto):**
 
@@ -287,7 +296,8 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
 1. **Super-admin / back-office.** Tabla `platform_admins` + `private.is_platform_admin()`.
    Extender RLS de las tablas necesarias con `OR private.is_platform_admin()`. Ruta
    `/dashboard/admin` protegida (requiere MFA). Vistas: cuentas, estado de suscripción/pago
-   (resuelve el caso call-center), visor de `audit.logs`.
+   (resuelve el caso call-center), visor **cross-account** de `audit.logs` (distinto del visor
+   por cuenta de 2G, que es solo para el admin de esa cuenta).
 2. **Impersonation ("ver como").** Flujo seguro con **banner permanente**, salida clara, y
    **registro en audit logs** de cada acción mientras se impersona.
 3. **GDPR.** RPCs `export_my_data()` (devuelve JSON completo del usuario/tenant) y
@@ -387,6 +397,13 @@ verde + `pnpm knip` limpio. Commits convencionales atómicos.
 ### Checklist de progreso
 
 - [x] **F1** — Fundación limpia + DX
-- [ ] **F2** — Módulos Supabase-native (2A billing · 2B email · 2C notifs · 2D webhooks/API keys · 2E flags · 2F jobs)
+- [ ] **F2** — Módulos Supabase-native
+  - [x] 2B · Email (Resend + React Email + 3 templates + wiring auth/invitations)
+  - [x] 2C · Notificaciones in-app (Realtime broadcast + `notify()` + `NotificationBell`)
+  - [x] 2E · Feature flags (tablas + RPC 3-niveles + `isEnabled()` + 5 tests)
+  - [ ] 2A · Billing (schema DB ✅ — falta integración Stripe/MercadoPago + UI real)
+  - [ ] 2D · Webhooks salientes + API keys
+  - [ ] 2F · Jobs / colas (pg_cron limpieza ✅ — falta pgmq + Edge Function worker)
+  - [x] 2G · Audit Log Viewer (RPC `get_account_audit_logs` + UI paginada en `dashboard/activity`, owner/admin only)
 - [ ] **F3** — Admin + Compliance + Onboarding
 - [ ] **F4** — Producto vendible (docs · landing · distribución)
