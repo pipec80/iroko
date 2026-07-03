@@ -14,6 +14,11 @@
 #                uno con Vercel Deployment Protection, TODOS los smoke tests
 #                fallan con timeouts opacos — el preflight de abajo lo detecta
 #                y falla con la causa explícita en la primera línea del log.
+#   VERCEL_AUTOMATION_BYPASS_SECRET → Protection Bypass for Automation.
+#                Vercel desafía a los runners de GitHub con su Security
+#                Checkpoint (429 + challenge JS); sin este secret ni curl ni
+#                Playwright pasan. Generarlo en Vercel → proyecto → Settings →
+#                Deployment Protection → Protection Bypass for Automation.
 #
 # Al fallar, GitHub envía notificación por email automáticamente.
 # El reporte HTML de Playwright queda disponible en Actions → Artifacts.
@@ -58,17 +63,39 @@ jobs:
       # Preflight: verifica que SITE_URL exista y sirva la app ANTES de correr
       # Playwright. Sin esto, una URL equivocada o un deployment protegido se
       # manifiesta como 15 timeouts de 30s indistinguibles de tests rotos.
+      #
+      # El firewall de Vercel desafía a los runners de GitHub (429 + "Vercel
+      # Security Checkpoint", un challenge de JS que curl no puede resolver).
+      # El mecanismo oficial para automatización es Protection Bypass for
+      # Automation: Vercel → Settings → Deployment Protection → generar secret
+      # → guardarlo como VERCEL_AUTOMATION_BYPASS_SECRET en GitHub. El header
+      # x-vercel-protection-bypass salta el checkpoint; x-vercel-set-bypass-cookie
+      # persiste el bypass como cookie para las navegaciones de Playwright.
       - name: Preflight — production URL serves the app
         env:
           SITE_URL: ${{ secrets.SITE_URL }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
           if [ -z "$SITE_URL" ]; then
             echo "::error::El secret SITE_URL no está definido — configúralo en Settings → Secrets → Actions."
             exit 1
           fi
 
-          status=$(curl -sL -o /tmp/preflight.html -w "%{http_code}" --max-time 30 "$SITE_URL/es" || echo "000")
+          bypass_args=()
+          if [ -n "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
+            bypass_args=(-H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" -H "x-vercel-set-bypass-cookie: true")
+            echo "Protection bypass: header presente"
+          else
+            echo "Protection bypass: sin secret (VERCEL_AUTOMATION_BYPASS_SECRET no definido)"
+          fi
+
+          status=$(curl -sL -o /tmp/preflight.html -w "%{http_code}" --max-time 30 "${bypass_args[@]}" "$SITE_URL/es" || echo "000")
           echo "GET $SITE_URL/es → HTTP $status"
+
+          if [ "$status" = "429" ] && grep -qi "Security Checkpoint" /tmp/preflight.html; then
+            echo "::error::El firewall de Vercel está desafiando al runner (Vercel Security Checkpoint). Fix: genera el secret en Vercel → Settings → Deployment Protection → Protection Bypass for Automation y guárdalo como VERCEL_AUTOMATION_BYPASS_SECRET en GitHub → Settings → Secrets → Actions. Si Attack Challenge Mode está activo en Vercel → Firewall, desactívalo (es solo para ataques en curso)."
+            exit 1
+          fi
 
           if [ "$status" != "200" ]; then
             echo "::error::$SITE_URL/es respondió HTTP $status — el dominio no sirve la app. Causas típicas: secret SITE_URL apunta al dominio equivocado, deployment inexistente (404), o Vercel Deployment Protection activo (401/403)."
@@ -92,6 +119,9 @@ jobs:
         env:
           # PLAYWRIGHT_BASE_URL desactiva el webServer local en playwright.config.ts
           PLAYWRIGHT_BASE_URL: ${{ secrets.SITE_URL }}
+          # playwright.config.ts lo convierte en extraHTTPHeaders para saltar
+          # el Security Checkpoint de Vercel en cada request de los tests.
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7

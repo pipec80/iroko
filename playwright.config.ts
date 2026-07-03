@@ -35,6 +35,18 @@ export default defineConfig({
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // Vercel's firewall challenges GitHub runners with its Security Checkpoint
+    // (HTTP 429 + JS challenge). The official escape hatch for automation is the
+    // Protection Bypass secret; the set-bypass-cookie header persists it across
+    // subsequent navigations. No-op when the env var is absent (local/CI runs).
+    ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?
+      {
+        extraHTTPHeaders: {
+          'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
+          'x-vercel-set-bypass-cookie': 'true',
+        },
+      }
+    : {}),
   },
 
   /* Configure projects for major browsers.
