@@ -59,7 +59,7 @@ export function useNotifications(userId: string) {
     return () => {
       cancelled = true;
     };
-  }, [userId]);
+  }, [userId, supabase]);
 
   useEffect(() => {
     if (channelRef.current?.state === 'joined') return;
@@ -88,7 +88,7 @@ export function useNotifications(userId: string) {
         channelRef.current = null;
       }
     };
-  }, [userId]);
+  }, [userId, supabase]);
 
   const unreadCount = notifications.filter((n) => !n.read_at).length;
 

@@ -55,12 +55,19 @@ export function MarkdownEditor({
     }
   }
 
+  // Keeps the effect below from needing `save` in its dependency array —
+  // `save` closes over state and is redefined every render.
+  const saveRef = useRef(save);
+  useEffect(() => {
+    saveRef.current = save;
+  });
+
   function handleChange(value: string) {
     setContent(value);
     setStatus('idle');
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
-      void save(value);
+      void saveRef.current(value);
     }, AUTOSAVE_DELAY);
   }
 
@@ -70,12 +77,12 @@ export function MarkdownEditor({
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         if (debounceRef.current) clearTimeout(debounceRef.current);
-        void save(content);
+        void saveRef.current(content);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [content, save]);
+  }, [content]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -96,7 +96,7 @@ describe('useNotifications', () => {
     await act(async () => {});
 
     expect(result.current.notifications).toHaveLength(1);
-    expect(result.current.notifications[0]!.id).toBe('notif-1');
+    expect(result.current.notifications[0]?.id).toBe('notif-1');
   });
 
   it('should report unreadCount = 0 when all notifications are read', async () => {
@@ -146,7 +146,7 @@ describe('useNotifications', () => {
     });
 
     expect(mocks.rpc).toHaveBeenCalledWith('mark_notifications_read', { p_ids: ['notif-1'] });
-    expect(result.current.notifications[0]!.read_at).not.toBeNull();
+    expect(result.current.notifications[0]?.read_at).not.toBeNull();
     expect(result.current.unreadCount).toBe(0);
   });
 
