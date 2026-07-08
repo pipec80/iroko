@@ -83,3 +83,6 @@ supabase/snippets/
 
 
 .vercel
+
+# pytest (artefactos de tooling local)
+.pytest_cache/
