@@ -15,7 +15,14 @@ type AuthFixtures = {
  * Pre-requisito: `supabase start` corriendo en :54321 y dev server en :3000.
  */
 export const test = base.extend<AuthFixtures>({
-  authenticatedPage: async ({ page, request }, provide) => {
+  authenticatedPage: async ({ page, request }, provide, testInfo) => {
+    // Guard: contra producción (nightly define PLAYWRIGHT_BASE_URL) no existe
+    // el Supabase local — saltar con causa explícita en vez de ECONNREFUSED.
+    testInfo.skip(
+      Boolean(process.env.PLAYWRIGHT_BASE_URL),
+      'authenticatedPage requiere Supabase local (127.0.0.1:54321) — este test no debe llevar @smoke ni correr contra producción.',
+    );
+
     const email = `e2e+settings+${Date.now()}@saasboilerplate.local`;
     const password = 'TestPass123!';
     const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
