@@ -635,6 +635,53 @@ export type Database = {
           },
         ]
       }
+      api_keys: {
+        Row: {
+          account_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auth_recovery_codes: {
         Row: {
           code_hash: string
@@ -1164,6 +1211,13 @@ export type Database = {
       check_request: { Args: never; Returns: undefined }
       consume_recovery_code: { Args: { p_code: string }; Returns: boolean }
       count_unused_recovery_codes: { Args: never; Returns: number }
+      create_api_key: {
+        Args: { p_account_id: string; p_expires_at?: string; p_name: string }
+        Returns: {
+          id: string
+          key: string
+        }[]
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       generate_recovery_codes: { Args: never; Returns: string[] }
       get_account_audit_logs: {
@@ -1238,6 +1292,18 @@ export type Database = {
         Args: { p_account_id: string; p_flag_name: string }
         Returns: boolean
       }
+      list_api_keys: {
+        Args: { p_account_id: string }
+        Returns: {
+          created_at: string
+          expires_at: string
+          id: string
+          key_prefix: string
+          last_used_at: string
+          name: string
+          revoked_at: string
+        }[]
+      }
       list_my_sessions: {
         Args: never
         Returns: {
@@ -1279,6 +1345,7 @@ export type Database = {
         Returns: undefined
       }
       request_account_deletion: { Args: never; Returns: undefined }
+      revoke_api_key: { Args: { p_key_id: string }; Returns: undefined }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
       update_my_profile: {
         Args: {
@@ -1320,6 +1387,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      verify_api_key: { Args: { p_key_hash: string }; Returns: string }
     }
     Enums: {
       account_type: "personal" | "team"
