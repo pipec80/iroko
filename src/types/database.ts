@@ -1328,7 +1328,7 @@ export type Database = {
       create_webhook_endpoint: {
         Args: {
           p_account_id: string
-          p_description: string
+          p_description?: string
           p_events: string[]
           p_url: string
         }
@@ -1458,7 +1458,7 @@ export type Database = {
           p_account_id: string
           p_cursor_created_at?: string
           p_cursor_id?: string
-          p_endpoint_id: string
+          p_endpoint_id?: string
           p_limit?: number
         }
         Returns: {
@@ -1544,7 +1544,7 @@ export type Database = {
       }
       update_webhook_endpoint: {
         Args: {
-          p_description: string
+          p_description?: string
           p_enabled: boolean
           p_endpoint_id: string
           p_events: string[]

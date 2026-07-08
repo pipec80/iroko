@@ -2,7 +2,6 @@
 -- ESPEJO de supabase/migrations/20260708110000_webhooks.sql (F2-2D)
 -- El diff declarativo está deshabilitado en Windows: este archivo documenta el
 -- estado final; la fuente de verdad ejecutable es la migración versionada.
--- (process_webhook_deliveries + cron: ver 20260708120000_webhooks_cron.sql)
 -- ============================================================================
 -- ============================================================================
 -- Webhooks salientes (F2-2D)
@@ -283,8 +282,8 @@ CREATE TRIGGER webhooks_account_updated
 CREATE OR REPLACE FUNCTION public.create_webhook_endpoint(
   p_account_id  uuid,
   p_url         text,
-  p_description text,
-  p_events      text[]
+  p_events      text[],
+  p_description text DEFAULT NULL
 )
 RETURNS TABLE (id uuid, secret text)
 LANGUAGE plpgsql
@@ -319,15 +318,15 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.create_webhook_endpoint(uuid, text, text, text[]) IS
+COMMENT ON FUNCTION public.create_webhook_endpoint(uuid, text, text[], text) IS
   'Crea un endpoint de webhook (owner/admin). Devuelve el signing secret UNA única vez. Máx 10 endpoints por cuenta.';
 
 CREATE OR REPLACE FUNCTION public.update_webhook_endpoint(
   p_endpoint_id uuid,
   p_url         text,
-  p_description text,
   p_events      text[],
-  p_enabled     boolean
+  p_enabled     boolean,
+  p_description text DEFAULT NULL
 )
 RETURNS void
 LANGUAGE plpgsql
@@ -361,7 +360,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.update_webhook_endpoint(uuid, text, text, text[], boolean) IS
+COMMENT ON FUNCTION public.update_webhook_endpoint(uuid, text, text[], boolean, text) IS
   'Actualiza URL, descripción, eventos y enabled de un endpoint (owner/admin).';
 
 CREATE OR REPLACE FUNCTION public.delete_webhook_endpoint(p_endpoint_id uuid)
@@ -417,7 +416,7 @@ COMMENT ON FUNCTION public.list_webhook_endpoints(uuid) IS
 
 CREATE OR REPLACE FUNCTION public.list_webhook_deliveries(
   p_account_id        uuid,
-  p_endpoint_id       uuid,
+  p_endpoint_id       uuid DEFAULT NULL,
   p_limit             integer DEFAULT 20,
   p_cursor_created_at timestamptz DEFAULT NULL,
   p_cursor_id         uuid DEFAULT NULL
@@ -466,14 +465,14 @@ COMMENT ON FUNCTION public.list_webhook_deliveries(uuid, uuid, integer, timestam
 -- Grants
 -- ============================================================================
 
-GRANT EXECUTE ON FUNCTION public.create_webhook_endpoint(uuid, text, text, text[]) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.update_webhook_endpoint(uuid, text, text, text[], boolean) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_webhook_endpoint(uuid, text, text[], text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_webhook_endpoint(uuid, text, text[], boolean, text) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.delete_webhook_endpoint(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_webhook_endpoints(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.list_webhook_deliveries(uuid, uuid, integer, timestamptz, uuid) TO authenticated;
 
-REVOKE EXECUTE ON FUNCTION public.create_webhook_endpoint(uuid, text, text, text[]) FROM PUBLIC;
-REVOKE EXECUTE ON FUNCTION public.update_webhook_endpoint(uuid, text, text, text[], boolean) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.create_webhook_endpoint(uuid, text, text[], text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.update_webhook_endpoint(uuid, text, text[], boolean, text) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.delete_webhook_endpoint(uuid) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.list_webhook_endpoints(uuid) FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION public.list_webhook_deliveries(uuid, uuid, integer, timestamptz, uuid) FROM PUBLIC;
@@ -567,4 +566,3 @@ SELECT cron.schedule(
   '* * * * *',
   $$ SELECT private.process_webhook_deliveries() $$
 );
-

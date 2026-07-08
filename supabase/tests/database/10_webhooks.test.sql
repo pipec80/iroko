@@ -34,7 +34,7 @@ SELECT set_config(
 );
 SELECT throws_ok(
   $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
-      'https://example.com/hook', NULL, ARRAY['member.joined'])$$,
+      'https://example.com/hook', ARRAY['member.joined'])$$,
   'not_authorized',
   'member no puede crear endpoints'
 );
@@ -48,14 +48,14 @@ SELECT set_config(
 
 SELECT throws_ok(
   $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
-      'http://insecure.com/hook', NULL, ARRAY['member.joined'])$$,
+      'http://insecure.com/hook', ARRAY['member.joined'])$$,
   'invalid_url',
   'URL http:// es rechazada'
 );
 
 SELECT throws_ok(
   $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
-      'https://example.com/hook', NULL, ARRAY['no.such.event'])$$,
+      'https://example.com/hook', ARRAY['no.such.event'])$$,
   'invalid_events',
   'evento fuera del catálogo es rechazado'
 );
@@ -63,7 +63,7 @@ SELECT throws_ok(
 -- ── 4. Crear devuelve el secret una única vez ───────────────────────────────
 CREATE TEMP TABLE ep AS
 SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
-  'https://example.com/hook', 'test endpoint', ARRAY['member.joined', 'member.removed']);
+  'https://example.com/hook', ARRAY['member.joined', 'member.removed'], 'test endpoint');
 
 SELECT ok(
   (SELECT secret LIKE 'whsec\_%' ESCAPE '\' FROM ep),
@@ -101,7 +101,7 @@ SELECT is(
 
 -- ── 8. Endpoint deshabilitado no recibe nuevas deliveries ───────────────────
 SELECT public.update_webhook_endpoint((SELECT ep.id FROM ep),
-  'https://example.com/hook', 'test endpoint', ARRAY['member.joined'], false);
+  'https://example.com/hook', ARRAY['member.joined'], false, 'test endpoint');
 
 SELECT private.emit_webhook_event('00000000-0000-0000-0000-000000000920',
   'member.joined', '{}'::jsonb);
