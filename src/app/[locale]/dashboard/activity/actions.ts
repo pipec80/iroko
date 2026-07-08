@@ -1,5 +1,6 @@
 'use server';
 
+import { getActiveAccountId } from '@/lib/active-account';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
@@ -28,13 +29,6 @@ export type AuditLogPage = {
 
 type ActionResult = { data: AuditLogPage | null; error?: string };
 
-/** Extract the active account_id from the JWT app_metadata. */
-async function getAccountId(): Promise<string | null> {
-  const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
-  return (data?.claims?.app_metadata?.account_id as string | undefined) ?? null;
-}
-
 /**
  * Fetches one page of audit log entries for the current account.
  * Authorization (owner/admin only) is enforced by the `get_account_audit_logs`
@@ -48,7 +42,7 @@ export const getAccountAuditLogs = withServerAction(async function getAccountAud
     return { data: null, error: 'validation_error' };
   }
 
-  const accountId = await getAccountId();
+  const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
 
   const { limit, cursor, action, resourceType } = parsed.data;

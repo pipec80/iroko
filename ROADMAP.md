@@ -402,7 +402,7 @@ verde + `pnpm knip` limpio. Commits convencionales atómicos.
   - [x] 2C · Notificaciones in-app (Realtime broadcast + `notify()` + `NotificationBell`)
   - [x] 2E · Feature flags (tablas + RPC 3-niveles + `isEnabled()` + 5 tests)
   - [ ] 2A · Billing (schema DB ✅ — falta integración Stripe/MercadoPago + UI real)
-  - [ ] 2D · Webhooks salientes + API keys
+  - [x] 2D · Webhooks salientes + API keys (endpoints + deliveries vía pg_net/HMAC/pg_cron, `api_keys` hasheadas, `GET /api/v1/account`, tabs en `org/settings`)
   - [ ] 2F · Jobs / colas (pg_cron limpieza ✅ — falta pgmq + Edge Function worker)
   - [x] 2G · Audit Log Viewer (RPC `get_account_audit_logs` + UI paginada en `dashboard/activity`, owner/admin only)
 - [ ] **F3** — Admin + Compliance + Onboarding

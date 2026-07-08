@@ -2,10 +2,13 @@
 
 import React, { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Settings, Shield, Plug, AlertTriangle } from 'lucide-react';
+import { Settings, Shield, Plug, KeyRound, Webhook, AlertTriangle } from 'lucide-react';
+
+import { ApiKeysTab } from '@/components/dashboard/org-settings/api-keys-tab';
+import { WebhooksTab } from '@/components/dashboard/org-settings/webhooks-tab';
 import { cn } from '@/lib/utils';
 
-type TabId = 'general' | 'security' | 'integrations' | 'danger';
+type TabId = 'general' | 'security' | 'integrations' | 'api_keys' | 'webhooks' | 'danger';
 
 export default function OrgSettingsPage() {
   const t = useTranslations('OrgSettings');
@@ -15,6 +18,8 @@ export default function OrgSettingsPage() {
     { id: 'general', label: t('tab_general'), Icon: Settings },
     { id: 'security', label: t('tab_security'), Icon: Shield },
     { id: 'integrations', label: t('tab_integrations'), Icon: Plug },
+    { id: 'api_keys', label: t('tab_api_keys'), Icon: KeyRound },
+    { id: 'webhooks', label: t('tab_webhooks'), Icon: Webhook },
     { id: 'danger', label: t('tab_danger'), Icon: AlertTriangle },
   ];
 
@@ -59,6 +64,8 @@ export default function OrgSettingsPage() {
         {active === 'general' && <GeneralTab />}
         {active === 'security' && <SecurityTab />}
         {active === 'integrations' && <IntegrationsTab />}
+        {active === 'api_keys' && <ApiKeysTab />}
+        {active === 'webhooks' && <WebhooksTab />}
         {active === 'danger' && <DangerTab />}
       </div>
     </div>
