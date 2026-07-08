@@ -1202,6 +1202,113 @@ export type Database = {
           },
         ]
       }
+      webhook_deliveries: {
+        Row: {
+          account_id: string
+          attempts: number
+          created_at: string
+          delivered_at: string | null
+          endpoint_id: string
+          event_type: string
+          id: string
+          last_error: string | null
+          last_status_code: number | null
+          next_retry_at: string | null
+          payload: Json
+          request_id: number | null
+          status: Database["public"]["Enums"]["webhook_delivery_status"]
+        }
+        Insert: {
+          account_id: string
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          endpoint_id: string
+          event_type: string
+          id?: string
+          last_error?: string | null
+          last_status_code?: number | null
+          next_retry_at?: string | null
+          payload?: Json
+          request_id?: number | null
+          status?: Database["public"]["Enums"]["webhook_delivery_status"]
+        }
+        Update: {
+          account_id?: string
+          attempts?: number
+          created_at?: string
+          delivered_at?: string | null
+          endpoint_id?: string
+          event_type?: string
+          id?: string
+          last_error?: string | null
+          last_status_code?: number | null
+          next_retry_at?: string | null
+          payload?: Json
+          request_id?: number | null
+          status?: Database["public"]["Enums"]["webhook_delivery_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhook_deliveries_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_endpoints: {
+        Row: {
+          account_id: string
+          created_at: string
+          description: string | null
+          enabled: boolean
+          events: string[]
+          id: string
+          secret: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          events: string[]
+          id?: string
+          secret: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          description?: string | null
+          enabled?: boolean
+          events?: string[]
+          id?: string
+          secret?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_endpoints_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -1218,7 +1325,23 @@ export type Database = {
           key: string
         }[]
       }
+      create_webhook_endpoint: {
+        Args: {
+          p_account_id: string
+          p_description: string
+          p_events: string[]
+          p_url: string
+        }
+        Returns: {
+          id: string
+          secret: string
+        }[]
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      delete_webhook_endpoint: {
+        Args: { p_endpoint_id: string }
+        Returns: undefined
+      }
       generate_recovery_codes: { Args: never; Returns: string[] }
       get_account_audit_logs: {
         Args: {
@@ -1330,6 +1453,38 @@ export type Database = {
           user_id: string
         }[]
       }
+      list_webhook_deliveries: {
+        Args: {
+          p_account_id: string
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_endpoint_id: string
+          p_limit?: number
+        }
+        Returns: {
+          attempts: number
+          created_at: string
+          delivered_at: string
+          endpoint_id: string
+          event_type: string
+          id: string
+          last_error: string
+          last_status_code: number
+          status: Database["public"]["Enums"]["webhook_delivery_status"]
+        }[]
+      }
+      list_webhook_endpoints: {
+        Args: { p_account_id: string }
+        Returns: {
+          created_at: string
+          description: string
+          enabled: boolean
+          events: string[]
+          id: string
+          updated_at: string
+          url: string
+        }[]
+      }
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
       remove_member: {
         Args: { p_account_id: string; p_user_id: string }
@@ -1387,6 +1542,16 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      update_webhook_endpoint: {
+        Args: {
+          p_description: string
+          p_enabled: boolean
+          p_endpoint_id: string
+          p_events: string[]
+          p_url: string
+        }
+        Returns: undefined
+      }
       verify_api_key: { Args: { p_key_hash: string }; Returns: string }
     }
     Enums: {
@@ -1395,6 +1560,7 @@ export type Database = {
       membership_role: "owner" | "admin" | "member" | "viewer"
       project_status: "active" | "paused" | "draft"
       project_type: "docs" | "automation" | "agent"
+      webhook_delivery_status: "pending" | "success" | "failed" | "exhausted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1560,6 +1726,7 @@ export const Constants = {
       membership_role: ["owner", "admin", "member", "viewer"],
       project_status: ["active", "paused", "draft"],
       project_type: ["docs", "automation", "agent"],
+      webhook_delivery_status: ["pending", "success", "failed", "exhausted"],
     },
   },
 } as const
