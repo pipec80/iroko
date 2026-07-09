@@ -1,334 +1,325 @@
 'use client';
 
-import React from 'react';
-import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { useLocale, useTranslations } from 'next-intl';
 
-import { cn } from '@/lib/utils';
 import {
-  Check,
-  CheckCircle,
-  Lock,
-  CreditCard,
-  Plus,
-  Download,
-  ArrowRight,
-  HelpCircle,
-} from 'lucide-react';
+  cancelSubscription,
+  getBillingData,
+  listInvoices,
+  startCheckout,
+  type Invoice,
+  type PlanRow,
+} from '@/app/[locale]/dashboard/billing/actions';
+import { cn } from '@/lib/utils';
+
+type Interval = 'month' | 'year';
 
 export function BillingTab() {
   const t = useTranslations('Billing');
+  const locale = useLocale();
+  const [interval, setInterval] = useState<Interval>('month');
+
+  const { data, isPending, error } = useQuery({
+    queryKey: ['billing', 'data'],
+    queryFn: async () => {
+      const result = await getBillingData();
+      if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
+      return result.data;
+    },
+    retry: false,
+  });
+
+  const checkout = useMutation({
+    mutationFn: async (plan: { slug: string; interval: Interval }) => {
+      const result = await startCheckout({ planSlug: plan.slug, interval: plan.interval });
+      if (result.error || !result.data) throw new Error(result.error ?? 'checkout_failed');
+      return result.data;
+    },
+    onSuccess: (result) => {
+      window.location.href = result.url;
+    },
+  });
+
+  if (isPending) {
+    return <p className="text-muted-foreground text-[13px]">{t('billing_loading')}</p>;
+  }
+  if (error) {
+    return (
+      <p className="text-[13px]" style={{ color: 'var(--color-poppy)' }}>
+        {t('billing_error')}
+      </p>
+    );
+  }
+
+  const plans = data.plans.filter((p) => p.interval === interval || p.slug === 'free');
+  const overview = data.overview;
+
+  const formatPrice = (plan: PlanRow) =>
+    new Intl.NumberFormat(locale, { style: 'currency', currency: plan.currency }).format(
+      plan.price / 100,
+    );
+
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
 
   return (
-    <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
-      {/* Left Column: Plans & Payment */}
-      <div className="flex flex-col gap-8 lg:col-span-8">
-        {/* Section: Plan Comparison */}
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-foreground text-xl font-bold">{t('current_plan')}</h2>
-            <span
-              className="rounded-full px-3 py-1 text-[10px] font-bold tracking-wider text-white uppercase"
-              style={{ background: 'var(--color-cobalt)' }}>
-              {t('billing_annual')}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* Basic Plan */}
-            <div className="border-border bg-background group hover:border-border/60 relative cursor-pointer rounded-xl border p-6 shadow-sm transition-colors hover:shadow-md">
-              <h3 className="text-foreground mb-1 text-lg font-bold">{t('plan_basic_name')}</h3>
-              <p className="text-muted-foreground mb-4 text-sm">{t('plan_basic_desc')}</p>
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-foreground font-mono text-2xl font-bold">$49</span>
-                <span className="text-muted-foreground text-sm">{t('plan_basic_period')}</span>
-              </div>
-              <ul className="text-muted-foreground mb-6 space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Check size={14} strokeWidth={2} className="shrink-0" />
-                  {t('plan_basic_item_1')}
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check size={14} strokeWidth={2} className="shrink-0" />
-                  {t('plan_basic_item_2')}
-                </li>
-              </ul>
-              <button
-                type="button"
-                className="border-border text-foreground group-hover:border-border/80 w-full rounded-md border py-2 text-sm font-bold tracking-wider uppercase transition-colors">
-                {t('plan_basic_btn')}
-              </button>
-            </div>
-
-            {/* Multi-store Plan (Active) */}
-            <div
-              className="relative rounded-xl border p-6 shadow-md"
-              style={{
-                background: 'color-mix(in srgb, var(--color-cobalt) 8%, transparent)',
-                borderColor: 'color-mix(in srgb, var(--color-cobalt) 30%, transparent)',
-              }}>
-              <div
-                className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase"
-                style={{ background: 'var(--color-cobalt)' }}>
-                {t('plan_multi_badge')}
-              </div>
-              <h3 className="text-foreground mb-1 text-lg font-bold">{t('plan_multi_name')}</h3>
-              <p className="text-muted-foreground mb-4 text-sm">{t('plan_multi_desc')}</p>
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-foreground font-mono text-2xl font-bold">$199</span>
-                <span className="text-muted-foreground text-sm">{t('plan_multi_period')}</span>
-              </div>
-              <ul className="text-muted-foreground mb-6 space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <CheckCircle
-                    size={14}
-                    strokeWidth={2}
-                    className="shrink-0"
-                    style={{ color: 'var(--color-cobalt)' }}
-                  />
-                  {t('plan_multi_item_1')}
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle
-                    size={14}
-                    strokeWidth={2}
-                    className="shrink-0"
-                    style={{ color: 'var(--color-cobalt)' }}
-                  />
-                  {t('plan_multi_item_2')}
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle
-                    size={14}
-                    strokeWidth={2}
-                    className="shrink-0"
-                    style={{ color: 'var(--color-cobalt)' }}
-                  />
-                  {t('plan_multi_item_3')}
-                </li>
-              </ul>
-              <button
-                type="button"
-                className="w-full rounded-md py-2.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
-                style={{ background: 'var(--color-cobalt)' }}>
-                {t('plan_multi_btn')}
-              </button>
-            </div>
-
-            {/* Enterprise Plan */}
-            <div className="border-border bg-background group hover:border-border/60 relative cursor-pointer rounded-xl border p-6 shadow-sm transition-colors hover:shadow-md">
-              <h3 className="text-foreground mb-1 text-lg font-bold">
-                {t('plan_enterprise_name')}
-              </h3>
-              <p className="text-muted-foreground mb-4 text-sm">{t('plan_enterprise_desc')}</p>
-              <div className="mb-6 flex items-baseline gap-1">
-                <span className="text-foreground font-mono text-2xl font-bold">Custom</span>
-              </div>
-              <ul className="text-muted-foreground mb-6 space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <Check size={14} strokeWidth={2} className="shrink-0" />
-                  {t('plan_enterprise_item_1')}
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check size={14} strokeWidth={2} className="shrink-0" />
-                  {t('plan_enterprise_item_2')}
-                </li>
-              </ul>
-              <button
-                type="button"
-                className="border-border text-foreground group-hover:border-border/80 w-full rounded-md border py-2 text-sm font-bold tracking-wider uppercase transition-colors">
-                {t('plan_enterprise_btn')}
-              </button>
-            </div>
-          </div>
-        </section>
-
-        {/* Section: Payment Method */}
-        <section
-          className="border-border rounded-xl border p-6 shadow-sm lg:p-8"
-          style={{ background: 'var(--surface-1)' }}>
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-foreground text-xl font-bold">{t('payment_method')}</h2>
-            <Lock size={18} className="text-muted-foreground" strokeWidth={1.75} />
-          </div>
-
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            {/* Current Card Display */}
-            <div className="border-border bg-background group relative overflow-hidden rounded-xl border p-5 shadow-sm">
-              <div
-                className="absolute top-0 right-0 -mt-10 -mr-10 h-32 w-32 rounded-full opacity-20 blur-3xl transition-transform duration-700 group-hover:scale-110"
-                style={{ background: 'var(--color-cobalt)' }}
-              />
-              <div className="relative z-10 mb-6 flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="bg-muted flex h-6 w-10 items-center justify-center rounded">
-                    <span className="text-muted-foreground text-[10px] font-black tracking-tighter uppercase">
-                      Visa
-                    </span>
-                  </div>
-                  <span className="text-foreground text-sm font-bold">{t('primary_card')}</span>
-                </div>
-                <button
-                  type="button"
-                  className="text-[10px] font-black tracking-widest uppercase hover:underline"
-                  style={{ color: 'var(--color-cobalt)' }}>
-                  {t('edit_card')}
-                </button>
-              </div>
-              <div className="text-foreground relative z-10 mb-2 font-mono text-xl tracking-widest">
-                •••• •••• •••• 4242
-              </div>
-              <div className="text-muted-foreground relative z-10 flex justify-between text-[10px] font-bold tracking-widest uppercase">
-                <span>{t('card_expires')}</span>
-                <span>{t('corporate_card')}</span>
-              </div>
-            </div>
-
-            {/* Add New Card */}
-            <div className="flex flex-col justify-center">
-              <h3 className="text-muted-foreground mb-4 text-xs font-black tracking-widest uppercase">
-                {t('add_payment')}
-              </h3>
-              <form className="space-y-3">
-                <div className="relative">
-                  <CreditCard
-                    size={18}
-                    strokeWidth={1.75}
-                    className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2"
-                  />
-                  <input
-                    className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border py-2.5 pr-3 pl-10 font-mono text-sm outline-none focus:ring-1"
-                    style={{ '--tw-ring-color': 'var(--color-cobalt)' } as React.CSSProperties}
-                    placeholder="0000 0000 0000 0000"
-                    type="text"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2.5 font-mono text-sm outline-none focus:ring-1"
-                    style={{ '--tw-ring-color': 'var(--color-cobalt)' } as React.CSSProperties}
-                    placeholder="MM/AA"
-                    type="text"
-                  />
-                  <input
-                    className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border px-3 py-2.5 font-mono text-sm outline-none focus:ring-1"
-                    style={{ '--tw-ring-color': 'var(--color-cobalt)' } as React.CSSProperties}
-                    placeholder="CVC"
-                    type="text"
-                  />
-                </div>
-                <button
-                  className="border-border text-foreground hover:bg-muted flex w-full items-center justify-center gap-2 rounded-md border py-2.5 text-xs font-bold tracking-widest uppercase transition-all active:scale-[0.98]"
-                  type="button">
-                  <Plus size={16} strokeWidth={2} />
-                  {t('add_card_btn')}
-                </button>
-              </form>
-            </div>
-          </div>
-        </section>
-      </div>
-
-      {/* Right Column: Billing History */}
-      <div className="flex flex-col gap-6 lg:col-span-4">
-        <section
-          className="border-border flex flex-1 flex-col rounded-xl border p-6 shadow-sm"
-          style={{ background: 'var(--surface-1)' }}>
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-foreground text-xl font-bold">{t('history_title')}</h2>
+    <div className="space-y-8">
+      <section>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-foreground text-xl font-bold">{t('current_plan')}</h2>
+          <div className="border-border flex rounded-lg border p-0.5">
             <button
               type="button"
-              className="text-muted-foreground hover:text-foreground transition-colors">
-              <Download size={20} strokeWidth={1.75} />
+              onClick={() => setInterval('month')}
+              className={cn(
+                'rounded-md px-3 py-1 text-[12px] font-semibold transition-colors',
+                interval === 'month' ? 'text-white' : 'text-muted-foreground',
+              )}
+              style={interval === 'month' ? { background: 'var(--color-cobalt)' } : undefined}>
+              {t('toggle_monthly')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setInterval('year')}
+              className={cn(
+                'rounded-md px-3 py-1 text-[12px] font-semibold transition-colors',
+                interval === 'year' ? 'text-white' : 'text-muted-foreground',
+              )}
+              style={interval === 'year' ? { background: 'var(--color-cobalt)' } : undefined}>
+              {t('toggle_yearly')}
             </button>
           </div>
+        </div>
 
-          <div className="-mx-6 flex-1 overflow-x-auto px-6">
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="border-border bg-muted/40 border-b">
-                  <th className="text-muted-foreground px-2 py-3 text-[10px] font-black tracking-widest uppercase">
-                    {t('col_date')}
-                  </th>
-                  <th className="text-muted-foreground px-2 py-3 text-right text-[10px] font-black tracking-widest uppercase">
-                    {t('col_amount')}
-                  </th>
-                  <th className="text-muted-foreground px-2 py-3 text-right text-[10px] font-black tracking-widest uppercase">
-                    {t('col_receipt')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {[
-                  { date: '2023-10-01', amount: '199.00' },
-                  { date: '2023-09-01', amount: '199.00' },
-                  { date: '2023-08-01', amount: '199.00' },
-                  { date: '2023-07-01', amount: '199.00' },
-                  { date: '2023-06-01', amount: '49.00' },
-                ].map((item, idx) => (
-                  <tr
-                    key={idx}
-                    className={cn(
-                      'border-border/50 hover:bg-muted/30 border-b transition-colors',
-                      idx % 2 !== 0 && 'bg-muted/20',
-                    )}>
-                    <td className="text-muted-foreground px-2 py-3 font-mono text-[11px]">
-                      {item.date}
-                    </td>
-                    <td className="text-foreground px-2 py-3 text-right font-mono text-xs font-bold">
-                      ${item.amount}
-                    </td>
-                    <td className="px-2 py-3 text-right">
-                      <button
-                        type="button"
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {plans.map((plan) => (
+            <PlanCard
+              key={`${plan.slug}-${plan.interval}`}
+              plan={plan}
+              isCurrent={overview?.planSlug === plan.slug}
+              price={formatPrice(plan)}
+              onSubscribe={() => checkout.mutate({ slug: plan.slug, interval })}
+              isSubscribing={checkout.isPending}
+            />
+          ))}
+        </div>
+      </section>
+
+      {overview && <SubscriptionStatusPanel overview={overview} formatDate={formatDate} />}
+
+      {overview && <InvoiceHistory />}
+    </div>
+  );
+}
+
+function PlanCard({
+  plan,
+  isCurrent,
+  price,
+  onSubscribe,
+  isSubscribing,
+}: {
+  plan: PlanRow;
+  isCurrent: boolean;
+  price: string;
+  onSubscribe: () => void;
+  isSubscribing: boolean;
+}) {
+  const t = useTranslations('Billing');
+  const isFree = plan.slug === 'free';
+
+  return (
+    <div
+      className="border-border bg-background relative rounded-xl border p-6 shadow-sm"
+      data-testid={`plan-card-${plan.slug}`}>
+      {isCurrent && (
+        <div
+          className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase"
+          style={{ background: 'var(--color-cobalt)' }}>
+          {t('plan_current_badge')}
+        </div>
+      )}
+      <h3 className="text-foreground mb-1 text-lg font-bold">{plan.name}</h3>
+      <p className="text-muted-foreground mb-4 text-sm">{plan.description}</p>
+      <div className="mb-4 flex items-baseline gap-1">
+        <span className="text-foreground font-mono text-2xl font-bold">{price}</span>
+        {!isFree && <span className="text-muted-foreground text-sm">/{plan.interval}</span>}
+      </div>
+      {plan.trialDays > 0 && !isCurrent && (
+        <p className="text-muted-foreground mb-4 text-[12px]">
+          {t('plan_trial', { days: plan.trialDays })}
+        </p>
+      )}
+      <button
+        type="button"
+        disabled={isCurrent || isFree || isSubscribing}
+        onClick={onSubscribe}
+        data-testid={`subscribe-${plan.slug}`}
+        className="w-full rounded-md py-2.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        style={{ background: 'var(--color-cobalt)' }}>
+        {isCurrent ?
+          t('plan_current_badge')
+        : isFree ?
+          t('plan_free_btn')
+        : t('plan_subscribe_btn')}
+      </button>
+    </div>
+  );
+}
+
+function SubscriptionStatusPanel({
+  overview,
+  formatDate,
+}: {
+  overview: NonNullable<Awaited<ReturnType<typeof getBillingData>>['data']>['overview'];
+  formatDate: (value: string) => string;
+}) {
+  const t = useTranslations('Billing');
+
+  const cancel = useMutation({
+    mutationFn: async () => {
+      const result = await cancelSubscription();
+      if (result.error) throw new Error(result.error);
+    },
+  });
+
+  if (!overview) return null;
+
+  return (
+    <section
+      className="border-border rounded-xl border p-6 shadow-sm"
+      style={{ background: 'var(--surface-1)' }}
+      data-testid="current-plan">
+      <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+        {t('status_label')}
+      </p>
+      <p className="text-foreground mt-1 text-sm font-semibold">{overview.status}</p>
+      {overview.currentPeriodEnd &&
+        (overview.cancelAtPeriodEnd ?
+          <p className="text-muted-foreground mt-2 text-[12px]">
+            {t('cancels_on', { date: formatDate(overview.currentPeriodEnd) })}
+          </p>
+        : <p className="text-muted-foreground mt-2 text-[12px]">
+            {t('renews_on', { date: formatDate(overview.currentPeriodEnd) })}
+          </p>)}
+      {!overview.cancelAtPeriodEnd && (
+        <button
+          type="button"
+          disabled={cancel.isPending}
+          onClick={() => {
+            if (window.confirm(t('cancel_confirm'))) cancel.mutate();
+          }}
+          className="mt-4 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
+          style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
+          {t('cancel_btn')}
+        </button>
+      )}
+    </section>
+  );
+}
+
+function InvoiceHistory() {
+  const t = useTranslations('Billing');
+  const locale = useLocale();
+
+  const { data, isPending, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery({
+      queryKey: ['billing', 'invoices'],
+      queryFn: async ({ pageParam }) => {
+        const result = await listInvoices({ cursor: pageParam ?? undefined });
+        if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
+        return result.data;
+      },
+      initialPageParam: null as { createdAt: string; id: string } | null,
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+      retry: false,
+    });
+
+  if (error?.message === 'not_authorized') return null;
+
+  const entries: Invoice[] = data?.pages.flatMap((page) => page.entries) ?? [];
+
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
+  const formatAmount = (invoice: Invoice) =>
+    new Intl.NumberFormat(locale, { style: 'currency', currency: invoice.currency }).format(
+      invoice.amountPaid / 100,
+    );
+
+  return (
+    <section
+      className="border-border rounded-xl border p-6 shadow-sm"
+      style={{ background: 'var(--surface-1)' }}>
+      <h2 className="text-foreground mb-4 text-xl font-bold">{t('history_title')}</h2>
+
+      {isPending ?
+        <p className="text-muted-foreground text-[12px]">{t('billing_loading')}</p>
+      : entries.length === 0 ?
+        <p className="text-muted-foreground text-[12px]">{t('history_empty')}</p>
+      : <>
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-border bg-muted/40 border-b">
+                <th className="text-muted-foreground px-2 py-3 text-[10px] font-black tracking-widest uppercase">
+                  {t('col_date')}
+                </th>
+                <th className="text-muted-foreground px-2 py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                  {t('col_amount')}
+                </th>
+                <th className="text-muted-foreground px-2 py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                  {t('col_status')}
+                </th>
+                <th className="text-muted-foreground px-2 py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                  {t('col_receipt')}
+                </th>
+              </tr>
+            </thead>
+            <tbody className="text-sm">
+              {entries.map((invoice, idx) => (
+                <tr
+                  key={invoice.id}
+                  className={cn(
+                    'border-border/50 hover:bg-muted/30 border-b transition-colors',
+                    idx % 2 !== 0 && 'bg-muted/20',
+                  )}>
+                  <td className="text-muted-foreground px-2 py-3 font-mono text-[11px]">
+                    {formatDate(invoice.createdAt)}
+                  </td>
+                  <td className="text-foreground px-2 py-3 text-right font-mono text-xs font-bold">
+                    {formatAmount(invoice)}
+                  </td>
+                  <td className="text-muted-foreground px-2 py-3 text-right text-[11px]">
+                    {invoice.status}
+                  </td>
+                  <td className="px-2 py-3 text-right">
+                    {invoice.hostedUrl && (
+                      <a
+                        href={invoice.hostedUrl}
+                        target="_blank"
+                        rel="noreferrer"
                         className="text-[10px] font-black tracking-widest uppercase hover:underline"
                         style={{ color: 'var(--color-cobalt)' }}>
                         PDF
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="border-border mt-6 border-t pt-4">
+                      </a>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {hasNextPage && (
             <button
               type="button"
-              className="group flex w-full items-center justify-center gap-2 text-xs font-black tracking-widest uppercase transition-colors hover:underline"
-              style={{ color: 'var(--color-cobalt)' }}>
-              {t('view_all')}
-              <ArrowRight
-                size={14}
-                strokeWidth={2}
-                className="transition-transform group-hover:translate-x-1"
-              />
+              disabled={isFetchingNextPage}
+              onClick={() => void fetchNextPage()}
+              className="border-border text-foreground mt-4 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50">
+              {t('load_more')}
             </button>
-          </div>
-        </section>
-
-        {/* Help Snippet */}
-        <section
-          className="border-border flex items-start gap-4 rounded-xl border p-5 shadow-sm"
-          style={{ background: 'var(--surface-1)' }}>
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
-            style={{ background: 'color-mix(in srgb, var(--color-cobalt) 12%, transparent)' }}>
-            <HelpCircle size={20} strokeWidth={1.75} style={{ color: 'var(--color-cobalt)' }} />
-          </div>
-          <div>
-            <h3 className="text-foreground mb-1 text-sm font-bold">{t('help_title')}</h3>
-            <p className="text-muted-foreground mb-3 text-[11px] leading-relaxed">
-              {t('help_desc')}
-            </p>
-            <button
-              type="button"
-              className="text-[10px] font-black tracking-widest uppercase hover:underline active:scale-95"
-              style={{ color: 'var(--color-cobalt)' }}>
-              {t('help_btn')}
-            </button>
-          </div>
-        </section>
-      </div>
-    </div>
+          )}
+        </>
+      }
+    </section>
   );
 }
