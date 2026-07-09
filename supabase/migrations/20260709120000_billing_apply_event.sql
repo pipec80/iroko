@@ -17,10 +17,10 @@ CREATE OR REPLACE FUNCTION public.apply_subscription_event(
   p_external_subscription_id text,
   p_external_event_id        text,
   p_event_type               text,
-  p_current_period_start     timestamptz,
-  p_current_period_end       timestamptz,
-  p_cancel_at_period_end     boolean,
-  p_trial_end                timestamptz,
+  p_current_period_start     timestamptz DEFAULT NULL,
+  p_current_period_end       timestamptz DEFAULT NULL,
+  p_cancel_at_period_end     boolean DEFAULT false,
+  p_trial_end                timestamptz DEFAULT NULL,
   p_invoice                  jsonb DEFAULT NULL
 )
 RETURNS text

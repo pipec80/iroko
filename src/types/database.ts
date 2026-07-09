@@ -1318,9 +1318,9 @@ export type Database = {
       apply_subscription_event: {
         Args: {
           p_account_id: string
-          p_cancel_at_period_end: boolean
-          p_current_period_end: string
-          p_current_period_start: string
+          p_cancel_at_period_end?: boolean
+          p_current_period_end?: string
+          p_current_period_start?: string
           p_event_type: string
           p_external_event_id: string
           p_external_subscription_id: string
@@ -1328,7 +1328,7 @@ export type Database = {
           p_invoice?: Json
           p_plan_slug: string
           p_status: Database["billing"]["Enums"]["subscription_status"]
-          p_trial_end: string
+          p_trial_end?: string
         }
         Returns: string
       }

@@ -491,7 +491,7 @@ ALTER FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit"
 COMMENT ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") IS 'Facturas de la cuenta paginadas por keyset (owner/admin).';
 
 
-CREATE OR REPLACE FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb" DEFAULT NULL::"jsonb") RETURNS "text"
+CREATE OR REPLACE FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_current_period_end" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cancel_at_period_end" boolean DEFAULT false, "p_trial_end" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_invoice" "jsonb" DEFAULT NULL::"jsonb") RETURNS "text"
     LANGUAGE "plpgsql"
     SET "search_path" TO ''
     AS $$
