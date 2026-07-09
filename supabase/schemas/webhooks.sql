@@ -31,11 +31,14 @@ LANGUAGE sql
 IMMUTABLE
 SET search_path = ''
 AS $$
-  SELECT ARRAY['member.invited', 'member.joined', 'member.removed', 'account.updated']
+  SELECT ARRAY[
+    'member.invited', 'member.joined', 'member.removed', 'account.updated',
+    'subscription.created', 'subscription.updated', 'subscription.canceled'
+  ]
 $$;
 
 COMMENT ON FUNCTION private.webhook_event_catalog() IS
-  'Catálogo canónico de eventos de webhook (F2-2D). Debe coincidir con WEBHOOK_EVENT_TYPES en src/lib/validation/webhooks.ts. 2A agregará subscription.* acá.';
+  'Catálogo canónico de eventos de webhook (F2-2D/2A-core). Debe coincidir con WEBHOOK_EVENT_TYPES en src/lib/validation/webhooks.ts.';
 REVOKE EXECUTE ON FUNCTION private.webhook_event_catalog() FROM PUBLIC;
 
 -- ============================================================================

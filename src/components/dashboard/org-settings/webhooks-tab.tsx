@@ -200,6 +200,9 @@ const EVENT_LABEL_KEYS: Record<WebhookEventType, string> = {
   'member.joined': 'webhooks_event_member_joined',
   'member.removed': 'webhooks_event_member_removed',
   'account.updated': 'webhooks_event_account_updated',
+  'subscription.created': 'webhooks_event_subscription_created',
+  'subscription.updated': 'webhooks_event_subscription_updated',
+  'subscription.canceled': 'webhooks_event_subscription_canceled',
 };
 
 function EndpointRow({ endpoint }: { endpoint: WebhookEndpoint }) {

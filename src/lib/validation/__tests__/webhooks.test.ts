@@ -9,6 +9,14 @@ describe('webhookEndpointSchema', () => {
     expect(webhookEndpointSchema.safeParse(valid).success).toBe(true);
   });
 
+  it('should accept subscription events from the catalog', () => {
+    const r = webhookEndpointSchema.safeParse({
+      url: 'https://api.example.com/hooks',
+      events: ['subscription.created', 'subscription.canceled'],
+    });
+    expect(r.success).toBe(true);
+  });
+
   it('should reject http:// urls', () => {
     const result = webhookEndpointSchema.safeParse({ ...valid, url: 'http://api.example.com/x' });
     expect(result.success).toBe(false);

@@ -6,6 +6,9 @@ export const WEBHOOK_EVENT_TYPES = [
   'member.joined',
   'member.removed',
   'account.updated',
+  'subscription.created',
+  'subscription.updated',
+  'subscription.canceled',
 ] as const;
 
 export type WebhookEventType = (typeof WEBHOOK_EVENT_TYPES)[number];
