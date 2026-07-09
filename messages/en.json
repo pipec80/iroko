@@ -684,7 +684,14 @@
     "view_all": "View all transactions",
     "help_title": "Billing questions?",
     "help_desc": "Our support team is available 24/7 for upgrades and inquiries.",
-    "help_btn": "Contact support"
+    "help_btn": "Contact support",
+    "mock_badge": "Test checkout",
+    "mock_title": "Subscribe to {plan} ({interval})",
+    "mock_desc": "Simulated payment — no real charge.",
+    "mock_pay_btn": "Pay",
+    "mock_decline_btn": "Decline",
+    "interval_month": "monthly",
+    "interval_year": "yearly"
   },
   "Projects": {
     "page_eyebrow": "Forest",

@@ -684,7 +684,14 @@
     "view_all": "Ver todas las transacciones",
     "help_title": "¿Preguntas de facturación?",
     "help_desc": "Nuestro equipo de soporte está disponible 24/7 para upgrades y consultas.",
-    "help_btn": "Contactar soporte"
+    "help_btn": "Contactar soporte",
+    "mock_badge": "Checkout de prueba",
+    "mock_title": "Suscribirte a {plan} ({interval})",
+    "mock_desc": "Pago simulado — sin cargo real.",
+    "mock_pay_btn": "Pagar",
+    "mock_decline_btn": "Declinar",
+    "interval_month": "mensual",
+    "interval_year": "anual"
   },
   "Projects": {
     "page_eyebrow": "Bosque",

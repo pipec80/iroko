@@ -684,7 +684,14 @@
     "view_all": "Voir toutes les transactions",
     "help_title": "Questions de facturation ?",
     "help_desc": "Notre équipe de support est disponible 24h/24 et 7j/7 pour les upgrades et les demandes.",
-    "help_btn": "Contacter le support"
+    "help_btn": "Contacter le support",
+    "mock_badge": "Paiement de test",
+    "mock_title": "S'abonner à {plan} ({interval})",
+    "mock_desc": "Paiement simulé — aucun débit réel.",
+    "mock_pay_btn": "Payer",
+    "mock_decline_btn": "Refuser",
+    "interval_month": "mensuel",
+    "interval_year": "annuel"
   },
   "Projects": {
     "page_eyebrow": "Forêt",
