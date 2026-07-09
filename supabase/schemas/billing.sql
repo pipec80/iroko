@@ -315,7 +315,7 @@ ALTER TABLE ONLY "billing"."plans"
 
 
 ALTER TABLE ONLY "billing"."plans"
-    ADD CONSTRAINT "plans_slug_key" UNIQUE ("slug");
+    ADD CONSTRAINT "plans_slug_interval_key" UNIQUE ("slug", "interval");
 
 
 
