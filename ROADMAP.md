@@ -226,12 +226,20 @@ migraciones, tipos regenerados, tests y JSDoc.
 
 **Tareas detalladas (sub-módulos):**
 
-- **2A · Billing.** Interface `PaymentProvider` (en `src/lib/billing/`) con dos
-  implementaciones: **Stripe** (default global) y **MercadoPago** (cuña LatAm, vía
-  `preapproval`). Checkout → **webhook handler** (route handler `/api/webhooks/[provider]`
-  o Edge Function) que valida firma y actualiza `billing.subscriptions`. Helper de
-  **plan-gating** (`hasFeature(account, key)`) leyendo `billing.plans.features`.
-  Env de credenciales en `src/env.ts`. Tests: validación de firma + transiciones de estado (mock).
+- **2A · Billing.** Partido en dos entregas:
+  - **2A-core (✅ hecho):** interfaz `PaymentProvider` + factory `registry.ts` (`src/lib/billing/`,
+    "si la pasarela existe en env, se agrega") con `MockProvider` (checkout simulado vía hosted-page
+    firmada HMAC, sin credenciales). Webhook handler genérico en
+    `/api/webhooks/[provider]` → RPC `apply_subscription_event` (idempotente por
+    `external_event_id`, emite `subscription.*` a los webhooks salientes de 2D). Máquina de
+    estados pura (`subscription-state.ts`). Plan-gating (`entitlements.ts`:
+    `hasFeature`/`getLimit`/`withinLimit`) leyendo `billing.plans.features/limits` vía RPC.
+    Seed Free/Pro/Scale (mensual+anual). UI real de planes + estado + historial de facturas.
+  - **2A-providers (⏳ próximo):** agregar el primer proveedor real (Stripe / MercadoPago /
+    Lemon Squeezy) implementando `PaymentProvider` — sin tocar la UI, el webhook handler ni el
+    registry (solo `providers/<nombre>.ts` + env vars + un `if` en `registry.ts`). Lemon Squeezy
+    es Merchant of Record (maneja impuestos globales, modelo distinto a Stripe/MP que son
+    processors directos) — la interfaz ya definida debe cubrir ambos modelos sin cambios.
 - **2B · Email.** Integrar **Resend** + plantillas (React Email o templates simples) para
   invite, reset, welcome, receipt. Abstracción `sendEmail()` en `src/lib/email/`. Conectar
   el envío real del email de invitación de `members`.
@@ -253,6 +261,19 @@ cursor)` `SECURITY DEFINER` que valida que el caller es `owner` o `admin` de esa
   `private.user_is_member`). UI en `dashboard/settings/activity`: tabla paginada con filtros por
   `action` y `resource_type`, columnas actor + acción + recurso + fecha. Accesible solo para roles
   `owner`/`admin`; la vista cross-account (plataforma) queda para F3.
+
+**Orden ejecutado (histórico, actualizado 2026-07-09):**
+
+| #   | Módulo                       | Estado                | Por qué en ese orden                                                                                               |
+| --- | ---------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| 1   | 2E · Feature Flags           | ✅ hecho              | El más simple (solo tablas + helper). 2A necesita `hasFeature()`/entitlements para el plan-gating.                 |
+| 2   | 2B · Email                   | ✅ hecho              | Se conecta a 2A (receipts, welcome) y se usa en 2C (notificaciones por mail).                                      |
+| 3   | 2C · Notificaciones          | ✅ hecho              | Realtime in-app. Reutiliza 2B para emails; se dispara con eventos de 2A/2D.                                        |
+| 4   | 2G · Audit Log Viewer        | ✅ hecho              | Se coló entre medio (RPC + UI ya listos); no dependía de nada del resto.                                           |
+| 5   | 2D · Webhooks + API keys     | ✅ hecho              | Deja el punto de enchufe (`private.emit_webhook_event`) para que 2A emita `subscription.*`.                        |
+| 6   | 2A · Billing — **core**      | ✅ hecho (2026-07-09) | `PaymentProvider` + factory registry + `MockProvider` + entitlements + UI real + e2e. Sin proveedor real todavía.  |
+| 7   | **2A · Billing — providers** | ⏳ **próximo**        | Elegir e integrar el primer proveedor real (Stripe / MercadoPago / Lemon Squeezy) sobre la interfaz ya construida. |
+| 8   | 2F · Jobs / colas            | ⏳ pendiente          | pg_cron de limpieza ya existe; falta pgmq + Edge Function worker (puede reusar la cola de emails de 2B).           |
 
 **🤖 Prompt para Claude Code — F2 (ejecutar sub-módulo por sub-módulo, no todo junto):**
 
