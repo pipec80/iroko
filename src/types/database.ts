@@ -1363,6 +1363,14 @@ export type Database = {
           resource_type: string
         }[]
       }
+      get_account_entitlements: {
+        Args: { p_account_id: string }
+        Returns: {
+          features: Json
+          limits: Json
+          plan_slug: string
+        }[]
+      }
       get_account_subscription: {
         Args: { p_account_id: string }
         Returns: {
@@ -1386,6 +1394,18 @@ export type Database = {
           price: number
           slug: string
           trial_days: number
+        }[]
+      }
+      get_billing_overview: {
+        Args: { p_account_id: string }
+        Returns: {
+          cancel_at_period_end: boolean
+          current_period_end: string
+          plan_interval: Database["billing"]["Enums"]["plan_interval"]
+          plan_name: string
+          plan_slug: string
+          status: Database["billing"]["Enums"]["subscription_status"]
+          trial_end: string
         }[]
       }
       get_my_account_id: { Args: never; Returns: string }
@@ -1414,6 +1434,25 @@ export type Database = {
       is_flag_enabled: {
         Args: { p_account_id: string; p_flag_name: string }
         Returns: boolean
+      }
+      list_account_invoices: {
+        Args: {
+          p_account_id: string
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+        }
+        Returns: {
+          amount_paid: number
+          created_at: string
+          currency: string
+          hosted_url: string
+          id: string
+          number: string
+          pdf_url: string
+          status: Database["billing"]["Enums"]["invoice_status"]
+          total: number
+        }[]
       }
       list_api_keys: {
         Args: { p_account_id: string }

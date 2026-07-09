@@ -396,6 +396,101 @@ ALTER FUNCTION "public"."get_active_plans"() OWNER TO "postgres";
 COMMENT ON FUNCTION "public"."get_active_plans"() IS 'Public pricing endpoint. SECURITY DEFINER so anon can read plans without exposing the billing.plans table. Intentional exposure to anon+authenticated.';
 
 
+CREATE OR REPLACE FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "features" "jsonb", "limits" "jsonb")
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  IF NOT private.user_is_member(p_account_id, (SELECT auth.uid())) THEN
+    RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  SELECT p.slug, COALESCE(p.features, '{}'::jsonb), COALESCE(p.limits, '{}'::jsonb)
+  FROM billing.subscriptions s
+  JOIN billing.customers c ON c.id = s.customer_id
+  JOIN billing.plans p ON p.id = s.plan_id
+  WHERE c.account_id = p_account_id
+    AND s.status IN ('active', 'trialing')
+  ORDER BY s.created_at DESC
+  LIMIT 1;
+
+  IF NOT FOUND THEN
+    RETURN QUERY
+    SELECT p.slug, COALESCE(p.features, '{}'::jsonb), COALESCE(p.limits, '{}'::jsonb)
+    FROM billing.plans p
+    WHERE p.slug = 'free'
+    ORDER BY p."interval"
+    LIMIT 1;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") IS 'Features+limits del plan efectivo de la cuenta (F2-2A-core). Fallback a Free sin suscripción. Callable por cualquier miembro: gobierna uso, no administración.';
+
+
+CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  PERFORM private.assert_account_admin(p_account_id);
+  RETURN QUERY
+  SELECT p.slug, p.name, p."interval", s.status, s.current_period_end,
+         s.cancel_at_period_end, s.trial_end
+  FROM billing.subscriptions s
+  JOIN billing.customers c ON c.id = s.customer_id
+  JOIN billing.plans p ON p.id = s.plan_id
+  WHERE c.account_id = p_account_id
+    AND s.status IN ('active', 'trialing', 'past_due', 'paused')
+  ORDER BY s.created_at DESC
+  LIMIT 1;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Suscripción vigente de la cuenta para la UI de billing (owner/admin). Vacío si nunca se suscribió.';
+
+
+CREATE OR REPLACE FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer DEFAULT 10, "p_cursor_created_at" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cursor_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "number" "text", "status" "billing"."invoice_status", "currency" character, "total" integer, "amount_paid" integer, "hosted_url" "text", "pdf_url" "text", "created_at" timestamp with time zone)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  IF p_limit IS NULL OR p_limit < 1 OR p_limit > 100 THEN
+    RAISE EXCEPTION 'invalid_limit';
+  END IF;
+  PERFORM private.assert_account_admin(p_account_id);
+  RETURN QUERY
+  SELECT i.id, i.number, i.status, i.currency, i.total, i.amount_paid,
+         i.hosted_url, i.pdf_url, i.created_at
+  FROM billing.invoices i
+  JOIN billing.customers c ON c.id = i.customer_id
+  WHERE c.account_id = p_account_id
+    AND (
+      p_cursor_created_at IS NULL
+      OR i.created_at < p_cursor_created_at
+      OR (i.created_at = p_cursor_created_at AND i.id < p_cursor_id)
+    )
+  ORDER BY i.created_at DESC, i.id DESC
+  LIMIT p_limit;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") IS 'Facturas de la cuenta paginadas por keyset (owner/admin).';
+
+
 
 CREATE OR REPLACE FUNCTION "public"."get_my_account_id"() RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
@@ -1352,6 +1447,21 @@ GRANT ALL ON FUNCTION "public"."get_account_subscription"("p_account_id" "uuid")
 GRANT ALL ON FUNCTION "public"."get_active_plans"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_active_plans"() TO "service_role";
 GRANT ALL ON FUNCTION "public"."get_active_plans"() TO "anon";
+
+
+
+REVOKE ALL ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") TO "authenticated";
 
 
 
