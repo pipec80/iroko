@@ -3,7 +3,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(6);
+SELECT plan(9);
 
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
   confirmation_token, email_confirmed_at, recovery_token, aud, role)
@@ -60,6 +60,32 @@ SELECT is(
 SELECT is(
   (SELECT count(*)::int FROM public.list_account_invoices('00000000-0000-0000-0000-000000000930')),
   0, 'owner sin facturas ve historial vacío');
+
+-- ── apply_subscription_event: crea sub activa, idempotencia, entitlements ────
+RESET role;
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_subscription_event(
+    '00000000-0000-0000-0000-000000000930', 'pro', 'month', 'active',
+    'mock_sub_test', 'mock_evt_1', 'subscription_created',
+    now(), now() + interval '30 days', false, NULL, NULL),
+  'applied', 'primer evento se aplica');
+
+SELECT is(
+  public.apply_subscription_event(
+    '00000000-0000-0000-0000-000000000930', 'pro', 'month', 'active',
+    'mock_sub_test', 'mock_evt_1', 'subscription_created',
+    now(), now() + interval '30 days', false, NULL, NULL),
+  'duplicate', 'mismo external_event_id es idempotente (no-op)');
+
+RESET role;
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000000831','role','authenticated')::text, true);
+
+SELECT is(
+  (SELECT plan_slug FROM public.get_account_entitlements('00000000-0000-0000-0000-000000000930')),
+  'pro', 'tras suscribir, entitlements refleja el plan pro');
 
 SELECT * FROM finish();
 ROLLBACK;

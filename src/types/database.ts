@@ -1315,6 +1315,23 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      apply_subscription_event: {
+        Args: {
+          p_account_id: string
+          p_cancel_at_period_end: boolean
+          p_current_period_end: string
+          p_current_period_start: string
+          p_event_type: string
+          p_external_event_id: string
+          p_external_subscription_id: string
+          p_interval: Database["billing"]["Enums"]["plan_interval"]
+          p_invoice?: Json
+          p_plan_slug: string
+          p_status: Database["billing"]["Enums"]["subscription_status"]
+          p_trial_end: string
+        }
+        Returns: string
+      }
       check_request: { Args: never; Returns: undefined }
       consume_recovery_code: { Args: { p_code: string }; Returns: boolean }
       count_unused_recovery_codes: { Args: never; Returns: number }
