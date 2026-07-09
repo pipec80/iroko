@@ -498,4 +498,10 @@ ALTER TABLE "billing"."subscription_items" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "billing"."subscriptions" ENABLE ROW LEVEL SECURITY;
 
 
+-- USAGE en el schema (F2-2A-core): PostgREST necesita resolver los tipos
+-- billing.* (enums) usados en las firmas de las RPCs de public.*. No expone
+-- las tablas: siguen siendo RLS deny-all y sin GRANT de fila.
+GRANT USAGE ON SCHEMA "billing" TO "anon", "authenticated", "service_role";
+
+
 

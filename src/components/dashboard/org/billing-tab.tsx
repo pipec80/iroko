@@ -192,7 +192,8 @@ function SubscriptionStatusPanel({
       className="border-border rounded-xl border p-6 shadow-sm"
       style={{ background: 'var(--surface-1)' }}
       data-testid="current-plan">
-      <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+      <h3 className="text-foreground text-lg font-bold">{overview.planName}</h3>
+      <p className="text-muted-foreground mt-2 text-[11px] font-semibold tracking-wide uppercase">
         {t('status_label')}
       </p>
       <p className="text-foreground mt-1 text-sm font-semibold">{overview.status}</p>
