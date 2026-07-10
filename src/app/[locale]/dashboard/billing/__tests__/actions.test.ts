@@ -35,7 +35,13 @@ vi.mock('@/env', () => ({
   },
 }));
 
-import { startCheckout, confirmMockCheckout, getBillingData, listInvoices } from '../actions';
+import {
+  startCheckout,
+  confirmMockCheckout,
+  cancelSubscription,
+  getBillingData,
+  listInvoices,
+} from '../actions';
 
 describe('billing actions', () => {
   beforeEach(() => {
@@ -84,6 +90,73 @@ describe('billing actions', () => {
     const res = await confirmMockCheckout({ data: 'bad' });
     expect(res.error).toBe('invalid_token');
     expect(mocks.handle).not.toHaveBeenCalled();
+  });
+
+  it('confirmMockCheckout returns checkout_failed when the webhook handler errors', async () => {
+    mocks.verify.mockResolvedValue({
+      accountId: 'a1',
+      planSlug: 'pro',
+      interval: 'month',
+      successUrl: 'http://ok',
+      cancelUrl: 'http://no',
+    });
+    mocks.sign.mockResolvedValue('signed-event');
+    mocks.handle.mockResolvedValue({ status: 500, body: { error: 'boom' } });
+    const res = await confirmMockCheckout({ data: 'token' });
+    expect(res.data).toBeNull();
+    expect(res.error).toBe('checkout_failed');
+  });
+
+  it('cancelSubscription returns no_account when there is no active account', async () => {
+    mocks.getActiveAccountId.mockResolvedValue(null);
+    const res = await cancelSubscription();
+    expect(res.error).toBe('no_account');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('cancelSubscription returns fetch_failed when the overview RPC errors', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: 'db_down' } });
+    const res = await cancelSubscription();
+    expect(res.error).toBe('db_down');
+    expect(mocks.handle).not.toHaveBeenCalled();
+  });
+
+  it('cancelSubscription returns no_subscription when the account has no active plan', async () => {
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
+    const res = await cancelSubscription();
+    expect(res.error).toBe('no_subscription');
+    expect(mocks.handle).not.toHaveBeenCalled();
+  });
+
+  it('cancelSubscription signs a subscription_updated event and posts it to the handler', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [{ plan_slug: 'pro', status: 'active', plan_interval: 'month' }],
+      error: null,
+    });
+    mocks.sign.mockResolvedValue('signed-cancel-event');
+    mocks.handle.mockResolvedValue({ status: 200, body: { result: 'applied' } });
+    const res = await cancelSubscription();
+    expect(res.data).toBe(true);
+    expect(mocks.sign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'subscription_updated',
+        accountId: 'a1',
+        cancelAtPeriodEnd: true,
+      }),
+    );
+    expect(mocks.handle).toHaveBeenCalledWith('mock', 'signed-cancel-event', 'mock');
+  });
+
+  it('cancelSubscription returns cancel_failed when the webhook handler errors', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [{ plan_slug: 'pro', status: 'active', plan_interval: 'month' }],
+      error: null,
+    });
+    mocks.sign.mockResolvedValue('signed-cancel-event');
+    mocks.handle.mockResolvedValue({ status: 500, body: { error: 'boom' } });
+    const res = await cancelSubscription();
+    expect(res.data).toBeNull();
+    expect(res.error).toBe('cancel_failed');
   });
 
   it('getBillingData maps plans and overview from the RPCs', async () => {
@@ -155,6 +228,13 @@ describe('billing actions', () => {
     expect(res.data?.overview).toBeNull();
   });
 
+  it('getBillingData returns no_account when there is no active account', async () => {
+    mocks.getActiveAccountId.mockResolvedValue(null);
+    const res = await getBillingData();
+    expect(res.error).toBe('no_account');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
   it('listInvoices maps the RPC rows and computes the next cursor', async () => {
     mocks.rpc.mockResolvedValue({
       data: [
@@ -178,5 +258,46 @@ describe('billing actions', () => {
       expect.objectContaining({ id: 'inv-1', amountPaid: 2900, createdAt: '2026-07-01T00:00:00Z' }),
     );
     expect(res.data?.nextCursor).toEqual({ createdAt: '2026-07-01T00:00:00Z', id: 'inv-1' });
+  });
+
+  it('listInvoices returns null nextCursor when fewer rows than the limit come back', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          id: 'inv-1',
+          number: 'INV-1',
+          status: 'paid',
+          currency: 'USD',
+          total: 2900,
+          amount_paid: 2900,
+          hosted_url: null,
+          pdf_url: null,
+          created_at: '2026-07-01T00:00:00Z',
+        },
+      ],
+      error: null,
+    });
+    const res = await listInvoices({ limit: 10 });
+    expect(res.data?.nextCursor).toBeNull();
+  });
+
+  it('listInvoices returns validation_error on an out-of-range limit', async () => {
+    const res = await listInvoices({ limit: 0 });
+    expect(res.error).toBe('validation_error');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('listInvoices returns no_account when there is no active account', async () => {
+    mocks.getActiveAccountId.mockResolvedValue(null);
+    const res = await listInvoices({ limit: 10 });
+    expect(res.error).toBe('no_account');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('listInvoices surfaces the RPC error message on failure', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: 'db_down' } });
+    const res = await listInvoices({ limit: 10 });
+    expect(res.data).toBeNull();
+    expect(res.error).toBe('db_down');
   });
 });
