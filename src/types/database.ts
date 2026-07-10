@@ -347,6 +347,7 @@ export type Database = {
           limits: Json | null
           name: string
           price: number
+          provider_ids: Json | null
           slug: string
           sort_order: number | null
           trial_days: number | null
@@ -363,6 +364,7 @@ export type Database = {
           limits?: Json | null
           name: string
           price?: number
+          provider_ids?: Json | null
           slug: string
           sort_order?: number | null
           trial_days?: number | null
@@ -379,6 +381,7 @@ export type Database = {
           limits?: Json | null
           name?: string
           price?: number
+          provider_ids?: Json | null
           slug?: string
           sort_order?: number | null
           trial_days?: number | null
@@ -1437,6 +1440,14 @@ export type Database = {
           slug: string
           type: Database["public"]["Enums"]["account_type"]
         }[]
+      }
+      get_plan_provider_id: {
+        Args: {
+          p_interval: Database["billing"]["Enums"]["plan_interval"]
+          p_provider: string
+          p_slug: string
+        }
+        Returns: string
       }
       invite_members: {
         Args: {
