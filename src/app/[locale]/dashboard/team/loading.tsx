@@ -19,7 +19,7 @@ export default function TeamLoading() {
           </div>
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-5 px-8 py-5">
-              <div className="bg-surface-container-highest h-12 w-12 rounded-full" />
+              <div className="bg-surface-container-highest size-12 rounded-full" />
               <div className="flex-1 space-y-2">
                 <div className="bg-surface-container-highest h-4 w-36 rounded" />
                 <div className="bg-surface-container-highest h-3 w-20 rounded opacity-50" />

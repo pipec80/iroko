@@ -221,7 +221,7 @@ export function MfaSetup() {
         {/* Authenticator App Item */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex gap-4">
-            <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+            <div className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-xl">
               <Smartphone size={22} strokeWidth={1.75} style={{ color: 'var(--color-cobalt)' }} />
             </div>
             <div className="space-y-1">
@@ -231,7 +231,7 @@ export function MfaSetup() {
               </p>
               {isMfaEnabled && (
                 <div className="bg-primary/10 text-primary mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase">
-                  <div className="bg-primary h-1.5 w-1.5 animate-pulse rounded-full" />
+                  <div className="bg-primary size-1.5 animate-pulse rounded-full" />
                   {t('status_enabled')}
                 </div>
               )}
@@ -269,7 +269,7 @@ export function MfaSetup() {
                     <DialogDescription>{t('mfa_modal_step1')}</DialogDescription>
                   </DialogHeader>
                   <div className="flex flex-col items-center gap-6 py-6">
-                    <div className="border-border/30 flex h-[186px] w-[186px] items-center justify-center rounded-2xl border bg-white p-5 shadow-sm">
+                    <div className="border-border/30 flex size-[186px] items-center justify-center rounded-2xl border bg-white p-5 shadow-sm">
                       {isLoadingQr && (
                         <Loader2
                           size={36}
@@ -283,7 +283,7 @@ export function MfaSetup() {
                           alt="QR Code"
                           width={176}
                           height={176}
-                          className="h-44 w-44"
+                          className="size-44"
                         />
                       )}
                     </div>
@@ -329,7 +329,7 @@ export function MfaSetup() {
         <div className="border-border/30 border-t pt-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex gap-4">
-              <div className="bg-muted flex h-10 w-10 shrink-0 items-center justify-center rounded-xl">
+              <div className="bg-muted flex size-10 shrink-0 items-center justify-center rounded-xl">
                 <KeyRound size={24} strokeWidth={1.75} style={{ color: 'var(--color-cobalt)' }} />
               </div>
               <div className="space-y-1">

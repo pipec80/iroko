@@ -5,6 +5,7 @@ import prettierConfig from 'eslint-config-prettier';
 import unicorn from 'eslint-plugin-unicorn';
 import noSecrets from 'eslint-plugin-no-secrets';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
+import betterTailwindcss from 'eslint-plugin-better-tailwindcss';
 
 /** @type {import('eslint').Linter.Config[]} */
 const eslintConfig = defineConfig([
@@ -18,6 +19,29 @@ const eslintConfig = defineConfig([
   // ──────────────────────────────────────────────────────────────
   {
     rules: jsxA11y.configs.recommended.rules,
+  },
+
+  // ──────────────────────────────────────────────────────────────
+  // better-tailwindcss: detecta clases arbitrarias que tienen
+  // equivalente canónico en el theme (ej. size-[15px] -> size-3.75),
+  // clases duplicadas/conflictivas y clases desconocidas.
+  // No incluye enforce-consistent-class-order: ya lo cubre
+  // prettier-plugin-tailwindcss en el formateo.
+  // ──────────────────────────────────────────────────────────────
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: { 'better-tailwindcss': betterTailwindcss },
+    settings: {
+      'better-tailwindcss': {
+        entryPoint: 'src/app/globals.css',
+      },
+    },
+    rules: {
+      'better-tailwindcss/enforce-canonical-classes': 'warn',
+      'better-tailwindcss/no-duplicate-classes': 'warn',
+      'better-tailwindcss/no-unnecessary-whitespace': 'warn',
+      'better-tailwindcss/no-conflicting-classes': 'error',
+    },
   },
 
   // ──────────────────────────────────────────────────────────────

@@ -50,7 +50,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
             <span style={{ color: 'var(--color-poppy)' }}>{t('hero_title_emphasis')}</span>{' '}
             {t('hero_title_2')}
           </h1>
-          <p className="text-muted-foreground mx-auto mb-10 max-w-xl text-xl leading-relaxed">
+          <p className="text-muted-foreground mx-auto mb-10 max-w-xl text-xl/relaxed">
             {t('hero_lead')}
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -83,7 +83,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
                 key={title}
                 className="border-border bg-background rounded-xl border p-8 transition-transform duration-200 hover:-translate-y-1">
                 <div
-                  className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl"
+                  className="mb-6 flex size-12 items-center justify-center rounded-xl"
                   style={{ background: 'rgba(217,33,33,0.08)' }}>
                   <Icon
                     className="size-5"
@@ -92,7 +92,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
                   />
                 </div>
                 <h3 className="text-foreground mb-3 text-lg font-semibold">{title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
+                <p className="text-muted-foreground text-sm/relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -115,7 +115,7 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
               {techStack.map(({ label, sub }) => (
                 <li key={label} className="flex items-center gap-4">
                   <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                    className="flex size-9 shrink-0 items-center justify-center rounded-lg"
                     style={{ background: 'rgba(217,33,33,0.08)' }}>
                     <Zap
                       className="size-4"
@@ -139,9 +139,9 @@ export default async function ProductPage({ params }: { params: Promise<{ locale
             <div
               className="flex items-center gap-2 border-b px-6 py-4"
               style={{ borderColor: 'rgba(245,236,218,0.08)' }}>
-              <div className="h-3 w-3 rounded-full bg-red-500" />
-              <div className="h-3 w-3 rounded-full bg-yellow-500" />
-              <div className="h-3 w-3 rounded-full bg-green-500" />
+              <div className="size-3 rounded-full bg-red-500" />
+              <div className="size-3 rounded-full bg-yellow-500" />
+              <div className="size-3 rounded-full bg-green-500" />
               <span className="text-muted-foreground ml-3 font-mono text-xs">
                 src/app/[locale]/dashboard/page.tsx
               </span>

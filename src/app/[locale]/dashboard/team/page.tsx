@@ -66,7 +66,7 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
                     key={m.user_id ?? `pending-${i}`}
                     className="hover:bg-surface-1 flex items-center justify-between px-6 py-4 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="relative h-10 w-10 shrink-0">
+                      <div className="relative size-10 shrink-0">
                         <Image
                           src={
                             storageUrl(m.avatar_url) ??
@@ -79,7 +79,7 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
                         />
                         {m.status === 'active' && (
                           <div
-                            className="border-background absolute right-0 bottom-0 h-2.5 w-2.5 rounded-full border-2"
+                            className="border-background absolute right-0 bottom-0 size-2.5 rounded-full border-2"
                             style={{ background: 'var(--color-cobalt)' }}
                           />
                         )}
@@ -118,14 +118,14 @@ export default async function TeamPage({ params }: { params: Promise<{ locale: s
         <div className="space-y-6">
           <div className="card card-pad space-y-4">
             <div
-              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              className="flex size-12 items-center justify-center rounded-xl"
               style={{ background: 'var(--color-cobalt)', color: '#fff' }}>
               <span className="material-symbols-outlined text-2xl">verified_user</span>
             </div>
-            <h2 className="text-foreground text-lg leading-tight font-bold tracking-tight">
+            <h2 className="text-foreground text-lg/tight font-bold tracking-tight">
               {t('security_rbac_title')}
             </h2>
-            <p className="text-muted-foreground text-sm leading-relaxed">
+            <p className="text-muted-foreground text-sm/relaxed">
               {t('security_rbac_description')}
             </p>
             <button className="border-border text-muted-foreground hover:bg-surface-1 w-full rounded-lg border py-3 font-mono text-[10px] font-bold tracking-widest uppercase transition-colors active:scale-95">

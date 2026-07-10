@@ -123,7 +123,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-lg"
                     style={{ background: 'rgba(217,33,33,0.08)' }}>
                     <MapPin
                       className="size-5"
@@ -145,7 +145,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
 
                 <div className="flex items-start gap-4">
                   <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-lg"
                     style={{ background: 'rgba(217,33,33,0.08)' }}>
                     <Mail
                       className="size-5"
@@ -167,7 +167,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
 
                 <div className="flex items-start gap-4">
                   <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                    className="flex size-10 shrink-0 items-center justify-center rounded-lg"
                     style={{ background: 'rgba(217,33,33,0.08)' }}>
                     <Phone
                       className="size-5"

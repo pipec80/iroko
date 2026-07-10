@@ -50,7 +50,7 @@ export async function PublicFooter() {
                 {appConfig.brand}
               </span>
             </Link>
-            <p className="text-sm leading-relaxed" style={{ color: 'rgba(245,236,218,0.5)' }}>
+            <p className="text-sm/relaxed" style={{ color: 'rgba(245,236,218,0.5)' }}>
               {t('brand_description')}
             </p>
             <p className="font-mono text-xs" style={{ color: 'rgba(245,236,218,0.3)' }}>

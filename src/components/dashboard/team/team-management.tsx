@@ -102,7 +102,7 @@ export function TeamManagement() {
                 className="hover:bg-surface-container-low/50 border-outline-variant/5 group border-b transition-colors">
                 <TableCell className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <Avatar className="border-surface-container-highest h-10 w-10 border-2">
+                    <Avatar className="border-surface-container-highest size-10 border-2">
                       <AvatarImage src={member.avatar} />
                       <AvatarFallback className="bg-primary/10 text-primary font-bold">
                         {member.name
@@ -130,7 +130,7 @@ export function TeamManagement() {
                   <div className="flex items-center gap-2">
                     <span
                       className={cn(
-                        'h-2 w-2 rounded-full',
+                        'size-2 rounded-full',
                         member.status === 'Active' ? 'bg-secondary' : 'bg-tertiary animate-pulse',
                       )}
                     />
@@ -145,7 +145,7 @@ export function TeamManagement() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="hover:bg-surface-container-highest text-on-surface-variant h-8 w-8 rounded-full">
+                        className="hover:bg-surface-container-highest text-on-surface-variant size-8 rounded-full">
                         <span className="material-symbols-outlined text-[20px]">more_vert</span>
                       </Button>
                     </DropdownMenuTrigger>

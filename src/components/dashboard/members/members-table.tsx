@@ -209,7 +209,7 @@ export function MembersTable({ members, timezone = 'UTC' }: Props) {
                   style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
                   {/* Avatar */}
                   {avatarUrl ?
-                    <div className="relative size-8 overflow-hidden rounded-[6px]">
+                    <div className="relative size-8 overflow-hidden rounded-md">
                       <Image
                         src={avatarUrl}
                         alt={displayName}

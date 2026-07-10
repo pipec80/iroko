@@ -94,7 +94,7 @@ export function ProfileTab({ profile, email, role }: Props) {
           <form
             action={avatarAction}
             className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
-            <div className="bg-muted relative h-20 w-20 overflow-hidden rounded-full ring-2 ring-white">
+            <div className="bg-muted relative size-20 overflow-hidden rounded-full ring-2 ring-white">
               {avatarPreview ?
                 <Image
                   src={avatarPreview}
@@ -103,7 +103,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                   unoptimized
                   className="object-cover"
                 />
-              : <div className="flex h-full w-full items-center justify-center">
+              : <div className="flex size-full items-center justify-center">
                   <User size={36} className="text-muted-foreground" strokeWidth={1.25} />
                 </div>
               }
@@ -200,7 +200,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                 id="locale"
                 name="locale"
                 defaultValue={profile.locale ?? 'es'}
-                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm [color-scheme:light] transition-all outline-none focus-visible:ring-4 dark:[color-scheme:dark]">
+                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm scheme-light transition-all outline-none focus-visible:ring-4 dark:scheme-dark">
                 {routing.locales.map((loc) => (
                   <option key={loc} value={loc}>
                     {LOCALE_LABELS[loc]}
@@ -215,7 +215,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                 id="timezone"
                 name="timezone"
                 defaultValue={profile.timezone ?? 'America/Santiago'}
-                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm [color-scheme:light] transition-all outline-none focus-visible:ring-4 dark:[color-scheme:dark]">
+                className="border-input bg-background focus-visible:border-primary focus-visible:ring-primary/20 h-8 w-full rounded-lg border px-3 py-1 text-sm scheme-light transition-all outline-none focus-visible:ring-4 dark:scheme-dark">
                 <optgroup label="América del Sur">
                   <option value="America/Santiago">Santiago (Chile)</option>
                   <option value="America/Argentina/Buenos_Aires">Buenos Aires (Argentina)</option>

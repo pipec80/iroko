@@ -12,7 +12,7 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
     <html lang="en">
       <body>
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8">
-          <div className="bg-error/10 flex h-20 w-20 items-center justify-center rounded-full">
+          <div className="bg-error/10 flex size-20 items-center justify-center rounded-full">
             <span className="material-symbols-outlined text-error text-4xl">error</span>
           </div>
           <div className="space-y-2 text-center">

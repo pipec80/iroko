@@ -20,7 +20,7 @@ export default function GlobalError({
 
   return (
     <div role="alert" className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8">
-      <div className="bg-destructive/10 flex h-20 w-20 items-center justify-center rounded-full">
+      <div className="bg-destructive/10 flex size-20 items-center justify-center rounded-full">
         <AlertCircle
           aria-hidden="true"
           className="text-destructive"

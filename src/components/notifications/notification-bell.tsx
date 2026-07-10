@@ -36,7 +36,7 @@ function NotificationItem({ notification }: { notification: Notification }) {
 
   const inner = (
     <div
-      className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-[var(--surface-2)]"
+      className="flex items-start gap-3 px-4 py-3 transition-colors hover:bg-(--surface-2)"
       style={{ opacity: isUnread ? 1 : 0.65 }}>
       <Icon style={{ width: 16, height: 16, color, marginTop: 2, flexShrink: 0 }} />
       <div className="min-w-0 flex-1">
@@ -98,7 +98,7 @@ export function NotificationBell({ userId }: Props) {
       <DropdownMenuTrigger asChild>
         <button
           aria-label={t('title')}
-          className="focus-visible:ring-primary/30 relative flex items-center justify-center rounded-[6px] transition-colors hover:bg-[var(--surface-2)] focus-visible:ring-2 focus-visible:outline-none"
+          className="focus-visible:ring-primary/30 relative flex items-center justify-center rounded-md transition-colors hover:bg-(--surface-2) focus-visible:ring-2 focus-visible:outline-none"
           style={{ width: 40, height: 40, background: 'transparent', border: 0 }}>
           <Bell
             style={{ width: 17, height: 17, color: 'var(--text-secondary)', strokeWidth: 1.5 }}

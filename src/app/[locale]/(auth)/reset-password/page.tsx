@@ -38,7 +38,7 @@ export default function ResetPasswordPage() {
           </Label>
           <div className="relative">
             <Lock
-              className="text-muted-foreground absolute top-1/2 left-3 size-[15px] -translate-y-1/2"
+              className="text-muted-foreground absolute top-1/2 left-3 size-3.75 -translate-y-1/2"
               strokeWidth={1.5}
             />
             <Input
@@ -62,7 +62,7 @@ export default function ResetPasswordPage() {
           </Label>
           <div className="relative">
             <Lock
-              className="text-muted-foreground absolute top-1/2 left-3 size-[15px] -translate-y-1/2"
+              className="text-muted-foreground absolute top-1/2 left-3 size-3.75 -translate-y-1/2"
               strokeWidth={1.5}
             />
             <Input

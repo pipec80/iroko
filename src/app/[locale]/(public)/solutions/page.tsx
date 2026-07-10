@@ -53,7 +53,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
             {t('hero_title_1')}{' '}
             <span style={{ color: 'var(--color-poppy)' }}>{t('hero_title_2')}</span>
           </h1>
-          <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-xl leading-relaxed">
+          <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-xl/relaxed">
             {t('hero_lead', { brand: appConfig.name })}
           </p>
           <Button
@@ -116,7 +116,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
               )}
 
               <div
-                className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl"
+                className="mb-6 flex size-12 items-center justify-center rounded-xl"
                 style={{
                   background: featured ? 'rgba(245,236,218,0.08)' : 'rgba(217,33,33,0.08)',
                 }}>
@@ -133,7 +133,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
                 {title}
               </h3>
               <p
-                className="mb-8 grow text-sm leading-relaxed"
+                className="mb-8 grow text-sm/relaxed"
                 style={{
                   color: featured ? 'rgba(245,236,218,0.6)' : 'var(--muted-foreground)',
                 }}>
@@ -171,7 +171,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
         <div className="mx-auto max-w-3xl px-8 text-center">
           <span className="eyebrow text-muted-foreground mb-6 block">{t('quote_eyebrow')}</span>
           <blockquote
-            className="mb-8 font-sans text-xl leading-[1.5] font-bold italic md:text-2xl"
+            className="mb-8 font-sans text-xl/normal font-bold italic md:text-2xl"
             style={{ color: 'var(--color-ink)' }}>
             &ldquo;{tMarketing('Quote.proverb')}&rdquo;
           </blockquote>

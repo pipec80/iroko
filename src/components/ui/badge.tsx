@@ -9,13 +9,12 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          'bg-[var(--color-poppy-wash)] text-[var(--color-poppy)] [a]:hover:bg-[var(--color-poppy-wash-2)]',
+        default: 'bg-(--color-poppy-wash) text-(--color-poppy) [a]:hover:bg-(--color-poppy-wash-2)',
         secondary:
-          'bg-[var(--color-cobalt-wash)] text-[var(--color-cobalt)] [a]:hover:bg-[var(--color-cobalt-wash-2)]',
+          'bg-(--color-cobalt-wash) text-(--color-cobalt) [a]:hover:bg-(--color-cobalt-wash-2)',
         destructive:
-          'bg-[var(--color-poppy-wash)] text-[var(--color-poppy)] [a]:hover:bg-[var(--color-poppy-wash-2)]',
-        success: 'bg-[var(--color-success-wash)] text-[var(--color-success)]',
+          'bg-(--color-poppy-wash) text-(--color-poppy) [a]:hover:bg-(--color-poppy-wash-2)',
+        success: 'bg-(--color-success-wash) text-(--color-success)',
         outline: 'border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground',
         ghost: 'hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50',
         link: 'text-primary underline-offset-4 hover:underline',

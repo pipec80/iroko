@@ -24,7 +24,7 @@ export function PublicNavbar() {
 
   return (
     <header
-      className="fixed top-0 right-0 left-0 z-50 transition-all duration-300"
+      className="fixed inset-x-0 top-0 z-50 transition-all duration-300"
       style={{
         background: scrolled ? 'rgba(245,236,218,0.86)' : 'transparent',
         backdropFilter: scrolled ? 'blur(12px)' : 'none',

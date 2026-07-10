@@ -1,7 +1,7 @@
-import React from 'react';
-import { setRequestLocale } from 'next-intl/server';
-import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
+import { Link } from '@/i18n/routing';
+import { setRequestLocale } from 'next-intl/server';
+import React from 'react';
 
 export default async function AuthLayout({
   children,
@@ -17,7 +17,7 @@ export default async function AuthLayout({
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* ── Left: form pane ── */}
       <div className="flex items-center justify-center px-8 py-12">
-        <div className="w-full max-w-[420px]">
+        <div className="w-full max-w-105">
           {/* Logo mark */}
           <Link href="/" className="mb-10 flex items-center gap-2">
             <svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">

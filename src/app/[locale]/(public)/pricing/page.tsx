@@ -202,7 +202,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
                   (col) => (
                     <th
                       key={col}
-                      className="px-4 py-4 text-center text-sm font-semibold"
+                      className="p-4 text-center text-sm font-semibold"
                       style={{
                         color: col === t('tier_studio_name') ? 'var(--color-poppy)' : undefined,
                       }}>
@@ -221,7 +221,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
                   <td className="text-foreground px-6 py-4 text-sm">{row.feature}</td>
                   {([row.personal, row.studio, row.custom] as (boolean | string)[]).map(
                     (val, j) => (
-                      <td key={j} className="px-4 py-4 text-center">
+                      <td key={j} className="p-4 text-center">
                         {typeof val === 'boolean' ?
                           val ?
                             <Check

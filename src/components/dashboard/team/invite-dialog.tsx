@@ -49,7 +49,7 @@ export function InviteDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
-          className="bg-primary flex cursor-pointer items-center gap-2 rounded-[8px] px-[18px] py-[10px] text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
+          className="bg-primary flex cursor-pointer items-center gap-2 rounded-lg px-[18px] py-[10px] text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
           style={{ border: 0 }}>
           <UserPlus style={{ width: 14, height: 14, strokeWidth: 1.5 }} />
           {t('invite_member')}
@@ -73,19 +73,19 @@ export function InviteDialog() {
                   className="bg-surface-container-low border-outline-variant/30 text-on-surface focus:border-primary flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none">
                   <span>{t(`role_${role}`)}</span>
                   <ChevronDown
-                    className="text-on-surface-variant h-4 w-4 opacity-60"
+                    className="text-on-surface-variant size-4 opacity-60"
                     aria-hidden="true"
                   />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+              <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width)">
                 {INVITABLE_ROLES.map((r) => (
                   <DropdownMenuItem
                     key={r}
                     onSelect={() => setRole(r)}
                     className="flex items-center justify-between">
                     <span>{t(`role_${r}`)}</span>
-                    {role === r && <Check className="h-4 w-4" aria-hidden="true" />}
+                    {role === r && <Check className="size-4" aria-hidden="true" />}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>

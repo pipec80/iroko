@@ -202,7 +202,7 @@ function ToggleRow({ title, desc }: { title: string; desc: string }) {
         aria-checked={on}>
         <span
           className={cn(
-            'absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
+            'absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform',
             on && 'translate-x-4',
           )}
         />

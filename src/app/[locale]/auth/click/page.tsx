@@ -80,7 +80,7 @@ export default async function AuthClickPage({
         <h1 className="text-foreground mb-2 text-2xl font-bold tracking-tight">
           {t('click_title')}
         </h1>
-        <p className="text-muted-foreground mb-8 text-sm leading-relaxed">
+        <p className="text-muted-foreground mb-8 text-sm/relaxed">
           {t(keys.desc as Parameters<typeof t>[0])}
         </p>
 

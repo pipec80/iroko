@@ -98,7 +98,7 @@ export function PhoneCountryInput({ name, defaultValue, 'aria-invalid': ariaInva
 
               {/* Country list */}
               <ScrollArea.Root className="h-60">
-                <ScrollArea.Viewport className="h-full w-full">
+                <ScrollArea.Viewport className="size-full">
                   <div className="py-1">
                     {filtered.map((c) => (
                       <button

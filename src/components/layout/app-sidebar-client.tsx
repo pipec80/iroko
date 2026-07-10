@@ -183,7 +183,7 @@ export function AppSidebarClient({ orgs }: Props) {
                   setSelectedIndex(i);
                   setIsOpen(false);
                 }}
-                className="flex w-full cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5"
+                className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5"
                 style={{
                   border: 0,
                   background: i === selectedIndex ? 'var(--surface-3)' : 'transparent',
@@ -218,7 +218,7 @@ export function AppSidebarClient({ orgs }: Props) {
             <div className="my-1.5 h-px" style={{ background: 'var(--border)' }} />
             <button
               type="button"
-              className="flex w-full cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5"
+              className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5"
               style={{ border: 0, background: 'transparent' }}>
               <div
                 className="inline-flex shrink-0 items-center justify-center text-sm font-medium"

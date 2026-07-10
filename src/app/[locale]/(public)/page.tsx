@@ -89,7 +89,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             {t('hero_title_1')}{' '}
             <span style={{ color: 'var(--color-poppy)' }}>{t('hero_title_2')}</span>
           </h1>
-          <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-xl leading-relaxed">
+          <p className="text-muted-foreground mx-auto mb-10 max-w-2xl text-xl/relaxed">
             {t('hero_lead', { brand: appConfig.name })}
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -136,7 +136,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 key={title}
                 className="border-border bg-background rounded-xl border p-8 transition-transform duration-200 hover:-translate-y-1">
                 <div
-                  className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl"
+                  className="mb-6 flex size-12 items-center justify-center rounded-xl"
                   style={{ background: 'rgba(217,33,33,0.08)' }}>
                   <Icon
                     className="size-5"
@@ -145,7 +145,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   />
                 </div>
                 <h3 className="text-foreground mb-3 text-lg font-semibold">{title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed">{desc}</p>
+                <p className="text-muted-foreground text-sm/relaxed">{desc}</p>
               </div>
             ))}
           </div>

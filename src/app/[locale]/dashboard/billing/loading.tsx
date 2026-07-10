@@ -23,7 +23,7 @@ export default function BillingLoading() {
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3">
-              <div className="bg-surface-container-high h-4 w-4 flex-shrink-0 rounded-full" />
+              <div className="bg-surface-container-high size-4 shrink-0 rounded-full" />
               <div
                 className="bg-surface-container-high h-3 rounded"
                 style={{ width: `${[55, 70, 45, 60][i]}%` }}

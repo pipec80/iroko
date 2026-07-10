@@ -136,7 +136,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
   return (
     <>
       <header
-        className="border-border sticky top-0 z-20 flex w-full items-center justify-between border-b bg-[rgba(245,236,218,0.85)] px-8 backdrop-blur-[16px] dark:bg-[rgba(14,17,23,0.85)]"
+        className="border-border sticky top-0 z-20 flex w-full items-center justify-between border-b bg-[rgba(245,236,218,0.85)] px-8 backdrop-blur-lg dark:bg-[rgba(14,17,23,0.85)]"
         style={{ height: 60 }}>
         {/* Left: mobile menu + breadcrumb */}
         <div className="flex items-center gap-3">
@@ -220,7 +220,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
             <DropdownMenuTrigger asChild>
               <button
                 aria-label={user.displayName}
-                className="focus-visible:ring-primary/30 flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-[8px] focus-visible:ring-2 focus-visible:outline-none"
+                className="focus-visible:ring-primary/30 flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center rounded-lg focus-visible:ring-2 focus-visible:outline-none"
                 style={{ background: 'transparent', border: 0 }}>
                 {user.avatarUrl ?
                   <div className="avatar-32 overflow-hidden">
@@ -229,7 +229,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                       alt={user.displayName}
                       width={32}
                       height={32}
-                      className="h-full w-full object-cover"
+                      className="size-full object-cover"
                       priority
                       unoptimized
                     />
@@ -367,7 +367,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
               <form action={`/${locale}/auth/logout`} method="POST">
                 <button
                   type="submit"
-                  className="flex w-full cursor-pointer items-center rounded-[4px] px-[10px] py-[7px] text-left transition-colors hover:bg-red-50"
+                  className="flex w-full cursor-pointer items-center rounded-sm px-[10px] py-[7px] text-left transition-colors hover:bg-red-50"
                   style={{ gap: 10, background: 'transparent', border: 0, fontFamily: 'inherit' }}>
                   <LogOut
                     style={{

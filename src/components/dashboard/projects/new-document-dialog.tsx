@@ -44,10 +44,10 @@ export function NewDocumentDialog({ projectId, projectSlug, variant }: NewDocume
     variant === 'card' ?
       <button
         type="button"
-        className="border-border group flex w-full flex-col items-center justify-center gap-3 rounded-[10px] border border-dashed py-10 transition-colors hover:border-transparent"
+        className="border-border group flex w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed py-10 transition-colors hover:border-transparent"
         style={{ background: 'var(--surface-elevated)' }}>
         <div
-          className="flex h-[30px] w-[30px] items-center justify-center rounded-md"
+          className="flex size-[30px] items-center justify-center rounded-md"
           style={{ background: 'rgba(217,33,33,0.10)' }}>
           <Plus size={14} style={{ color: 'var(--color-iron)' }} strokeWidth={1.5} />
         </div>

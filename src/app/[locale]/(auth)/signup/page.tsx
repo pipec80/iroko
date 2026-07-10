@@ -104,7 +104,7 @@ export default function SignupPage() {
           </Label>
           <div className="relative">
             <Mail
-              className="text-muted-foreground absolute top-1/2 left-3 size-[15px] -translate-y-1/2"
+              className="text-muted-foreground absolute top-1/2 left-3 size-3.75 -translate-y-1/2"
               strokeWidth={1.5}
             />
             <Input
@@ -130,11 +130,11 @@ export default function SignupPage() {
           </Label>
           <div className="relative">
             <Lock
-              className="text-muted-foreground absolute top-1/2 left-3 size-[15px] -translate-y-1/2"
+              className="text-muted-foreground absolute top-1/2 left-3 size-3.75 -translate-y-1/2"
               strokeWidth={1.5}
             />
             <Input
-              className="h-11 pr-10 pl-10"
+              className="h-11 px-10"
               id="password"
               name="password"
               placeholder="••••••••"
@@ -149,8 +149,8 @@ export default function SignupPage() {
               aria-label={showPassword ? t('hide_password') : t('show_password')}
               className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2 transition-colors">
               {showPassword ?
-                <EyeOff className="size-[15px]" strokeWidth={1.5} />
-              : <Eye className="size-[15px]" strokeWidth={1.5} />}
+                <EyeOff className="size-3.75" strokeWidth={1.5} />
+              : <Eye className="size-3.75" strokeWidth={1.5} />}
             </button>
           </div>
           {fieldError('password') && (

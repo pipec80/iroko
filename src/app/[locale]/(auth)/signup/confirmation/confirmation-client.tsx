@@ -26,9 +26,9 @@ export function ConfirmationClient({ email }: { email: string }) {
     <div className="animate-in fade-in slide-in-from-bottom-8 flex flex-col items-center space-y-10 py-8 text-center duration-1000 ease-out">
       <div className="relative">
         <div className="bg-primary/20 absolute inset-0 scale-150 animate-pulse rounded-full blur-3xl" />
-        <div className="border-border bg-surface-elevated relative flex h-28 w-28 rotate-3 items-center justify-center rounded-3xl border shadow-2xl transition-transform duration-500 hover:rotate-0">
+        <div className="border-border bg-surface-elevated relative flex size-28 rotate-3 items-center justify-center rounded-3xl border shadow-2xl transition-transform duration-500 hover:rotate-0">
           <MailCheck className="text-primary" size={48} strokeWidth={1.5} aria-hidden="true" />
-          <div className="border-background bg-primary text-primary-foreground absolute -top-2 -right-2 flex h-8 w-8 items-center justify-center rounded-full border-4 shadow-lg">
+          <div className="border-background bg-primary text-primary-foreground absolute -top-2 -right-2 flex size-8 items-center justify-center rounded-full border-4 shadow-lg">
             <Check size={14} strokeWidth={2.5} aria-hidden="true" />
           </div>
         </div>
@@ -38,7 +38,7 @@ export function ConfirmationClient({ email }: { email: string }) {
         <h2 className="text-foreground text-4xl font-black tracking-tighter">
           {t('confirmation_title')}
         </h2>
-        <p className="text-muted-foreground text-lg leading-relaxed opacity-80">
+        <p className="text-muted-foreground text-lg/relaxed opacity-80">
           {t.rich('confirmation_desc', {
             email: (chunks) => (
               <span className="text-primary decoration-primary/30 font-mono font-bold underline decoration-2 underline-offset-4">

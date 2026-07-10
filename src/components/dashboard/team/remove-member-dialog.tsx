@@ -38,7 +38,7 @@ export function RemoveMemberDialog({ userId, displayName }: Props) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
-          className="text-on-surface-variant hover:text-error flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
+          className="text-on-surface-variant hover:text-error flex size-8 items-center justify-center rounded-lg transition-colors"
           title={t('remove_member')}>
           <span className="material-symbols-outlined text-[18px]">person_remove</span>
         </button>

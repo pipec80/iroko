@@ -132,7 +132,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
             href={href}
             className="card group flex items-start gap-4 p-5 transition-colors hover:border-transparent">
             <div
-              className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+              className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-xl"
               style={{ background: `${color}18` }}>
               <Icon size={18} style={{ color }} strokeWidth={1.75} />
             </div>

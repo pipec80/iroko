@@ -135,13 +135,13 @@ export function ExcelUploadDropzone() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="text-primary h-5 w-5" />
+            <FileSpreadsheet className="text-primary size-5" />
             <CardTitle className="text-base">
               {t('card_title', { brand: appConfig.brand })}
             </CardTitle>
           </div>
           <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
-            <Download className="h-4 w-4" />
+            <Download className="size-4" />
             {t('download_template')}
           </Button>
         </div>
@@ -166,12 +166,12 @@ export function ExcelUploadDropzone() {
           onDrop={handleDrop}>
           <div
             className={cn(
-              'flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors',
+              'flex size-9 shrink-0 items-center justify-center rounded-md transition-colors',
               isDragging ? 'bg-primary/10' : 'bg-muted',
             )}>
             <UploadCloud
               className={cn(
-                'h-4 w-4 transition-colors',
+                'size-4 transition-colors',
                 isDragging ? 'text-primary' : 'text-muted-foreground',
               )}
             />
@@ -184,7 +184,7 @@ export function ExcelUploadDropzone() {
               {file ? `${(file.size / 1024).toFixed(1)} KB` : t('dropzone_hint')}
             </p>
           </div>
-          {file && <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />}
+          {file && <CheckCircle2 className="size-4 shrink-0 text-green-500" />}
           <input
             type="file"
             ref={fileInputRef}
@@ -196,7 +196,7 @@ export function ExcelUploadDropzone() {
 
         {error && (
           <div className="border-destructive/50 text-destructive bg-destructive/10 flex items-start gap-3 rounded-lg border px-4 py-3">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+            <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <div>
               <p className="text-sm leading-none font-medium">{t('error_title')}</p>
               <p className="mt-1 text-xs opacity-90">{error}</p>
@@ -206,7 +206,7 @@ export function ExcelUploadDropzone() {
 
         {success && (
           <div className="flex items-start gap-3 rounded-lg border border-green-500/50 bg-green-500/10 px-4 py-3 text-green-700 dark:text-green-400">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-green-500" />
             <div>
               <p className="text-sm leading-none font-medium">{t('success_title')}</p>
               <p className="mt-1 text-xs opacity-90">

@@ -15,7 +15,7 @@ export default function ProjectsLoading() {
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="bg-surface-container-highest rounded-2xl p-5">
             <div className="mb-4 flex items-center gap-3">
-              <div className="bg-surface-container-high h-9 w-9 rounded-lg" />
+              <div className="bg-surface-container-high size-9 rounded-lg" />
               <div className="flex-1 space-y-1.5">
                 <div className="bg-surface-container-high h-4 w-3/4 rounded" />
                 <div className="bg-surface-container-high h-3 w-1/2 rounded opacity-60" />

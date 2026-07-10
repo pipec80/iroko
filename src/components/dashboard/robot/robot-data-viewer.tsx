@@ -65,16 +65,16 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
         <Tabs defaultValue="routines" className="w-full">
           <TabsList className="mb-4 grid h-auto w-full grid-cols-2 gap-2 md:grid-cols-4">
             <TabsTrigger value="routines" className="gap-2">
-              <Clock className="h-4 w-4" /> {t('tab_routines')}
+              <Clock className="size-4" /> {t('tab_routines')}
             </TabsTrigger>
             <TabsTrigger value="contacts" className="gap-2">
-              <Users className="h-4 w-4" /> {t('tab_contacts')}
+              <Users className="size-4" /> {t('tab_contacts')}
             </TabsTrigger>
             <TabsTrigger value="memories" className="gap-2">
-              <BrainCircuit className="h-4 w-4" /> {t('tab_memories')}
+              <BrainCircuit className="size-4" /> {t('tab_memories')}
             </TabsTrigger>
             <TabsTrigger value="history" className="gap-2">
-              <FileSpreadsheet className="h-4 w-4" /> {t('tab_history')}
+              <FileSpreadsheet className="size-4" /> {t('tab_history')}
             </TabsTrigger>
           </TabsList>
 
@@ -203,7 +203,7 @@ export function RobotDataViewer({ routines, contacts, memories, history, account
                             size="sm"
                             disabled={isPending}
                             onClick={() => handleDownload(h.name)}>
-                            <Download className="mr-2 h-4 w-4" />
+                            <Download className="mr-2 size-4" />
                             {t('download_btn')}
                           </Button>
                         </TableCell>

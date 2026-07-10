@@ -94,7 +94,7 @@ function ProjectCard({ project, locale }: { project: Project; locale: string }) 
         {/* Top row */}
         <div className="flex items-center gap-2.5">
           <span
-            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-md text-white"
+            className="flex size-[30px] shrink-0 items-center justify-center rounded-md text-white"
             style={{ background: color }}>
             <Folder size={14} strokeWidth={1.5} />
           </span>

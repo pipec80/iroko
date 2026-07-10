@@ -58,7 +58,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
       <header className="flex items-end justify-between">
         <div className="flex items-center gap-3">
           <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white"
+            className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white"
             style={{ background: project.color ?? 'var(--color-iron)' }}>
             <Folder size={16} strokeWidth={1.5} />
           </span>
@@ -148,7 +148,7 @@ function EmptyState({
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
       <div
-        className="flex h-12 w-12 items-center justify-center rounded-xl"
+        className="flex size-12 items-center justify-center rounded-xl"
         style={{ background: 'var(--surface-2)' }}>
         <FileText size={20} strokeWidth={1.5} className="text-muted-foreground" />
       </div>
