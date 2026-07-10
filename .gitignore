@@ -73,6 +73,7 @@ nuevo4.txt
 knip-output.txt
 skills-lock.json
 .antigravitycli/
+cspell.json
 
 # supabase studio queries locales
 supabase/snippets/
