@@ -1,0 +1,28 @@
+# Release Please — versionado y CHANGELOG automáticos
+#
+# En cada push a main, abre/actualiza un PR "chore(release): X.Y.Z" con el
+# CHANGELOG generado a partir de Conventional Commits (feat -> minor,
+# fix -> patch, feat!/BREAKING CHANGE -> major). El merge del PR de release
+# es manual: vos decides cuándo cortar una versión. Al mergearlo, se crea
+# el tag y el GitHub Release automáticamente.
+
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release Please
+        uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
