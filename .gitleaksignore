@@ -1,0 +1,7 @@
+# Falsos positivos verificados — ver PR y análisis en el historial.
+# irk_abc12345: prefijo de API key ficticio usado en fixtures de test.
+803de8ee0c2c885c5a6de28858ee68ef9f936bdf:src/app/[locale]/dashboard/org/settings/__tests__/actions-api-keys.test.ts:generic-api-key:69
+803de8ee0c2c885c5a6de28858ee68ef9f936bdf:src/app/[locale]/dashboard/org/settings/__tests__/actions-api-keys.test.ts:generic-api-key:82
+# sentry_key en CSP report-uri: es la clave pública del DSN de Sentry, ya expuesta en el bundle cliente.
+e0531fce291d3383bd3e475d8f8cba5d53620d75:src/proxy.ts:generic-api-key:10
+7fca9c17c0341e7dda621f1ee03395cbd0faa0af:src/proxy.ts:generic-api-key:24
