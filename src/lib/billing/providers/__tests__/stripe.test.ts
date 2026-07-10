@@ -4,11 +4,31 @@ vi.mock('@/env', () => ({
   env: { STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_WEBHOOK_SECRET: 'whsec_test' },
 }));
 
-const { constructEvent } = vi.hoisted(() => ({ constructEvent: vi.fn() }));
+const {
+  constructEvent,
+  sessionsCreate,
+  billingPortalCreate,
+  subscriptionsUpdate,
+  subscriptionsCancel,
+} = vi.hoisted(() => ({
+  constructEvent: vi.fn(),
+  sessionsCreate: vi.fn(),
+  billingPortalCreate: vi.fn(),
+  subscriptionsUpdate: vi.fn(),
+  subscriptionsCancel: vi.fn(),
+}));
 vi.mock('stripe', () => ({
   default: class {
     webhooks = { constructEvent };
+    checkout = { sessions: { create: sessionsCreate } };
+    billingPortal = { sessions: { create: billingPortalCreate } };
+    subscriptions = { update: subscriptionsUpdate, cancel: subscriptionsCancel };
   },
+}));
+
+const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(async () => ({ rpc })),
 }));
 
 import { stripeProvider } from '../stripe';
@@ -132,5 +152,78 @@ describe('stripeProvider.verifyWebhook', () => {
     constructEvent.mockReturnValue({ id: 'evt_6', type: 'charge.refunded', data: { object: {} } });
     const result = await stripeProvider.verifyWebhook('{}', 'sig');
     expect(result).toBeNull();
+  });
+});
+
+describe('stripeProvider.createCheckout', () => {
+  it('should resolve the price id from get_plan_provider_id and create a subscription session', async () => {
+    rpc.mockResolvedValue({ data: 'price_test_123', error: null });
+    sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/session_1' });
+
+    const { url } = await stripeProvider.createCheckout({
+      accountId: 'acc_1',
+      planSlug: 'pro',
+      interval: 'month',
+      successUrl: 'https://app/ok',
+      cancelUrl: 'https://app/no',
+    });
+
+    expect(rpc).toHaveBeenCalledWith('get_plan_provider_id', {
+      p_slug: 'pro',
+      p_interval: 'month',
+      p_provider: 'stripe',
+    });
+    expect(sessionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'subscription',
+        line_items: [{ price: 'price_test_123', quantity: 1 }],
+        success_url: 'https://app/ok',
+        cancel_url: 'https://app/no',
+        subscription_data: { metadata: { accountId: 'acc_1' } },
+        metadata: { accountId: 'acc_1' },
+      }),
+    );
+    expect(url).toBe('https://checkout.stripe.com/session_1');
+  });
+
+  it('should throw when the plan has no stripe price configured', async () => {
+    rpc.mockResolvedValue({ data: null, error: null });
+    await expect(
+      stripeProvider.createCheckout({
+        accountId: 'acc_1',
+        planSlug: 'pro',
+        interval: 'month',
+        successUrl: 'https://app/ok',
+        cancelUrl: 'https://app/no',
+      }),
+    ).rejects.toThrow('plan_provider_id_not_configured');
+  });
+});
+
+describe('stripeProvider.createPortalSession', () => {
+  it('should create a billing portal session and return its url', async () => {
+    billingPortalCreate.mockResolvedValue({ url: 'https://billing.stripe.com/portal_1' });
+    const { url } = await stripeProvider.createPortalSession({
+      accountId: 'acc_1',
+      returnUrl: 'https://app/billing',
+    });
+    expect(billingPortalCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ return_url: 'https://app/billing' }),
+    );
+    expect(url).toBe('https://billing.stripe.com/portal_1');
+  });
+});
+
+describe('stripeProvider.cancelSubscription', () => {
+  it('should mark cancel_at_period_end when atPeriodEnd is true', async () => {
+    await stripeProvider.cancelSubscription('sub_1', true);
+    expect(subscriptionsUpdate).toHaveBeenCalledWith('sub_1', { cancel_at_period_end: true });
+    expect(subscriptionsCancel).not.toHaveBeenCalled();
+  });
+
+  it('should cancel immediately when atPeriodEnd is false', async () => {
+    await stripeProvider.cancelSubscription('sub_1', false);
+    expect(subscriptionsCancel).toHaveBeenCalledWith('sub_1');
+    expect(subscriptionsUpdate).not.toHaveBeenCalled();
   });
 });

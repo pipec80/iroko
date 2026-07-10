@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 
 import { env } from '@/env';
+import { createClient } from '@/lib/supabase/server';
 
 import type {
   CheckoutParams,
@@ -70,16 +71,41 @@ function fromInvoiceEvent(stripeEvent: Stripe.Event): NormalizedEvent | null {
 export const stripeProvider: PaymentProvider = {
   name: 'stripe',
 
-  async createCheckout(_params: CheckoutParams): Promise<{ url: string }> {
-    throw new Error('not_implemented_yet');
+  async createCheckout(params: CheckoutParams): Promise<{ url: string }> {
+    const supabase = await createClient();
+    const { data: priceId } = await supabase.rpc('get_plan_provider_id', {
+      p_slug: params.planSlug,
+      p_interval: params.interval,
+      p_provider: 'stripe',
+    });
+    if (!priceId) throw new Error('plan_provider_id_not_configured');
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: params.successUrl,
+      cancel_url: params.cancelUrl,
+      subscription_data: { metadata: { accountId: params.accountId } },
+      metadata: { accountId: params.accountId },
+    });
+    if (!session.url) throw new Error('checkout_session_missing_url');
+    return { url: session.url };
   },
 
-  async createPortalSession(_params: PortalParams): Promise<{ url: string }> {
-    throw new Error('not_implemented_yet');
+  async createPortalSession(params: PortalParams): Promise<{ url: string }> {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: params.accountId,
+      return_url: params.returnUrl,
+    });
+    return { url: session.url };
   },
 
-  async cancelSubscription(_externalId: string, _atPeriodEnd: boolean): Promise<void> {
-    throw new Error('not_implemented_yet');
+  async cancelSubscription(externalId: string, atPeriodEnd: boolean): Promise<void> {
+    if (atPeriodEnd) {
+      await stripe.subscriptions.update(externalId, { cancel_at_period_end: true });
+    } else {
+      await stripe.subscriptions.cancel(externalId);
+    }
   },
 
   async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedEvent | null> {
