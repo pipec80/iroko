@@ -1392,6 +1392,10 @@ export type Database = {
           plan_slug: string
         }[]
       }
+      get_account_id_by_external_subscription: {
+        Args: { p_external_subscription_id: string }
+        Returns: string
+      }
       get_account_subscription: {
         Args: { p_account_id: string }
         Returns: {

@@ -2,7 +2,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(3);
+SELECT plan(4);
 
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
   confirmation_token, email_confirmed_at, recovery_token, aud, role)
@@ -31,6 +31,10 @@ SELECT is(
 SELECT is(
   public.get_plan_provider_id('pro', 'month', 'lemonsqueezy'),
   NULL, 'proveedor sin ID configurado devuelve null, no error');
+
+SELECT is(
+  public.get_account_id_by_external_subscription('nonexistent_sub'),
+  NULL, 'sin match, get_account_id_by_external_subscription devuelve null');
 
 SELECT * FROM finish();
 ROLLBACK;

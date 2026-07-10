@@ -1,4 +1,5 @@
 import { env } from '@/env';
+import { createClient } from '@/lib/supabase/server';
 
 import type {
   CheckoutParams,
@@ -7,6 +8,7 @@ import type {
   PortalParams,
   SubscriptionStatus,
 } from '../types';
+import { handleProviderWebhook } from '../webhook-handler';
 
 const API_BASE = 'https://api.mercadopago.com';
 
@@ -88,21 +90,88 @@ async function fetchResource<T>(path: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** Adapter real de MercadoPago (F2-2A-providers). checkout/portal/cancel se
- * completan en la siguiente tarea del plan; por ahora lanzan si se llaman. */
+async function postResource<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.MERCADOPAGO_ACCESS_TOKEN ?? ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`mercadopago_post_failed_${res.status}`);
+  return (await res.json()) as T;
+}
+
+async function putResource<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${env.MERCADOPAGO_ACCESS_TOKEN ?? ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`mercadopago_put_failed_${res.status}`);
+  return (await res.json()) as T;
+}
+
+/** cancelSubscription solo recibe externalId (contrato de PaymentProvider) —
+ * para la cancelación diferida hace falta accountId, que se resuelve acá vía
+ * la suscripción ya persistida en vez de agregar un parámetro nuevo a la
+ * interfaz (rompería el contrato compartido con Stripe). */
+async function findAccountIdBySubscription(externalId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.rpc('get_account_id_by_external_subscription', {
+    p_external_subscription_id: externalId,
+  });
+  return data ?? null;
+}
+
+/** Adapter real de MercadoPago (F2-2A-providers). */
 export const mercadopagoProvider: PaymentProvider = {
   name: 'mercadopago',
 
-  async createCheckout(_params: CheckoutParams): Promise<{ url: string }> {
-    throw new Error('not_implemented_yet');
+  async createCheckout(params: CheckoutParams): Promise<{ url: string }> {
+    const supabase = await createClient();
+    const { data: planId } = await supabase.rpc('get_plan_provider_id', {
+      p_slug: params.planSlug,
+      p_interval: params.interval,
+      p_provider: 'mercadopago',
+    });
+    if (!planId) throw new Error('plan_provider_id_not_configured');
+
+    // MercadoPago no distingue success/cancel: solo hay un back_url. cancelUrl
+    // se ignora deliberadamente en este adapter (documentado en el spec, §4).
+    const preapproval = await postResource<{ id: string; init_point: string }>('/preapproval', {
+      preapproval_plan_id: planId,
+      external_reference: params.accountId,
+      back_url: params.successUrl,
+      status: 'pending',
+    });
+    return { url: preapproval.init_point };
   },
 
   async createPortalSession(params: PortalParams): Promise<{ url: string }> {
     return { url: params.returnUrl };
   },
 
-  async cancelSubscription(_externalId: string, _atPeriodEnd: boolean): Promise<void> {
-    throw new Error('not_implemented_yet');
+  async cancelSubscription(externalId: string, atPeriodEnd: boolean): Promise<void> {
+    if (atPeriodEnd) {
+      const accountId = await findAccountIdBySubscription(externalId);
+      if (!accountId) throw new Error('subscription_not_found');
+      const event: NormalizedEvent = {
+        externalEventId: `mp_cancel_${externalId}_${Date.now()}`,
+        type: 'subscription_updated',
+        accountId,
+        externalSubscriptionId: externalId,
+        cancelAtPeriodEnd: true,
+        raw: {},
+      };
+      await handleProviderWebhook('mercadopago', JSON.stringify(event), 'internal');
+      return;
+    }
+    await putResource(`/preapproval/${externalId}`, { status: 'cancelled' });
   },
 
   async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedEvent | null> {

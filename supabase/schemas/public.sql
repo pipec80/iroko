@@ -476,6 +476,24 @@ ALTER FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "bi
 COMMENT ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") IS 'Resuelve el ID específico del proveedor (price_id de Stripe, preapproval_plan_id de MercadoPago) para un plan+interval. Lectura pública de metadata de planes (F2-2A-providers).';
 
 
+CREATE OR REPLACE FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") RETURNS "uuid"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT c.account_id
+  FROM billing.subscriptions s
+  JOIN billing.customers c ON c.id = s.customer_id
+  WHERE s.external_subscription_id = p_external_subscription_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") IS 'Resuelve accountId a partir del id de suscripción del proveedor (F2-2A-providers, cancelación diferida de MercadoPago). NULL si no hay match.';
+
+
 CREATE OR REPLACE FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer DEFAULT 10, "p_cursor_created_at" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cursor_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "number" "text", "status" "billing"."invoice_status", "currency" character, "total" integer, "amount_paid" integer, "hosted_url" "text", "pdf_url" "text", "created_at" timestamp with time zone)
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
@@ -1567,6 +1585,11 @@ GRANT ALL ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") TO 
 
 REVOKE ALL ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") TO "authenticated";
 
 
 
