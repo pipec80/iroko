@@ -433,7 +433,7 @@ ALTER FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") OWNER 
 COMMENT ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") IS 'Features+limits del plan efectivo de la cuenta (F2-2A-core). Fallback a Free sin suscripción. Callable por cualquier miembro: gobierna uso, no administración.';
 
 
-CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone, "provider" "text", "external_subscription_id" "text")
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -441,7 +441,7 @@ BEGIN
   PERFORM private.assert_account_admin(p_account_id);
   RETURN QUERY
   SELECT p.slug, p.name, p."interval", s.status, s.current_period_end,
-         s.cancel_at_period_end, s.trial_end
+         s.cancel_at_period_end, s.trial_end, s.provider, s.external_subscription_id
   FROM billing.subscriptions s
   JOIN billing.customers c ON c.id = s.customer_id
   JOIN billing.plans p ON p.id = s.plan_id
@@ -456,7 +456,7 @@ $$;
 ALTER FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Suscripción vigente de la cuenta para la UI de billing (owner/admin). Vacío si nunca se suscribió.';
+COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Suscripción vigente de la cuenta para la UI de billing (owner/admin), incluyendo provider + external_subscription_id para poder cancelar contra el adapter real. Vacío si nunca se suscribió.';
 
 
 CREATE OR REPLACE FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") RETURNS "text"

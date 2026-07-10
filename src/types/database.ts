@@ -1422,9 +1422,11 @@ export type Database = {
         Returns: {
           cancel_at_period_end: boolean
           current_period_end: string
+          external_subscription_id: string
           plan_interval: Database["billing"]["Enums"]["plan_interval"]
           plan_name: string
           plan_slug: string
+          provider: string
           status: Database["billing"]["Enums"]["subscription_status"]
           trial_end: string
         }[]

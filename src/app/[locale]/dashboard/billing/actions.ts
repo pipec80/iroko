@@ -34,6 +34,8 @@ export interface BillingOverview {
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   trialEnd: string | null;
+  provider: string;
+  externalSubscriptionId: string | null;
 }
 
 export interface Invoice {
@@ -189,6 +191,8 @@ export const getBillingData = withServerAction(async function getBillingData(): 
         currentPeriodEnd: o.current_period_end,
         cancelAtPeriodEnd: o.cancel_at_period_end,
         trialEnd: o.trial_end,
+        provider: o.provider,
+        externalSubscriptionId: o.external_subscription_id,
       }
     : null;
   return { data: { plans: mappedPlans, overview: mappedOverview } };

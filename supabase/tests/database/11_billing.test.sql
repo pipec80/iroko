@@ -3,7 +3,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(10);
+SELECT plan(11);
 
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
   confirmation_token, email_confirmed_at, recovery_token, aud, role)
@@ -93,6 +93,10 @@ SELECT set_config('request.jwt.claims',
 SELECT is(
   (SELECT plan_slug FROM public.get_account_entitlements('00000000-0000-0000-0000-000000000930')),
   'pro', 'tras suscribir, entitlements refleja el plan pro');
+
+SELECT is(
+  (SELECT external_subscription_id FROM public.get_billing_overview('00000000-0000-0000-0000-000000000930')),
+  'mock_sub_test', 'get_billing_overview expone el external_subscription_id para poder cancelar');
 
 SELECT * FROM finish();
 ROLLBACK;
