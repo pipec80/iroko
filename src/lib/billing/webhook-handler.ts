@@ -28,6 +28,7 @@ export async function handleProviderWebhook(
     p_status: event.status ?? 'active',
     p_external_subscription_id: event.externalSubscriptionId ?? `mock_${event.accountId}`,
     p_external_event_id: event.externalEventId,
+    p_provider: providerName,
     p_event_type: event.type,
     p_current_period_start: event.currentPeriodStart ?? undefined,
     p_current_period_end: event.currentPeriodEnd ?? undefined,

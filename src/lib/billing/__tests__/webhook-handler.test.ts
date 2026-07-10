@@ -65,6 +65,16 @@ describe('handleProviderWebhook', () => {
     );
   });
 
+  it('should forward the real provider name to apply_subscription_event', async () => {
+    mocks.verifyWebhook.mockResolvedValue(validEvent);
+    mocks.rpc.mockResolvedValue({ data: 'applied', error: null });
+    await handleProviderWebhook('stripe', JSON.stringify(validEvent), 'sig');
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'apply_subscription_event',
+      expect.objectContaining({ p_provider: 'stripe' }),
+    );
+  });
+
   it('should return 200 on a duplicate event (idempotent)', async () => {
     mocks.verifyWebhook.mockResolvedValue(validEvent);
     mocks.rpc.mockResolvedValue({ data: 'duplicate', error: null });

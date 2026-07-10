@@ -1327,6 +1327,7 @@ export type Database = {
           p_interval: Database["billing"]["Enums"]["plan_interval"]
           p_invoice?: Json
           p_plan_slug: string
+          p_provider?: string
           p_status: Database["billing"]["Enums"]["subscription_status"]
           p_trial_end?: string
         }

@@ -3,7 +3,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(9);
+SELECT plan(10);
 
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
   confirmation_token, email_confirmed_at, recovery_token, aud, role)
@@ -80,6 +80,13 @@ SELECT is(
   'duplicate', 'mismo external_event_id es idempotente (no-op)');
 
 RESET role;
+
+-- service_role no tiene SELECT directo sobre billing.subscriptions (deny-all
+-- salvo RPCs); esta lectura corre como el superusuario ambiente del test runner.
+SELECT is(
+  (SELECT provider FROM billing.subscriptions WHERE external_subscription_id = 'mock_sub_test'),
+  'mock', 'sin p_provider explícito, apply_subscription_event sigue defaulteando a mock');
+
 SELECT set_config('request.jwt.claims',
   json_build_object('sub','00000000-0000-0000-0000-000000000831','role','authenticated')::text, true);
 
