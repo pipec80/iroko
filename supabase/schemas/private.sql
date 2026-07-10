@@ -438,5 +438,26 @@ CREATE INDEX IF NOT EXISTS "idx_rate_limit_counters_ip_window"
   ON "private"."rate_limit_counters" ("ip", "window_start" DESC);
 
 
+CREATE OR REPLACE FUNCTION "private"."cancel_overdue_mercadopago_subscriptions"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  UPDATE billing.subscriptions
+  SET status = 'canceled', canceled_at = now()
+  WHERE provider = 'mercadopago'
+    AND cancel_at_period_end = true
+    AND current_period_end < now()
+    AND status <> 'canceled';
+END;
+$$;
+
+
+ALTER FUNCTION "private"."cancel_overdue_mercadopago_subscriptions"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "private"."cancel_overdue_mercadopago_subscriptions"() IS 'Cierra localmente suscripciones MercadoPago vencidas y marcadas para cancelar (F2-2A-providers). No llama a la API de MercadoPago.';
+
+
 
 
