@@ -25,12 +25,16 @@ describe('POST /api/webhooks/[provider]', () => {
     expect(mocks.handleProviderWebhook).toHaveBeenCalledWith('stripe', '{}', 'sig_stripe');
   });
 
-  it('should read x-signature for the mercadopago provider', async () => {
+  it('should combine x-signature and x-request-id for the mercadopago provider', async () => {
     mocks.handleProviderWebhook.mockResolvedValue({ status: 200, body: { result: 'applied' } });
-    await POST(makeRequest({ 'x-signature': 'sig_mp' }), {
+    await POST(makeRequest({ 'x-signature': 'sig_mp', 'x-request-id': 'req_1' }), {
       params: Promise.resolve({ provider: 'mercadopago' }),
     });
-    expect(mocks.handleProviderWebhook).toHaveBeenCalledWith('mercadopago', '{}', 'sig_mp');
+    expect(mocks.handleProviderWebhook).toHaveBeenCalledWith(
+      'mercadopago',
+      '{}',
+      'sig_mp;x-request-id=req_1',
+    );
   });
 
   it('should keep reading x-webhook-signature for the mock provider', async () => {
