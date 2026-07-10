@@ -77,9 +77,6 @@ importers:
       lucide-react:
         specifier: ^1.8.0
         version: 1.8.0(react@19.2.4)
-      mercadopago:
-        specifier: ^3.2.0
-        version: 3.2.0
       next:
         specifier: 16.2.7
         version: 16.2.7(@babel/core@7.29.6)(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -6041,10 +6038,6 @@ packages:
 
   meow@13.2.0:
     resolution: {integrity: sha512-pxQJQzB6djGPXh08dacEloMFopsOqGVRKFPYvPOt9XDZ1HasbgDZA74CJGreSU4G3Ak7EFJGoiH2auq+yXISgA==}
-    engines: {node: '>=18'}
-
-  mercadopago@3.2.0:
-    resolution: {integrity: sha512-9keIOj21CpIvpLepeUp+VTUejiD7Dc2eCy2yqW21G4yBtj3Ey2E4AsnFrxRfGchtRc6L7qxA3YNkT4N7IcWj+g==}
     engines: {node: '>=18'}
 
   merge-descriptors@2.0.0:
@@ -13737,8 +13730,6 @@ snapshots:
   media-typer@1.1.0: {}
 
   meow@13.2.0: {}
-
-  mercadopago@3.2.0: {}
 
   merge-descriptors@2.0.0: {}
 
