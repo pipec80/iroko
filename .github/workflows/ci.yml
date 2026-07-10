@@ -370,6 +370,7 @@ jobs:
           # Los E2E no envían emails reales; Mailpit captura los de auth.
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
+          MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
           # Sin NEXT_PUBLIC_TURNSTILE_SITE_KEY: CaptchaField no renderiza nada
           # y captchaReady arranca en true → botones habilitados desde el inicio.
           # Turnstile headless no dispara onSuccess aunque uses la test key.
@@ -419,6 +420,7 @@ jobs:
       SITE_URL: ${{ secrets.SITE_URL }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
       FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
+      MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
       NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
     steps:
