@@ -126,7 +126,9 @@ export const confirmMockCheckout = withServerAction(async function confirmMockCh
   return { data: { redirectUrl: token.successUrl } };
 });
 
-/** Cancela la suscripción al final del período (materializada vía webhook). */
+/** Cancela la suscripción al final del período. Mock la materializa inline
+ * vía webhook (sin credenciales que llamar); proveedores reales delegan al
+ * adapter, que decide cómo lograr "al fin del período" contra su propia API. */
 export const cancelSubscription = withServerAction(async function cancelSubscription(): Promise<
   ActionResult<true>
 > {
@@ -140,6 +142,13 @@ export const cancelSubscription = withServerAction(async function cancelSubscrip
   if (error) return { data: null, error: error.message ?? 'fetch_failed' };
   const current = overview?.[0];
   if (!current) return { data: null, error: 'no_subscription' };
+
+  if (current.provider !== 'mock') {
+    if (!current.external_subscription_id) return { data: null, error: 'no_subscription' };
+    const provider = getPaymentProvider(current.provider);
+    await provider.cancelSubscription(current.external_subscription_id, true);
+    return { data: true };
+  }
 
   const now = new Date();
   const event: NormalizedEvent = {

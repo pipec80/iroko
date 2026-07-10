@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getActiveAccountId: vi.fn(),
   createCheckout: vi.fn(),
+  cancelSubscription: vi.fn(),
+  getPaymentProvider: vi.fn(),
   handle: vi.fn(),
   verify: vi.fn(),
   sign: vi.fn(),
@@ -10,9 +12,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/active-account', () => ({ getActiveAccountId: mocks.getActiveAccountId }));
-vi.mock('@/lib/billing/registry', () => ({
-  getPaymentProvider: vi.fn(() => ({ name: 'mock', createCheckout: mocks.createCheckout })),
-}));
+vi.mock('@/lib/billing/registry', () => ({ getPaymentProvider: mocks.getPaymentProvider }));
 vi.mock('@/lib/billing/webhook-handler', () => ({ handleProviderWebhook: mocks.handle }));
 vi.mock('@/lib/billing/signing', () => ({
   signMockPayload: mocks.sign,
@@ -47,6 +47,11 @@ describe('billing actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('a1');
+    mocks.getPaymentProvider.mockReturnValue({
+      name: 'mock',
+      createCheckout: mocks.createCheckout,
+      cancelSubscription: mocks.cancelSubscription,
+    });
   });
 
   it('startCheckout returns the provider checkout url', async () => {
@@ -130,7 +135,15 @@ describe('billing actions', () => {
 
   it('cancelSubscription signs a subscription_updated event and posts it to the handler', async () => {
     mocks.rpc.mockResolvedValue({
-      data: [{ plan_slug: 'pro', status: 'active', plan_interval: 'month' }],
+      data: [
+        {
+          plan_slug: 'pro',
+          status: 'active',
+          plan_interval: 'month',
+          provider: 'mock',
+          external_subscription_id: 'mock_sub_a1',
+        },
+      ],
       error: null,
     });
     mocks.sign.mockResolvedValue('signed-cancel-event');
@@ -149,7 +162,15 @@ describe('billing actions', () => {
 
   it('cancelSubscription returns cancel_failed when the webhook handler errors', async () => {
     mocks.rpc.mockResolvedValue({
-      data: [{ plan_slug: 'pro', status: 'active', plan_interval: 'month' }],
+      data: [
+        {
+          plan_slug: 'pro',
+          status: 'active',
+          plan_interval: 'month',
+          provider: 'mock',
+          external_subscription_id: 'mock_sub_a1',
+        },
+      ],
       error: null,
     });
     mocks.sign.mockResolvedValue('signed-cancel-event');
@@ -157,6 +178,52 @@ describe('billing actions', () => {
     const res = await cancelSubscription();
     expect(res.data).toBeNull();
     expect(res.error).toBe('cancel_failed');
+  });
+
+  it('cancelSubscription calls the real provider adapter when the account uses a non-mock provider', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          plan_slug: 'pro',
+          status: 'active',
+          plan_interval: 'month',
+          provider: 'stripe',
+          external_subscription_id: 'sub_stripe_123',
+        },
+      ],
+      error: null,
+    });
+    mocks.getPaymentProvider.mockReturnValue({
+      name: 'stripe',
+      cancelSubscription: mocks.cancelSubscription,
+    });
+
+    const res = await cancelSubscription();
+
+    expect(mocks.getPaymentProvider).toHaveBeenCalledWith('stripe');
+    expect(mocks.cancelSubscription).toHaveBeenCalledWith('sub_stripe_123', true);
+    expect(mocks.handle).not.toHaveBeenCalled();
+    expect(res.data).toBe(true);
+  });
+
+  it('cancelSubscription returns no_subscription when a real provider has no external_subscription_id', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          plan_slug: 'pro',
+          status: 'active',
+          plan_interval: 'month',
+          provider: 'stripe',
+          external_subscription_id: null,
+        },
+      ],
+      error: null,
+    });
+
+    const res = await cancelSubscription();
+
+    expect(res.error).toBe('no_subscription');
+    expect(mocks.cancelSubscription).not.toHaveBeenCalled();
   });
 
   it('getBillingData maps plans and overview from the RPCs', async () => {
