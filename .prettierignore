@@ -14,6 +14,7 @@ public/
 src/types/database.ts
 pnpm-lock.yaml
 skills-lock.json
+CHANGELOG.md
 
 # Tooling & Agents — no formatear
 .agent/
