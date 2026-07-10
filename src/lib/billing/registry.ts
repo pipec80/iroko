@@ -1,18 +1,17 @@
 import { env } from '@/env';
 
 import { mockProvider } from './providers/mock';
+import { stripeProvider } from './providers/stripe';
 import type { PaymentProvider } from './types';
 
 /**
  * Registro de proveedores de pago. Cada uno se registra solo si sus credenciales
  * están en env — así "si la pasarela existe, se agrega". `mock` siempre está.
- * 2A-providers añadirá stripe/lemon/mercadopago con la misma forma.
+ * 2A-providers añadirá lemon/mercadopago con la misma forma.
  */
 const registry = new Map<string, PaymentProvider>();
 registry.set(mockProvider.name, mockProvider);
-
-// Ejemplo para 2A-providers (comentado hasta tener el adapter y las env vars):
-// if (env.STRIPE_SECRET_KEY) registry.set(stripeProvider.name, stripeProvider);
+if (env.STRIPE_SECRET_KEY) registry.set(stripeProvider.name, stripeProvider);
 
 export function availableProviders(): string[] {
   return [...registry.keys()];
