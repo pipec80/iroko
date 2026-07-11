@@ -11,7 +11,15 @@ import type {
   SubscriptionStatus,
 } from '../types';
 
-const stripe = new Stripe(env.STRIPE_SECRET_KEY ?? '');
+let stripeClient: Stripe | undefined;
+
+/** Lazy: instanciar a nivel de módulo rompe el build cuando STRIPE_SECRET_KEY
+ * no está seteada (el SDK lanza si el apiKey viene vacío), y ese import
+ * ocurre siempre — registry.ts solo condiciona el registro, no el import. */
+function getStripe(): Stripe {
+  stripeClient ??= new Stripe(env.STRIPE_SECRET_KEY ?? '');
+  return stripeClient;
+}
 
 /** incomplete_expired no tiene equivalente propio en SubscriptionStatus — el
  * checkout nunca se completó, así que cae a 'canceled' (estado terminal). */
@@ -80,7 +88,7 @@ export const stripeProvider: PaymentProvider = {
     });
     if (!priceId) throw new Error('plan_provider_id_not_configured');
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       mode: 'subscription',
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: params.successUrl,
@@ -93,7 +101,7 @@ export const stripeProvider: PaymentProvider = {
   },
 
   async createPortalSession(params: PortalParams): Promise<{ url: string }> {
-    const session = await stripe.billingPortal.sessions.create({
+    const session = await getStripe().billingPortal.sessions.create({
       customer: params.accountId,
       return_url: params.returnUrl,
     });
@@ -102,16 +110,20 @@ export const stripeProvider: PaymentProvider = {
 
   async cancelSubscription(externalId: string, atPeriodEnd: boolean): Promise<void> {
     if (atPeriodEnd) {
-      await stripe.subscriptions.update(externalId, { cancel_at_period_end: true });
+      await getStripe().subscriptions.update(externalId, { cancel_at_period_end: true });
     } else {
-      await stripe.subscriptions.cancel(externalId);
+      await getStripe().subscriptions.cancel(externalId);
     }
   },
 
   async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedEvent | null> {
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(rawBody, signature, env.STRIPE_WEBHOOK_SECRET ?? '');
+      event = getStripe().webhooks.constructEvent(
+        rawBody,
+        signature,
+        env.STRIPE_WEBHOOK_SECRET ?? '',
+      );
     } catch {
       return null;
     }
