@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.1.0](https://github.com/pipec80/iroko/compare/iroko-v1.0.0...iroko-v1.1.0) (2026-07-11)
+
+
+### Features
+
+* add Stripe and MercadoPago payment provider adapters ([#38](https://github.com/pipec80/iroko/issues/38)) ([7175204](https://github.com/pipec80/iroko/commit/71752046ba550592f9a744155418baa291fad168))
+
 ## [1.0.0](https://github.com/pipec80/iroko/compare/iroko-v0.1.0...iroko-v1.0.0) (2026-07-10)
 
 
