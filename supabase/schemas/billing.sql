@@ -193,6 +193,7 @@ CREATE TABLE IF NOT EXISTS "billing"."plans" (
     "trial_days" integer DEFAULT 0,
     "features" "jsonb" DEFAULT '{}'::"jsonb",
     "limits" "jsonb" DEFAULT '{}'::"jsonb",
+    "provider_ids" "jsonb" DEFAULT '{}'::"jsonb",
     "sort_order" integer DEFAULT 0,
     "is_active" boolean DEFAULT true,
     "created_at" timestamp with time zone DEFAULT "now"(),

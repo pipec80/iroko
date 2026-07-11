@@ -433,7 +433,7 @@ ALTER FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") OWNER 
 COMMENT ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") IS 'Features+limits del plan efectivo de la cuenta (F2-2A-core). Fallback a Free sin suscripción. Callable por cualquier miembro: gobierna uso, no administración.';
 
 
-CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone, "provider" "text", "external_subscription_id" "text")
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -441,7 +441,7 @@ BEGIN
   PERFORM private.assert_account_admin(p_account_id);
   RETURN QUERY
   SELECT p.slug, p.name, p."interval", s.status, s.current_period_end,
-         s.cancel_at_period_end, s.trial_end
+         s.cancel_at_period_end, s.trial_end, s.provider, s.external_subscription_id
   FROM billing.subscriptions s
   JOIN billing.customers c ON c.id = s.customer_id
   JOIN billing.plans p ON p.id = s.plan_id
@@ -456,7 +456,42 @@ $$;
 ALTER FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Suscripción vigente de la cuenta para la UI de billing (owner/admin). Vacío si nunca se suscribió.';
+COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Suscripción vigente de la cuenta para la UI de billing (owner/admin), incluyendo provider + external_subscription_id para poder cancelar contra el adapter real. Vacío si nunca se suscribió.';
+
+
+CREATE OR REPLACE FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") RETURNS "text"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT provider_ids->>p_provider
+  FROM billing.plans
+  WHERE slug = p_slug AND "interval" = p_interval
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") IS 'Resuelve el ID específico del proveedor (price_id de Stripe, preapproval_plan_id de MercadoPago) para un plan+interval. Lectura pública de metadata de planes (F2-2A-providers).';
+
+
+CREATE OR REPLACE FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") RETURNS "uuid"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT c.account_id
+  FROM billing.subscriptions s
+  JOIN billing.customers c ON c.id = s.customer_id
+  WHERE s.external_subscription_id = p_external_subscription_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") IS 'Resuelve accountId a partir del id de suscripción del proveedor (F2-2A-providers, cancelación diferida de MercadoPago). NULL si no hay match.';
 
 
 CREATE OR REPLACE FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer DEFAULT 10, "p_cursor_created_at" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cursor_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "number" "text", "status" "billing"."invoice_status", "currency" character, "total" integer, "amount_paid" integer, "hosted_url" "text", "pdf_url" "text", "created_at" timestamp with time zone)
@@ -491,7 +526,7 @@ ALTER FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit"
 COMMENT ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") IS 'Facturas de la cuenta paginadas por keyset (owner/admin).';
 
 
-CREATE OR REPLACE FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_current_period_end" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cancel_at_period_end" boolean DEFAULT false, "p_trial_end" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_invoice" "jsonb" DEFAULT NULL::"jsonb") RETURNS "text"
+CREATE OR REPLACE FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_current_period_end" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cancel_at_period_end" boolean DEFAULT false, "p_trial_end" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_invoice" "jsonb" DEFAULT NULL::"jsonb", "p_provider" "text" DEFAULT 'mock'::"text") RETURNS "text"
     LANGUAGE "plpgsql"
     SET "search_path" TO ''
     AS $$
@@ -502,7 +537,7 @@ DECLARE
 BEGIN
   -- Idempotencia: si el evento externo ya se procesó, no-op.
   INSERT INTO billing.events (event_type, provider, external_event_id, payload, processed_at)
-  VALUES (p_event_type, 'mock', p_external_event_id, COALESCE(p_invoice, '{}'::jsonb), now())
+  VALUES (p_event_type, p_provider, p_external_event_id, COALESCE(p_invoice, '{}'::jsonb), now())
   ON CONFLICT (external_event_id) DO NOTHING;
   IF NOT FOUND THEN
     RETURN 'duplicate';
@@ -516,7 +551,7 @@ BEGIN
 
   -- Upsert del customer (account_id UNIQUE).
   INSERT INTO billing.customers (account_id, provider)
-  VALUES (p_account_id, 'mock')
+  VALUES (p_account_id, p_provider)
   ON CONFLICT (account_id) DO UPDATE SET updated_at = now()
   RETURNING id INTO v_customer_id;
 
@@ -530,7 +565,7 @@ BEGIN
       cancel_at_period_end, trial_end, provider, external_subscription_id)
     VALUES (
       v_customer_id, v_plan_id, p_status, p_current_period_start, p_current_period_end,
-      COALESCE(p_cancel_at_period_end, false), p_trial_end, 'mock', p_external_subscription_id)
+      COALESCE(p_cancel_at_period_end, false), p_trial_end, p_provider, p_external_subscription_id)
     RETURNING id INTO v_subscription_id;
   ELSE
     UPDATE billing.subscriptions
@@ -573,10 +608,10 @@ END;
 $$;
 
 
-ALTER FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb") OWNER TO "postgres";
+ALTER FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb") IS 'Persiste un evento de suscripción resuelto (idempotente por external_event_id) y emite subscription.* a los webhooks salientes. Solo service_role (F2-2A-core).';
+COMMENT ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") IS 'Persiste un evento de suscripción resuelto (idempotente por external_event_id), graba el provider real, y emite subscription.* a los webhooks salientes. Solo service_role (F2-2A-providers).';
 
 
 
@@ -1548,15 +1583,25 @@ GRANT ALL ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") TO 
 
 
 
+REVOKE ALL ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") TO "authenticated";
+
+
+
 REVOKE ALL ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") TO "authenticated";
 
 
 
-REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb") FROM "authenticated";
-REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb") FROM "anon";
-GRANT ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb") TO "service_role";
+REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") FROM "authenticated";
+REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") FROM "anon";
+GRANT ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") TO "service_role";
 
 
 

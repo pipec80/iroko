@@ -1,7 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/env', () => ({
-  env: { MOCK_BILLING_SECRET: 'test-secret', BILLING_DEFAULT_PROVIDER: 'mock' },
+  env: {
+    MOCK_BILLING_SECRET: 'test-secret',
+    BILLING_DEFAULT_PROVIDER: 'mock',
+    STRIPE_SECRET_KEY: 'sk_test_x',
+    MERCADOPAGO_ACCESS_TOKEN: 'TEST-token',
+    LOG_LEVEL: 'silent',
+  },
 }));
 
 import { getPaymentProvider, availableProviders } from '../registry';
@@ -35,5 +41,13 @@ describe('payment provider registry', () => {
   it('mock verifyWebhook rejects a tampered body', async () => {
     const provider = getPaymentProvider('mock');
     expect(await provider.verifyWebhook('{"not":"signed"}', 'bad-sig')).toBeNull();
+  });
+
+  it('should register stripe when STRIPE_SECRET_KEY is set', () => {
+    expect(availableProviders()).toContain('stripe');
+  });
+
+  it('should register mercadopago when MERCADOPAGO_ACCESS_TOKEN is set', () => {
+    expect(availableProviders()).toContain('mercadopago');
   });
 });

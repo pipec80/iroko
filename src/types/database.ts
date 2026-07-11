@@ -347,6 +347,7 @@ export type Database = {
           limits: Json | null
           name: string
           price: number
+          provider_ids: Json | null
           slug: string
           sort_order: number | null
           trial_days: number | null
@@ -363,6 +364,7 @@ export type Database = {
           limits?: Json | null
           name: string
           price?: number
+          provider_ids?: Json | null
           slug: string
           sort_order?: number | null
           trial_days?: number | null
@@ -379,6 +381,7 @@ export type Database = {
           limits?: Json | null
           name?: string
           price?: number
+          provider_ids?: Json | null
           slug?: string
           sort_order?: number | null
           trial_days?: number | null
@@ -1327,6 +1330,7 @@ export type Database = {
           p_interval: Database["billing"]["Enums"]["plan_interval"]
           p_invoice?: Json
           p_plan_slug: string
+          p_provider?: string
           p_status: Database["billing"]["Enums"]["subscription_status"]
           p_trial_end?: string
         }
@@ -1388,6 +1392,10 @@ export type Database = {
           plan_slug: string
         }[]
       }
+      get_account_id_by_external_subscription: {
+        Args: { p_external_subscription_id: string }
+        Returns: string
+      }
       get_account_subscription: {
         Args: { p_account_id: string }
         Returns: {
@@ -1418,9 +1426,11 @@ export type Database = {
         Returns: {
           cancel_at_period_end: boolean
           current_period_end: string
+          external_subscription_id: string
           plan_interval: Database["billing"]["Enums"]["plan_interval"]
           plan_name: string
           plan_slug: string
+          provider: string
           status: Database["billing"]["Enums"]["subscription_status"]
           trial_end: string
         }[]
@@ -1436,6 +1446,14 @@ export type Database = {
           slug: string
           type: Database["public"]["Enums"]["account_type"]
         }[]
+      }
+      get_plan_provider_id: {
+        Args: {
+          p_interval: Database["billing"]["Enums"]["plan_interval"]
+          p_provider: string
+          p_slug: string
+        }
+        Returns: string
       }
       invite_members: {
         Args: {
