@@ -47,22 +47,22 @@ la regla. Si no entra, no entra.
 
 Catálogo de módulos. La columna **Superficie** indica qué UI lleva cada uno — **no todos necesitan página**.
 
-| Necesidad                     | Implementación nativa                                     | Superficie / UI                                                   | Estado     |
-| ----------------------------- | --------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
-| Auth (email/oauth/magic/MFA)  | Supabase Auth                                             | 🟡 Flujos login/signup + settings MFA                             | ✅ existe  |
-| Multi-tenant + RBAC           | Postgres + RLS + custom access token hook (JWT claims)    | 🟢 Members + account switcher (RLS = enforcement, sin vista)      | ✅ core    |
-| Audit logs                    | triggers Postgres (schema `audit`) + `v_recent_activity`  | 🟢 Visor por cuenta en `dashboard/activity`, filtros + paginación | ✅ F2 (2G) |
-| Notificaciones in-app         | tabla + **Realtime** (live, sin polling)                  | 🟡 Campanita + lista (leer/descartar) — no se "crean"             | F2         |
-| Email transaccional           | Resend (free 3k/mes)                                      | ⚪ Servicio `sendEmail()` disparado por eventos                   | F2         |
-| Webhooks salientes            | **Database Webhooks / pg_net**                            | 🟢 CRUD de endpoints + log de entregas read-only                  | F2         |
-| API keys                      | tabla hasheada + Edge Function de validación              | 🟢 Crear / listar / revocar (sin editar)                          | F2         |
-| Feature flags                 | tabla Postgres + RLS                                      | 🟢 Página admin (toggles + asignación)                            | F2         |
-| Jobs / colas                  | **pg_cron + pgmq + Edge Functions**                       | ⚪ Backend puro (panel de estado opcional)                        | F2         |
-| Storage de archivos           | Supabase Storage + RLS                                    | 🟡 Widgets embebidos (avatar, subir archivos)                     | ✅ existe  |
-| Admin panel + impersonation   | RLS `platform_admin` + service role                       | 🟡 Páginas read + acciones (admin)                                | F3         |
-| GDPR export / right-to-delete | funciones Postgres (RPC)                                  | 🟡 2 botones en settings + confirmación                           | F3         |
-| Billing (suscripciones)       | Stripe + MercadoPago, estado en Postgres, webhook en Edge | 🟡 Plan / facturas + suscribir / cancelar                         | F2         |
-| Vertical IA ("IA tuneada")    | **pgvector**                                              | 🟢 Según el vertical                                              | base lista |
+| Necesidad                     | Implementación nativa                                           | Superficie / UI                                                   | Estado     |
+| ----------------------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
+| Auth (email/oauth/magic/MFA)  | Supabase Auth                                                   | 🟡 Flujos login/signup + settings MFA                             | ✅ existe  |
+| Multi-tenant + RBAC           | Postgres + RLS + custom access token hook (JWT claims)          | 🟢 Members + account switcher (RLS = enforcement, sin vista)      | ✅ core    |
+| Audit logs                    | triggers Postgres (schema `audit`) + `v_recent_activity`        | 🟢 Visor por cuenta en `dashboard/activity`, filtros + paginación | ✅ F2 (2G) |
+| Notificaciones in-app         | tabla + **Realtime** (live, sin polling)                        | 🟡 Campanita + lista (leer/descartar) — no se "crean"             | F2         |
+| Email transaccional           | Resend (free 3k/mes)                                            | ⚪ Servicio `sendEmail()` disparado por eventos                   | F2         |
+| Webhooks salientes            | **Database Webhooks / pg_net**                                  | 🟢 CRUD de endpoints + log de entregas read-only                  | F2         |
+| API keys                      | tabla hasheada + RPC `verify_api_key` (route Next)              | 🟢 Crear / listar / revocar (sin editar)                          | F2         |
+| Feature flags                 | tabla Postgres + RLS                                            | 🟢 Página admin (toggles + asignación)                            | F2         |
+| Jobs / colas                  | **pg_cron + pgmq + Edge Functions**                             | ⚪ Backend puro (panel de estado opcional)                        | F2         |
+| Storage de archivos           | Supabase Storage + RLS                                          | 🟡 Widgets embebidos (avatar, subir archivos)                     | ✅ existe  |
+| Admin panel + impersonation   | RLS `platform_admin` + service role                             | 🟡 Páginas read + acciones (admin)                                | F3         |
+| GDPR export / right-to-delete | funciones Postgres (RPC)                                        | 🟡 2 botones en settings + confirmación                           | F3         |
+| Billing (suscripciones)       | Stripe + MercadoPago, estado en Postgres, webhook en route Next | 🟡 Plan / facturas + suscribir / cancelar                         | F2         |
+| Vertical IA ("IA tuneada")    | **pgvector**                                                    | 🟢 Según el vertical                                              | base lista |
 
 **Superficie:** 🟢 página + CRUD visual · 🟡 UI sin CRUD (widget / lista / acciones) · ⚪ sin vista (backend / servicio).
 
@@ -329,6 +329,28 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
    consent config-driven.
 6. **Anuncios (broadcast).** Tabla `announcements` + UI admin para publicar avisos in-app a
    todas las cuentas (reusa el canal de notificaciones de 2C). Web push queda FUERA.
+7. **Gate de admin para `broadcast_alert_email` (deuda 2F).** Restringir el RPC a
+   `platform_admin` (hoy cualquier usuario autenticado puede invocarlo — limitación
+   documentada de 2F). Opcional: botón de disparo en `/dashboard/admin`.
+8. **Logo de organización (deuda Storage).** El bucket `org-assets` existe en `config.toml`
+   pero no tiene políticas RLS ni UI. Agregar upload de logo en `org/settings` (patrón de
+   avatar de perfil: path en DB + `storageUrl()`), políticas RLS del bucket, y mostrar el
+   logo en el account switcher (`accounts.logo_url` ya existe en el schema).
+9. **Vault para secrets de webhooks (deuda 2D).** `webhook_endpoints.secret` se guarda en
+   texto plano (protegido por RLS/RPCs pero sin cifrado at-rest). Migrar a Supabase Vault
+   (`vault.create_secret` / `vault.decrypted_secrets`) y ajustar `process-webhook-deliveries`
+   para leer el secret desde Vault al firmar. Cumple la promesa "Vault (secrets)" del mapa.
+10. **Advisors en CI (deuda DX).** Los scripts `supa:advisors` y `supa:lint` existen pero
+    ningún workflow los corre. Agregar un job al nightly que los ejecute contra el stack
+    local y falle en findings de seguridad (RLS sin índice, SECURITY DEFINER sin
+    search_path, etc.).
+11. **Presence "miembros online" (opcional, demo-value).** Badge de presencia en la lista
+    de members reusando Realtime (canal `account:{id}:presence`, uso puntual per regla de
+    realtime). Única primitiva de Realtime aún sin demostrar en el boilerplate.
+
+**Nota (decisión 2026-07-13):** las extensiones habilitadas sin uso (`postgis`, `pg_trgm`,
+`unaccent`, `pg_partman`) se quedan como están por ahora — son "activables" para verticales;
+`pgvector` sigue reservada para el vertical IA. Revisar en F4 si conviene quitarlas del v1.
 
 **🤖 Prompt para Claude Code — F3:**
 
@@ -345,6 +367,11 @@ Implementá la FASE 3: Plataforma admin + Compliance + Onboarding.
 4. Onboarding wizard post-signup (org → invitar → plan → branding), skippable por config.
 5. Páginas legales (Términos, Privacidad) en (public) + cookie consent banner config-driven.
 6. Tabla announcements + UI admin de broadcast in-app reusando el canal de notificaciones.
+7. Gate platform_admin para broadcast_alert_email (deuda 2F).
+8. Upload de logo de org al bucket org-assets (RLS + UI en org/settings + account switcher).
+9. Migrar webhook_endpoints.secret a Supabase Vault y ajustar el worker de deliveries.
+10. Job nightly que corra supa:advisors + supa:lint y falle en findings de seguridad.
+11. (Opcional) Presence de members online vía canal account:{id}:presence.
 
 Reglas: migraciones con patrón private.* + COMMENT, `pnpm supa:gen:types` tras el schema.
 Seguridad primero (RLS, MFA en admin, auditoría de impersonation). JSDoc en todo export.
