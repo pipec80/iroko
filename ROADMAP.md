@@ -347,6 +347,21 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
 11. **Presence "miembros online" (opcional, demo-value).** Badge de presencia en la lista
     de members reusando Realtime (canal `account:{id}:presence`, uso puntual per regla de
     realtime). Única primitiva de Realtime aún sin demostrar en el boilerplate.
+12. **Cablear entitlements a la UI (deuda 2A — el ejemplo "free ve esto / pago ve esto").**
+    La infraestructura completa existe (`billing.plans.features/limits`, RPC
+    `get_account_entitlements`, helpers `hasFeature/getLimit/withinLimit` testeados) pero
+    **ningún componente ni server action la consume** — la única UI consciente del plan es
+    la página de billing. Demostrar el patrón end-to-end en las 3 superficies existentes:
+    - **Webhooks** (feature booleana): si `hasFeature('webhooks_enabled')` es false, la tab
+      muestra empty state con CTA "Disponible en Pro" en vez del CRUD.
+    - **API keys** (límite numérico): botón "Crear" deshabilitado con contador
+      `X/api_keys_max` cuando `withinLimit()` da false.
+    - **Members** (seats): chequear `seats_max` al invitar.
+      Incluye **fix de bug de consistencia**: `create_webhook_endpoint` tiene el límite
+      hardcodeado en 10 (el valor de Pro) en vez de leer `webhook_endpoints_max` del plan —
+      hoy una cuenta free (webhooks_enabled=false, max=0) puede crear hasta 10 webhooks.
+      El RPC debe leer el límite desde `get_account_entitlements`. Aplicar el mismo criterio
+      en el RPC de creación de API keys (límite del plan, no fijo).
 
 **Nota (decisión 2026-07-13):** las extensiones habilitadas sin uso (`postgis`, `pg_trgm`,
 `unaccent`, `pg_partman`) se quedan como están por ahora — son "activables" para verticales;
@@ -372,6 +387,10 @@ Implementá la FASE 3: Plataforma admin + Compliance + Onboarding.
 9. Migrar webhook_endpoints.secret a Supabase Vault y ajustar el worker de deliveries.
 10. Job nightly que corra supa:advisors + supa:lint y falle en findings de seguridad.
 11. (Opcional) Presence de members online vía canal account:{id}:presence.
+12. Cablear entitlements a la UI: gate de webhooks por hasFeature('webhooks_enabled'),
+    límite de API keys por withinLimit('api_keys_max'), seats_max al invitar members.
+    Fix: create_webhook_endpoint y el RPC de API keys deben leer el límite del plan
+    (get_account_entitlements), no valores hardcodeados.
 
 Reglas: migraciones con patrón private.* + COMMENT, `pnpm supa:gen:types` tras el schema.
 Seguridad primero (RLS, MFA en admin, auditoría de impersonation). JSDoc en todo export.
