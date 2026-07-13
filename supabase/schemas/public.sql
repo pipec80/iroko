@@ -494,6 +494,47 @@ ALTER FUNCTION "public"."get_account_id_by_external_subscription"("p_external_su
 COMMENT ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") IS 'Resuelve accountId a partir del id de suscripción del proveedor (F2-2A-providers, cancelación diferida de MercadoPago). NULL si no hay match.';
 
 
+CREATE OR REPLACE FUNCTION "public"."broadcast_alert_email"("p_subject" "text", "p_body" "text") RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_count integer := 0;
+  v_row record;
+BEGIN
+  IF p_subject IS NULL OR length(trim(p_subject)) = 0 THEN
+    RAISE EXCEPTION 'subject_required';
+  END IF;
+  IF p_body IS NULL OR length(trim(p_body)) = 0 THEN
+    RAISE EXCEPTION 'body_required';
+  END IF;
+
+  FOR v_row IN
+    SELECT am.account_id, u.email
+    FROM public.accounts_memberships am
+    JOIN auth.users u ON u.id = am.user_id
+    WHERE am.role = 'owner'
+  LOOP
+    PERFORM pgmq.send('email_queue', jsonb_build_object(
+      'accountId', v_row.account_id,
+      'email', v_row.email,
+      'subject', p_subject,
+      'body', p_body
+    ));
+    v_count := v_count + 1;
+  END LOOP;
+
+  RETURN v_count;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."broadcast_alert_email"("p_subject" "text", "p_body" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."broadcast_alert_email"("p_subject" "text", "p_body" "text") IS 'Encola un email de alerta en pgmq.email_queue para cada owner de cuenta (F2-2F). Sin gate de admin todavía — F3 agrega platform_admin real.';
+
+
 CREATE OR REPLACE FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer DEFAULT 10, "p_cursor_created_at" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cursor_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "number" "text", "status" "billing"."invoice_status", "currency" character, "total" integer, "amount_paid" integer, "hosted_url" "text", "pdf_url" "text", "created_at" timestamp with time zone)
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
@@ -1590,6 +1631,12 @@ GRANT ALL ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interv
 
 REVOKE ALL ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."broadcast_alert_email"("p_subject" "text", "p_body" "text") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."broadcast_alert_email"("p_subject" "text", "p_body" "text") FROM "anon";
+GRANT ALL ON FUNCTION "public"."broadcast_alert_email"("p_subject" "text", "p_body" "text") TO "authenticated";
 
 
 
