@@ -264,16 +264,16 @@ cursor)` `SECURITY DEFINER` que valida que el caller es `owner` o `admin` de esa
 
 **Orden ejecutado (histórico, actualizado 2026-07-09):**
 
-| #   | Módulo                   | Estado                | Por qué en ese orden                                                                                              |
-| --- | ------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| 1   | 2E · Feature Flags       | ✅ hecho              | El más simple (solo tablas + helper). 2A necesita `hasFeature()`/entitlements para el plan-gating.                |
-| 2   | 2B · Email               | ✅ hecho              | Se conecta a 2A (receipts, welcome) y se usa en 2C (notificaciones por mail).                                     |
-| 3   | 2C · Notificaciones      | ✅ hecho              | Realtime in-app. Reutiliza 2B para emails; se dispara con eventos de 2A/2D.                                       |
-| 4   | 2G · Audit Log Viewer    | ✅ hecho              | Se coló entre medio (RPC + UI ya listos); no dependía de nada del resto.                                          |
-| 5   | 2D · Webhooks + API keys | ✅ hecho              | Deja el punto de enchufe (`private.emit_webhook_event`) para que 2A emita `subscription.*`.                       |
-| 6   | 2A · Billing — **core**  | ✅ hecho (2026-07-09) | `PaymentProvider` + factory registry + `MockProvider` + entitlements + UI real + e2e. Sin proveedor real todavía. |
-| 7   | 2A · Billing — providers | ✅ hecho (2026-07-10) | Adapters reales Stripe + MercadoPago sobre la interfaz `PaymentProvider` ya construida. Lemon Squeezy descartado. |
-| 8   | 2F · Jobs / colas        | ⏳ pendiente          | pg_cron de limpieza ya existe; falta pgmq + Edge Function worker (puede reusar la cola de emails de 2B).          |
+| #   | Módulo                   | Estado                | Por qué en ese orden                                                                                                                                                                                                                                                                       |
+| --- | ------------------------ | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | 2E · Feature Flags       | ✅ hecho              | El más simple (solo tablas + helper). 2A necesita `hasFeature()`/entitlements para el plan-gating.                                                                                                                                                                                         |
+| 2   | 2B · Email               | ✅ hecho              | Se conecta a 2A (receipts, welcome) y se usa en 2C (notificaciones por mail).                                                                                                                                                                                                              |
+| 3   | 2C · Notificaciones      | ✅ hecho              | Realtime in-app. Reutiliza 2B para emails; se dispara con eventos de 2A/2D.                                                                                                                                                                                                                |
+| 4   | 2G · Audit Log Viewer    | ✅ hecho              | Se coló entre medio (RPC + UI ya listos); no dependía de nada del resto.                                                                                                                                                                                                                   |
+| 5   | 2D · Webhooks + API keys | ✅ hecho              | Deja el punto de enchufe (`private.emit_webhook_event`) para que 2A emita `subscription.*`.                                                                                                                                                                                                |
+| 6   | 2A · Billing — **core**  | ✅ hecho (2026-07-09) | `PaymentProvider` + factory registry + `MockProvider` + entitlements + UI real + e2e. Sin proveedor real todavía.                                                                                                                                                                          |
+| 7   | 2A · Billing — providers | ✅ hecho (2026-07-10) | Adapters reales Stripe + MercadoPago sobre la interfaz `PaymentProvider` ya construida. Lemon Squeezy descartado.                                                                                                                                                                          |
+| 8   | 2F · Jobs / colas        | ✅ hecho (2026-07-13) | Patrón pgmq + pg_cron + Edge Function: cola `email_queue`, RPC `broadcast_alert_email` (un mensaje por owner de cuenta), worker `process-email-queue` (fetch directo a Resend, sin SDK), cron cada minuto vía pg_net. Sin gate de admin (llega en F3); sin UI (backend puro, per ROADMAP). |
 
 **🤖 Prompt para Claude Code — F2 (ejecutar sub-módulo por sub-módulo, no todo junto):**
 
@@ -418,13 +418,13 @@ verde + `pnpm knip` limpio. Commits convencionales atómicos.
 ### Checklist de progreso
 
 - [x] **F1** — Fundación limpia + DX
-- [ ] **F2** — Módulos Supabase-native
+- [x] **F2** — Módulos Supabase-native
   - [x] 2B · Email (Resend + React Email + 3 templates + wiring auth/invitations)
   - [x] 2C · Notificaciones in-app (Realtime broadcast + `notify()` + `NotificationBell`)
   - [x] 2E · Feature flags (tablas + RPC 3-niveles + `isEnabled()` + 5 tests)
   - [x] 2A · Billing (schema DB ✅ — core ✅ + **providers ✅ (2026-07-10)**: adapters reales Stripe + MercadoPago sobre la interfaz `PaymentProvider`, sin cambios en UI/registry-shape. Lemon Squeezy descartado (riesgo de sunset post-adquisición por Stripe, ver spec). Fuera de scope: selector de proveedor en checkout — un solo `BILLING_DEFAULT_PROVIDER` global; 2F completo — solo se tomó prestado un `pg_cron` job acotado para la cancelación diferida de MercadoPago.)
   - [x] 2D · Webhooks salientes + API keys (endpoints + deliveries vía pg_net/HMAC/pg_cron, `api_keys` hasheadas, `GET /api/v1/account`, tabs en `org/settings`)
-  - [ ] 2F · Jobs / colas (pg_cron limpieza ✅ — falta pgmq + Edge Function worker)
+  - [x] 2F · Jobs / colas (pgmq `email_queue` + RPC `broadcast_alert_email` + Edge Function `process-email-queue` + cron cada minuto vía pg_net — patrón de referencia, sin UI ni gate de admin todavía)
   - [x] 2G · Audit Log Viewer (RPC `get_account_audit_logs` + UI paginada en `dashboard/activity`, owner/admin only)
 - [ ] **F3** — Admin + Compliance + Onboarding
 - [ ] **F4** — Producto vendible (docs · landing · distribución)

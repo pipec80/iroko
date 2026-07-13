@@ -178,7 +178,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2
         with:
-          version: 2.107.0
+          version: 2.109.1
 
       - name: Restore Supabase Docker image cache
         id: supabase-cache-db-types
@@ -195,6 +195,7 @@ jobs:
         run: |
           for i in 1 2 3; do
             supabase db start && break
+            if [ "$i" = 3 ]; then echo "All 3 attempts failed"; exit 1; fi
             echo "Attempt $i failed — retrying in 15s..."
             sleep 15
           done
@@ -229,7 +230,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2
         with:
-          version: 2.107.0
+          version: 2.109.1
 
       - name: Restore Supabase Docker image cache
         id: supabase-cache-db-tests
@@ -246,6 +247,7 @@ jobs:
         run: |
           for i in 1 2 3; do
             supabase db start && break
+            if [ "$i" = 3 ]; then echo "All 3 attempts failed"; exit 1; fi
             echo "Attempt $i failed — retrying in 15s..."
             sleep 15
           done
@@ -327,7 +329,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2
         with:
-          version: 2.107.0
+          version: 2.109.1
 
       # Caché de imágenes Docker de Supabase — evita la descarga de ~2 GB en cada run
       - name: Restore Supabase Docker image cache
@@ -345,6 +347,7 @@ jobs:
         run: |
           for i in 1 2 3; do
             supabase start && break
+            if [ "$i" = 3 ]; then echo "All 3 attempts failed"; exit 1; fi
             echo "Attempt $i failed — retrying in 15s..."
             sleep 15
           done

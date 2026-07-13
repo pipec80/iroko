@@ -1336,6 +1336,10 @@ export type Database = {
         }
         Returns: string
       }
+      broadcast_alert_email: {
+        Args: { p_body: string; p_subject: string }
+        Returns: number
+      }
       check_request: { Args: never; Returns: undefined }
       consume_recovery_code: { Args: { p_code: string }; Returns: boolean }
       count_unused_recovery_codes: { Args: never; Returns: number }
