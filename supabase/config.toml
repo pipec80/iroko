@@ -85,13 +85,13 @@ api_url = "http://127.0.0.1"
 openai_api_key = "env(OPENAI_API_KEY)"
 
 # ============================================================================
-# Inbucket (Email testing local — http://127.0.0.1:54324)
+# Local SMTP / Mailpit (Email testing local — http://127.0.0.1:54324)
 # ----------------------------------------------------------------------------
 # Todos los emails de Supabase Auth (signup, magic link, recovery, invite,
 # email_change, MFA enrolled, password changed, etc.) se capturan aqui.
 # NO se envian emails reales en local.
 # ============================================================================
-[inbucket]
+[local_smtp]
 enabled = true
 port = 54324
 smtp_port = 54325
