@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.2.1](https://github.com/pipec80/iroko/compare/iroko-v1.2.0...iroko-v1.2.1) (2026-07-13)
+
+
+### Bug Fixes
+
+* cache pg_prove/postgres-meta images and harden CI workflows ([#42](https://github.com/pipec80/iroko/issues/42)) ([f9ba5c1](https://github.com/pipec80/iroko/commit/f9ba5c1e923c800fb355b1283d61e78080c47851))
+
 ## [1.2.0](https://github.com/pipec80/iroko/compare/iroko-v1.1.0...iroko-v1.2.0) (2026-07-13)
 
 
