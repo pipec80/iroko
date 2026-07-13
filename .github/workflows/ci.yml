@@ -51,6 +51,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Mínimo privilegio por defecto; db-types eleva a contents: write para poder
+# commitear el sync de types.
+permissions:
+  contents: read
+
 env:
   NODE_VERSION: '24'
   PNPM_VERSION: '10'
@@ -62,6 +67,7 @@ jobs:
   quality:
     name: Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -101,6 +107,7 @@ jobs:
   security:
     name: Security Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -129,6 +136,7 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -164,6 +172,7 @@ jobs:
   db-types:
     name: Database Types
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: write
     env:
@@ -180,16 +189,19 @@ jobs:
         with:
           version: 2.109.1
 
+      # Key propia por job: cada job usa un set de imágenes distinto (db start
+      # + postgres-meta acá vs db start + pg_prove en db-tests vs stack completo
+      # en e2e). Con una key compartida el primero que guardaba ganaba y los
+      # demás quedaban con cache incompleta para siempre (las keys son inmutables).
       - name: Restore Supabase Docker image cache
         id: supabase-cache-db-types
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: /tmp/supabase-images.tar
-          key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+          key: supabase-images-db-types-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
 
       - name: Load cached Docker images
-        if: steps.supabase-cache-db-types.outputs.cache-hit == 'true'
-        run: docker load -i /tmp/supabase-images.tar
+        run: if [ -f /tmp/supabase-images.tar ]; then docker load -i /tmp/supabase-images.tar; fi
 
       - name: Start local database
         run: |
@@ -199,12 +211,6 @@ jobs:
             echo "Attempt $i failed — retrying in 15s..."
             sleep 15
           done
-
-      - name: Save Docker images to cache
-        if: steps.supabase-cache-db-types.outputs.cache-hit != 'true'
-        run: |
-          docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgres') \
-            -o /tmp/supabase-images.tar
 
       - name: Sync database types
         run: |
@@ -217,12 +223,22 @@ jobs:
             git push
           fi
 
+      # Después de gen types para incluir postgres-meta (que gen types pullea
+      # bajo demanda) — antes quedaba fuera del tarball y se descargaba de
+      # ghcr.io en cada run, vulnerable a rate limiting (toomanyrequests).
+      - name: Save Docker images to cache
+        if: steps.supabase-cache-db-types.outputs.cache-hit != 'true'
+        run: |
+          docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgres') \
+            -o /tmp/supabase-images.tar
+
   # ─────────────────────────────────────────────
   # JOB 5: Tests de base de datos (pgTAP)
   # ─────────────────────────────────────────────
   db-tests:
     name: Database Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -232,16 +248,16 @@ jobs:
         with:
           version: 2.109.1
 
+      # Key propia por job — ver comentario en db-types.
       - name: Restore Supabase Docker image cache
         id: supabase-cache-db-tests
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: /tmp/supabase-images.tar
-          key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+          key: supabase-images-db-tests-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
 
       - name: Load cached Docker images
-        if: steps.supabase-cache-db-tests.outputs.cache-hit == 'true'
-        run: docker load -i /tmp/supabase-images.tar
+        run: if [ -f /tmp/supabase-images.tar ]; then docker load -i /tmp/supabase-images.tar; fi
 
       - name: Start local database
         run: |
@@ -252,14 +268,16 @@ jobs:
             sleep 15
           done
 
+      - name: Run pgTAP tests
+        run: supabase test db
+
+      # Después de los tests para incluir pg_prove (que test db pullea bajo
+      # demanda) — ver comentario equivalente en db-types.
       - name: Save Docker images to cache
         if: steps.supabase-cache-db-tests.outputs.cache-hit != 'true'
         run: |
           docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgres') \
             -o /tmp/supabase-images.tar
-
-      - name: Run pgTAP tests
-        run: supabase test db
 
   # ─────────────────────────────────────────────
   # JOB 6: Tests E2E con Playwright + Supabase local
@@ -331,17 +349,17 @@ jobs:
         with:
           version: 2.109.1
 
-      # Caché de imágenes Docker de Supabase — evita la descarga de ~2 GB en cada run
+      # Caché de imágenes Docker de Supabase — evita la descarga de ~2 GB en cada run.
+      # Key propia por job — ver comentario en db-types.
       - name: Restore Supabase Docker image cache
         id: supabase-cache-e2e
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: /tmp/supabase-images.tar
-          key: supabase-images-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+          key: supabase-images-e2e-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
 
       - name: Load cached Docker images
-        if: steps.supabase-cache-e2e.outputs.cache-hit == 'true'
-        run: docker load -i /tmp/supabase-images.tar
+        run: if [ -f /tmp/supabase-images.tar ]; then docker load -i /tmp/supabase-images.tar; fi
 
       - name: Start local Supabase (full stack con Auth + Mailpit)
         run: |
@@ -392,6 +410,7 @@ jobs:
   e2e-status:
     name: E2E Status
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     needs: e2e
     if: always()
     steps:
@@ -411,6 +430,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [quality, test, db-types, db-tests, e2e]
     if: |
       !startsWith(github.head_ref, 'dependabot/') &&
