@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.2.0](https://github.com/pipec80/iroko/compare/iroko-v1.1.0...iroko-v1.2.0) (2026-07-13)
+
+
+### Features
+
+* add pgmq + pg_cron + edge function jobs pattern (2F) ([#40](https://github.com/pipec80/iroko/issues/40)) ([5fb2148](https://github.com/pipec80/iroko/commit/5fb21481fc4e6919695575aa69b82291a6bb09c6))
+
 ## [1.1.0](https://github.com/pipec80/iroko/compare/iroko-v1.0.0...iroko-v1.1.0) (2026-07-11)
 
 
