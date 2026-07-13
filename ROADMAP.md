@@ -424,6 +424,19 @@ blog MDX; modelo de licencia + distribución; y verticales de ejemplo documentad
 5. **Verticales de ejemplo.** Mantener el **robot** como demo #1 + agregar un starter de
    **IA (pgvector)** para la persona "IA tuneada". Documentar el patrón "cómo agregar un vertical".
 6. **Pasada final.** Accesibilidad (a11y), performance, i18n 100% completo, pulido visual.
+7. **Checklist de emails en producción (auditoría 2026-07-13).** Los dos rieles de email
+   quedaron listos en local pero con pendientes de deploy:
+   - **Auth (Supabase/GoTrue):** el bloque `[auth.email.smtp]` con Resend está comentado en
+     `config.toml` a propósito — sin él, Supabase Cloud manda los emails de auth desde su
+     SMTP built-in (`noreply@mail.app.supabase.io`, ~2-4 emails/hora, inusable en prod).
+     Al desplegar: descomentar el bloque (host `smtp.resend.com`, pass `env(RESEND_API_KEY)`)
+     y subir los templates custom de `supabase/templates/*.html` con
+     `pnpm supa:cloud:config:push` (o Dashboard → Auth → Email Templates).
+   - **Transaccionales (Resend directo):** `FROM_EMAIL=onboarding@resend.dev` es el sender
+     compartido de prueba de Resend — para prod hay que **verificar un dominio propio** en
+     Resend y actualizar `FROM_EMAIL` (y el `admin_email` del bloque SMTP; `iroko.vercel.app`
+     no sirve, no es verificable como dominio de envío).
+   - Documentar ambos pasos en la guía de deploy del docs site (tarea 1).
 
 **🤖 Prompt para Claude Code — F4:**
 
@@ -442,6 +455,10 @@ Implementá la FASE 4: Producto vendible, en este orden.
 5. Verticales de ejemplo: mantené el robot (toggle de config) y agregá un starter de IA con
    pgvector. Documentá "cómo agregar un vertical".
 6. Pasada final de a11y, performance e i18n 100%.
+7. Checklist de emails en prod: descomentar [auth.email.smtp] (Resend) + config push de
+   templates de auth al proyecto cloud; verificar dominio propio en Resend y actualizar
+   FROM_EMAIL (hoy usa onboarding@resend.dev, sender de prueba). Documentarlo en la guía
+   de deploy.
 
 Reglas: contenido bilingüe en/es donde aplique. JSDoc en todo export. SEO medible (metadata,
 sitemap, structured data). Tests Playwright de las páginas públicas clave. `pnpm validate` en
