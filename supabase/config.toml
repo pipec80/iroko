@@ -527,6 +527,11 @@ policy = "oneshot"
 inspector_port = 8083
 # deno_version = 2   # no documentado en CLI spec
 
+# Worker de email_queue (F2-2F): solo lo invoca el cron interno de pg_cron
+# vía pg_net, nunca un end user — no necesita verificación de JWT por request.
+[functions.process-email-queue]
+verify_jwt = false
+
 # ============================================================================
 # Analytics (Logflare) — DESHABILITADO en local.
 # Consume mucha RAM en Docker. En Supabase Cloud viene gratis.
