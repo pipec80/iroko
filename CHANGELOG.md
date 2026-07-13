@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.2.2](https://github.com/pipec80/iroko/compare/iroko-v1.2.1...iroko-v1.2.2) (2026-07-13)
+
+
+### Bug Fixes
+
+* tag sentry environment and filter next prerender noise ([#47](https://github.com/pipec80/iroko/issues/47)) ([7cca32f](https://github.com/pipec80/iroko/commit/7cca32f31753e796f81528aa2f993382a4bdfad4))
+
 ## [1.2.1](https://github.com/pipec80/iroko/compare/iroko-v1.2.0...iroko-v1.2.1) (2026-07-13)
 
 
