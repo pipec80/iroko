@@ -2,11 +2,15 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(6);
+SELECT plan(7);
 
 SELECT ok(
   to_regclass('pgmq.q_email_queue') IS NOT NULL,
   'la cola pgmq email_queue existe');
+
+SELECT ok(
+  EXISTS(SELECT 1 FROM cron.job WHERE jobname = 'process-email-queue'),
+  'el cron process-email-queue está registrado');
 
 -- La DB local puede tener cuentas reales con owners: el broadcast va a TODOS
 -- los owners, así que la cola se purga primero (transaccional, se revierte
