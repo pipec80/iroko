@@ -26,6 +26,16 @@ VALUES
   ('00000000-0000-0000-0000-000000000920', '00000000-0000-0000-0000-000000000821', 'owner'),
   ('00000000-0000-0000-0000-000000000920', '00000000-0000-0000-0000-000000000822', 'member');
 
+-- Sub pro (F3-3H-1: create_webhook_endpoint/send_webhook_delivery gatean por
+-- feature webhooks_enabled del plan; este suite no testea ese gate en sí,
+-- así que la cuenta necesita el feature activo, patrón de 11_billing.test.sql).
+SET LOCAL role service_role;
+SELECT public.apply_subscription_event(
+  '00000000-0000-0000-0000-000000000920', 'pro', 'month', 'active',
+  'sub_webhooks_test', 'evt_webhooks_test_1', 'subscription_created',
+  now(), now() + interval '30 days', false, NULL, NULL);
+RESET role;
+
 -- ── 1. Member no puede crear endpoints ──────────────────────────────────────
 SELECT set_config(
   'request.jwt.claims',

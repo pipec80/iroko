@@ -158,6 +158,14 @@ BEGIN
     RETURN;
   END IF;
 
+  -- Gate de entrega (F3-3H-1): plan sin webhooks → no se llama pg_net.
+  IF NOT private.account_has_feature(v.account_id, 'webhooks_enabled') THEN
+    UPDATE public.webhook_deliveries
+    SET status = 'exhausted', last_error = 'feature_not_in_plan', next_retry_at = NULL
+    WHERE id = p_delivery_id;
+    RETURN;
+  END IF;
+
   v_ts   := extract(epoch FROM now())::bigint::text;
   v_body := jsonb_build_object(
     'id',         v.id,
@@ -189,7 +197,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION private.send_webhook_delivery(uuid) IS
-  'Encola el POST firmado en pg_net e incrementa attempts. Llamada por el trigger de INSERT y por los retries del cron.';
+  'Encola el POST firmado en pg_net e incrementa attempts. Llamada por el trigger de INSERT y por los retries del cron. Sin la feature webhooks_enabled, marca exhausted sin llamar pg_net (F3-3H-1).';
 REVOKE EXECUTE ON FUNCTION private.send_webhook_delivery(uuid) FROM PUBLIC;
 
 CREATE OR REPLACE FUNCTION private.trg_send_webhook_delivery()
@@ -294,6 +302,8 @@ VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
+DECLARE
+  v_max integer;
 BEGIN
   PERFORM private.assert_account_admin(p_account_id);
   IF p_url IS NULL OR p_url !~ '^https://' THEN
@@ -303,8 +313,13 @@ BEGIN
      OR NOT (p_events <@ private.webhook_event_catalog()) THEN
     RAISE EXCEPTION 'invalid_events';
   END IF;
-  IF (SELECT count(*) FROM public.webhook_endpoints e
-      WHERE e.account_id = p_account_id) >= 10 THEN
+
+  IF NOT private.account_has_feature(p_account_id, 'webhooks_enabled') THEN
+    RAISE EXCEPTION 'feature_not_in_plan';
+  END IF;
+  v_max := private.get_account_limit(p_account_id, 'webhook_endpoints_max');
+  IF v_max IS NOT NULL AND (SELECT count(*) FROM public.webhook_endpoints e
+      WHERE e.account_id = p_account_id) >= v_max THEN
     RAISE EXCEPTION 'endpoint_limit_reached';
   END IF;
 
@@ -322,7 +337,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.create_webhook_endpoint(uuid, text, text[], text) IS
-  'Crea un endpoint de webhook (owner/admin). Devuelve el signing secret UNA única vez. Máx 10 endpoints por cuenta.';
+  'Crea un endpoint de webhook (owner/admin). Devuelve el signing secret UNA única vez. Feature y límite según el plan de la cuenta (F3-3H-1).';
 
 CREATE OR REPLACE FUNCTION public.update_webhook_endpoint(
   p_endpoint_id uuid,

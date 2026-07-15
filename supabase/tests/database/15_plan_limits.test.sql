@@ -2,7 +2,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(4);
+SELECT plan(8);
 
 -- Seed: 2 usuarios → handle_new_profile crea cuenta personal+owner por cada uno.
 -- Cuenta A queda en free (sin suscripción); cuenta B recibe sub pro vía RPC.
@@ -52,6 +52,54 @@ SELECT is(
 SELECT is(
   private.account_has_feature('00000000-0000-0000-0000-000000001101', 'webhooks_enabled'),
   true, 'cuenta pro: webhooks_enabled = true');
+
+-- ── gate de webhooks ─────────────────────────────────────────────────────
+-- free (webhooks_enabled=false) no puede crear
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000001001','role','authenticated')::text, true);
+SET LOCAL role authenticated;
+SELECT throws_like(
+  $$SELECT * FROM public.create_webhook_endpoint(
+      '00000000-0000-0000-0000-000000001100', 'https://example.com/hook',
+      ARRAY['account.updated'])$$,
+  '%feature_not_in_plan%', 'cuenta free no puede crear webhooks');
+RESET role;
+
+-- pro sí puede crear
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000001002','role','authenticated')::text, true);
+SET LOCAL role authenticated;
+SELECT lives_ok(
+  $$SELECT * FROM public.create_webhook_endpoint(
+      '00000000-0000-0000-0000-000000001101', 'https://example.com/hook',
+      ARRAY['account.updated'])$$,
+  'cuenta pro crea webhook dentro del límite');
+RESET role;
+
+-- gate de entrega: delivery de cuenta free se marca exhausted sin llamar pg_net
+-- (endpoint sembrado directo como superuser para simular datos pre-gate)
+INSERT INTO public.webhook_endpoints (id, account_id, url, events, secret)
+VALUES ('00000000-0000-0000-0000-000000001200',
+        '00000000-0000-0000-0000-000000001100',
+        'https://example.com/legacy-hook', ARRAY['account.updated'], 'whsec_test_legacy');
+INSERT INTO public.webhook_deliveries (id, endpoint_id, account_id, event_type, payload, status)
+VALUES ('00000000-0000-0000-0000-000000001201',
+        '00000000-0000-0000-0000-000000001200',
+        '00000000-0000-0000-0000-000000001100',
+        'account.updated', '{}'::jsonb, 'pending');
+
+SELECT private.send_webhook_delivery('00000000-0000-0000-0000-000000001201');
+
+SELECT is(
+  (SELECT d.status FROM public.webhook_deliveries d
+   WHERE d.id = '00000000-0000-0000-0000-000000001201'),
+  'exhausted'::public.webhook_delivery_status,
+  'delivery de cuenta sin feature queda exhausted');
+
+SELECT is(
+  (SELECT d.last_error FROM public.webhook_deliveries d
+   WHERE d.id = '00000000-0000-0000-0000-000000001201'),
+  'feature_not_in_plan', 'last_error explica el motivo');
 
 SELECT * FROM finish();
 ROLLBACK;
