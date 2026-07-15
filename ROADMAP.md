@@ -491,3 +491,39 @@ verde + `pnpm knip` limpio. Commits convencionales atómicos.
   - [x] 2G · Audit Log Viewer (RPC `get_account_audit_logs` + UI paginada en `dashboard/activity`, owner/admin only)
 - [ ] **F3** — Admin + Compliance + Onboarding
 - [ ] **F4** — Producto vendible (docs · landing · distribución)
+- [ ] **F5 (idea, sin comprometer — 2026-07-15)** — Vertical "Operación remota": PWA + chat + videollamada
+
+---
+
+## Idea futura: vertical "Operación remota" (F5, sin fecha)
+
+Capturada el 2026-07-15, no diseñada aún. Pensada como **tercer vertical de ejemplo**
+(junto a robot y el futuro vertical IA/pgvector de F4), no como módulo core — sigue el
+mismo patrón de desacople por feature toggle que ya usa el robot.
+
+**Caso de uso:** operador de un dispositivo/vertical físico (ej. robot) a distancia,
+necesita: (a) ver/escuchar el feed en vivo del dispositivo, y (b) coordinarse por
+chat/videollamada con otras personas (supervisor, soporte) mientras opera.
+
+**Motivación PWA:** instalable en móvil/tablet para uso en campo + push notifications
+(hoy 2C solo notifica con la pestaña abierta) + mejor UX de permisos de cámara/micro.
+
+**Chequeo contra la Regla de Oro (nativo Supabase + free tier):**
+
+| Pieza                                      | Encaja en v1 (nativo/free)                                      |
+| ------------------------------------------ | --------------------------------------------------------------- |
+| PWA instalable (manifest + service worker) | ✅ sí — nativo del navegador, sin infra                         |
+| Push notifications (Web Push + VAPID)      | ✅ sí — extiende 2C, no lo duplica                              |
+| Acceso a cámara/micro                      | ✅ sí — API nativa del navegador                                |
+| Chat de equipo (coordinación)              | ✅ sí — mismo patrón de 2C: Realtime `broadcast` + tabla        |
+| Videollamada persona↔persona               | ⚠️ señalización sí (Realtime), pero TURN confiable no es free   |
+| Feed video dispositivo↔persona             | ⚠️ mismo problema de TURN + el dispositivo debe ser peer WebRTC |
+
+**Decisión tentativa:** igual criterio que SAML/Temporal — lo que necesita TURN/infra
+paga en escala se documenta como _demo best-effort con STUN público_, dejando explícito
+que un TURN confiable en producción es costo/responsabilidad del comprador (Twilio,
+Cloudflare Calls, Metered, etc.), nunca parte prometida del free tier del v1.
+
+Falta: diseño completo (arquitectura WebRTC, esquema de señalización sobre Realtime,
+alcance exacto del vertical demo) — pendiente de un brainstorm dedicado cuando se
+priorice frente a F3/F4.
