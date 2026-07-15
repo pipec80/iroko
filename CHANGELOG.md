@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.3.0](https://github.com/pipec80/iroko/compare/iroko-v1.2.2...iroko-v1.3.0) (2026-07-15)
+
+
+### Features
+
+* enforce plan entitlements in RPCs, delivery worker and org settings UI (3H-1) ([34994a2](https://github.com/pipec80/iroko/commit/34994a20182607dd56d86ee5dbb050e464c28c18))
+
 ## [1.2.2](https://github.com/pipec80/iroko/compare/iroko-v1.2.1...iroko-v1.2.2) (2026-07-13)
 
 
