@@ -2,7 +2,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(11);
+SELECT plan(12);
 
 -- Seed: 2 usuarios → handle_new_profile crea cuenta personal+owner por cada uno.
 -- Cuenta A queda en free (sin suscripción); cuenta B recibe sub pro vía RPC.
@@ -116,6 +116,17 @@ SELECT lives_ok(
 SELECT throws_like(
   $$SELECT * FROM public.create_api_key('00000000-0000-0000-0000-000000001100', 'k3', NULL)$$,
   '%key_limit_reached%', 'la tercera key de una cuenta free es rechazada');
+RESET role;
+
+-- ── seats por plan ───────────────────────────────────────────────────────
+-- free: seats_max = 2; la cuenta 1100 tiene 1 member → invitar 2 excede
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000001001','role','authenticated')::text, true);
+SET LOCAL role authenticated;
+SELECT throws_like(
+  $$SELECT * FROM public.invite_members('00000000-0000-0000-0000-000000001100',
+      ARRAY['nuevo1@example.com','nuevo2@example.com'], 'member')$$,
+  '%seat_limit_reached%', 'invitar por encima de seats_max es rechazado');
 RESET role;
 
 SELECT * FROM finish();
