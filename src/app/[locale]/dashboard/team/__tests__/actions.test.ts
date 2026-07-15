@@ -167,6 +167,14 @@ describe('inviteMembers', () => {
     expect(result.error).toBe('invite quota exceeded');
   });
 
+  it('should surface seat_limit_reached as a typed error', async () => {
+    mockAuthenticatedWithAccount();
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: 'seat_limit_reached' } });
+    const fd = makeFormData({ emails: 'user@example.com', role: 'member' });
+    const result = await inviteMembers(fd);
+    expect(result.error).toBe('seat_limit_reached');
+  });
+
   it('should return success with count and revalidate on happy path', async () => {
     mockAuthenticatedWithAccount();
     mocks.rpc.mockResolvedValue({
