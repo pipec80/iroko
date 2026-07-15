@@ -13,12 +13,14 @@ import {
   type WebhookDelivery,
   type WebhookEndpoint,
 } from '@/app/[locale]/dashboard/org/settings/actions-webhooks';
+import { getOrgEntitlements } from '@/app/[locale]/dashboard/org/settings/actions-entitlements';
 import { cn } from '@/lib/utils';
 import {
   WEBHOOK_EVENT_TYPES,
   webhookEndpointSchema,
   type WebhookEventType,
 } from '@/lib/validation/webhooks';
+import { PlanGateEmptyState } from './plan-gate-empty-state';
 import { RevealCard } from './reveal-card';
 
 const ENDPOINTS_KEY = ['org-settings', 'webhooks'];
@@ -32,6 +34,15 @@ export function WebhooksTab() {
   const [events, setEvents] = useState<WebhookEventType[]>([]);
   const [formError, setFormError] = useState(false);
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
+
+  const { data: entitlements } = useQuery({
+    queryKey: ['org-settings', 'entitlements'],
+    queryFn: async () => {
+      const result = await getOrgEntitlements();
+      if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
+      return result.data;
+    },
+  });
 
   const { data, isPending, error } = useQuery({
     queryKey: ENDPOINTS_KEY,
@@ -86,6 +97,15 @@ export function WebhooksTab() {
       <div className="card flex items-center justify-center p-10">
         <p className="text-muted-foreground text-[13px]">{t('webhooks_not_authorized')}</p>
       </div>
+    );
+  }
+
+  if (entitlements && entitlements.features.webhooks_enabled !== true) {
+    return (
+      <PlanGateEmptyState
+        featureKey="plan_gate_webhooks_feature"
+        note="plan_gate_webhooks_paused"
+      />
     );
   }
 

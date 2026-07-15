@@ -311,7 +311,8 @@
     "col_member": "Miembro",
     "col_status": "Estado",
     "col_joined": "Miembro desde",
-    "status_invited": "Invitado"
+    "status_invited": "Invitado",
+    "error_seat_limit": "Tu plan no tiene asientos disponibles. Mejorá el plan para invitar más miembros."
   },
   "ActivityLog": {
     "title": "Actividad",
@@ -788,6 +789,13 @@
     "webhooks_status_success": "Entregada",
     "webhooks_status_failed": "Fallida",
     "webhooks_status_exhausted": "Agotada",
+    "plan_gate_title": "Disponible en el plan Pro",
+    "plan_gate_body": "{feature} no está incluido en tu plan actual. Al mejorar el plan, se desbloquea al instante — tus datos y configuración se conservan.",
+    "plan_gate_cta": "Ver planes",
+    "plan_gate_webhooks_feature": "Webhooks salientes",
+    "plan_gate_webhooks_paused": "Los endpoints existentes quedan en pausa (no se borran) mientras el plan no incluya webhooks.",
+    "api_keys_usage": "{used} de {max} usadas",
+    "api_keys_limit_hint": "Alcanzaste el límite de tu plan.",
     "general_section_title": "Información de la organización",
     "general_field_name": "Nombre",
     "general_field_name_placeholder": "Nombre de la organización",

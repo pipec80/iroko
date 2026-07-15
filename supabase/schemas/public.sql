@@ -700,6 +700,7 @@ DECLARE
   v_norm_email  text;
   v_raw_token   text;
   v_token_hash  text;
+  v_seats_max   integer;
 BEGIN
   SELECT role INTO v_caller_role
   FROM public.accounts_memberships
@@ -715,6 +716,13 @@ BEGIN
 
   IF array_length(p_emails, 1) > 20 THEN
     RAISE EXCEPTION 'Maximum 20 emails per batch';
+  END IF;
+
+  v_seats_max := private.get_account_limit(p_account_id, 'seats_max');
+  IF v_seats_max IS NOT NULL AND
+     (SELECT count(*) FROM public.accounts_memberships m
+      WHERE m.account_id = p_account_id) + array_length(p_emails, 1) > v_seats_max THEN
+    RAISE EXCEPTION 'seat_limit_reached';
   END IF;
 
   FOREACH v_email IN ARRAY p_emails LOOP
@@ -739,7 +747,7 @@ $$;
 ALTER FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Crea invitaciones y retorna (email, token) pares. El token en texto plano se retorna UNA SOLA VEZ para enviarse por email. Solo el hash se almacena en BD.';
+COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Crea invitaciones y retorna (email, token) pares. El token en texto plano se retorna UNA SOLA VEZ para enviarse por email. Solo el hash se almacena en BD. Rechaza si members actuales + invitados excede seats_max del plan (F3-3H-1).';
 
 
 

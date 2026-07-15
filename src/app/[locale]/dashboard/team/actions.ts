@@ -100,7 +100,11 @@ export const inviteMembers = withServerAction(async function inviteMembers(
       { action: 'team.invite', code: error.code, message: error.message },
       'invite_members failed',
     );
-    return { error: error.message ?? 'invite_failed' };
+    const knownError =
+      error.message?.includes('seat_limit_reached') ?
+        'seat_limit_reached'
+      : (error.message ?? 'invite_failed');
+    return { error: knownError };
   }
 
   const count = (invitations ?? []).length;

@@ -21,12 +21,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { inviteMembers } from '@/app/[locale]/dashboard/team/actions';
+import { Link } from '@/i18n/routing';
 import { INVITABLE_ROLES } from '@/lib/validation/team';
 
 type InvitableRole = (typeof INVITABLE_ROLES)[number];
 
 export function InviteDialog() {
   const t = useTranslations('Team');
+  const tOrgSettings = useTranslations('OrgSettings');
   const [open, setOpen] = useState(false);
   const [roleOpen, setRoleOpen] = useState(false);
   const [role, setRole] = useState<InvitableRole>('member');
@@ -110,7 +112,14 @@ export function InviteDialog() {
           {/* Error display */}
           {state.error && (
             <p className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
-              {state.error}
+              {state.error === 'seat_limit_reached' ?
+                <>
+                  {t('error_seat_limit')}{' '}
+                  <Link href="/dashboard/billing" className="font-semibold underline">
+                    {tOrgSettings('plan_gate_cta')}
+                  </Link>
+                </>
+              : state.error}
             </p>
           )}
 

@@ -10,6 +10,8 @@ import {
   revokeApiKey,
   type ApiKey,
 } from '@/app/[locale]/dashboard/org/settings/actions-api-keys';
+import { getOrgEntitlements } from '@/app/[locale]/dashboard/org/settings/actions-entitlements';
+import { Link } from '@/i18n/routing';
 import { RevealCard } from './reveal-card';
 
 const QUERY_KEY = ['org-settings', 'api-keys'];
@@ -22,6 +24,15 @@ export function ApiKeysTab() {
   const [expiresAt, setExpiresAt] = useState('');
   const [createdKey, setCreatedKey] = useState<string | null>(null);
 
+  const { data: entitlements } = useQuery({
+    queryKey: ['org-settings', 'entitlements'],
+    queryFn: async () => {
+      const result = await getOrgEntitlements();
+      if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
+      return result.data;
+    },
+  });
+
   const { data, isPending, error } = useQuery({
     queryKey: QUERY_KEY,
     queryFn: async () => {
@@ -31,6 +42,10 @@ export function ApiKeysTab() {
     },
     retry: false,
   });
+
+  const apiKeysMax = entitlements?.limits.api_keys_max ?? null;
+  const activeCount = (data ?? []).filter((key) => keyStatus(key) === 'active').length;
+  const atLimit = apiKeysMax !== null && activeCount >= apiKeysMax;
 
   const create = useMutation({
     mutationFn: async () => {
@@ -113,12 +128,26 @@ export function ApiKeysTab() {
           </label>
           <button
             type="submit"
-            disabled={!name.trim() || create.isPending}
+            disabled={!name.trim() || create.isPending || atLimit}
             className="rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
             style={{ background: 'var(--color-cobalt)' }}>
             {t('api_keys_create_btn')}
           </button>
+          {apiKeysMax !== null && (
+            <span className="text-muted-foreground text-[12px]">
+              {t('api_keys_usage', { used: activeCount, max: apiKeysMax })}
+            </span>
+          )}
         </form>
+
+        {atLimit && (
+          <p className="text-muted-foreground text-[12px]">
+            {t('api_keys_limit_hint')}{' '}
+            <Link href="/dashboard/billing" className="text-primary font-semibold">
+              {t('plan_gate_cta')}
+            </Link>
+          </p>
+        )}
 
         {isPending ?
           <p className="text-muted-foreground text-[12px]">{t('api_keys_loading')}</p>
