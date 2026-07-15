@@ -311,7 +311,8 @@
     "col_member": "Member",
     "col_status": "Status",
     "col_joined": "Member since",
-    "status_invited": "Invited"
+    "status_invited": "Invited",
+    "error_seat_limit": "Your plan has no seats left. Upgrade to invite more members."
   },
   "ActivityLog": {
     "title": "Activity",
@@ -788,6 +789,13 @@
     "webhooks_status_success": "Delivered",
     "webhooks_status_failed": "Failed",
     "webhooks_status_exhausted": "Exhausted",
+    "plan_gate_title": "Available on the Pro plan",
+    "plan_gate_body": "{feature} is not included in your current plan. Upgrade to unlock it instantly — your data and settings are preserved.",
+    "plan_gate_cta": "View plans",
+    "plan_gate_webhooks_feature": "Outgoing webhooks",
+    "plan_gate_webhooks_paused": "Existing endpoints are paused (not deleted) while your plan does not include webhooks.",
+    "api_keys_usage": "{used} of {max} used",
+    "api_keys_limit_hint": "You reached your plan limit.",
     "general_section_title": "Organization information",
     "general_field_name": "Name",
     "general_field_name_placeholder": "Organization name",
