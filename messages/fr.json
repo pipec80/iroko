@@ -311,7 +311,8 @@
     "col_member": "Membre",
     "col_status": "Statut",
     "col_joined": "Membre depuis",
-    "status_invited": "Invité"
+    "status_invited": "Invité",
+    "error_seat_limit": "Votre plan n'a plus de places disponibles. Passez à un plan supérieur pour inviter plus de membres."
   },
   "ActivityLog": {
     "title": "Activité",
@@ -788,6 +789,13 @@
     "webhooks_status_success": "Livrée",
     "webhooks_status_failed": "Échouée",
     "webhooks_status_exhausted": "Épuisée",
+    "plan_gate_title": "Disponible avec le plan Pro",
+    "plan_gate_body": "{feature} n'est pas inclus dans votre plan actuel. En passant à un plan supérieur, la fonctionnalité se débloque instantanément — vos données et vos paramètres sont conservés.",
+    "plan_gate_cta": "Voir les plans",
+    "plan_gate_webhooks_feature": "Webhooks sortants",
+    "plan_gate_webhooks_paused": "Les points de terminaison existants restent en pause (ils ne sont pas supprimés) tant que le plan n'inclut pas les webhooks.",
+    "api_keys_usage": "{used} sur {max} utilisées",
+    "api_keys_limit_hint": "Vous avez atteint la limite de votre plan.",
     "general_section_title": "Informations de l'organisation",
     "general_field_name": "Nom",
     "general_field_name_placeholder": "Nom de l'organisation",
