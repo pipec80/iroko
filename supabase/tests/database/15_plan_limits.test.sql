@@ -2,7 +2,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(8);
+SELECT plan(11);
 
 -- Seed: 2 usuarios → handle_new_profile crea cuenta personal+owner por cada uno.
 -- Cuenta A queda en free (sin suscripción); cuenta B recibe sub pro vía RPC.
@@ -100,6 +100,23 @@ SELECT is(
   (SELECT d.last_error FROM public.webhook_deliveries d
    WHERE d.id = '00000000-0000-0000-0000-000000001201'),
   'feature_not_in_plan', 'last_error explica el motivo');
+
+-- ── límite de API keys por plan ──────────────────────────────────────────
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000001001','role','authenticated')::text, true);
+SET LOCAL role authenticated;
+-- free: api_keys_max = 2 → las dos primeras pasan (un statement por lives_ok),
+-- la tercera revienta
+SELECT lives_ok(
+  $$SELECT * FROM public.create_api_key('00000000-0000-0000-0000-000000001100', 'k1', NULL)$$,
+  'cuenta free crea la primera api key');
+SELECT lives_ok(
+  $$SELECT * FROM public.create_api_key('00000000-0000-0000-0000-000000001100', 'k2', NULL)$$,
+  'cuenta free crea la segunda api key');
+SELECT throws_like(
+  $$SELECT * FROM public.create_api_key('00000000-0000-0000-0000-000000001100', 'k3', NULL)$$,
+  '%key_limit_reached%', 'la tercera key de una cuenta free es rechazada');
+RESET role;
 
 SELECT * FROM finish();
 ROLLBACK;
