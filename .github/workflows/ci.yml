@@ -58,7 +58,7 @@ permissions:
 
 env:
   NODE_VERSION: '24'
-  PNPM_VERSION: '10'
+  PNPM_VERSION: '11'
 
 jobs:
   # ─────────────────────────────────────────────
