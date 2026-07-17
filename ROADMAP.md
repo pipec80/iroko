@@ -347,7 +347,8 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
 11. **Presence "miembros online" (opcional, demo-value).** Badge de presencia en la lista
     de members reusando Realtime (canal `account:{id}:presence`, uso puntual per regla de
     realtime). Única primitiva de Realtime aún sin demostrar en el boilerplate.
-12. **Cablear entitlements a la UI (deuda 2A — el ejemplo "free ve esto / pago ve esto").**
+12. **[x] Cablear entitlements a la UI (deuda 2A — el ejemplo "free ve esto / pago ve esto").
+    ✅ Hecho (2026-07-15, PR #49, 3H-1).**
     La infraestructura completa existe (`billing.plans.features/limits`, RPC
     `get_account_entitlements`, helpers `hasFeature/getLimit/withinLimit` testeados) pero
     **ningún componente ni server action la consume** — la única UI consciente del plan es
@@ -362,6 +363,14 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
       hoy una cuenta free (webhooks_enabled=false, max=0) puede crear hasta 10 webhooks.
       El RPC debe leer el límite desde `get_account_entitlements`. Aplicar el mismo criterio
       en el RPC de creación de API keys (límite del plan, no fijo).
+    - **Implementado vía:** helpers `private.get_account_limit`/`private.account_has_feature`
+      (nuevos, resuelven plan efectivo sin exponer membership); gate de creación **y entrega**
+      en webhooks (`feature_not_in_plan`/`endpoint_limit_reached`); `key_limit_reached` en
+      `create_api_key`; `seat_limit_reached` en `invite_members`; server action
+      `getOrgEntitlements()`; UI gateada en los 3 tabs de `org/settings` + invite dialog.
+      Bonus: se detectó y arregló un incidente de infra CI no relacionado (retiro de endpoint
+      legacy de npm audit → migración a pnpm 11) y una falta de traducciones fr/pt (+ test de
+      paridad i18n nuevo, `src/test/i18n-parity.test.ts`).
 
 **Nota (decisión 2026-07-13):** las extensiones habilitadas sin uso (`postgis`, `pg_trgm`,
 `unaccent`, `pg_partman`) se quedan como están por ahora — son "activables" para verticales;
