@@ -12,6 +12,7 @@ import {
 } from '@/app/[locale]/dashboard/org/settings/actions-api-keys';
 import { getOrgEntitlements } from '@/app/[locale]/dashboard/org/settings/actions-entitlements';
 import { Link } from '@/i18n/routing';
+import { LIMIT_KEYS } from '@/lib/billing/entitlement-keys';
 import { RevealCard } from './reveal-card';
 
 const QUERY_KEY = ['org-settings', 'api-keys'];
@@ -43,7 +44,7 @@ export function ApiKeysTab() {
     retry: false,
   });
 
-  const apiKeysMax = entitlements?.limits.api_keys_max ?? null;
+  const apiKeysMax = entitlements?.limits[LIMIT_KEYS.apiKeysMax] ?? null;
   const activeCount = (data ?? []).filter((key) => keyStatus(key) === 'active').length;
   const atLimit = apiKeysMax !== null && activeCount >= apiKeysMax;
 

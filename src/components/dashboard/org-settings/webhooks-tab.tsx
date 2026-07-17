@@ -14,6 +14,7 @@ import {
   type WebhookEndpoint,
 } from '@/app/[locale]/dashboard/org/settings/actions-webhooks';
 import { getOrgEntitlements } from '@/app/[locale]/dashboard/org/settings/actions-entitlements';
+import { FEATURE_KEYS } from '@/lib/billing/entitlement-keys';
 import { cn } from '@/lib/utils';
 import {
   WEBHOOK_EVENT_TYPES,
@@ -100,7 +101,7 @@ export function WebhooksTab() {
     );
   }
 
-  if (entitlements && entitlements.features.webhooks_enabled !== true) {
+  if (entitlements && entitlements.features[FEATURE_KEYS.webhooksEnabled] !== true) {
     return (
       <PlanGateEmptyState
         featureKey="plan_gate_webhooks_feature"
