@@ -100,7 +100,6 @@ SET search_path = ''
 AS $$
 DECLARE
   v_key text;
-  v_max integer;
 BEGIN
   PERFORM private.assert_account_admin(p_account_id);
 
@@ -110,9 +109,9 @@ BEGIN
   IF p_expires_at IS NOT NULL AND p_expires_at <= now() THEN
     RAISE EXCEPTION 'invalid_expiry';
   END IF;
-  v_max := private.get_account_limit(p_account_id, 'api_keys_max');
-  IF v_max IS NOT NULL AND (SELECT count(*) FROM public.api_keys k
-      WHERE k.account_id = p_account_id AND k.revoked_at IS NULL) >= v_max THEN
+  IF NOT private.within_plan_limit(p_account_id, 'api_keys_max',
+      (SELECT count(*) FROM public.api_keys k
+       WHERE k.account_id = p_account_id AND k.revoked_at IS NULL)) THEN
     RAISE EXCEPTION 'key_limit_reached';
   END IF;
 
@@ -134,7 +133,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.create_api_key(uuid, text, timestamptz) IS
-  'Crea una API key para la cuenta (owner/admin). Devuelve la clave en claro UNA única vez; solo el hash queda persistido. Límite de keys activas según api_keys_max del plan (F3-3H-1).';
+  'Crea una API key para la cuenta (owner/admin). Devuelve la clave en claro UNA única vez; solo el hash queda persistido. Límite de keys activas según api_keys_max del plan (F3-3H-1, límite vía private.within_plan_limit desde 3H-1.5).';
 
 -- ============================================================================
 -- list_api_keys

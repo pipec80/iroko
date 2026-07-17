@@ -10,8 +10,9 @@ import {
   revokeApiKey,
   type ApiKey,
 } from '@/app/[locale]/dashboard/org/settings/actions-api-keys';
-import { getOrgEntitlements } from '@/app/[locale]/dashboard/org/settings/actions-entitlements';
+import { useOrgEntitlements } from '@/hooks/use-org-entitlements';
 import { Link } from '@/i18n/routing';
+import { LIMIT_KEYS } from '@/lib/billing/entitlement-keys';
 import { RevealCard } from './reveal-card';
 
 const QUERY_KEY = ['org-settings', 'api-keys'];
@@ -24,14 +25,7 @@ export function ApiKeysTab() {
   const [expiresAt, setExpiresAt] = useState('');
   const [createdKey, setCreatedKey] = useState<string | null>(null);
 
-  const { data: entitlements } = useQuery({
-    queryKey: ['org-settings', 'entitlements'],
-    queryFn: async () => {
-      const result = await getOrgEntitlements();
-      if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
-      return result.data;
-    },
-  });
+  const { data: entitlements } = useOrgEntitlements();
 
   const { data, isPending, error } = useQuery({
     queryKey: QUERY_KEY,
@@ -43,7 +37,7 @@ export function ApiKeysTab() {
     retry: false,
   });
 
-  const apiKeysMax = entitlements?.limits.api_keys_max ?? null;
+  const apiKeysMax = entitlements?.limits[LIMIT_KEYS.apiKeysMax] ?? null;
   const activeCount = (data ?? []).filter((key) => keyStatus(key) === 'active').length;
   const atLimit = apiKeysMax !== null && activeCount >= apiKeysMax;
 

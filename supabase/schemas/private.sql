@@ -459,13 +459,13 @@ ALTER FUNCTION "private"."cancel_overdue_mercadopago_subscriptions"() OWNER TO "
 COMMENT ON FUNCTION "private"."cancel_overdue_mercadopago_subscriptions"() IS 'Cierra localmente suscripciones MercadoPago vencidas y marcadas para cancelar (F2-2A-providers). No llama a la API de MercadoPago.';
 
 
-CREATE OR REPLACE FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") RETURNS TABLE("features" "jsonb", "limits" "jsonb")
+CREATE OR REPLACE FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") RETURNS TABLE("features" "jsonb", "limits" "jsonb", "slug" "text")
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
   RETURN QUERY
-  SELECT COALESCE(p.features, '{}'::jsonb), COALESCE(p.limits, '{}'::jsonb)
+  SELECT COALESCE(p.features, '{}'::jsonb), COALESCE(p.limits, '{}'::jsonb), p.slug
   FROM billing.subscriptions s
   JOIN billing.customers c ON c.id = s.customer_id
   JOIN billing.plans p ON p.id = s.plan_id
@@ -476,7 +476,7 @@ BEGIN
 
   IF NOT FOUND THEN
     RETURN QUERY
-    SELECT COALESCE(p.features, '{}'::jsonb), COALESCE(p.limits, '{}'::jsonb)
+    SELECT COALESCE(p.features, '{}'::jsonb), COALESCE(p.limits, '{}'::jsonb), p.slug
     FROM billing.plans p
     WHERE p.slug = 'free'
     ORDER BY p."interval"
@@ -488,7 +488,7 @@ $$;
 
 ALTER FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") OWNER TO "postgres";
 
-COMMENT ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") IS 'Features+limits del plan efectivo (sub activa → fallback free). Interno, sin check de membership (F3-3H-1).';
+COMMENT ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") IS 'Features+limits+slug del plan efectivo (sub activa → fallback free). Interno, sin check de membership (3H-1.5).';
 
 REVOKE ALL ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") FROM PUBLIC;
 
@@ -523,5 +523,21 @@ ALTER FUNCTION "private"."account_has_feature"("p_account_id" "uuid", "p_key" "t
 COMMENT ON FUNCTION "private"."account_has_feature"("p_account_id" "uuid", "p_key" "text") IS 'Feature booleana del plan efectivo; ausente = false (F3-3H-1).';
 
 REVOKE ALL ON FUNCTION "private"."account_has_feature"("p_account_id" "uuid", "p_key" "text") FROM PUBLIC;
+
+
+CREATE OR REPLACE FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer DEFAULT 1) RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT private.get_account_limit(p_account_id, p_key) IS NULL
+      OR (p_current + p_increment) <= private.get_account_limit(p_account_id, p_key);
+$$;
+
+
+ALTER FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer) OWNER TO "postgres";
+
+COMMENT ON FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer) IS 'True si (current+increment) respeta el límite del plan; límite ausente = ilimitado. p_current es bigint porque count(*) devuelve bigint (3H-1.5).';
+
+REVOKE ALL ON FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer) FROM PUBLIC;
 
 

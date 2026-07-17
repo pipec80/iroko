@@ -406,23 +406,8 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  SELECT p.slug, COALESCE(p.features, '{}'::jsonb), COALESCE(p.limits, '{}'::jsonb)
-  FROM billing.subscriptions s
-  JOIN billing.customers c ON c.id = s.customer_id
-  JOIN billing.plans p ON p.id = s.plan_id
-  WHERE c.account_id = p_account_id
-    AND s.status IN ('active', 'trialing')
-  ORDER BY s.created_at DESC
-  LIMIT 1;
-
-  IF NOT FOUND THEN
-    RETURN QUERY
-    SELECT p.slug, COALESCE(p.features, '{}'::jsonb), COALESCE(p.limits, '{}'::jsonb)
-    FROM billing.plans p
-    WHERE p.slug = 'free'
-    ORDER BY p."interval"
-    LIMIT 1;
-  END IF;
+  SELECT r.slug, r.features, r.limits
+  FROM private.get_account_plan_row(p_account_id) r;
 END;
 $$;
 
@@ -430,7 +415,7 @@ $$;
 ALTER FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") IS 'Features+limits del plan efectivo de la cuenta (F2-2A-core). Fallback a Free sin suscripción. Callable por cualquier miembro: gobierna uso, no administración.';
+COMMENT ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") IS 'Features+limits del plan efectivo de la cuenta (F2-2A-core). Fallback a Free sin suscripción. Callable por cualquier miembro: gobierna uso, no administración. Delega en private.get_account_plan_row (3H-1.5).';
 
 
 CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone, "provider" "text", "external_subscription_id" "text")
@@ -700,7 +685,6 @@ DECLARE
   v_norm_email  text;
   v_raw_token   text;
   v_token_hash  text;
-  v_seats_max   integer;
 BEGIN
   SELECT role INTO v_caller_role
   FROM public.accounts_memberships
@@ -718,10 +702,9 @@ BEGIN
     RAISE EXCEPTION 'Maximum 20 emails per batch';
   END IF;
 
-  v_seats_max := private.get_account_limit(p_account_id, 'seats_max');
-  IF v_seats_max IS NOT NULL AND
-     (SELECT count(*) FROM public.accounts_memberships m
-      WHERE m.account_id = p_account_id) + array_length(p_emails, 1) > v_seats_max THEN
+  IF NOT private.within_plan_limit(p_account_id, 'seats_max',
+      (SELECT count(*) FROM public.accounts_memberships m WHERE m.account_id = p_account_id),
+      array_length(p_emails, 1)) THEN
     RAISE EXCEPTION 'seat_limit_reached';
   END IF;
 

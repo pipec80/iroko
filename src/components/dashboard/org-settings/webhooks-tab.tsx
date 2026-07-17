@@ -13,7 +13,8 @@ import {
   type WebhookDelivery,
   type WebhookEndpoint,
 } from '@/app/[locale]/dashboard/org/settings/actions-webhooks';
-import { getOrgEntitlements } from '@/app/[locale]/dashboard/org/settings/actions-entitlements';
+import { useOrgEntitlements } from '@/hooks/use-org-entitlements';
+import { FEATURE_KEYS } from '@/lib/billing/entitlement-keys';
 import { cn } from '@/lib/utils';
 import {
   WEBHOOK_EVENT_TYPES,
@@ -35,14 +36,7 @@ export function WebhooksTab() {
   const [formError, setFormError] = useState(false);
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
 
-  const { data: entitlements } = useQuery({
-    queryKey: ['org-settings', 'entitlements'],
-    queryFn: async () => {
-      const result = await getOrgEntitlements();
-      if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
-      return result.data;
-    },
-  });
+  const { data: entitlements } = useOrgEntitlements();
 
   const { data, isPending, error } = useQuery({
     queryKey: ENDPOINTS_KEY,
@@ -100,7 +94,7 @@ export function WebhooksTab() {
     );
   }
 
-  if (entitlements && entitlements.features.webhooks_enabled !== true) {
+  if (entitlements && entitlements.features[FEATURE_KEYS.webhooksEnabled] !== true) {
     return (
       <PlanGateEmptyState
         featureKey="plan_gate_webhooks_feature"
