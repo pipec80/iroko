@@ -674,6 +674,25 @@ ALTER FUNCTION "public"."get_my_accounts"() OWNER TO "postgres";
 COMMENT ON FUNCTION "public"."get_my_accounts"() IS 'Returns accounts the current user belongs to. SECURITY DEFINER: reads accounts_memberships (direct SELECT revoked). Uses auth.uid() internally.';
 
 
+CREATE OR REPLACE FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") RETURNS void
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  PERFORM private.assert_account_admin(p_account_id);
+
+  UPDATE public.accounts
+  SET logo_url = p_path
+  WHERE id = p_account_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") OWNER TO "postgres";
+
+COMMENT ON FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") IS 'Setea (o quita, con p_path NULL) el logo_url de la cuenta. Owner/admin únicamente vía private.assert_account_admin (F3-3H-2).';
+
+
 
 CREATE OR REPLACE FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role" DEFAULT 'member'::"public"."membership_role") RETURNS TABLE("email" "text", "token" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -1652,6 +1671,10 @@ GRANT ALL ON FUNCTION "public"."get_my_account_id"() TO "service_role";
 REVOKE ALL ON FUNCTION "public"."get_my_accounts"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_my_accounts"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_my_accounts"() TO "service_role";
+
+
+REVOKE ALL ON FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") TO "authenticated";
 
 
 

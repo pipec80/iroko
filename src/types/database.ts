@@ -1580,6 +1580,10 @@ export type Database = {
       request_account_deletion: { Args: never; Returns: undefined }
       revoke_api_key: { Args: { p_key_id: string }; Returns: undefined }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
+      set_account_logo: {
+        Args: { p_account_id: string; p_path: string }
+        Returns: undefined
+      }
       update_my_profile: {
         Args: {
           p_avatar_url?: string
