@@ -272,6 +272,7 @@
     }
   },
   "Team": {
+    "presence_online": "En ligne",
     "title": "Équipe",
     "description": "Gérez les membres et les permissions de votre organisation.",
     "invite_member": "Inviter un membre",
