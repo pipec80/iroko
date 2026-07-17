@@ -2,7 +2,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(12);
+SELECT plan(14);
 
 -- Seed: 2 usuarios → handle_new_profile crea cuenta personal+owner por cada uno.
 -- Cuenta A queda en free (sin suscripción); cuenta B recibe sub pro vía RPC.
@@ -52,6 +52,14 @@ SELECT is(
 SELECT is(
   private.account_has_feature('00000000-0000-0000-0000-000000001101', 'webhooks_enabled'),
   true, 'cuenta pro: webhooks_enabled = true');
+
+SELECT is(
+  (SELECT slug FROM private.get_account_plan_row('00000000-0000-0000-0000-000000001100')),
+  'free', 'cuenta free: get_account_plan_row.slug = free');
+
+SELECT is(
+  (SELECT slug FROM private.get_account_plan_row('00000000-0000-0000-0000-000000001101')),
+  'pro', 'cuenta pro: get_account_plan_row.slug = pro');
 
 -- ── gate de webhooks ─────────────────────────────────────────────────────
 -- free (webhooks_enabled=false) no puede crear
