@@ -302,8 +302,6 @@ VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-DECLARE
-  v_max integer;
 BEGIN
   PERFORM private.assert_account_admin(p_account_id);
   IF p_url IS NULL OR p_url !~ '^https://' THEN
@@ -317,9 +315,8 @@ BEGIN
   IF NOT private.account_has_feature(p_account_id, 'webhooks_enabled') THEN
     RAISE EXCEPTION 'feature_not_in_plan';
   END IF;
-  v_max := private.get_account_limit(p_account_id, 'webhook_endpoints_max');
-  IF v_max IS NOT NULL AND (SELECT count(*) FROM public.webhook_endpoints e
-      WHERE e.account_id = p_account_id) >= v_max THEN
+  IF NOT private.within_plan_limit(p_account_id, 'webhook_endpoints_max',
+      (SELECT count(*) FROM public.webhook_endpoints e WHERE e.account_id = p_account_id)) THEN
     RAISE EXCEPTION 'endpoint_limit_reached';
   END IF;
 
@@ -337,7 +334,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.create_webhook_endpoint(uuid, text, text[], text) IS
-  'Crea un endpoint de webhook (owner/admin). Devuelve el signing secret UNA única vez. Feature y límite según el plan de la cuenta (F3-3H-1).';
+  'Crea un endpoint de webhook (owner/admin). Devuelve el signing secret UNA única vez. Feature y límite según el plan de la cuenta (F3-3H-1, límite vía private.within_plan_limit desde 3H-1.5).';
 
 CREATE OR REPLACE FUNCTION public.update_webhook_endpoint(
   p_endpoint_id uuid,
