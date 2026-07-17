@@ -674,7 +674,7 @@ ALTER FUNCTION "public"."get_my_accounts"() OWNER TO "postgres";
 COMMENT ON FUNCTION "public"."get_my_accounts"() IS 'Returns accounts the current user belongs to. SECURITY DEFINER: reads accounts_memberships (direct SELECT revoked). Uses auth.uid() internally.';
 
 
-CREATE OR REPLACE FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") RETURNS void
+CREATE OR REPLACE FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text" DEFAULT NULL::"text") RETURNS void
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -690,7 +690,7 @@ $$;
 
 ALTER FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") OWNER TO "postgres";
 
-COMMENT ON FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") IS 'Setea (o quita, con p_path NULL) el logo_url de la cuenta. Owner/admin únicamente vía private.assert_account_admin (F3-3H-2).';
+COMMENT ON FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" "text") IS 'Setea (o quita, omitiendo p_path) el logo_url de la cuenta. Owner/admin únicamente vía private.assert_account_admin (F3-3H-2).';
 
 
 

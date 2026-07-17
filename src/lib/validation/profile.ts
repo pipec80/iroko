@@ -86,6 +86,25 @@ export function validateAvatarFile(file: File): { ok: true } | { ok: false; erro
   return { ok: true };
 }
 
+// Organization logo upload: validated client-side before FormData is sent.
+export const ORG_LOGO_MAX_BYTES = 5 * 1024 * 1024; // 5 MiB — límite del bucket org-assets
+export const ORG_LOGO_ALLOWED_MIME = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/svg+xml',
+] as const;
+
+export function validateOrgLogoFile(file: File): { ok: true } | { ok: false; error: string } {
+  if (!(ORG_LOGO_ALLOWED_MIME as readonly string[]).includes(file.type)) {
+    return { ok: false, error: 'invalid_mime' };
+  }
+  if (file.size > ORG_LOGO_MAX_BYTES) {
+    return { ok: false, error: 'file_too_large' };
+  }
+  return { ok: true };
+}
+
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type UpdateEmailInput = z.infer<typeof updateEmailSchema>;
 export type UpdatePasswordFromSettingsInput = z.infer<typeof updatePasswordFromSettingsSchema>;
