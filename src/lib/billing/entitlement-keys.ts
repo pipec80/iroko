@@ -9,6 +9,3 @@ export const LIMIT_KEYS = {
   webhookEndpointsMax: 'webhook_endpoints_max',
   seatsMax: 'seats_max',
 } as const;
-
-export type FeatureKey = (typeof FEATURE_KEYS)[keyof typeof FEATURE_KEYS];
-export type LimitKey = (typeof LIMIT_KEYS)[keyof typeof LIMIT_KEYS];
