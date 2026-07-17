@@ -415,25 +415,40 @@ i18n en/es. Tests: Vitest para RPCs (export/delete), Playwright para onboarding 
 es un dev; el producto es la **experiencia** (docs, DX, demos) y la **maquinaria de venta**.
 
 **Done when:** sitio de docs navegable; landing con secciones de conversión + SEO/OG/JSON-LD;
-blog MDX; modelo de licencia + distribución; y verticales de ejemplo documentados
-("cómo agregar un vertical").
+blog MDX; modelo de licencia + distribución.
+
+> **Nota (decisión 2026-07-17):** la tarea de verticales de ejemplo (robot + starter IA/pgvector
+>
+> - guía "cómo agregar un vertical") se **saca de F4** y se difiere completa a **F5** — F3+F4
+>   se enfocan puramente en cerrar el MVP vendible del boilerplate en sí, sin ningún trabajo de
+>   vertical de por medio. Ver la idea de F5 más abajo.
 
 **Tareas detalladas:**
 
-1. **Docs site.** MDX (Fumadocs/Nextra o ruta `/docs` con MDX): quickstart (clone→run<15min),
-   arquitectura, variables de entorno, deploy (Vercel + Supabase free), y una guía por módulo
-   (billing, notifs, webhooks, jobs, admin). **Las docs SON el producto.**
-2. **Landing + SEO.** Secciones de conversión (hero, features, pricing leído de `billing.plans`,
-   FAQ, testimonios, CTA). OG images, JSON-LD/structured data, metadata completa, sitemap
-   (ya hay `next-sitemap`).
-3. **Blog (MDX).** Motor de contenido para adquisición/SEO.
-4. **Licencia + distribución.** Modelo de license key + estrategia de repo privado +
-   flujo de compra del propio boilerplate (reusa el módulo billing de F2 — meta) +
-   changelog/versionado de releases.
-5. **Verticales de ejemplo.** Mantener el **robot** como demo #1 + agregar un starter de
-   **IA (pgvector)** para la persona "IA tuneada". Documentar el patrón "cómo agregar un vertical".
-6. **Pasada final.** Accesibilidad (a11y), performance, i18n 100% completo, pulido visual.
-7. **Checklist de emails en producción (auditoría 2026-07-13).** Los dos rieles de email
+0. **Elegir motor MDX.** Decisión (2026-07-17): **Fumadocs** — App-Router-native, sin wrapper
+   de config propio (mejor sobre Turbopack que Nextra), search local (Orama) sin infra externa.
+   Un solo motor para docs (tarea 1) y blog (tarea 3), dos colecciones de contenido separadas.
+1. **Docs site.** MDX (Fumadocs, ver tarea 0): quickstart (clone→run<15min) **verificable con
+   un smoke test en `nightly.yml`** (no solo prosa), arquitectura, variables de entorno,
+   deploy (Vercel + Supabase free), y una guía por módulo (billing, notifs, webhooks, jobs,
+   admin). **Las docs SON el producto.**
+2. **Landing + SEO.** Fix urgente: la home y `/pricing` hoy tienen el pricing **hardcodeado en
+   TS**, no leen `billing.plans` en vivo (la RPC `get_active_plans` ya existe y se usa en
+   `dashboard/billing` — falta conectarla acá). Secciones de conversión (hero, features,
+   pricing real, FAQ nueva, testimonios nuevos, CTA). OG images generadas con `next/og`,
+   JSON-LD (`SoftwareApplication`/`FAQPage`/`BlogPosting`), metadata completa, sitemap
+   (ya hay `next-sitemap`, usar `generateStaticParams` en docs/blog para que las detecte).
+3. **Blog (MDX).** Mismo motor de la tarea 0. RSS opcional sin dependencia nueva.
+4. **Licencia + distribución.** `release-please` ya resuelve el changelog/versionado al 100%
+   (solo documentarlo). Falta el modelo de license key: schema nuevo `licensing.license_keys`
+   (NO reusa `api_keys` — son conceptualmente distintos), RPC `verify_license_key`/
+   `create_license_key` disparada por el webhook de Stripe/MP existente (reusa
+   `PaymentProvider` — meta, Iroko vendiéndose a sí mismo), repo privado con invitación
+   individual vía API de GitHub (revocable).
+5. **Pasada final.** Accesibilidad (`@axe-core/playwright` + activar `eslint-plugin-jsx-a11y`
+   si no está activo), performance (Lighthouse CI en `nightly.yml`), i18n 100% completo
+   (4 locales), pulido visual.
+6. **Checklist de emails en producción (auditoría 2026-07-13).** Los dos rieles de email
    quedaron listos en local pero con pendientes de deploy:
    - **Auth (Supabase/GoTrue):** el bloque `[auth.email.smtp]` con Resend está comentado en
      `config.toml` a propósito — sin él, Supabase Cloud manda los emails de auth desde su
@@ -452,19 +467,22 @@ blog MDX; modelo de licencia + distribución; y verticales de ejemplo documentad
 ```
 Trabajás sobre iroko. Cumplí los "Estándares de Ingeniería" de ROADMAP.md.
 
-Implementá la FASE 4: Producto vendible, en este orden.
+Implementá la FASE 4: Producto vendible, en este orden. Verticales de ejemplo (robot/IA/
+pgvector/guía de verticales) NO son parte de F4 — se difieren completas a F5, no las toques.
 
+0. Elegí e instalá el motor MDX (Fumadocs) — lo consumen las tareas 1 y 3.
 1. Sitio de docs (MDX): quickstart, arquitectura, env vars, deploy en free tier, y guía por
-   módulo (billing/notifs/webhooks/jobs/admin). Que un dev clone y corra en <15 min siguiéndolas.
-2. Landing de conversión (hero, features, pricing desde billing.plans, FAQ, testimonios, CTA)
-   + SEO completo: OG images, JSON-LD, metadata, sitemap.
-3. Blog MDX para contenido/SEO.
-4. Modelo de licencia + distribución (license key, estrategia de repo privado, flujo de compra
-   reusando el módulo billing, changelog/versionado).
-5. Verticales de ejemplo: mantené el robot (toggle de config) y agregá un starter de IA con
-   pgvector. Documentá "cómo agregar un vertical".
-6. Pasada final de a11y, performance e i18n 100%.
-7. Checklist de emails en prod: descomentar [auth.email.smtp] (Resend) + config push de
+   módulo (billing/notifs/webhooks/jobs/admin). Que un dev clone y corra en <15 min siguiéndolas,
+   verificado con un smoke test en nightly.yml (no solo prosa).
+2. Landing de conversión: primero conectar el pricing real (`get_active_plans`) en vez del
+   hardcodeado actual; hero, features, FAQ, testimonios, CTA + SEO completo: OG images
+   (next/og), JSON-LD, metadata, sitemap.
+3. Blog MDX para contenido/SEO (mismo motor de la tarea 0).
+4. Modelo de licencia + distribución (schema `licensing.license_keys` separado de `api_keys`,
+   estrategia de repo privado vía invitación GitHub, flujo de compra reusando el módulo
+   billing — release-please ya cubre el changelog/versionado, no rediseñarlo).
+5. Pasada final de a11y (axe-core + jsx-a11y), performance (Lighthouse CI) e i18n 100%.
+6. Checklist de emails en prod: descomentar [auth.email.smtp] (Resend) + config push de
    templates de auth al proyecto cloud; verificar dominio propio en Resend y actualizar
    FROM_EMAIL (hoy usa onboarding@resend.dev, sender de prueba). Documentarlo en la guía
    de deploy.
@@ -507,8 +525,15 @@ verde + `pnpm knip` limpio. Commits convencionales atómicos.
 ## Idea futura: vertical "Operación remota" (F5, sin fecha)
 
 Capturada el 2026-07-15, no diseñada aún. Pensada como **tercer vertical de ejemplo**
-(junto a robot y el futuro vertical IA/pgvector de F4), no como módulo core — sigue el
+(junto a robot y un futuro vertical IA/pgvector), no como módulo core — sigue el
 mismo patrón de desacople por feature toggle que ya usa el robot.
+
+> **Actualización 2026-07-17:** la tarea "Verticales de ejemplo" que antes vivía en F4
+> (mantener robot + starter IA/pgvector + guía "cómo agregar un vertical") se movió acá
+> completa — F3 y F4 quedan enfocadas 100% en cerrar el MVP vendible del boilerplate,
+> sin ningún trabajo de vertical de por medio. F5 diseña junto: robot expandido, starter
+> IA/pgvector, la guía de verticales, y esta idea de "Operación remota" — todo sin fecha,
+> pendiente de un brainstorm dedicado cuando se priorice frente a cerrar F3+F4.
 
 **Caso de uso:** operador de un dispositivo/vertical físico (ej. robot) a distancia,
 necesita: (a) ver/escuchar el feed en vivo del dispositivo, y (b) coordinarse por
