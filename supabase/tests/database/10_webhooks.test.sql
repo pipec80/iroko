@@ -4,7 +4,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(8);
+SELECT plan(11);
 
 -- ── Seed: owner (0821) y member (0822) en el team 0920 ──────────────────────
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
@@ -79,6 +79,26 @@ SELECT ok(
   (SELECT secret LIKE 'whsec\_%' ESCAPE '\' FROM ep),
   'el secret devuelto tiene prefijo whsec_'
 );
+
+-- ── 4b. El secret vive en Vault, no en texto plano en la tabla ──────────────
+SELECT is(
+  (SELECT count(*)::int FROM public.webhook_endpoints e
+   WHERE e.id = (SELECT ep.id FROM ep) AND e.secret_id IS NOT NULL),
+  1, 'el endpoint creado tiene secret_id poblado (no secret en texto plano)');
+
+SET LOCAL role authenticated;
+SELECT throws_like(
+  $$SELECT decrypted_secret FROM vault.decrypted_secrets
+    WHERE id = (SELECT secret_id FROM public.webhook_endpoints
+                WHERE id = (SELECT id FROM ep))$$,
+  '%permission denied%',
+  'authenticated no tiene grant sobre vault.decrypted_secrets');
+RESET role;
+
+SELECT is(
+  (SELECT decrypted_secret LIKE 'whsec\_%' ESCAPE '\' FROM vault.decrypted_secrets
+   WHERE id = (SELECT secret_id FROM public.webhook_endpoints WHERE id = (SELECT id FROM ep))),
+  true, 'el secreto en Vault tiene el mismo prefijo whsec_ (worker puede leerlo)');
 
 -- ── 5. La tabla es invisible para authenticated ─────────────────────────────
 SET LOCAL role authenticated;
