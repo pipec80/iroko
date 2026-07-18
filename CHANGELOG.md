@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.4.0](https://github.com/pipec80/iroko/compare/iroko-v1.3.0...iroko-v1.4.0) (2026-07-18)
+
+
+### Features
+
+* add organization logo and member presence (3H-2) ([#54](https://github.com/pipec80/iroko/issues/54)) ([f41ca39](https://github.com/pipec80/iroko/commit/f41ca392b494fcf5b9f7989a46924530279ca5f3))
+
 ## [1.3.0](https://github.com/pipec80/iroko/compare/iroko-v1.2.2...iroko-v1.3.0) (2026-07-15)
 
 
