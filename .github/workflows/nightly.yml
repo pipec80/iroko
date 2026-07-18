@@ -131,3 +131,73 @@ jobs:
           name: nightly-playwright-report
           path: playwright-report/
           retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # JOB 2: Advisors de base de datos (lint + security)
+  #
+  # No corre en CI de PRs — es análisis lento y de tendencia. Falla el
+  # workflow si hay warnings de schema lint o findings de seguridad; los
+  # findings de performance solo se reportan (no bloquean).
+  # ─────────────────────────────────────────────
+  db-advisors:
+    name: Database Advisors
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@3c2f5e2ae34c34e428e8e206e2c4d21fa2d20fbf # v2
+        with:
+          version: 2.109.1
+
+      # Key propia por job — evita colisión con las de ci.yml.
+      - name: Restore Supabase Docker image cache
+        id: supabase-cache-advisors
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: /tmp/supabase-images.tar
+          key: supabase-images-advisors-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+
+      - name: Load cached Docker images
+        run: if [ -f /tmp/supabase-images.tar ]; then docker load -i /tmp/supabase-images.tar; fi
+
+      - name: Start local database
+        run: |
+          for i in 1 2 3; do
+            supabase db start && break
+            if [ "$i" = 3 ]; then echo "All 3 attempts failed"; exit 1; fi
+            echo "Attempt $i failed — retrying in 15s..."
+            sleep 15
+          done
+
+      - name: Save Docker images to cache
+        if: steps.supabase-cache-advisors.outputs.cache-hit != 'true'
+        run: |
+          docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgres') \
+            -o /tmp/supabase-images.tar
+
+      - name: Schema lint (fails on warning)
+        # Acotado a schemas propios — extensions (postgis/pg_partman vendored)
+        # tiene decenas de warnings que no controlamos, no forman parte del
+        # scope de este repo.
+        run: supabase db lint --local --schema public,private,billing,audit --fail-on warning 2>&1 | tee lint-report.txt
+
+      - name: Security advisors (fails on warn)
+        run: supabase db advisors --local --type security --fail-on warn 2>&1 | tee security-advisors-report.txt
+
+      - name: Performance advisors (report only)
+        if: always()
+        run: supabase db advisors --local --type performance 2>&1 | tee performance-advisors-report.txt
+
+      - name: Upload advisor reports
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: db-advisor-reports
+          path: |
+            lint-report.txt
+            security-advisors-report.txt
+            performance-advisors-report.txt
+          retention-days: 14

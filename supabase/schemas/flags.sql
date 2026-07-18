@@ -121,7 +121,7 @@ CREATE OR REPLACE FUNCTION public.is_flag_enabled(
 )
 RETURNS boolean
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$

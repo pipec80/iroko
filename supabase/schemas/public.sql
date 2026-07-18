@@ -351,7 +351,7 @@ ALTER FUNCTION "public"."generate_recovery_codes"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") RETURNS TABLE("plan_name" "text", "plan_slug" "text", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "features" "jsonb")
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
@@ -397,7 +397,7 @@ COMMENT ON FUNCTION "public"."get_active_plans"() IS 'Public pricing endpoint. S
 
 
 CREATE OR REPLACE FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "features" "jsonb", "limits" "jsonb")
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
@@ -419,7 +419,7 @@ COMMENT ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") I
 
 
 CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone, "provider" "text", "external_subscription_id" "text")
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
@@ -521,7 +521,7 @@ COMMENT ON FUNCTION "public"."broadcast_alert_email"("p_subject" "text", "p_body
 
 
 CREATE OR REPLACE FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer DEFAULT 10, "p_cursor_created_at" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cursor_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "number" "text", "status" "billing"."invoice_status", "currency" character, "total" integer, "amount_paid" integer, "hosted_url" "text", "pdf_url" "text", "created_at" timestamp with time zone)
-    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN

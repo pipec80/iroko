@@ -427,7 +427,7 @@ RETURNS TABLE (
   updated_at  timestamptz
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
@@ -463,7 +463,7 @@ RETURNS TABLE (
   delivered_at     timestamptz
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
