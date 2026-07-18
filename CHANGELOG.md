@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.5.0](https://github.com/pipec80/iroko/compare/iroko-v1.4.1...iroko-v1.5.0) (2026-07-18)
+
+
+### Features
+
+* move webhook secrets to Supabase Vault, add nightly db advisors (3H-3) ([#56](https://github.com/pipec80/iroko/issues/56)) ([659287e](https://github.com/pipec80/iroko/commit/659287efc506202a7c779266235bbd3b8284f2a4))
+
 ## [1.4.1](https://github.com/pipec80/iroko/compare/iroko-v1.4.0...iroko-v1.4.1) (2026-07-18)
 
 
