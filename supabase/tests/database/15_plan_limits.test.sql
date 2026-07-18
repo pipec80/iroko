@@ -97,11 +97,13 @@ SELECT lives_ok(
 RESET role;
 
 -- gate de entrega: delivery de cuenta free se marca exhausted sin llamar pg_net
--- (endpoint sembrado directo como superuser para simular datos pre-gate)
-INSERT INTO public.webhook_endpoints (id, account_id, url, events, secret)
+-- (endpoint sembrado directo como superuser para simular datos pre-gate; el
+-- secret vive en Vault desde F3-3H-3, nunca en texto plano en la tabla)
+INSERT INTO public.webhook_endpoints (id, account_id, url, events, secret_id)
 VALUES ('00000000-0000-0000-0000-000000001200',
         '00000000-0000-0000-0000-000000001100',
-        'https://example.com/legacy-hook', ARRAY['account.updated'], 'whsec_test_legacy');
+        'https://example.com/legacy-hook', ARRAY['account.updated'],
+        vault.create_secret('whsec_test_legacy', 'webhook_endpoint:legacy-test'));
 INSERT INTO public.webhook_deliveries (id, endpoint_id, account_id, event_type, payload, status)
 VALUES ('00000000-0000-0000-0000-000000001201',
         '00000000-0000-0000-0000-000000001200',

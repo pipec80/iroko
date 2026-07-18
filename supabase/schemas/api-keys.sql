@@ -59,7 +59,7 @@ REVOKE ALL ON public.api_keys FROM authenticated, anon;
 CREATE OR REPLACE FUNCTION private.assert_account_admin(p_account_id uuid)
 RETURNS void
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
@@ -150,7 +150,7 @@ RETURNS TABLE (
   created_at   timestamptz
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$

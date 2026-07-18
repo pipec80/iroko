@@ -50,7 +50,7 @@ CREATE TABLE public.webhook_endpoints (
   account_id  uuid        NOT NULL REFERENCES public.accounts(id) ON DELETE CASCADE,
   url         text        NOT NULL CHECK (url ~ '^https://'),
   description text        CHECK (char_length(description) <= 200),
-  secret      text        NOT NULL,
+  secret_id   uuid        NOT NULL,
   events      text[]      NOT NULL CHECK (array_length(events, 1) >= 1),
   enabled     boolean     NOT NULL DEFAULT true,
   created_at  timestamptz NOT NULL DEFAULT now(),
@@ -61,8 +61,8 @@ COMMENT ON TABLE public.webhook_endpoints IS
   'Endpoints de webhook por cuenta (F2-2D). El secret firma cada entrega (HMAC-SHA256) y se muestra una única vez al crear. Gestionado solo vía RPCs.';
 COMMENT ON COLUMN public.webhook_endpoints.url IS
   'Destino HTTPS. Validación anti-SSRF superficial en la capa Zod; el CHECK solo garantiza https://.';
-COMMENT ON COLUMN public.webhook_endpoints.secret IS
-  'whsec_… generado server-side. Nunca se expone en list_*; solo en el RETURNING de create.';
+COMMENT ON COLUMN public.webhook_endpoints.secret_id IS
+  'Referencia a vault.secrets — el signing secret HMAC vive cifrado en Vault, nunca en texto plano (F3-3H-3).';
 COMMENT ON COLUMN public.webhook_endpoints.events IS
   'Eventos suscritos; subset de private.webhook_event_catalog(), validado en los RPCs.';
 
@@ -148,10 +148,12 @@ DECLARE
   v_ts      text;
   v_request bigint;
 BEGIN
-  SELECT d.id, d.event_type, d.account_id, d.payload, d.created_at, e.url, e.secret
+  SELECT d.id, d.event_type, d.account_id, d.payload, d.created_at, e.url,
+         vs.decrypted_secret AS secret
   INTO v
   FROM public.webhook_deliveries d
   JOIN public.webhook_endpoints e ON e.id = d.endpoint_id
+  JOIN vault.decrypted_secrets vs ON vs.id = e.secret_id
   WHERE d.id = p_delivery_id;
 
   IF NOT FOUND THEN
@@ -197,7 +199,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION private.send_webhook_delivery(uuid) IS
-  'Encola el POST firmado en pg_net e incrementa attempts. Llamada por el trigger de INSERT y por los retries del cron. Sin la feature webhooks_enabled, marca exhausted sin llamar pg_net (F3-3H-1).';
+  'Encola el POST firmado en pg_net e incrementa attempts. Lee el secret desde vault.decrypted_secrets (F3-3H-3) — ningún rol de API tiene grant sobre Vault. Sin la feature webhooks_enabled, marca exhausted sin llamar pg_net (F3-3H-1).';
 REVOKE EXECUTE ON FUNCTION private.send_webhook_delivery(uuid) FROM PUBLIC;
 
 CREATE OR REPLACE FUNCTION private.trg_send_webhook_delivery()
@@ -302,6 +304,10 @@ VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
+DECLARE
+  v_id        uuid;
+  v_secret    text;
+  v_secret_id uuid;
 BEGIN
   PERFORM private.assert_account_admin(p_account_id);
   IF p_url IS NULL OR p_url !~ '^https://' THEN
@@ -320,21 +326,28 @@ BEGIN
     RAISE EXCEPTION 'endpoint_limit_reached';
   END IF;
 
-  RETURN QUERY
-  INSERT INTO public.webhook_endpoints (account_id, url, description, events, secret)
+  v_id := gen_random_uuid();
+  v_secret := 'whsec_' || translate(encode(extensions.gen_random_bytes(32), 'base64'), '+/=', '-_');
+  v_secret_id := vault.create_secret(v_secret, 'webhook_endpoint:' || v_id::text);
+
+  INSERT INTO public.webhook_endpoints (id, account_id, url, description, events, secret_id)
   VALUES (
+    v_id,
     p_account_id,
     p_url,
     NULLIF(btrim(COALESCE(p_description, '')), ''),
     p_events,
-    'whsec_' || translate(encode(extensions.gen_random_bytes(32), 'base64'), '+/=', '-_')
-  )
-  RETURNING webhook_endpoints.id, webhook_endpoints.secret;
+    v_secret_id
+  );
+
+  id := v_id;
+  secret := v_secret;
+  RETURN NEXT;
 END;
 $$;
 
 COMMENT ON FUNCTION public.create_webhook_endpoint(uuid, text, text[], text) IS
-  'Crea un endpoint de webhook (owner/admin). Devuelve el signing secret UNA única vez. Feature y límite según el plan de la cuenta (F3-3H-1, límite vía private.within_plan_limit desde 3H-1.5).';
+  'Crea un endpoint de webhook (owner/admin). El signing secret se guarda en Vault (secret_id) y se devuelve en claro UNA única vez. Feature y límite según el plan de la cuenta (F3-3H-1/3H-1.5, secreto en Vault desde F3-3H-3).';
 
 CREATE OR REPLACE FUNCTION public.update_webhook_endpoint(
   p_endpoint_id uuid,
@@ -387,19 +400,21 @@ SET search_path = ''
 AS $$
 DECLARE
   v_account_id uuid;
+  v_secret_id  uuid;
 BEGIN
-  SELECT e.account_id INTO v_account_id
+  SELECT e.account_id, e.secret_id INTO v_account_id, v_secret_id
   FROM public.webhook_endpoints e WHERE e.id = p_endpoint_id;
   IF v_account_id IS NULL THEN
     RAISE EXCEPTION 'not_found';
   END IF;
   PERFORM private.assert_account_admin(v_account_id);
   DELETE FROM public.webhook_endpoints WHERE id = p_endpoint_id;
+  DELETE FROM vault.secrets WHERE id = v_secret_id;
 END;
 $$;
 
 COMMENT ON FUNCTION public.delete_webhook_endpoint(uuid) IS
-  'Elimina un endpoint y (cascade) su historial de entregas (owner/admin).';
+  'Elimina un endpoint y (cascade) su historial de entregas (owner/admin). Borra también el secret asociado en Vault, sin huérfanos (F3-3H-3).';
 
 CREATE OR REPLACE FUNCTION public.list_webhook_endpoints(p_account_id uuid)
 RETURNS TABLE (
@@ -412,7 +427,7 @@ RETURNS TABLE (
   updated_at  timestamptz
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
@@ -448,7 +463,7 @@ RETURNS TABLE (
   delivered_at     timestamptz
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$

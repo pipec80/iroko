@@ -215,7 +215,7 @@ RETURNS TABLE (
   created_at    timestamptz
 )
 LANGUAGE plpgsql
-STABLE
+VOLATILE
 SECURITY DEFINER
 SET search_path = ''
 AS $$

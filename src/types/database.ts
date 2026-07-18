@@ -1276,7 +1276,7 @@ export type Database = {
           enabled: boolean
           events: string[]
           id: string
-          secret: string
+          secret_id: string
           updated_at: string
           url: string
         }
@@ -1287,7 +1287,7 @@ export type Database = {
           enabled?: boolean
           events: string[]
           id?: string
-          secret: string
+          secret_id: string
           updated_at?: string
           url: string
         }
@@ -1298,7 +1298,7 @@ export type Database = {
           enabled?: boolean
           events?: string[]
           id?: string
-          secret?: string
+          secret_id?: string
           updated_at?: string
           url?: string
         }
