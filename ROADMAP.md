@@ -332,21 +332,29 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
 7. **Gate de admin para `broadcast_alert_email` (deuda 2F).** Restringir el RPC a
    `platform_admin` (hoy cualquier usuario autenticado puede invocarlo — limitación
    documentada de 2F). Opcional: botón de disparo en `/dashboard/admin`.
-8. **Logo de organización (deuda Storage).** El bucket `org-assets` existe en `config.toml`
-   pero no tiene políticas RLS ni UI. Agregar upload de logo en `org/settings` (patrón de
-   avatar de perfil: path en DB + `storageUrl()`), políticas RLS del bucket, y mostrar el
-   logo en el account switcher (`accounts.logo_url` ya existe en el schema).
-9. **Vault para secrets de webhooks (deuda 2D).** `webhook_endpoints.secret` se guarda en
-   texto plano (protegido por RLS/RPCs pero sin cifrado at-rest). Migrar a Supabase Vault
-   (`vault.create_secret` / `vault.decrypted_secrets`) y ajustar `process-webhook-deliveries`
-   para leer el secret desde Vault al firmar. Cumple la promesa "Vault (secrets)" del mapa.
-10. **Advisors en CI (deuda DX).** Los scripts `supa:advisors` y `supa:lint` existen pero
-    ningún workflow los corre. Agregar un job al nightly que los ejecute contra el stack
-    local y falle en findings de seguridad (RLS sin índice, SECURITY DEFINER sin
-    search_path, etc.).
-11. **Presence "miembros online" (opcional, demo-value).** Badge de presencia en la lista
-    de members reusando Realtime (canal `account:{id}:presence`, uso puntual per regla de
-    realtime). Única primitiva de Realtime aún sin demostrar en el boilerplate.
+8. **[x] Logo de organización (deuda Storage). ✅ Hecho (2026-07-18, PR #54 + hotfix PR #57, 3H-2).**
+   El bucket `org-assets` existe en `config.toml` pero no tenía políticas RLS ni UI.
+   Agregado: upload de logo en `org/settings` (`general-tab.tsx`, patrón de avatar de
+   perfil: path en DB + `storageUrl()`), RPC `set_account_logo`, políticas RLS
+   insert/update/delete admin-only + **fix post-QA:** política SELECT para members (sin
+   ella, el `INSERT ... RETURNING *` real de la Storage API fallaba con "row-level
+   security policy" — bug detectado en QA manual y cerrado en PR #57), logo visible en el
+   account switcher (`accounts.logo_url`).
+9. **[x] Vault para secrets de webhooks (deuda 2D). ✅ Hecho (2026-07-21, PR #56, 3H-3).**
+   `webhook_endpoints.secret` se guardaba en texto plano (protegido por RLS/RPCs pero sin
+   cifrado at-rest). Migrado a Supabase Vault (`vault.create_secret` / `secret_id uuid` +
+   `vault.decrypted_secrets`); `create_webhook_endpoint`/`send_webhook_delivery`/
+   `delete_webhook_endpoint` ajustados para leer/borrar el secret vía Vault. Cumple la
+   promesa "Vault (secrets)" del mapa.
+10. **[x] Advisors en CI (deuda DX). ✅ Hecho (2026-07-21, PR #56, 3H-3).** Nuevo job
+    `db-advisors` en `nightly.yml`: `supabase db lint --fail-on warning` (schema-scoped a
+    public/private/billing/audit) + `supabase db advisors --type security --fail-on warn`
+    (performance queda report-only). Incluye migración de limpieza de 10 funciones
+    `STABLE→VOLATILE` para pasar el lint desde el día 1.
+11. **[x] Presence "miembros online". ✅ Hecho (2026-07-18, PR #54, 3H-2).** Badge de
+    presencia en la lista de members vía Realtime (canal `account:{id}:presence`, hook
+    `usePresence()`), reusando `private.user_is_member` existente — no hizo falta un
+    helper nuevo. Cierra la última primitiva de Realtime sin demostrar en el boilerplate.
 12. **[x] Cablear entitlements a la UI (deuda 2A — el ejemplo "free ve esto / pago ve esto").
     ✅ Hecho (2026-07-15, PR #49, 3H-1).**
     La infraestructura completa existe (`billing.plans.features/limits`, RPC
