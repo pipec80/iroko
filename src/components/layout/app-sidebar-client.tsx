@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import {
   ChevronDown,
   ChevronUp,
@@ -16,8 +17,9 @@ import { useTranslations } from 'next-intl';
 
 import { Link, usePathname } from '@/i18n/routing';
 import type { Database } from '@/types/database';
-import { cn } from '@/lib/utils';
 import { appConfig } from '@/config/app.config';
+import { storageUrl } from '@/lib/storage';
+import { cn } from '@/lib/utils';
 
 type MembershipRole = Database['public']['Enums']['membership_role'];
 type AccountType = Database['public']['Enums']['account_type'];
@@ -118,19 +120,30 @@ export function AppSidebarClient({ orgs }: Props) {
         <button type="button" onClick={() => setIsOpen((v) => !v)} className="org-switcher">
           {selectedOrg ?
             <>
-              <div
-                className="inline-flex shrink-0 items-center justify-center font-sans"
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 6,
-                  background: getOrgTone(selectedIndex),
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: 11,
-                }}>
-                {orgInitials(selectedOrg.name)}
-              </div>
+              {storageUrl(selectedOrg.logo_url) ?
+                <div className="relative size-[26px] shrink-0 overflow-hidden rounded-md">
+                  <Image
+                    src={storageUrl(selectedOrg.logo_url) as string}
+                    alt={selectedOrg.name}
+                    fill
+                    unoptimized
+                    className="object-cover"
+                  />
+                </div>
+              : <div
+                  className="inline-flex shrink-0 items-center justify-center font-sans"
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 6,
+                    background: getOrgTone(selectedIndex),
+                    color: '#fff',
+                    fontWeight: 700,
+                    fontSize: 11,
+                  }}>
+                  {orgInitials(selectedOrg.name)}
+                </div>
+              }
               <div className="flex min-w-0 flex-1 flex-col text-left">
                 <span
                   className="truncate text-[13px] font-semibold"
@@ -188,19 +201,30 @@ export function AppSidebarClient({ orgs }: Props) {
                   border: 0,
                   background: i === selectedIndex ? 'var(--surface-3)' : 'transparent',
                 }}>
-                <div
-                  className="inline-flex shrink-0 items-center justify-center"
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 4,
-                    background: getOrgTone(i),
-                    color: '#fff',
-                    fontWeight: 700,
-                    fontSize: 10,
-                  }}>
-                  {orgInitials(org.name)}
-                </div>
+                {storageUrl(org.logo_url) ?
+                  <div className="relative size-[22px] shrink-0 overflow-hidden rounded-sm">
+                    <Image
+                      src={storageUrl(org.logo_url) as string}
+                      alt={org.name}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
+                  </div>
+                : <div
+                    className="inline-flex shrink-0 items-center justify-center"
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 4,
+                      background: getOrgTone(i),
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 10,
+                    }}>
+                    {orgInitials(org.name)}
+                  </div>
+                }
                 <span
                   className="flex-1 text-left text-[13px] font-medium"
                   style={{ color: 'var(--text-primary)' }}>

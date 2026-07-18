@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import type { TeamMember } from '@/app/[locale]/dashboard/team/actions';
 import { removeMember } from '@/app/[locale]/dashboard/team/actions';
+import { usePresence } from '@/hooks/use-presence';
 import { storageUrl } from '@/lib/storage';
 
 function memberTone(role: string, index: number): string {
@@ -119,11 +120,17 @@ const ROLE_LABELS: Record<string, 'role_owner' | 'role_admin' | 'role_member' | 
   viewer: 'role_viewer',
 };
 
-type Props = { members: TeamMember[]; timezone?: string };
+type Props = {
+  members: TeamMember[];
+  timezone?: string;
+  accountId: string | null;
+  currentUserId: string | null;
+};
 
-export function MembersTable({ members, timezone = 'UTC' }: Props) {
+export function MembersTable({ members, timezone = 'UTC', accountId, currentUserId }: Props) {
   const t = useTranslations('Team');
   const locale = useLocale();
+  const { onlineUserIds } = usePresence(accountId ?? '', currentUserId ?? '');
   const [q, setQ] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -208,20 +215,29 @@ export function MembersTable({ members, timezone = 'UTC' }: Props) {
                   className="members-row py-[14px]"
                   style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
                   {/* Avatar */}
-                  {avatarUrl ?
-                    <div className="relative size-8 overflow-hidden rounded-md">
-                      <Image
-                        src={avatarUrl}
-                        alt={displayName}
-                        fill
-                        unoptimized
-                        className="object-cover"
+                  <div className="relative">
+                    {avatarUrl ?
+                      <div className="relative size-8 overflow-hidden rounded-md">
+                        <Image
+                          src={avatarUrl}
+                          alt={displayName}
+                          fill
+                          unoptimized
+                          className="object-cover"
+                        />
+                      </div>
+                    : <div className="avatar-32" style={{ background: tone }}>
+                        {initials}
+                      </div>
+                    }
+                    {member.user_id && onlineUserIds.has(member.user_id) && (
+                      <span
+                        aria-label={t('presence_online')}
+                        className="absolute right-0 bottom-0 block size-2 rounded-full ring-2 ring-white"
+                        style={{ background: '#6f9362' }}
                       />
-                    </div>
-                  : <div className="avatar-32" style={{ background: tone }}>
-                      {initials}
-                    </div>
-                  }
+                    )}
+                  </div>
 
                   {/* Name + email */}
                   <div className="min-w-0">

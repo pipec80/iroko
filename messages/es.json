@@ -272,6 +272,7 @@
     }
   },
   "Team": {
+    "presence_online": "En línea",
     "title": "Equipo",
     "description": "Gestiona los miembros y permisos de tu organización.",
     "invite_member": "Invitar miembro",
@@ -796,6 +797,13 @@
     "plan_gate_webhooks_paused": "Los endpoints existentes quedan en pausa (no se borran) mientras el plan no incluya webhooks.",
     "api_keys_usage": "{used} de {max} usadas",
     "api_keys_limit_hint": "Alcanzaste el límite de tu plan.",
+    "general_logo_heading": "Logo de la organización",
+    "general_logo_hint": "PNG, JPG, WEBP o SVG. Máximo 5MB.",
+    "general_logo_upload_btn": "Subir logo",
+    "general_logo_remove_btn": "Quitar logo",
+    "general_logo_saving": "Guardando…",
+    "general_logo_success": "Logo actualizado.",
+    "general_logo_removed": "Logo eliminado.",
     "general_section_title": "Información de la organización",
     "general_field_name": "Nombre",
     "general_field_name_placeholder": "Nombre de la organización",

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Settings, Shield, Plug, KeyRound, Webhook, AlertTriangle } from 'lucide-react';
 
 import { ApiKeysTab } from '@/components/dashboard/org-settings/api-keys-tab';
+import { GeneralTab } from '@/components/dashboard/org-settings/general-tab';
 import { WebhooksTab } from '@/components/dashboard/org-settings/webhooks-tab';
 import { cn } from '@/lib/utils';
 
@@ -72,43 +73,6 @@ export default function OrgSettingsPage() {
   );
 }
 
-function GeneralTab() {
-  const t = useTranslations('OrgSettings');
-  return (
-    <div className="space-y-6">
-      <div className="card space-y-5 p-6">
-        <h2 className="text-foreground text-[14px] font-semibold">{t('general_section_title')}</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Field
-            label={t('general_field_name')}
-            placeholder={t('general_field_name_placeholder')}
-          />
-          <Field
-            label={t('general_field_slug')}
-            placeholder={t('general_field_slug_placeholder')}
-          />
-          <Field
-            label={t('general_field_website')}
-            placeholder={t('general_field_website_placeholder')}
-          />
-          <Field
-            label={t('general_field_country')}
-            placeholder={t('general_field_country_placeholder')}
-          />
-        </div>
-        <div className="flex justify-end">
-          <button
-            type="button"
-            className="rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: 'var(--color-cobalt)' }}>
-            {t('general_save_btn')}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function SecurityTab() {
   const t = useTranslations('OrgSettings');
   return (
@@ -162,22 +126,6 @@ function DangerTab() {
           {t('danger_delete_btn')}
         </button>
       </div>
-    </div>
-  );
-}
-
-function Field({ label, placeholder }: { label: string; placeholder: string }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
-        {label}
-      </label>
-      <input
-        type="text"
-        placeholder={placeholder}
-        className="border-border bg-background text-foreground placeholder:text-muted-foreground rounded-lg border px-3 py-2 text-[13px] outline-none focus:ring-1"
-        style={{ '--tw-ring-color': 'var(--color-cobalt)' } as React.CSSProperties}
-      />
     </div>
   );
 }
