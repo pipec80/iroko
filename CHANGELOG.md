@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.4.1](https://github.com/pipec80/iroko/compare/iroko-v1.4.0...iroko-v1.4.1) (2026-07-18)
+
+
+### Bug Fixes
+
+* add missing SELECT policy for org-assets storage bucket ([#57](https://github.com/pipec80/iroko/issues/57)) ([7dc47fc](https://github.com/pipec80/iroko/commit/7dc47fc1b2345839f678f1ef53bb94ee7f5fd0e4))
+
 ## [1.4.0](https://github.com/pipec80/iroko/compare/iroko-v1.3.0...iroko-v1.4.0) (2026-07-18)
 
 
