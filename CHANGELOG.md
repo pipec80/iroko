@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.6.0](https://github.com/pipec80/iroko/compare/iroko-v1.5.0...iroko-v1.6.0) (2026-07-21)
+
+
+### Features
+
+* add platform_admins back-office (F3-C1) ([#60](https://github.com/pipec80/iroko/issues/60)) ([d82cb99](https://github.com/pipec80/iroko/commit/d82cb99bf8e7c974928577027f666c2a35e66b01))
+
 ## [1.5.0](https://github.com/pipec80/iroko/compare/iroko-v1.4.1...iroko-v1.5.0) (2026-07-18)
 
 
