@@ -9,7 +9,7 @@ import type { Database } from '@/types/database';
 type JwtClaims = {
   sub?: string;
   aal?: string;
-  app_metadata?: { mfa_enrolled?: boolean } & Record<string, unknown>;
+  app_metadata?: { mfa_enrolled?: boolean; is_platform_admin?: boolean } & Record<string, unknown>;
 };
 
 const PUBLIC_PATH_PREFIXES = ['/login', '/signup', '/forgot-password', '/auth'];
@@ -132,6 +132,29 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     url.pathname = `/${locale}/login`;
     url.searchParams.set('mfa', 'required');
     return NextResponse.redirect(url);
+  }
+
+  // Super-admin back-office gate (F3-C1). Runs after the generic MFA gate, so
+  // by this point an admin who hasn't cleared aal2 yet has already been sent
+  // to /login?mfa=required — this block only has to decide between "not an
+  // admin at all" (404, never reveal the route) and "admin but never
+  // enrolled MFA" (this route REQUIRES enrollment, unlike the rest of the
+  // app where the generic gate only applies to users who already enrolled).
+  if (claims != null && pathWithoutLocale.startsWith('/dashboard/admin')) {
+    const isPlatformAdmin = claims.app_metadata?.is_platform_admin === true;
+
+    if (!isPlatformAdmin) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${locale}/not-found`;
+      return NextResponse.rewrite(url, { status: 404 });
+    }
+
+    if (claims.app_metadata?.mfa_enrolled !== true) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${locale}/dashboard/account/security`;
+      url.searchParams.set('mfa', 'required_admin');
+      return NextResponse.redirect(url);
+    }
   }
 
   // Authenticated users are bounced off the marketing root and auth-only pages —
