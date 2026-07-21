@@ -1,8 +1,9 @@
--- pgTAP: pgmq email_queue setup + broadcast_alert_email RPC (F2-2F)
+-- pgTAP: pgmq email_queue setup + broadcast_alert_email RPC (F2-2F), gateado a
+-- platform_admin desde F3-C6.
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(7);
+SELECT plan(9);
 
 SELECT ok(
   to_regclass('pgmq.q_email_queue') IS NOT NULL,
@@ -29,7 +30,13 @@ VALUES
    'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-000000000863', 'member-a@example.com',
    '{"given_name":"Member","family_name":"A"}'::jsonb, now(), now(), '', now(), '',
+   'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0000-000000000864', 'c6-admin@example.com',
+   '{"given_name":"Admin","family_name":"C6"}'::jsonb, now(), now(), '', now(), '',
    'authenticated', 'authenticated');
+
+INSERT INTO public.platform_admins (user_id)
+VALUES ('00000000-0000-0000-0000-000000000864');
 
 INSERT INTO public.accounts (id, type, name, slug, created_by)
 VALUES
@@ -44,26 +51,54 @@ VALUES
   ('00000000-0000-0000-0000-000000000950', '00000000-0000-0000-0000-000000000863', 'member'),
   ('00000000-0000-0000-0000-000000000951', '00000000-0000-0000-0000-000000000862', 'owner');
 
+-- ============================================================================
+-- 3. No-admin (owner-a, aun con aal2) rechazado — el gate corre ANTES de
+--    cualquier lógica de negocio de la función.
+-- ============================================================================
 SELECT set_config('request.jwt.claims',
-  json_build_object('sub','00000000-0000-0000-0000-000000000861','role','authenticated')::text, true);
+  json_build_object('sub','00000000-0000-0000-0000-000000000861','role','authenticated','aal','aal2')::text,
+  true);
+SELECT throws_ok(
+  $$SELECT public.broadcast_alert_email('x', 'y')$$,
+  'not_platform_admin',
+  'Owner-a (no-admin) es rechazado por broadcast_alert_email aunque tenga aal2');
+
+-- ============================================================================
+-- 4. Admin whitelisteado pero sin aal2 real (sesión aal1) rechazado.
+-- ============================================================================
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000000864','role','authenticated','aal','aal1')::text,
+  true);
+SELECT throws_ok(
+  $$SELECT public.broadcast_alert_email('x', 'y')$$,
+  'mfa_required',
+  'Admin whitelisteado en sesión aal1 es rechazado — aal2 real, no solo el claim');
+
+-- ============================================================================
+-- Admin con aal2 real — a partir de acá corren los 5 casos originales de F2-2F,
+-- ahora en sesión de admin.
+-- ============================================================================
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000000864','role','authenticated','aal','aal2')::text,
+  true);
 
 SELECT is(
   public.broadcast_alert_email('Mantenimiento programado', 'El sábado a las 3am habrá mantenimiento.'),
   (SELECT count(*)::int FROM public.accounts_memberships WHERE role = 'owner'),
-  'encola un mensaje por cada owner de cuenta (los members no cuentan)');
+  'admin: encola un mensaje por cada owner de cuenta (los members no cuentan)');
 
 SELECT is(
   (SELECT count(*)::int FROM pgmq.q_email_queue),
   (SELECT count(*)::int FROM public.accounts_memberships WHERE role = 'owner'),
-  'la cola tiene exactamente un mensaje por owner tras el broadcast');
+  'admin: la cola tiene exactamente un mensaje por owner tras el broadcast');
 
 SELECT is(
   (SELECT message->>'email' FROM pgmq.q_email_queue WHERE message->>'accountId' = '00000000-0000-0000-0000-000000000950'),
-  'owner-a@example.com', 'el mensaje de team-a va al email del owner correcto, no de un member');
+  'owner-a@example.com', 'admin: el mensaje de team-a va al email del owner correcto, no de un member');
 
 SELECT throws_like(
   $$SELECT public.broadcast_alert_email('', 'body')$$,
-  '%subject_required%', 'subject vacío rechazado');
+  '%subject_required%', 'admin: subject vacío rechazado (después de pasar el gate)');
 
 SET LOCAL role anon;
 SELECT throws_like(
