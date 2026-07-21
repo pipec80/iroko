@@ -40,13 +40,23 @@ function actionTone(action: AuditAction): string {
 }
 
 type Props = {
-  initialEntries: AuditLogEntry[];
+  variant?: 'account' | 'platform';
+  initialEntries: (AuditLogEntry & {
+    accountName?: string | null;
+    impersonatorName?: string | null;
+  })[];
   initialCursor: AuditLogCursor | null;
   timezone?: string;
 };
 
-export function AuditLogTable({ initialEntries, initialCursor, timezone = 'UTC' }: Props) {
+export function AuditLogTable({
+  variant = 'account',
+  initialEntries,
+  initialCursor,
+  timezone = 'UTC',
+}: Props) {
   const t = useTranslations('ActivityLog');
+  const tAdmin = useTranslations('Admin');
   const locale = useLocale();
   const [entries, setEntries] = useState(initialEntries);
   const [cursor, setCursor] = useState(initialCursor);
@@ -117,10 +127,17 @@ export function AuditLogTable({ initialEntries, initialCursor, timezone = 'UTC' 
       {/* Table card */}
       <div className="card overflow-x-auto">
         <div className="min-w-[720px]">
-          <div className="col-header activity-row bg-surface-2 py-3">
+          <div
+            className={
+              variant === 'platform' ?
+                'col-header platform-activity-row bg-surface-2 py-3'
+              : 'col-header activity-row bg-surface-2 py-3'
+            }>
             <span>{t('col_actor')}</span>
             <span>{t('col_action')}</span>
             <span>{t('col_resource')}</span>
+            {variant === 'platform' && <span>{tAdmin('col_account')}</span>}
+            {variant === 'platform' && <span>{tAdmin('col_impersonator')}</span>}
             <span className="text-right">{t('col_date')}</span>
           </div>
 
@@ -131,7 +148,11 @@ export function AuditLogTable({ initialEntries, initialCursor, timezone = 'UTC' 
           : entries.map((entry, idx) => (
               <div
                 key={entry.id}
-                className="activity-row py-[14px]"
+                className={
+                  variant === 'platform' ?
+                    'platform-activity-row py-[14px]'
+                  : 'activity-row py-[14px]'
+                }
                 style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
                 <span className="text-foreground truncate text-sm font-medium">
                   {entry.actorName ?? t('unknown_actor')}
@@ -146,6 +167,16 @@ export function AuditLogTable({ initialEntries, initialCursor, timezone = 'UTC' 
                 <span className="text-muted-foreground text-sm">
                   {t((RESOURCE_LABELS[entry.resourceType] ?? 'resource_profiles') as never)}
                 </span>
+                {variant === 'platform' && (
+                  <span className="text-muted-foreground truncate text-sm">
+                    {entry.accountName ?? '—'}
+                  </span>
+                )}
+                {variant === 'platform' && (
+                  <span className="text-muted-foreground truncate text-sm">
+                    {entry.impersonatorName ?? '—'}
+                  </span>
+                )}
                 <span
                   className="text-muted-foreground text-right font-mono text-xs"
                   style={{ letterSpacing: '0.02em' }}>

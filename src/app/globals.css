@@ -532,6 +532,16 @@
     padding-right: 22px;
   }
 
+  /* ── Platform-wide audit log table row grid (F3-C1: adds Account + Impersonated-by) ── */
+  .platform-activity-row {
+    display: grid;
+    grid-template-columns: 1fr 0.8fr 0.7fr 0.7fr 0.9fr 1fr;
+    gap: 16px;
+    align-items: center;
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+
   /* ── Wordmark — brand name treatment ── */
   .brand-wordmark {
     font-size: 22px;
