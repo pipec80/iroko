@@ -9,7 +9,7 @@ import type { Database } from '@/types/database';
 type JwtClaims = {
   sub?: string;
   aal?: string;
-  app_metadata?: { mfa_enrolled?: boolean } & Record<string, unknown>;
+  app_metadata?: { mfa_enrolled?: boolean; is_platform_admin?: boolean } & Record<string, unknown>;
 };
 
 const PUBLIC_PATH_PREFIXES = ['/login', '/signup', '/forgot-password', '/auth'];
@@ -132,6 +132,33 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     url.pathname = `/${locale}/login`;
     url.searchParams.set('mfa', 'required');
     return NextResponse.redirect(url);
+  }
+
+  // Super-admin back-office gate (F3-C1). Runs after the generic MFA gate, so
+  // by this point an admin who hasn't cleared aal2 yet has already been sent
+  // to /login?mfa=required — this block only has to decide between "not an
+  // admin at all" (404, never reveal the route) and "admin but never
+  // enrolled MFA" (this route REQUIRES enrollment, unlike the rest of the
+  // app where the generic gate only applies to users who already enrolled).
+  if (
+    claims != null &&
+    claims.app_metadata?.is_platform_admin === true &&
+    pathWithoutLocale.startsWith('/dashboard/admin')
+  ) {
+    // A rewrite's response status is always 200 in Next.js regardless of
+    // what the destination renders — faking a 404 here would leak a wrong
+    // HTTP status to any client checking it. So non-admins are NOT
+    // intercepted at the edge for this route: the request passes through
+    // unchanged (same URL, no redirect) and AdminLayout's own `notFound()`
+    // call produces a genuine 404 status once it re-derives the claim
+    // server-side. This block only handles the admin-but-unenrolled case.
+    if (claims.app_metadata?.mfa_enrolled !== true) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/${locale}/dashboard/account`;
+      url.searchParams.set('tab', 'security');
+      url.searchParams.set('mfa', 'required_admin');
+      return NextResponse.redirect(url);
+    }
   }
 
   // Authenticated users are bounced off the marketing root and auth-only pages —

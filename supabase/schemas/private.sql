@@ -541,3 +541,60 @@ COMMENT ON FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key"
 REVOKE ALL ON FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer) FROM PUBLIC;
 
 
+-- ============================================================================
+-- Super-admin back-office guard functions (F3-C1)
+-- ============================================================================
+-- authenticated previously had no USAGE on schema private (nothing there was
+-- ever called directly by that role — only from SECURITY DEFINER wrappers,
+-- which run as their owner and don't need it). is_platform_admin/
+-- assert_platform_admin are explicitly meant to be callable directly by
+-- authenticated (inside a future RLS policy "OR private.is_platform_admin()"
+-- in C2/C3), which requires resolving the schema-qualified name — hence
+-- USAGE, same rationale as `GRANT USAGE ON SCHEMA audit TO authenticated` in
+-- audit.sql (F2-2G). This does NOT expose any other private.* object — each
+-- function still needs its own explicit GRANT EXECUTE.
+GRANT USAGE ON SCHEMA "private" TO "authenticated";
+
+CREATE OR REPLACE FUNCTION "private"."is_platform_admin"("p_user_id" "uuid" DEFAULT "auth"."uid"()) RETURNS boolean
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT EXISTS(SELECT 1 FROM public.platform_admins WHERE user_id = p_user_id);
+$$;
+
+
+ALTER FUNCTION "private"."is_platform_admin"("p_user_id" "uuid") OWNER TO "postgres";
+
+COMMENT ON FUNCTION "private"."is_platform_admin"("p_user_id" "uuid") IS 'True si p_user_id está en la whitelist platform_admins (F3-C1). Usable dentro de policies RLS via GRANT a authenticated — en C1 ninguna policy lo usa todavía (preparado para C2/C3).';
+
+REVOKE ALL ON FUNCTION "private"."is_platform_admin"("p_user_id" "uuid") FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION "private"."is_platform_admin"("p_user_id" "uuid") TO "authenticated";
+
+
+CREATE OR REPLACE FUNCTION "private"."assert_platform_admin"() RETURNS "void"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  IF NOT private.is_platform_admin((SELECT auth.uid())) THEN
+    RAISE EXCEPTION 'not_platform_admin' USING ERRCODE = '42501';
+  END IF;
+
+  -- Defense in depth: the *real* aal of this session (set by GoTrue itself),
+  -- not app_metadata.mfa_enrolled (which only means a factor exists — not
+  -- that this particular session passed the challenge).
+  IF (SELECT auth.jwt() ->> 'aal') IS DISTINCT FROM 'aal2' THEN
+    RAISE EXCEPTION 'mfa_required' USING ERRCODE = '42501';
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "private"."assert_platform_admin"() OWNER TO "postgres";
+
+COMMENT ON FUNCTION "private"."assert_platform_admin"() IS 'Llamar al inicio de todo RPC del back-office de super-admin. Rechaza no-admins (not_platform_admin) y sesiones sin aal2 real (mfa_required), aunque el claim JWT diga mfa_enrolled=true (F3-C1).';
+
+REVOKE ALL ON FUNCTION "private"."assert_platform_admin"() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION "private"."assert_platform_admin"() TO "authenticated";
+
+
