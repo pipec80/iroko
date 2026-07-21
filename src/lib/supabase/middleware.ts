@@ -151,7 +151,8 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
 
     if (claims.app_metadata?.mfa_enrolled !== true) {
       const url = request.nextUrl.clone();
-      url.pathname = `/${locale}/dashboard/account/security`;
+      url.pathname = `/${locale}/dashboard/account`;
+      url.searchParams.set('tab', 'security');
       url.searchParams.set('mfa', 'required_admin');
       return NextResponse.redirect(url);
     }
