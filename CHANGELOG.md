@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.7.0](https://github.com/pipec80/iroko/compare/iroko-v1.6.0...iroko-v1.7.0) (2026-07-21)
+
+
+### Features
+
+* gate broadcast_alert_email to platform_admin (F3-C6) ([#62](https://github.com/pipec80/iroko/issues/62)) ([69723a4](https://github.com/pipec80/iroko/commit/69723a42553d5e5b31325f94d74a769c2b74bc26))
+
 ## [1.6.0](https://github.com/pipec80/iroko/compare/iroko-v1.5.0...iroko-v1.6.0) (2026-07-21)
 
 
