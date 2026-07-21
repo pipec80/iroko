@@ -336,9 +336,12 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
    consent config-driven.
 6. **Anuncios (broadcast).** Tabla `announcements` + UI admin para publicar avisos in-app a
    todas las cuentas (reusa el canal de notificaciones de 2C). Web push queda FUERA.
-7. **Gate de admin para `broadcast_alert_email` (deuda 2F).** Restringir el RPC a
-   `platform_admin` (hoy cualquier usuario autenticado puede invocarlo — limitación
-   documentada de 2F). Opcional: botón de disparo en `/dashboard/admin`.
+7. **[x] Gate de admin para `broadcast_alert_email` (deuda 2F). ✅ Hecho (2026-07-21, F3-C6).**
+   `public.broadcast_alert_email` gateado con `PERFORM private.assert_platform_admin();`
+   (whitelist + aal2 real, mismo guard que `admin_list_accounts`/`get_platform_audit_logs`
+   de C1) — antes cualquier usuario autenticado podía invocarlo. `GRANT`/`REVOKE` sin cambios
+   (gate interno al body). Botón de disparo implementado en `/dashboard/admin/alerts`
+   (formulario subject+body → `sendPlatformAlert()`), no quedó opcional/pendiente.
 8. **[x] Logo de organización (deuda Storage). ✅ Hecho (2026-07-18, PR #54 + hotfix PR #57, 3H-2).**
    El bucket `org-assets` existe en `config.toml` pero no tenía políticas RLS ni UI.
    Agregado: upload de logo en `org/settings` (`general-tab.tsx`, patrón de avatar de
