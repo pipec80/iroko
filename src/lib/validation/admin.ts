@@ -44,3 +44,11 @@ export const platformAuditLogQuerySchema = z.object({
 export type PlatformAuditLogCursor = z.infer<typeof platformAuditLogCursorSchema>;
 export type PlatformAuditLogQueryInput = z.input<typeof platformAuditLogQuerySchema>;
 export type PlatformAuditLogQuery = z.output<typeof platformAuditLogQuerySchema>;
+
+/** Input for `sendPlatformAlert` — subject/body of the broadcast email. */
+export const platformAlertSchema = z.object({
+  subject: z.string().trim().min(1).max(200),
+  body: z.string().trim().min(1).max(5000),
+});
+
+export type PlatformAlertInput = z.input<typeof platformAlertSchema>;

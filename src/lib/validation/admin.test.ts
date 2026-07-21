@@ -4,6 +4,7 @@ import {
   ADMIN_ACCOUNTS_DEFAULT_PAGE_SIZE,
   ADMIN_ACCOUNTS_MAX_PAGE_SIZE,
   adminAccountsQuerySchema,
+  platformAlertSchema,
   platformAuditLogQuerySchema,
 } from './admin';
 
@@ -79,5 +80,39 @@ describe('platformAuditLogQuerySchema', () => {
 
   it('rejects a non-uuid accountId', () => {
     expect(platformAuditLogQuerySchema.safeParse({ accountId: 'nope' }).success).toBe(false);
+  });
+});
+
+describe('platformAlertSchema', () => {
+  it('accepts a well-formed subject and body', () => {
+    const result = platformAlertSchema.safeParse({
+      subject: 'Mantenimiento programado',
+      body: 'El sábado a las 3am habrá mantenimiento.',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an empty subject', () => {
+    expect(platformAlertSchema.safeParse({ subject: '', body: 'x' }).success).toBe(false);
+  });
+
+  it('rejects an empty body', () => {
+    expect(platformAlertSchema.safeParse({ subject: 'x', body: '' }).success).toBe(false);
+  });
+
+  it('trims whitespace-only subject to empty and rejects it', () => {
+    expect(platformAlertSchema.safeParse({ subject: '   ', body: 'x' }).success).toBe(false);
+  });
+
+  it('rejects a subject over 200 characters', () => {
+    expect(platformAlertSchema.safeParse({ subject: 'x'.repeat(201), body: 'y' }).success).toBe(
+      false,
+    );
+  });
+
+  it('rejects a body over 5000 characters', () => {
+    expect(platformAlertSchema.safeParse({ subject: 'x', body: 'y'.repeat(5001) }).success).toBe(
+      false,
+    );
   });
 });
