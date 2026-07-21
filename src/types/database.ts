@@ -17,6 +17,7 @@ export type Database = {
           actor_type: string | null
           created_at: string | null
           id: number
+          impersonator_id: string | null
           ip_address: unknown
           new_data: Json | null
           old_data: Json | null
@@ -31,6 +32,7 @@ export type Database = {
           actor_type?: string | null
           created_at?: string | null
           id?: never
+          impersonator_id?: string | null
           ip_address?: unknown
           new_data?: Json | null
           old_data?: Json | null
@@ -45,6 +47,7 @@ export type Database = {
           actor_type?: string | null
           created_at?: string | null
           id?: never
+          impersonator_id?: string | null
           ip_address?: unknown
           new_data?: Json | null
           old_data?: Json | null
@@ -959,6 +962,21 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1318,6 +1336,25 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token: string }; Returns: string }
+      admin_list_accounts: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_id?: string
+          p_limit?: number
+          p_search?: string
+        }
+        Returns: {
+          account_id: string
+          created_at: string
+          member_count: number
+          name: string
+          owner_email: string
+          plan_slug: string
+          slug: string
+          subscription_status: Database["billing"]["Enums"]["subscription_status"]
+          type: Database["public"]["Enums"]["account_type"]
+        }[]
+      }
       apply_subscription_event: {
         Args: {
           p_account_id: string
@@ -1458,6 +1495,28 @@ export type Database = {
           p_slug: string
         }
         Returns: string
+      }
+      get_platform_audit_logs: {
+        Args: {
+          p_account_id?: string
+          p_action?: Database["audit"]["Enums"]["action_type"]
+          p_actor_id?: string
+          p_cursor_created_at?: string
+          p_cursor_id?: number
+          p_limit?: number
+          p_resource_type?: string
+        }
+        Returns: {
+          account_id: string
+          action: Database["audit"]["Enums"]["action_type"]
+          actor_id: string
+          actor_name: string
+          created_at: string
+          id: number
+          impersonator_id: string
+          resource_id: string
+          resource_type: string
+        }[]
       }
       invite_members: {
         Args: {
