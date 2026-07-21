@@ -52,11 +52,14 @@ CREATE TABLE IF NOT EXISTS "audit"."logs" (
     "new_data" "jsonb",
     "ip_address" "inet",
     "user_agent" "text",
-    "created_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "impersonator_id" "uuid"
 );
 
 
 ALTER TABLE "audit"."logs" OWNER TO "postgres";
+
+COMMENT ON COLUMN "audit"."logs"."impersonator_id" IS 'Populated by C2 (impersonation) when an admin acts on behalf of another user. NULL for every row until then — added now (F3-C1) so the platform audit RPC ships complete on day one.';
 
 
 ALTER TABLE "audit"."logs" ALTER COLUMN "id" ADD GENERATED ALWAYS AS IDENTITY (
@@ -252,6 +255,113 @@ GRANT EXECUTE ON FUNCTION public.get_account_audit_logs(
 
 REVOKE EXECUTE ON FUNCTION public.get_account_audit_logs(
   uuid, integer, timestamptz, bigint, audit.action_type, text
+) FROM PUBLIC;
+
+-- ============================================================================
+-- Platform-wide (cross-account) audit log viewer (F3-C1)
+-- ============================================================================
+-- Same worker/wrapper split as get_account_audit_logs above, but scoped to
+-- the whole platform instead of one account, restricted to platform_admins
+-- via private.assert_platform_admin(), and exposing impersonator_id
+-- (populated starting C2).
+
+CREATE OR REPLACE FUNCTION private.list_platform_audit_logs(
+  p_limit             integer,
+  p_cursor_created_at timestamptz,
+  p_cursor_id         bigint,
+  p_account_id        uuid,
+  p_actor_id          uuid,
+  p_action            audit.action_type,
+  p_resource_type     text
+)
+RETURNS TABLE (
+  id             bigint,
+  actor_id       uuid,
+  actor_name     text,
+  impersonator_id uuid,
+  account_id     uuid,
+  action         audit.action_type,
+  resource_type  text,
+  resource_id    text,
+  created_at     timestamptz
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT v.id, v.actor_id, v.actor_name, l.impersonator_id, v.account_id,
+         v.action, v.resource_type, v.resource_id, v.created_at
+  FROM audit.v_recent_activity v
+  JOIN audit.logs l ON l.id = v.id
+  WHERE (p_account_id IS NULL OR v.account_id = p_account_id)
+    AND (p_actor_id IS NULL OR v.actor_id = p_actor_id)
+    AND (p_action IS NULL OR v.action = p_action)
+    AND (p_resource_type IS NULL OR v.resource_type = p_resource_type)
+    AND (
+      p_cursor_created_at IS NULL
+      OR v.created_at < p_cursor_created_at
+      OR (v.created_at = p_cursor_created_at AND v.id < p_cursor_id)
+    )
+  ORDER BY v.created_at DESC, v.id DESC
+  LIMIT p_limit
+$$;
+
+COMMENT ON FUNCTION private.list_platform_audit_logs IS
+  'Unauthorized worker for the platform-wide (cross-account) audit log viewer (F3-C1). Never call directly — use public.get_platform_audit_logs, which asserts platform_admin first.';
+
+REVOKE ALL ON FUNCTION private.list_platform_audit_logs(
+  integer, timestamptz, bigint, uuid, uuid, audit.action_type, text
+) FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION public.get_platform_audit_logs(
+  p_limit             integer DEFAULT 20,
+  p_cursor_created_at timestamptz DEFAULT NULL,
+  p_cursor_id         bigint DEFAULT NULL,
+  p_account_id        uuid DEFAULT NULL,
+  p_actor_id          uuid DEFAULT NULL,
+  p_action            audit.action_type DEFAULT NULL,
+  p_resource_type     text DEFAULT NULL
+)
+RETURNS TABLE (
+  id             bigint,
+  actor_id       uuid,
+  actor_name     text,
+  impersonator_id uuid,
+  account_id     uuid,
+  action         audit.action_type,
+  resource_type  text,
+  resource_id    text,
+  created_at     timestamptz
+)
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  PERFORM private.assert_platform_admin();
+
+  IF p_limit IS NULL OR p_limit < 1 OR p_limit > 100 THEN
+    RAISE EXCEPTION 'invalid_limit';
+  END IF;
+
+  RETURN QUERY
+  SELECT * FROM private.list_platform_audit_logs(
+    p_limit, p_cursor_created_at, p_cursor_id, p_account_id, p_actor_id, p_action, p_resource_type
+  );
+END;
+$$;
+
+COMMENT ON FUNCTION public.get_platform_audit_logs IS
+  'Cross-account paginated audit log, restricted to platform_admins (F3-C1). Exposes impersonator_id (populated starting C2).';
+
+GRANT EXECUTE ON FUNCTION public.get_platform_audit_logs(
+  integer, timestamptz, bigint, uuid, uuid, audit.action_type, text
+) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.get_platform_audit_logs(
+  integer, timestamptz, bigint, uuid, uuid, audit.action_type, text
 ) FROM PUBLIC;
 
 

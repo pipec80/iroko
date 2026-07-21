@@ -290,6 +290,13 @@ BEGIN
 
   v_app_meta := v_app_meta || jsonb_build_object('mfa_enrolled', v_has_mfa);
 
+  -- F3-C1: mirror platform_admins membership into the JWT so the edge proxy
+  -- can gate /dashboard/admin without a DB round trip. Every RPC still
+  -- re-checks private.is_platform_admin() against the table directly.
+  v_app_meta := v_app_meta || jsonb_build_object(
+    'is_platform_admin', private.is_platform_admin(v_user_id)
+  );
+
   v_claims := jsonb_set(v_claims, '{app_metadata}', v_app_meta, true);
   RETURN jsonb_set(event, '{claims}', v_claims, true);
 END;
@@ -299,7 +306,7 @@ $$;
 ALTER FUNCTION "public"."custom_access_token_hook"("event" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") IS 'Supabase Auth custom_access_token hook. Writes app_metadata.account_id + app_metadata.role from the user''s default membership, and app_metadata.mfa_enrolled (true when a verified MFA factor exists) so the edge proxy can enforce aal2 for MFA users. SECURITY DEFINER.';
+COMMENT ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") IS 'Supabase Auth custom_access_token hook. Writes app_metadata.account_id + app_metadata.role from the user''s default membership, app_metadata.mfa_enrolled (true when a verified MFA factor exists), and app_metadata.is_platform_admin (F3-C1, mirrors public.platform_admins). SECURITY DEFINER.';
 
 
 
@@ -1155,6 +1162,30 @@ CREATE TABLE IF NOT EXISTS "public"."accounts_memberships" (
 ALTER TABLE "public"."accounts_memberships" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "public"."platform_admins" (
+    "user_id" "uuid" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."platform_admins" OWNER TO "postgres";
+
+COMMENT ON TABLE "public"."platform_admins" IS 'Whitelist de super-admins de la plataforma (back-office F3). Sin UI de auto-alta: solo se puebla a mano via SQL/Studio. RLS deny-all total — el acceso pasa por private.* que ya validan is_platform_admin() del caller.';
+
+ALTER TABLE ONLY "public"."platform_admins"
+    ADD CONSTRAINT "platform_admins_pkey" PRIMARY KEY ("user_id");
+
+ALTER TABLE ONLY "public"."platform_admins"
+    ADD CONSTRAINT "platform_admins_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
+
+ALTER TABLE "public"."platform_admins" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "platform_admins_deny_all" ON "public"."platform_admins" FOR ALL TO "authenticated", "anon" USING (false) WITH CHECK (false);
+
+REVOKE ALL ON TABLE "public"."platform_admins" FROM "anon";
+REVOKE ALL ON TABLE "public"."platform_admins" FROM "authenticated";
+
+
 CREATE TABLE IF NOT EXISTS "public"."auth_recovery_codes" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -1859,6 +1890,73 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "anon";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "authenticated";
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLES TO "service_role";
+
+
+-- ============================================================================
+-- Super-admin back-office (F3-C1)
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.admin_list_accounts(
+  p_search              text DEFAULT NULL,
+  p_limit               integer DEFAULT 20,
+  p_cursor_created_at   timestamptz DEFAULT NULL,
+  p_cursor_id           uuid DEFAULT NULL
+)
+RETURNS TABLE (
+  account_id           uuid,
+  name                 text,
+  slug                 text,
+  type                 public.account_type,
+  owner_email          text,
+  plan_slug            text,
+  subscription_status  billing.subscription_status,
+  member_count         integer,
+  created_at           timestamptz
+)
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  PERFORM private.assert_platform_admin();
+
+  IF p_limit IS NULL OR p_limit < 1 OR p_limit > 100 THEN
+    RAISE EXCEPTION 'invalid_limit';
+  END IF;
+
+  RETURN QUERY
+  SELECT a.id, a.name, a.slug, a.type, u.email::text,
+         p.slug, s.status,
+         (SELECT count(*)::int FROM public.accounts_memberships m WHERE m.account_id = a.id),
+         a.created_at
+  FROM public.accounts a
+  LEFT JOIN public.accounts_memberships om ON om.account_id = a.id AND om.role = 'owner'
+  LEFT JOIN auth.users u ON u.id = om.user_id
+  LEFT JOIN billing.customers c ON c.account_id = a.id
+  LEFT JOIN billing.subscriptions s ON s.customer_id = c.id
+    AND s.status IN ('active', 'trialing', 'past_due', 'paused')
+  LEFT JOIN billing.plans p ON p.id = s.plan_id
+  WHERE a.deleted_at IS NULL
+    AND (p_search IS NULL OR a.name ILIKE '%' || p_search || '%' OR a.slug ILIKE '%' || p_search || '%')
+    AND (
+      p_cursor_created_at IS NULL
+      OR a.created_at < p_cursor_created_at
+      OR (a.created_at = p_cursor_created_at AND a.id < p_cursor_id)
+    )
+  ORDER BY a.created_at DESC, a.id DESC
+  LIMIT p_limit;
+END;
+$$;
+
+COMMENT ON FUNCTION public.admin_list_accounts IS
+  'Lista de cuentas con owner + estado de suscripción para el back-office de super-admin (F3-C1, "caso call-center"). Restringido a platform_admins.';
+
+GRANT EXECUTE ON FUNCTION public.admin_list_accounts(
+  text, integer, timestamptz, uuid
+) TO authenticated;
+
+REVOKE ALL ON FUNCTION public.admin_list_accounts(
+  text, integer, timestamptz, uuid
+) FROM PUBLIC;
 
 
 
