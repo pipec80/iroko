@@ -140,15 +140,18 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // admin at all" (404, never reveal the route) and "admin but never
   // enrolled MFA" (this route REQUIRES enrollment, unlike the rest of the
   // app where the generic gate only applies to users who already enrolled).
-  if (claims != null && pathWithoutLocale.startsWith('/dashboard/admin')) {
-    const isPlatformAdmin = claims.app_metadata?.is_platform_admin === true;
-
-    if (!isPlatformAdmin) {
-      const url = request.nextUrl.clone();
-      url.pathname = `/${locale}/not-found`;
-      return NextResponse.rewrite(url, { status: 404 });
-    }
-
+  if (
+    claims != null &&
+    claims.app_metadata?.is_platform_admin === true &&
+    pathWithoutLocale.startsWith('/dashboard/admin')
+  ) {
+    // A rewrite's response status is always 200 in Next.js regardless of
+    // what the destination renders — faking a 404 here would leak a wrong
+    // HTTP status to any client checking it. So non-admins are NOT
+    // intercepted at the edge for this route: the request passes through
+    // unchanged (same URL, no redirect) and AdminLayout's own `notFound()`
+    // call produces a genuine 404 status once it re-derives the claim
+    // server-side. This block only handles the admin-but-unenrolled case.
     if (claims.app_metadata?.mfa_enrolled !== true) {
       const url = request.nextUrl.clone();
       url.pathname = `/${locale}/dashboard/account`;

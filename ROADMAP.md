@@ -314,11 +314,18 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
 
 **Tareas detalladas:**
 
-1. **Super-admin / back-office.** Tabla `platform_admins` + `private.is_platform_admin()`.
-   Extender RLS de las tablas necesarias con `OR private.is_platform_admin()`. Ruta
-   `/dashboard/admin` protegida (requiere MFA). Vistas: cuentas, estado de suscripción/pago
-   (resuelve el caso call-center), visor **cross-account** de `audit.logs` (distinto del visor
-   por cuenta de 2G, que es solo para el admin de esa cuenta).
+1. **[x] Super-admin / back-office. ✅ Hecho (2026-07-21, F3-C1).** Tabla `platform_admins`
+   (RLS deny-all, se puebla a mano) + `private.is_platform_admin()`/`assert_platform_admin()`
+   (whitelist + aal2 real, no solo el claim). Claim `is_platform_admin` en
+   `custom_access_token_hook`. Ruta `/dashboard/admin` protegida en el edge (404 sin revelar
+   la ruta si no es admin; redirect a inscribir MFA si es admin sin factor). Vistas:
+   `admin/accounts` (RPC `admin_list_accounts`, resuelve el caso call-center con
+   plan/estado de suscripción), `admin/audit` (RPC `get_platform_audit_logs`, visor
+   **cross-account** de `audit.logs`, distinto del visor por cuenta de 2G). Columna
+   `audit.logs.impersonator_id` agregada (sin poblar) para que C2 no tenga que volver a
+   tocar el RPC. **No** se extendió ninguna RLS existente con `OR is_platform_admin()`
+   todavía — queda preparado para C2/C3. Impersonation (tarea 2), GDPR (tarea 3) y el gate
+   de `broadcast_alert_email` (tarea 7) siguen pendientes, cada una su propia tarea/PR.
 2. **Impersonation ("ver como").** Flujo seguro con **banner permanente**, salida clara, y
    **registro en audit logs** de cada acción mientras se impersona.
 3. **GDPR.** RPCs `export_my_data()` (devuelve JSON completo del usuario/tenant) y
