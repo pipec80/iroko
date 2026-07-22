@@ -130,7 +130,9 @@ describe('endImpersonation', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('forces sign-out when the return cookie is missing or invalid', async () => {
-    mocks.cookieGet.mockReturnValue();
+    // cookieGet is a fresh vi.fn() after clearAllMocks() — returns undefined
+    // by default, no explicit stub needed (and mockReturnValue(undefined) is
+    // auto-fixed away by the unicorn/no-useless-undefined eslint rule).
     const result = await endImpersonation();
     expect(result.error).toBe('session_expired');
     expect(mocks.signOut).toHaveBeenCalled();
