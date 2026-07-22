@@ -46,6 +46,8 @@ export type AppConfig = {
     members: boolean;
     /** Show the Activity module (audit log viewer, owner/admin only). */
     activityLog: boolean;
+    /** Show the cookie consent banner (GDPR/ePrivacy). Set false to hide it entirely. */
+    cookieConsent: boolean;
     /** Per-vertical toggles. */
     verticals: {
       /** Demo vertical — robot configuration uploader. Set false to hide from nav. */
@@ -82,6 +84,7 @@ export const appConfig: AppConfig = {
     projects: true,
     members: true,
     activityLog: true,
+    cookieConsent: true,
     verticals: {
       robot: true,
     },

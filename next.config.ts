@@ -6,7 +6,14 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
+  // cacheComponents (PPR) deshabilitado: incompatibilidad confirmada y documentada
+  // por next-intl (github.com/amannn/next-intl/issues/1493) — con cacheComponents
+  // activo, el shell estático se genera una sola vez y sirve el mismo locale para
+  // TODAS las URLs de idioma (bug real detectado en F3-C5). next/root-params
+  // resolvería esto manteniendo PPR, pero aún tiene un issue abierto del lado
+  // cliente (BaseLink/usePathname + Suspense) al momento de este fix — se prefiere
+  // la opción estable (SSR normal) hasta que la integración madure.
+  cacheComponents: false,
   poweredByHeader: false,
   devIndicators: {
     position: 'bottom-right',

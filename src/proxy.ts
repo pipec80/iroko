@@ -1,5 +1,5 @@
 import createMiddleware from 'next-intl/middleware';
-import { NextResponse, type NextRequest } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 import { env } from '@/env';
 import { routing } from './i18n/routing';
@@ -36,12 +36,15 @@ function buildCspHeader(isDev: boolean): string {
 
   const directives: string[] = [
     "default-src 'self'",
-    // NOTE: 'unsafe-inline' (no per-request nonce). Per-request nonces force
-    // every page into dynamic rendering, which is incompatible with this app's
-    // statically-generated marketing pages (cacheComponents). The high-value
-    // directives below (object-src 'none', base-uri, frame-ancestors) plus
-    // React's auto-escaping and zero dangerouslySetInnerHTML keep the residual
-    // XSS surface minimal. See SECURITY.md.
+    // NOTE: 'unsafe-inline' (no per-request nonce) — decisión heredada de cuando
+    // cacheComponents estaba activo (nonces forzaban dynamic rendering en todas
+    // las páginas estáticas). cacheComponents está deshabilitado ahora (ver
+    // next.config.ts, incompatibilidad con next-intl), así que adoptar nonces ya
+    // no chocaría con generación estática — queda como mejora de seguridad futura,
+    // fuera de scope de este fix. Mientras tanto, los directivas de abajo
+    // (object-src 'none', base-uri, frame-ancestors) más React's auto-escaping y
+    // cero dangerouslySetInnerHTML mantienen la superficie de XSS residual mínima.
+    // See SECURITY.md.
     isDev ?
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:"
     : "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://challenges.cloudflare.com",
@@ -118,17 +121,18 @@ export async function proxy(request: NextRequest) {
     return intlResponse;
   }
 
-  const response = NextResponse.next();
-
-  for (const cookie of intlResponse.cookies.getAll()) {
-    response.cookies.set(cookie.name, cookie.value, cookie);
-  }
+  // Base the final response on intlResponse, not a fresh NextResponse.next().
+  // next-intl's middleware sets an internal request header (x-next-intl-locale)
+  // on its own NextResponse.next({request: {headers}}) so getRequestConfig can
+  // read the resolved locale downstream via headers(). A bare NextResponse.next()
+  // silently drops that header, making every non-default locale fall back to
+  // defaultLocale ('es') for the actual page render (confirmed bug, F3-C5).
   for (const cookie of supabaseResponse.cookies.getAll()) {
-    response.cookies.set(cookie.name, cookie.value, cookie);
+    intlResponse.cookies.set(cookie.name, cookie.value, cookie);
   }
 
-  applySecurityHeaders(response, cspHeader);
-  return response;
+  applySecurityHeaders(intlResponse, cspHeader);
+  return intlResponse;
 }
 
 export const config = {
