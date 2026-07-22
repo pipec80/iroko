@@ -9,7 +9,12 @@ import type { Database } from '@/types/database';
 type JwtClaims = {
   sub?: string;
   aal?: string;
-  app_metadata?: { mfa_enrolled?: boolean; is_platform_admin?: boolean } & Record<string, unknown>;
+  app_metadata?: {
+    mfa_enrolled?: boolean;
+    is_platform_admin?: boolean;
+    impersonated_by?: string;
+    impersonation_expires_at?: string;
+  } & Record<string, unknown>;
 };
 
 const PUBLIC_PATH_PREFIXES = ['/login', '/signup', '/forgot-password', '/auth'];
@@ -159,6 +164,26 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
       url.searchParams.set('mfa', 'required_admin');
       return NextResponse.redirect(url);
     }
+  }
+
+  // Impersonation expiry cap (F3-C2). Applies to any /dashboard/* route (not
+  // just /dashboard/admin) because the impersonated user navigates the app
+  // normally. The edge can't call an RPC directly (no full Supabase client
+  // here beyond what's already wired for auth), so it redirects to a
+  // dedicated Node-runtime route handler that closes the session server-side
+  // and sends the user back to where they were.
+  const impersonationExpiresAt = claims?.app_metadata?.impersonation_expires_at;
+  if (
+    claims != null &&
+    impersonationExpiresAt != null &&
+    new Date(impersonationExpiresAt).getTime() <= Date.now() &&
+    pathWithoutLocale.startsWith('/dashboard')
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/api/impersonation/expire';
+    url.search = '';
+    url.searchParams.set('returnTo', request.nextUrl.pathname);
+    return NextResponse.redirect(url);
   }
 
   // Authenticated users are bounced off the marketing root and auth-only pages —
