@@ -44,14 +44,10 @@ test.describe('Legal pages', () => {
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Términos de Servicio');
   });
 
-  // NOTA: no se asertan textos localizados para /en aquí — esta build de producción tiene
-  // un bug PRE-EXISTENTE (no introducido por esta tarea) donde `next start` con PPR sirve
-  // contenido en `es` para cualquier locale en TODO el route group (public), confirmado
-  // también en /en/contact y /en/pricing. Ver docs/estado-fases.md / memoria de cierre F3-C5.
-  test('renders /en/legal/terms with a 200 status', async ({ page }) => {
+  test('renders /en/legal/terms', async ({ page }) => {
     const response = await page.goto('/en/legal/terms');
     expect(response?.status()).toBe(200);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toContainText('Terms of Service');
   });
 
   test('renders /es/legal/privacy', async ({ page }) => {
