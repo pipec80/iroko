@@ -38,7 +38,7 @@ export function CookieConsentBanner() {
 
   return (
     <div
-      role="dialog"
+      role="region"
       aria-label={t('message')}
       data-testid="cookie-consent-banner"
       className="border-border bg-background fixed inset-x-4 bottom-4 z-50 rounded-2xl border p-6 shadow-lg sm:inset-x-auto sm:right-6 sm:bottom-6 sm:max-w-md">
