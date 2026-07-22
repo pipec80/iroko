@@ -20,6 +20,7 @@ describe('appConfig', () => {
     expect(typeof appConfig.features.projects).toBe('boolean');
     expect(typeof appConfig.features.members).toBe('boolean');
     expect(typeof appConfig.features.activityLog).toBe('boolean');
+    expect(typeof appConfig.features.cookieConsent).toBe('boolean');
     expect(typeof appConfig.features.verticals.robot).toBe('boolean');
   });
 
