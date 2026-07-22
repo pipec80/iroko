@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.9.0](https://github.com/pipec80/iroko/compare/iroko-v1.8.0...iroko-v1.9.0) (2026-07-22)
+
+
+### Features
+
+* legal pages + cookie consent banner (F3-C5) ([#66](https://github.com/pipec80/iroko/issues/66)) ([eb8fe2f](https://github.com/pipec80/iroko/commit/eb8fe2f30a1f5660b97da2e5e9f29d3e025a318f))
+
 ## [1.8.0](https://github.com/pipec80/iroko/compare/iroko-v1.7.0...iroko-v1.8.0) (2026-07-22)
 
 
