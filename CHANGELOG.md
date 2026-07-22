@@ -8,6 +8,13 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org/).
 
 ---
 
+## [1.8.0](https://github.com/pipec80/iroko/compare/iroko-v1.7.0...iroko-v1.8.0) (2026-07-22)
+
+
+### Features
+
+* impersonation ("ver como") con auditoría real (F3-C2) ([#64](https://github.com/pipec80/iroko/issues/64)) ([aee6172](https://github.com/pipec80/iroko/commit/aee6172e1d3777f567380ec47519331b5a440b6b))
+
 ## [1.7.0](https://github.com/pipec80/iroko/compare/iroko-v1.6.0...iroko-v1.7.0) (2026-07-21)
 
 
