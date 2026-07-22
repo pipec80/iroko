@@ -22,8 +22,8 @@ export async function PublicFooter() {
     company: [
       { label: t('link_about'), href: '#' },
       { label: t('link_contact'), href: '/contact' },
-      { label: t('link_privacy'), href: '#' },
-      { label: t('link_terms'), href: '#' },
+      { label: t('link_privacy'), href: '/legal/privacy' },
+      { label: t('link_terms'), href: '/legal/terms' },
     ],
   };
 
