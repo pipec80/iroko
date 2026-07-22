@@ -465,8 +465,10 @@ blog MDX; modelo de licencia + distribución.
    JSON-LD (`SoftwareApplication`/`FAQPage`/`BlogPosting`), metadata completa, sitemap
    (ya hay `next-sitemap`, usar `generateStaticParams` en docs/blog para que las detecte).
 3. **Blog (MDX).** Mismo motor de la tarea 0. RSS opcional sin dependencia nueva.
-4. **Licencia + distribución.** `release-please` ya resuelve el changelog/versionado al 100%
-   (solo documentarlo). Falta el modelo de license key: schema nuevo `licensing.license_keys`
+4. **Licencia + distribución.** `release-please` estuvo activo (workflow deshabilitado el
+   2026-07-22 por versionado prematuro pre-MVP — config y manifest quedan en el repo por si se
+   reactiva cuando el producto esté listo para versionarse de cara al usuario). Falta el modelo
+   de license key: schema nuevo `licensing.license_keys`
    (NO reusa `api_keys` — son conceptualmente distintos), RPC `verify_license_key`/
    `create_license_key` disparada por el webhook de Stripe/MP existente (reusa
    `PaymentProvider` — meta, Iroko vendiéndose a sí mismo), repo privado con invitación
@@ -506,7 +508,7 @@ pgvector/guía de verticales) NO son parte de F4 — se difieren completas a F5,
 3. Blog MDX para contenido/SEO (mismo motor de la tarea 0).
 4. Modelo de licencia + distribución (schema `licensing.license_keys` separado de `api_keys`,
    estrategia de repo privado vía invitación GitHub, flujo de compra reusando el módulo
-   billing — release-please ya cubre el changelog/versionado, no rediseñarlo).
+   billing — reactivar `release-please` en ese momento en vez de rediseñar el versionado).
 5. Pasada final de a11y (axe-core + jsx-a11y), performance (Lighthouse CI) e i18n 100%.
 6. Checklist de emails en prod: descomentar [auth.email.smtp] (Resend) + config push de
    templates de auth al proyecto cloud; verificar dominio propio en Resend y actualizar
