@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** Full domain of `audit.action_type`. Only create/update/delete are emitted today (generic trigger); the rest are reserved for future use. */
+/** Full domain of `audit.action_type`. create/update/delete come from the generic trigger; impersonate_start/impersonate_end come from begin_/end_impersonation_session (F3-C2); the rest are reserved for future use. */
 export const AUDIT_ACTIONS = [
   'create',
   'update',
@@ -12,6 +12,8 @@ export const AUDIT_ACTIONS = [
   'subscription_change',
   'payment',
   'export',
+  'impersonate_start',
+  'impersonate_end',
 ] as const;
 
 /** Tables currently wired to `private.audit_log()` (see migration 20260625300001). */

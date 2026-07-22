@@ -29,7 +29,9 @@ CREATE TYPE "audit"."action_type" AS ENUM (
     'role_change',
     'subscription_change',
     'payment',
-    'export'
+    'export',
+    'impersonate_start',
+    'impersonate_end'
 );
 
 

@@ -15,6 +15,7 @@ export type AdminAccountEntry = {
   name: string;
   slug: string;
   type: Database['public']['Enums']['account_type'];
+  ownerId: string | null;
   ownerEmail: string | null;
   planSlug: string | null;
   subscriptionStatus: Database['billing']['Enums']['subscription_status'] | null;
@@ -65,6 +66,7 @@ export const getAdminAccounts = withServerAction(async function getAdminAccounts
     name: row.name,
     slug: row.slug,
     type: row.type,
+    ownerId: row.owner_id,
     ownerEmail: row.owner_email,
     planSlug: row.plan_slug,
     subscriptionStatus: row.subscription_status,

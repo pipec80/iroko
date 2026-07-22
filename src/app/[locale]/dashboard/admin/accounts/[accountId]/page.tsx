@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { getAdminAccounts } from '../actions';
+import { ImpersonateButton } from './impersonate-button';
 
 export default async function AdminAccountDetailPage({
   params,
@@ -51,7 +52,14 @@ export default async function AdminAccountDetailPage({
           <span className="text-muted-foreground">{t('col_members')}: </span>
           {account.memberCount}
         </div>
-        {/* TODO(C2): "Ver como" (impersonate) button goes here. */}
+        {account.ownerId && (
+          <div className="pt-2">
+            <ImpersonateButton
+              targetUserId={account.ownerId}
+              targetName={account.ownerEmail ?? account.name}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

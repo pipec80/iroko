@@ -262,6 +262,8 @@ DECLARE
   v_account_id uuid;
   v_role       text;
   v_has_mfa    boolean;
+  v_imp_admin  uuid;
+  v_imp_exp    timestamptz;
   v_claims     jsonb := event -> 'claims';
   v_app_meta   jsonb := COALESCE(v_claims -> 'app_metadata', '{}'::jsonb);
 BEGIN
@@ -297,6 +299,22 @@ BEGIN
     'is_platform_admin', private.is_platform_admin(v_user_id)
   );
 
+  -- F3-C2: si hay una sesión de impersonation activa DONDE este usuario es
+  -- el target, mintear quién lo está impersonando y hasta cuándo. El edge
+  -- (middleware.ts) usa esto para el banner y el cap de 30 min; ningún RPC
+  -- confía en esto para autorización (RLS ve auth.uid() real, siempre).
+  SELECT admin_id, expires_at
+  INTO v_imp_admin, v_imp_exp
+  FROM public.impersonation_sessions
+  WHERE target_user_id = v_user_id AND ended_at IS NULL
+  LIMIT 1;
+
+  IF v_imp_admin IS NOT NULL THEN
+    v_app_meta := v_app_meta
+      || jsonb_build_object('impersonated_by', v_imp_admin)
+      || jsonb_build_object('impersonation_expires_at', v_imp_exp);
+  END IF;
+
   v_claims := jsonb_set(v_claims, '{app_metadata}', v_app_meta, true);
   RETURN jsonb_set(event, '{claims}', v_claims, true);
 END;
@@ -306,7 +324,7 @@ $$;
 ALTER FUNCTION "public"."custom_access_token_hook"("event" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") IS 'Supabase Auth custom_access_token hook. Writes app_metadata.account_id + app_metadata.role from the user''s default membership, app_metadata.mfa_enrolled (true when a verified MFA factor exists), and app_metadata.is_platform_admin (F3-C1, mirrors public.platform_admins). SECURITY DEFINER.';
+COMMENT ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") IS 'Supabase Auth custom_access_token hook. Writes app_metadata.account_id + app_metadata.role from the user''s default membership, app_metadata.mfa_enrolled (true when a verified MFA factor exists), app_metadata.is_platform_admin (F3-C1, mirrors public.platform_admins), and app_metadata.impersonated_by/impersonation_expires_at when the user is currently being impersonated (F3-C2). SECURITY DEFINER.';
 
 
 
@@ -1188,6 +1206,42 @@ REVOKE ALL ON TABLE "public"."platform_admins" FROM "anon";
 REVOKE ALL ON TABLE "public"."platform_admins" FROM "authenticated";
 
 
+CREATE TABLE public.impersonation_sessions (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  target_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  reason         text NOT NULL,
+  started_at     timestamptz NOT NULL DEFAULT now(),
+  expires_at     timestamptz NOT NULL,
+  ended_at       timestamptz,
+  ended_reason   text,
+  ip_address     inet,
+  user_agent     text,
+  CONSTRAINT impersonation_target_not_admin CHECK (admin_id <> target_user_id)
+);
+
+COMMENT ON TABLE public.impersonation_sessions IS
+  'Registro de sesiones "ver como" de super-admin (F3-C2). Cap duro de 30 min via expires_at. RLS deny-all — el acceso pasa por los RPCs begin_/end_impersonation_session.';
+
+CREATE UNIQUE INDEX idx_impersonation_one_active_per_admin
+  ON public.impersonation_sessions (admin_id) WHERE ended_at IS NULL;
+
+CREATE INDEX idx_impersonation_active_target
+  ON public.impersonation_sessions (target_user_id) WHERE ended_at IS NULL;
+
+ALTER TABLE public.impersonation_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "impersonation_sessions_deny_all" ON public.impersonation_sessions
+  FOR ALL TO authenticated, anon USING (false) WITH CHECK (false);
+
+REVOKE ALL ON public.impersonation_sessions FROM anon, authenticated;
+
+CREATE TRIGGER impersonation_sessions_immutable_core
+  BEFORE UPDATE OF admin_id, target_user_id, reason, started_at
+  ON public.impersonation_sessions
+  FOR EACH ROW EXECUTE FUNCTION private.deny_mutation();
+
+
 CREATE TABLE IF NOT EXISTS "public"."auth_recovery_codes" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" NOT NULL,
@@ -1909,6 +1963,7 @@ RETURNS TABLE (
   name                 text,
   slug                 text,
   type                 public.account_type,
+  owner_id             uuid,
   owner_email          text,
   plan_slug            text,
   subscription_status  billing.subscription_status,
@@ -1926,7 +1981,7 @@ BEGIN
   END IF;
 
   RETURN QUERY
-  SELECT a.id, a.name, a.slug, a.type, u.email::text,
+  SELECT a.id, a.name, a.slug, a.type, u.id, u.email::text,
          p.slug, s.status,
          (SELECT count(*)::int FROM public.accounts_memberships m WHERE m.account_id = a.id),
          a.created_at
@@ -1950,7 +2005,7 @@ END;
 $$;
 
 COMMENT ON FUNCTION public.admin_list_accounts IS
-  'Lista de cuentas con owner + estado de suscripción para el back-office de super-admin (F3-C1, "caso call-center"). Restringido a platform_admins.';
+  'Lista de cuentas con owner + estado de suscripción para el back-office de super-admin (F3-C1, "caso call-center"). owner_id agregado en F3-C2 (necesario para impersonation). Restringido a platform_admins.';
 
 GRANT EXECUTE ON FUNCTION public.admin_list_accounts(
   text, integer, timestamptz, uuid
@@ -1959,6 +2014,90 @@ GRANT EXECUTE ON FUNCTION public.admin_list_accounts(
 REVOKE ALL ON FUNCTION public.admin_list_accounts(
   text, integer, timestamptz, uuid
 ) FROM PUBLIC;
+
+
+-- ============================================================================
+-- Impersonation "Ver como" (F3-C2)
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.begin_impersonation_session(
+  p_target_user_id uuid, p_reason text
+)
+RETURNS public.impersonation_sessions
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_row public.impersonation_sessions;
+BEGIN
+  PERFORM private.assert_platform_admin();
+
+  IF p_reason IS NULL OR length(trim(p_reason)) < 3 THEN
+    RAISE EXCEPTION 'reason_required';
+  END IF;
+
+  PERFORM private.assert_impersonation_target_valid(p_target_user_id);
+
+  INSERT INTO public.impersonation_sessions (admin_id, target_user_id, reason, expires_at)
+  VALUES ((SELECT auth.uid()), p_target_user_id, p_reason, now() + interval '30 minutes')
+  RETURNING * INTO v_row;
+
+  INSERT INTO audit.logs (actor_id, action, resource_type, resource_id, new_data)
+  VALUES (
+    (SELECT auth.uid()), 'impersonate_start', 'impersonation_sessions', v_row.id::text,
+    jsonb_build_object('target_user_id', p_target_user_id, 'reason', p_reason)
+  );
+
+  RETURN v_row;
+END;
+$$;
+
+COMMENT ON FUNCTION public.begin_impersonation_session(uuid, text) IS
+  'Abre una sesión de "ver como" (F3-C2). Solo platform_admin, aal2. Falla si ya hay una sesión activa para este admin (índice único) o si el target no es válido.';
+
+GRANT EXECUTE ON FUNCTION public.begin_impersonation_session(uuid, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.begin_impersonation_session(uuid, text) FROM PUBLIC;
+
+CREATE OR REPLACE FUNCTION public.end_impersonation_session(
+  p_session_id uuid, p_reason text DEFAULT 'manual'
+)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_admin_id uuid;
+BEGIN
+  -- Invocable por el propio admin (con su sesión ya restaurada) o por un
+  -- contexto sin auth.uid() (service_role, para el cierre automático por
+  -- expiración vía el route handler dedicado) — nunca por un tercer admin.
+  SELECT admin_id INTO v_admin_id FROM public.impersonation_sessions WHERE id = p_session_id;
+
+  IF v_admin_id IS NULL THEN
+    RAISE EXCEPTION 'session_not_found';
+  END IF;
+
+  IF (SELECT auth.uid()) IS NOT NULL AND (SELECT auth.uid()) <> v_admin_id THEN
+    RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
+  END IF;
+
+  UPDATE public.impersonation_sessions
+  SET ended_at = now(), ended_reason = p_reason
+  WHERE id = p_session_id AND ended_at IS NULL;
+
+  INSERT INTO audit.logs (actor_id, action, resource_type, resource_id, new_data)
+  VALUES (
+    v_admin_id, 'impersonate_end', 'impersonation_sessions', p_session_id::text,
+    jsonb_build_object('reason', p_reason)
+  );
+END;
+$$;
+
+COMMENT ON FUNCTION public.end_impersonation_session(uuid, text) IS
+  'Cierra una sesión de "ver como" (F3-C2). Solo el admin dueño, o sin auth.uid() (cierre automático por expiración). Idempotente: la segunda llamada no encuentra filas ended_at IS NULL para actualizar y no falla.';
+
+GRANT EXECUTE ON FUNCTION public.end_impersonation_session(uuid, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.end_impersonation_session(uuid, text) FROM PUBLIC;
 
 
 

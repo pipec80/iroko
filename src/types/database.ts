@@ -94,6 +94,8 @@ export type Database = {
         | "subscription_change"
         | "payment"
         | "export"
+        | "impersonate_start"
+        | "impersonate_end"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -842,6 +844,45 @@ export type Database = {
         }
         Relationships: []
       }
+      impersonation_sessions: {
+        Row: {
+          admin_id: string
+          ended_at: string | null
+          ended_reason: string | null
+          expires_at: string
+          id: string
+          ip_address: unknown
+          reason: string
+          started_at: string
+          target_user_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_id: string
+          ended_at?: string | null
+          ended_reason?: string | null
+          expires_at: string
+          id?: string
+          ip_address?: unknown
+          reason: string
+          started_at?: string
+          target_user_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_id?: string
+          ended_at?: string | null
+          ended_reason?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: unknown
+          reason?: string
+          started_at?: string
+          target_user_id?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           account_id: string
@@ -1349,6 +1390,7 @@ export type Database = {
           member_count: number
           name: string
           owner_email: string
+          owner_id: string
           plan_slug: string
           slug: string
           subscription_status: Database["billing"]["Enums"]["subscription_status"]
@@ -1372,6 +1414,27 @@ export type Database = {
           p_trial_end?: string
         }
         Returns: string
+      }
+      begin_impersonation_session: {
+        Args: { p_reason: string; p_target_user_id: string }
+        Returns: {
+          admin_id: string
+          ended_at: string | null
+          ended_reason: string | null
+          expires_at: string
+          id: string
+          ip_address: unknown
+          reason: string
+          started_at: string
+          target_user_id: string
+          user_agent: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "impersonation_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       broadcast_alert_email: {
         Args: { p_body: string; p_subject: string }
@@ -1402,6 +1465,10 @@ export type Database = {
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       delete_webhook_endpoint: {
         Args: { p_endpoint_id: string }
+        Returns: undefined
+      }
+      end_impersonation_session: {
+        Args: { p_reason?: string; p_session_id: string }
         Returns: undefined
       }
       generate_recovery_codes: { Args: never; Returns: string[] }
@@ -1840,6 +1907,8 @@ export const Constants = {
         "subscription_change",
         "payment",
         "export",
+        "impersonate_start",
+        "impersonate_end",
       ],
     },
   },
