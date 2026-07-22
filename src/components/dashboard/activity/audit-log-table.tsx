@@ -22,6 +22,8 @@ const ACTION_LABELS: Record<AuditAction, string> = {
   subscription_change: 'action_subscription_change',
   payment: 'action_payment',
   export: 'action_export',
+  impersonate_start: 'action_impersonate_start',
+  impersonate_end: 'action_impersonate_end',
 };
 
 const RESOURCE_LABELS: Record<string, string> = {

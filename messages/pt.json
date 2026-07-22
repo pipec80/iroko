@@ -336,6 +336,8 @@
     "action_subscription_change": "Assinatura alterada",
     "action_payment": "Pagamento",
     "action_export": "Exportado",
+    "action_impersonate_start": "Personificação iniciada",
+    "action_impersonate_end": "Personificação encerrada",
     "resource_profiles": "Perfil",
     "resource_accounts": "Conta",
     "resource_accounts_memberships": "Associação",

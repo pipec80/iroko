@@ -336,6 +336,8 @@
     "action_subscription_change": "Subscription changed",
     "action_payment": "Payment",
     "action_export": "Exported",
+    "action_impersonate_start": "Impersonation started",
+    "action_impersonate_end": "Impersonation ended",
     "resource_profiles": "Profile",
     "resource_accounts": "Account",
     "resource_accounts_memberships": "Membership",

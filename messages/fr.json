@@ -336,6 +336,8 @@
     "action_subscription_change": "Abonnement modifié",
     "action_payment": "Paiement",
     "action_export": "Exporté",
+    "action_impersonate_start": "Emprunt d'identité démarré",
+    "action_impersonate_end": "Emprunt d'identité terminé",
     "resource_profiles": "Profil",
     "resource_accounts": "Compte",
     "resource_accounts_memberships": "Adhésion",
