@@ -1,39 +1,57 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
 import { parseConsentCookie, writeConsentCookie } from '@/lib/cookie-consent';
 import { cn } from '@/lib/utils';
 
-function hasStoredConsent(): boolean {
-  if (typeof document === 'undefined') return true;
+// Cookie consent never changes without a full page navigation from this
+// component's own actions, so there is nothing to subscribe to.
+function subscribeNoop() {
+  return () => {};
+}
+
+function hasConsentSnapshot(): boolean {
   return parseConsentCookie(document.cookie) !== null;
+}
+
+// Matches what the server always assumes (no document.cookie access) —
+// reading the real cookie only on the client via useSyncExternalStore
+// avoids the SSR/hydration mismatch (React error #418) that a plain
+// useState(() => hasConsent()) initializer would produce.
+function hasConsentServerSnapshot(): boolean {
+  return true;
 }
 
 export function CookieConsentBanner() {
   const t = useTranslations('CookieConsent');
-  const [dismissed, setDismissed] = useState(() => hasStoredConsent());
+  const dismissed = useSyncExternalStore(
+    subscribeNoop,
+    hasConsentSnapshot,
+    hasConsentServerSnapshot,
+  );
   const [customizing, setCustomizing] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
+  const [dismissedOverride, setDismissedOverride] = useState(false);
 
-  if (dismissed) return null;
+  if (dismissed || dismissedOverride) return null;
 
   function acceptAll() {
     writeConsentCookie({ analytics: true, marketing: true });
-    setDismissed(true);
+    setDismissedOverride(true);
   }
 
   function rejectNonEssential() {
     writeConsentCookie({ analytics: false, marketing: false });
-    setDismissed(true);
+    setDismissedOverride(true);
   }
 
   function savePreferences() {
     writeConsentCookie({ analytics, marketing });
-    setDismissed(true);
+    setDismissedOverride(true);
   }
 
   return (
