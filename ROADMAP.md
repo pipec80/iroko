@@ -326,8 +326,16 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
    tocar el RPC. **No** se extendió ninguna RLS existente con `OR is_platform_admin()`
    todavía — queda preparado para C2/C3. Impersonation (tarea 2), GDPR (tarea 3) y el gate
    de `broadcast_alert_email` (tarea 7) siguen pendientes, cada una su propia tarea/PR.
-2. **Impersonation ("ver como").** Flujo seguro con **banner permanente**, salida clara, y
-   **registro en audit logs** de cada acción mientras se impersona.
+2. **[x] Impersonation ("ver como"). ✅ Hecho (2026-07-22, F3-C2).** Sesión real del target
+   (no JWT spoofing) via `auth.admin.generateLink` + `verifyOtp`, cap duro de 30 min
+   (`impersonation_sessions.expires_at`), banner permanente con salida clara
+   (`endImpersonation` restaura al admin ANTES de cerrar la sesión en DB), y cada acción del
+   admin mientras impersona queda auditada con `audit.logs.impersonator_id` poblado (actor_id
+   sigue siendo el target). Cookie de retorno del admin firmada con HMAC-SHA256 nativo (sin
+   dependencia nueva). Tabla `impersonation_sessions` RLS deny-all + índice único "una sesión
+   activa por admin". `owner_id` agregado a `admin_list_accounts` (gap encontrado en C1).
+   E2E queda en `test.skip` (falta fixture de `platform_admin` con MFA/aal2 en CI) — cubierto
+   por QA manual.
 3. **GDPR.** RPCs `export_my_data()` (devuelve JSON completo del usuario/tenant) y
    `delete_my_account()` (borrado en cascada, respetando FKs). UI en `account` settings.
 4. **Onboarding.** Wizard post-signup: confirmar/crear org → invitar equipo → elegir plan →
