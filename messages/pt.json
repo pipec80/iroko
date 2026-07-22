@@ -441,6 +441,115 @@
     "link_privacy": "Privacidade",
     "link_terms": "Termos"
   },
+  "LegalTerms": {
+    "eyebrow": "Legal",
+    "title": "Termos de Serviço",
+    "last_updated": "Última atualização: 1 de janeiro de 2026",
+    "sections": [
+      {
+        "heading": "1. Aceitação dos termos",
+        "paragraphs": [
+          "Ao acessar ou usar este serviço, você concorda em ficar vinculado a estes Termos de Serviço. Se você não concordar com alguma parte dos termos, não poderá acessar o serviço."
+        ]
+      },
+      {
+        "heading": "2. Uso do serviço",
+        "paragraphs": [
+          "Você concorda em usar o serviço apenas para fins lícitos e de acordo com estes termos.",
+          "Reservamo-nos o direito de suspender ou cancelar sua conta se detectarmos uso indevido ou fraudulento do serviço."
+        ]
+      },
+      {
+        "heading": "3. Contas de usuário",
+        "paragraphs": [
+          "Você é responsável por manter a confidencialidade de sua conta e senha, bem como por restringir o acesso à sua equipe ou conta.",
+          "Você concorda em assumir a responsabilidade por todas as atividades que ocorrerem em sua conta."
+        ]
+      },
+      {
+        "heading": "4. Propriedade intelectual",
+        "paragraphs": [
+          "O serviço e seu conteúdo original, recursos e funcionalidades são e continuarão sendo propriedade exclusiva da empresa e de seus licenciadores."
+        ]
+      },
+      {
+        "heading": "5. Limitação de responsabilidade",
+        "paragraphs": [
+          "Em nenhum caso a empresa será responsável por danos indiretos, incidentais, especiais ou consequenciais decorrentes do uso ou da impossibilidade de usar o serviço."
+        ]
+      },
+      {
+        "heading": "6. Alterações nos termos",
+        "paragraphs": [
+          "Podemos atualizar estes termos a qualquer momento. Notificaremos alterações significativas publicando a nova versão nesta página."
+        ]
+      },
+      {
+        "heading": "7. Contato",
+        "paragraphs": [
+          "Se você tiver dúvidas sobre estes termos, entre em contato conosco em support@iroko.vercel.app."
+        ]
+      }
+    ]
+  },
+  "LegalPrivacy": {
+    "eyebrow": "Legal",
+    "title": "Política de Privacidade",
+    "last_updated": "Última atualização: 1 de janeiro de 2026",
+    "sections": [
+      {
+        "heading": "1. Informações que coletamos",
+        "paragraphs": [
+          "Coletamos informações que você nos fornece diretamente, como nome, email e dados da organização ao se cadastrar.",
+          "Também coletamos automaticamente informações técnicas, como endereço IP, tipo de navegador e páginas visitadas."
+        ]
+      },
+      {
+        "heading": "2. Como usamos suas informações",
+        "paragraphs": [
+          "Usamos suas informações para fornecer, manter e melhorar o serviço, para nos comunicarmos com você e para cumprir obrigações legais."
+        ]
+      },
+      {
+        "heading": "3. Cookies",
+        "paragraphs": [
+          "Usamos cookies necessários para o funcionamento do serviço e, com seu consentimento, cookies de analítica e marketing. Você pode gerenciar suas preferências a qualquer momento no banner de cookies."
+        ]
+      },
+      {
+        "heading": "4. Compartilhamento de dados",
+        "paragraphs": [
+          "Não vendemos suas informações pessoais. Podemos compartilhar dados com prestadores de serviços (hospedagem, email, pagamentos) que atuam sob nossas instruções e as mesmas obrigações de confidencialidade."
+        ]
+      },
+      {
+        "heading": "5. Seus direitos",
+        "paragraphs": [
+          "Você tem o direito de acessar, corrigir, excluir e portar seus dados pessoais. Você pode exercer esses direitos nas configurações da sua conta ou entrando em contato conosco diretamente."
+        ]
+      },
+      {
+        "heading": "6. Segurança",
+        "paragraphs": [
+          "Implementamos medidas técnicas e organizacionais razoáveis para proteger suas informações contra acesso não autorizado, perda ou alteração."
+        ]
+      },
+      {
+        "heading": "7. Contato",
+        "paragraphs": ["Para dúvidas sobre privacidade, escreva para support@iroko.vercel.app."]
+      }
+    ]
+  },
+  "CookieConsent": {
+    "message": "Usamos cookies necessários para o funcionamento do site e, com sua permissão, cookies de analítica e marketing. Leia mais em nossa Política de Privacidade.",
+    "accept_all": "Aceitar tudo",
+    "reject": "Rejeitar não essenciais",
+    "customize": "Personalizar",
+    "necessary_label": "Necessários (sempre ativos)",
+    "analytics_label": "Analítica",
+    "marketing_label": "Marketing",
+    "save": "Salvar preferências"
+  },
   "PublicHome": {
     "hero_eyebrow": "Step · 01 · Origem",
     "hero_title_1": "Um tronco comum para os seus",

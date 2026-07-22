@@ -441,6 +441,115 @@
     "link_privacy": "Privacy",
     "link_terms": "Terms"
   },
+  "LegalTerms": {
+    "eyebrow": "Legal",
+    "title": "Terms of Service",
+    "last_updated": "Last updated: January 1, 2026",
+    "sections": [
+      {
+        "heading": "1. Acceptance of terms",
+        "paragraphs": [
+          "By accessing or using this service, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access the service."
+        ]
+      },
+      {
+        "heading": "2. Use of the service",
+        "paragraphs": [
+          "You agree to use the service only for lawful purposes and in accordance with these terms.",
+          "We reserve the right to suspend or terminate your account if we detect misuse or fraudulent use of the service."
+        ]
+      },
+      {
+        "heading": "3. User accounts",
+        "paragraphs": [
+          "You are responsible for safeguarding your account and password, and for restricting access to your team or account.",
+          "You agree to accept responsibility for all activities that occur under your account."
+        ]
+      },
+      {
+        "heading": "4. Intellectual property",
+        "paragraphs": [
+          "The service and its original content, features and functionality are and will remain the exclusive property of the company and its licensors."
+        ]
+      },
+      {
+        "heading": "5. Limitation of liability",
+        "paragraphs": [
+          "In no event shall the company be liable for any indirect, incidental, special or consequential damages arising from the use of, or inability to use, the service."
+        ]
+      },
+      {
+        "heading": "6. Changes to the terms",
+        "paragraphs": [
+          "We may update these terms at any time. We will notify significant changes by posting the new version on this page."
+        ]
+      },
+      {
+        "heading": "7. Contact",
+        "paragraphs": [
+          "If you have questions about these terms, contact us at support@iroko.vercel.app."
+        ]
+      }
+    ]
+  },
+  "LegalPrivacy": {
+    "eyebrow": "Legal",
+    "title": "Privacy Policy",
+    "last_updated": "Last updated: January 1, 2026",
+    "sections": [
+      {
+        "heading": "1. Information we collect",
+        "paragraphs": [
+          "We collect information you provide directly, such as your name, email and organization details when you sign up.",
+          "We also automatically collect technical information such as your IP address, browser type and pages visited."
+        ]
+      },
+      {
+        "heading": "2. How we use your information",
+        "paragraphs": [
+          "We use your information to provide, maintain and improve the service, to communicate with you, and to comply with legal obligations."
+        ]
+      },
+      {
+        "heading": "3. Cookies",
+        "paragraphs": [
+          "We use cookies necessary for the service to function and, with your consent, analytics and marketing cookies. You can manage your preferences at any time from the cookie banner."
+        ]
+      },
+      {
+        "heading": "4. Data sharing",
+        "paragraphs": [
+          "We do not sell your personal information. We may share data with service providers (hosting, email, payments) acting under our instructions and the same confidentiality obligations."
+        ]
+      },
+      {
+        "heading": "5. Your rights",
+        "paragraphs": [
+          "You have the right to access, correct, delete and port your personal data. You can exercise these rights from your account settings or by contacting us directly."
+        ]
+      },
+      {
+        "heading": "6. Security",
+        "paragraphs": [
+          "We implement reasonable technical and organizational measures to protect your information against unauthorized access, loss or alteration."
+        ]
+      },
+      {
+        "heading": "7. Contact",
+        "paragraphs": ["For privacy inquiries, write to us at support@iroko.vercel.app."]
+      }
+    ]
+  },
+  "CookieConsent": {
+    "message": "We use cookies necessary for the site to function and, with your permission, analytics and marketing cookies. Read more in our Privacy Policy.",
+    "accept_all": "Accept all",
+    "reject": "Reject non-essential",
+    "customize": "Customize",
+    "necessary_label": "Necessary (always active)",
+    "analytics_label": "Analytics",
+    "marketing_label": "Marketing",
+    "save": "Save preferences"
+  },
   "PublicHome": {
     "hero_eyebrow": "Step · 01 · Origin",
     "hero_title_1": "The shared trunk for your",
