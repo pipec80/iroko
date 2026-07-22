@@ -1,4 +1,4 @@
-import { test as base, type Page } from '@playwright/test';
+import { expect, test as base, type Page } from '@playwright/test';
 
 const SUPABASE_URL = 'http://127.0.0.1:54321';
 
@@ -22,6 +22,17 @@ export const test = base.extend<AuthFixtures>({
       Boolean(process.env.PLAYWRIGHT_BASE_URL),
       'authenticatedPage requiere Supabase local (127.0.0.1:54321) — este test no debe llevar @smoke ni correr contra producción.',
     );
+
+    // Regresión: un hydration mismatch de React (error #418/#423/#425) en
+    // cualquier componente cliente global (ej. providers/index.tsx) puede
+    // dejar nodos duplicados transitorios en CUALQUIER página autenticada,
+    // sin relación aparente con el componente que lo causa (ver
+    // docs/modules/legal-cookies.md §8). Falla el test apenas se detecta,
+    // en vez de dejar que se manifieste como un locator ambiguo aguas abajo.
+    const hydrationErrors: string[] = [];
+    page.on('pageerror', (err) => {
+      if (/error #4(18|23|25|27)/.test(err.message)) hydrationErrors.push(err.message);
+    });
 
     const email = `e2e+settings+${Date.now()}@saasboilerplate.local`;
     const password = 'TestPass123!';
@@ -59,6 +70,8 @@ export const test = base.extend<AuthFixtures>({
     await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
 
     await provide(page);
+
+    expect(hydrationErrors, 'Errores de hydration mismatch de React durante el test').toEqual([]);
 
     // Cleanup: eliminar el usuario de test (best-effort)
     await request

@@ -46,4 +46,23 @@ test.describe('Asset & hydration sanity', () => {
 
     await expect(magicButton).toBeEnabled({ timeout: 10_000 });
   });
+
+  test('no hydration mismatch on first render @smoke', async ({ page }) => {
+    // Regresión: un componente cliente que lee document.cookie/localStorage en
+    // el inicializador de useState produce un mismatch real entre SSR e
+    // hidratación en TODA carga de página (React error #418/#423/#425).
+    // React se recupera regenerando el subárbol del lado del cliente — la
+    // página sigue "funcionando" (por eso el test de arriba no lo detecta),
+    // pero puede dejar nodos duplicados transitorios en cualquier parte de la
+    // app que comparta un ancestro cliente con el componente que causa el
+    // mismatch (ver docs/modules/legal-cookies.md §8 — CookieConsentBanner).
+    const pageErrors: string[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+
+    await page.goto('/es');
+    await page.waitForLoadState('networkidle');
+
+    const hydrationErrors = pageErrors.filter((msg) => /error #4(18|23|25|27)/.test(msg));
+    expect(hydrationErrors, 'Errores de hydration mismatch de React').toEqual([]);
+  });
 });
