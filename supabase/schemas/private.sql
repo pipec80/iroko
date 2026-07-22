@@ -347,6 +347,7 @@ DECLARE
   v_account_id  uuid;
   v_resource_id text;
   v_row         jsonb;
+  v_impersonator_id uuid;
 BEGIN
   v_action := CASE TG_OP
     WHEN 'INSERT' THEN 'create'
@@ -368,6 +369,14 @@ BEGIN
 
   v_resource_id := COALESCE(v_row ->> 'id', v_row ->> 'account_id', '');
 
+  -- F3-C2: si la sesión actual está impersonando a alguien, el claim
+  -- impersonated_by trae el id del admin real — se guarda acá sin tocar
+  -- actor_id (que sigue siendo auth.uid(), el target, para que RLS y el
+  -- visor por cuenta se comporten exactamente igual que sin impersonation).
+  v_impersonator_id := NULLIF(
+    ((SELECT auth.jwt()) -> 'app_metadata' ->> 'impersonated_by'), ''
+  )::uuid;
+
   INSERT INTO audit.logs (
     actor_id,
     action,
@@ -377,7 +386,8 @@ BEGIN
     old_data,
     new_data,
     ip_address,
-    user_agent
+    user_agent,
+    impersonator_id
   ) VALUES (
     auth.uid(),
     v_action,
@@ -393,7 +403,8 @@ BEGIN
       )),
       ''
     )::inet,
-    current_setting('request.headers', true)::json->>'user-agent'
+    current_setting('request.headers', true)::json->>'user-agent',
+    v_impersonator_id
   );
 
   RETURN COALESCE(NEW, OLD);
@@ -596,5 +607,30 @@ COMMENT ON FUNCTION "private"."assert_platform_admin"() IS 'Llamar al inicio de 
 
 REVOKE ALL ON FUNCTION "private"."assert_platform_admin"() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION "private"."assert_platform_admin"() TO "authenticated";
+
+
+CREATE OR REPLACE FUNCTION private.assert_impersonation_target_valid(p_target_user_id uuid)
+RETURNS void
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF p_target_user_id = (SELECT auth.uid()) THEN
+    RAISE EXCEPTION 'cannot_impersonate_self' USING ERRCODE = '42501';
+  END IF;
+  IF private.is_platform_admin(p_target_user_id) THEN
+    RAISE EXCEPTION 'cannot_impersonate_admin' USING ERRCODE = '42501';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = p_target_user_id) THEN
+    RAISE EXCEPTION 'target_not_found' USING ERRCODE = 'P0002';
+  END IF;
+END;
+$$;
+
+COMMENT ON FUNCTION private.assert_impersonation_target_valid(uuid) IS
+  'Bloquea auto-impersonación y target=admin, valida que el target exista (F3-C2). Llamar desde begin_impersonation_session.';
+
+REVOKE ALL ON FUNCTION private.assert_impersonation_target_valid(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION private.assert_impersonation_target_valid(uuid) TO authenticated;
 
 
