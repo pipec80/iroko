@@ -84,6 +84,8 @@ supabase/snippets/
 
 
 .vercel
-
+.cursorrules
+CLAUDE.md
+AGENTS.md
 # pytest (artefactos de tooling local)
 .pytest_cache/
