@@ -24,6 +24,8 @@ export type SettingsActionState = {
   fieldErrors?: Record<string, string[]>;
   success?: string;
   codes?: string[];
+  /** Human-readable list of blocking accounts, set only when error is 'sole_owner_must_transfer'. */
+  blockingAccounts?: string;
 };
 
 function flattenFieldErrors(
@@ -252,6 +254,30 @@ export const requestPasswordResetFromSettingsAction = withServerAction(
   },
 );
 
+/**
+ * Exports every personal data point the app holds about the caller as a
+ * single jsonb snapshot (GDPR Art. 15). Authorization is just "must be
+ * logged in" — enforced by export_my_data() itself via auth.uid().
+ */
+export const exportMyDataAction = withServerAction(async function exportMyDataAction(): Promise<{
+  data: Record<string, unknown> | null;
+  error?: string;
+}> {
+  const { supabase, userId } = await requireUserId();
+  if (!userId) return { data: null, error: 'not_authenticated' };
+
+  const { data, error } = await supabase.rpc('export_my_data');
+  if (error) {
+    logger.warn(
+      { userId, action: 'settings.exportMyData', code: error.code },
+      'export_my_data failed',
+    );
+    return { data: null, error: error.message ?? 'export_failed' };
+  }
+
+  return { data: data as Record<string, unknown> };
+});
+
 export const deleteAccountAction = withServerAction(async function deleteAccountAction(
   _prev: SettingsActionState,
   formData: FormData,
@@ -266,13 +292,17 @@ export const deleteAccountAction = withServerAction(async function deleteAccount
   const { supabase, userId } = await requireUserId();
   if (!userId) return { error: 'not_authenticated' };
 
-  const { error: rpcError } = await supabase.rpc('request_account_deletion');
+  const { error: rpcError } = await supabase.rpc('delete_my_account');
   if (rpcError) {
     logger.error(
       { userId, action: 'settings.deleteAccount', code: rpcError.code },
-      'Soft-delete failed',
+      'Account deletion failed',
     );
-    return { error: rpcError.code ?? 'delete_failed' };
+    const errorCode = rpcError.message ?? 'delete_failed';
+    return {
+      error: errorCode,
+      blockingAccounts: errorCode === 'sole_owner_must_transfer' ? rpcError.details : undefined,
+    };
   }
 
   await supabase.auth.signOut();

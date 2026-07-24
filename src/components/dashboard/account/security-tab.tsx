@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useActionState, useState } from 'react';
-import { CheckCircle, Mail } from 'lucide-react';
+import React, { useActionState, useState, useTransition } from 'react';
+import { CheckCircle, Download, Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import {
   deleteAccountAction,
+  exportMyDataAction,
   requestPasswordResetFromSettingsAction,
   updatePasswordFromSettingsAction,
   type SettingsActionState,
@@ -26,6 +27,65 @@ function translateError(
   return t(`errors.${code}` as 'errors.generic', { default: t('errors.generic') });
 }
 
+function downloadJson(data: unknown, filenamePrefix: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filenamePrefix}-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+function ExportDataCard() {
+  const t = useTranslations('Settings');
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  function handleExport() {
+    setError(null);
+    setSuccess(false);
+    startTransition(async () => {
+      const result = await exportMyDataAction();
+      if (result.error || !result.data) {
+        setError(result.error ?? 'export_failed');
+        return;
+      }
+      downloadJson(result.data, 'iroko-export');
+      setSuccess(true);
+    });
+  }
+
+  return (
+    <Card className="border-outline-variant/10 rounded-3xl">
+      <CardHeader>
+        <CardTitle>{t('security.export_data_heading')}</CardTitle>
+        <CardDescription>{t('security.export_data_description')}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button variant="outline" onClick={handleExport} disabled={isPending}>
+          <Download size={16} strokeWidth={1.75} className="mr-2" />
+          {isPending ? t('security.export_data_downloading') : t('security.export_data_button')}
+        </Button>
+        {error && (
+          <p role="alert" className="text-error mt-3 text-sm">
+            {translateError(t, error)}
+          </p>
+        )}
+        {success && (
+          <div className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+            <CheckCircle size={18} strokeWidth={1.75} />
+            {t('security.success.data_exported')}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function SecurityTab() {
   const t = useTranslations('Settings');
   const [pwState, pwAction, pwPending] = useActionState(
@@ -43,7 +103,10 @@ export function SecurityTab() {
 
   const pwError = translateError(t, pwState.error);
   const resetError = translateError(t, resetState.error);
-  const delError = translateError(t, delState.error);
+  const delError =
+    delState.error === 'sole_owner_must_transfer' ?
+      t('errors.sole_owner_must_transfer', { accounts: delState.blockingAccounts ?? '' })
+    : translateError(t, delState.error);
 
   return (
     <div className="flex flex-col gap-8">
@@ -163,6 +226,9 @@ export function SecurityTab() {
           )}
         </CardContent>
       </Card>
+
+      {/* Export my data (GDPR) */}
+      <ExportDataCard />
 
       {/* Danger zone */}
       <Card className="danger-zone rounded-3xl">
