@@ -52,3 +52,15 @@ export const platformAlertSchema = z.object({
 });
 
 export type PlatformAlertInput = z.input<typeof platformAlertSchema>;
+
+export const ANNOUNCEMENT_TYPES = ['info', 'success', 'warning', 'error'] as const;
+
+/** Input for `publishAnnouncement` — matches the announcements_type_check constraint. */
+export const announcementSchema = z.object({
+  type: z.enum(ANNOUNCEMENT_TYPES).default('info'),
+  title: z.string().trim().min(1).max(200),
+  body: z.string().trim().max(2000).optional().or(z.literal('')),
+  link: z.string().trim().url().max(2000).optional().or(z.literal('')),
+});
+
+export type AnnouncementInput = z.input<typeof announcementSchema>;

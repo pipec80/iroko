@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Info, AlertTriangle, AlertCircle, CheckCircle } from 'lucide-react';
+import { Bell, Info, AlertTriangle, AlertCircle, CheckCircle, Megaphone } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import {
@@ -8,31 +8,32 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import type { Notification } from '@/hooks/use-notifications';
-import { useNotifications } from '@/hooks/use-notifications';
+import type { InboxItem } from '@/hooks/use-inbox-items';
+import { useInboxItems } from '@/hooks/use-inbox-items';
 import { logClient } from '@/lib/logger-client';
 
-const TYPE_ICON: Record<
-  Notification['type'],
-  React.ComponentType<{ style?: React.CSSProperties }>
-> = {
+type ItemType = InboxItem['data']['type'];
+
+const TYPE_ICON: Record<ItemType, React.ComponentType<{ style?: React.CSSProperties }>> = {
   info: Info,
   success: CheckCircle,
   warning: AlertTriangle,
   error: AlertCircle,
 };
 
-const TYPE_COLOR: Record<Notification['type'], string> = {
+const TYPE_COLOR: Record<ItemType, string> = {
   info: 'var(--color-primary, #4f6ef7)',
   success: 'var(--color-success, #22c55e)',
   warning: 'var(--color-warning, #f59e0b)',
   error: 'var(--color-poppy, #ef4444)',
 };
 
-function NotificationItem({ notification }: { notification: Notification }) {
-  const Icon = TYPE_ICON[notification.type];
-  const color = TYPE_COLOR[notification.type];
-  const isUnread = !notification.read_at;
+function InboxRow({ item }: { item: InboxItem }) {
+  const t = useTranslations('Notifications');
+  const isAnnouncement = item.kind === 'announcement';
+  const Icon = isAnnouncement ? Megaphone : TYPE_ICON[item.data.type];
+  const color = TYPE_COLOR[item.data.type];
+  const isUnread = item.kind === 'notification' ? !item.data.read_at : true;
 
   const inner = (
     <div
@@ -40,14 +41,23 @@ function NotificationItem({ notification }: { notification: Notification }) {
       style={{ opacity: isUnread ? 1 : 0.65 }}>
       <Icon style={{ width: 16, height: 16, color, marginTop: 2, flexShrink: 0 }} />
       <div className="min-w-0 flex-1">
-        <p
-          className="truncate text-[13px]"
-          style={{ fontWeight: isUnread ? 600 : 400, color: 'var(--text-primary)' }}>
-          {notification.title}
-        </p>
-        {notification.body && (
+        <div className="flex items-center gap-1.5">
+          <p
+            className="truncate text-[13px]"
+            style={{ fontWeight: isUnread ? 600 : 400, color: 'var(--text-primary)' }}>
+            {item.data.title}
+          </p>
+          {isAnnouncement && (
+            <span
+              className="rounded-pill shrink-0 px-1.5 py-0.5 text-[10px] font-medium"
+              style={{ background: 'var(--surface-2)', color: 'var(--text-tertiary)' }}>
+              {t('announcement_badge')}
+            </span>
+          )}
+        </div>
+        {item.data.body && (
           <p className="mt-0.5 truncate text-[12px]" style={{ color: 'var(--text-tertiary)' }}>
-            {notification.body}
+            {item.data.body}
           </p>
         )}
       </div>
@@ -60,8 +70,8 @@ function NotificationItem({ notification }: { notification: Notification }) {
     </div>
   );
 
-  if (notification.link) {
-    return <a href={notification.link}>{inner}</a>;
+  if (item.data.link) {
+    return <a href={item.data.link}>{inner}</a>;
   }
   return inner;
 }
@@ -77,7 +87,7 @@ type Props = {
  */
 export function NotificationBell({ userId }: Props) {
   const t = useTranslations('Notifications');
-  const { notifications, unreadCount, markAllRead } = useNotifications(userId);
+  const { items, unreadCount, markAllRead } = useInboxItems(userId);
 
   const handleOpenChange = async (open: boolean) => {
     if (open && unreadCount > 0) {
@@ -155,13 +165,13 @@ export function NotificationBell({ userId }: Props) {
 
         {/* Lista */}
         <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-          {notifications.length === 0 ?
+          {items.length === 0 ?
             <p
               className="px-4 py-6 text-center text-[13px]"
               style={{ color: 'var(--text-tertiary)' }}>
               {t('empty')}
             </p>
-          : notifications.map((n) => <NotificationItem key={n.id} notification={n} />)}
+          : items.map((item) => <InboxRow key={`${item.kind}:${item.data.id}`} item={item} />)}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
