@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { appConfig } from '@/config/app.config';
 import { env } from '@/env';
 import { routing } from '@/i18n/routing';
 import type { Database } from '@/types/database';
@@ -14,6 +15,7 @@ type JwtClaims = {
     is_platform_admin?: boolean;
     impersonated_by?: string;
     impersonation_expires_at?: string;
+    onboarding_completed?: boolean;
   } & Record<string, unknown>;
 };
 
@@ -136,6 +138,24 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.searchParams.set('mfa', 'required');
+    return NextResponse.redirect(url);
+  }
+
+  // Onboarding gate (F3-C4). The claim is minted by custom_access_token_hook —
+  // strict === false so tokens issued before this claim existed (undefined)
+  // are never trapped until their next natural refresh.
+  const onboardingPending =
+    claims != null &&
+    appConfig.features.onboarding &&
+    claims.app_metadata?.onboarding_completed === false;
+
+  if (
+    onboardingPending &&
+    pathWithoutLocale.startsWith('/dashboard') &&
+    !pathWithoutLocale.startsWith('/dashboard/onboarding')
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/dashboard/onboarding`;
     return NextResponse.redirect(url);
   }
 
