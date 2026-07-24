@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.announcements (
   title      text        NOT NULL,
   body       text,
   link       text,
-  created_by uuid        NOT NULL REFERENCES auth.users(id),
+  created_by uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT announcements_type_check CHECK (type IN ('info', 'success', 'warning', 'error'))
 );
@@ -37,7 +37,7 @@ COMMENT ON COLUMN public.announcements.body IS
 COMMENT ON COLUMN public.announcements.link IS
   'URL opcional para navegar al hacer click. NULL si no hay acción asociada.';
 COMMENT ON COLUMN public.announcements.created_by IS
-  'platform_admin que publicó el anuncio.';
+  'platform_admin que publicó el anuncio. NULL si esa cuenta fue borrada después (SET NULL, no bloquea el borrado).';
 COMMENT ON COLUMN public.announcements.created_at IS
   'Timestamp de creación (inmutable). Ordena el historial y sirve de cursor de "no leído" en el cliente (localStorage; sin tabla announcement_reads -- YAGNI, ver design doc F3 tarea 6).';
 

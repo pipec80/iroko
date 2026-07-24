@@ -647,7 +647,7 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           link: string | null
           title: string
@@ -656,7 +656,7 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
-          created_by: string
+          created_by?: string | null
           id?: string
           link?: string | null
           title: string
@@ -665,7 +665,7 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           id?: string
           link?: string | null
           title?: string
@@ -1731,7 +1731,7 @@ export type Database = {
         Returns: {
           body: string | null
           created_at: string
-          created_by: string
+          created_by: string | null
           id: string
           link: string | null
           title: string

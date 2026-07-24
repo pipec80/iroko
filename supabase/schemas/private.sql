@@ -254,7 +254,18 @@ CREATE OR REPLACE FUNCTION "private"."enforce_single_owner_per_account"() RETURN
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
+DECLARE
+  v_account_id   uuid := COALESCE(NEW.account_id, OLD.account_id);
+  v_account_type public.account_type;
 BEGIN
+  SELECT type INTO v_account_type FROM public.accounts WHERE id = v_account_id;
+
+  -- No es una cuenta de equipo (personal, o ya no existe) -- no aplica el
+  -- invariante, dejar pasar la mutación.
+  IF v_account_type IS DISTINCT FROM 'team' THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+
   IF TG_OP = 'UPDATE'
      AND OLD.role = 'owner'
      AND NEW.role != 'owner' THEN
@@ -287,6 +298,8 @@ $$;
 
 
 ALTER FUNCTION "private"."enforce_single_owner_per_account"() OWNER TO "postgres";
+
+COMMENT ON FUNCTION "private"."enforce_single_owner_per_account"() IS 'Impide dejar una cuenta de EQUIPO (type=team) sin owner al degradar/eliminar una membresía. No aplica a cuentas personales (1:1 con su único usuario, sin transferencia de ownership posible) -- fix 2026-07-24.';
 
 REVOKE ALL ON FUNCTION "private"."enforce_single_owner_per_account"() FROM PUBLIC;
 
