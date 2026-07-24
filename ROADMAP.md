@@ -336,14 +336,29 @@ onboarding post-signup; páginas legales + cookie consent; y anuncios broadcast.
    activa por admin". `owner_id` agregado a `admin_list_accounts` (gap encontrado en C1).
    E2E queda en `test.skip` (falta fixture de `platform_admin` con MFA/aal2 en CI) — cubierto
    por QA manual.
-3. **GDPR.** RPCs `export_my_data()` (devuelve JSON completo del usuario/tenant) y
-   `delete_my_account()` (borrado en cascada, respetando FKs). UI en `account` settings.
-4. **Onboarding.** Wizard post-signup: confirmar/crear org → invitar equipo → elegir plan →
-   branding. Impulsado por config (skippable según `features`).
-5. **Legal + cookies.** Páginas Términos y Privacidad (en `(public)`), banner de cookie
-   consent config-driven.
-6. **Anuncios (broadcast).** Tabla `announcements` + UI admin para publicar avisos in-app a
-   todas las cuentas (reusa el canal de notificaciones de 2C). Web push queda FUERA.
+3. **[x] GDPR. ✅ Hecho (2026-07-24, F3-C3, PR #75).** RPCs `export_my_data()` (snapshot jsonb
+   del caller — `resources_created_summary` da solo conteos de `api_keys`, no contenido; billing
+   solo de la cuenta personal) y `delete_my_account()` (wrapper sobre `request_account_deletion()`
+   con guardrail `sole_owner_must_transfer` + revocación de sesiones). Cron
+   `purge-deleted-identities` (03:30) cierra el gap de que `hard-delete-old-accounts` nunca
+   purgaba `profiles`/`auth.users` — implementado como `DELETE` directo, no pg_net+Vault+Admin
+   API del GoTrue (sin precedente seguro en este repo, ver `docs/modules/gdpr.md`). De paso se
+   encontraron y arreglaron 2 bugs pre-existentes de integridad de borrado (PR #74): FK
+   `announcements.created_by` bloqueaba borrar admins, y el trigger
+   `enforce_single_owner_per_account` bloqueaba el hard-delete de **toda** cuenta personal desde
+   que existe. UI en `account` settings (Seguridad).
+4. **[x] Onboarding. ✅ Hecho (2026-07-24, F3-C4, PR #70).** Wizard post-signup de 4 pasos
+   (confirmar org → invitar equipo → elegir plan → branding), gate 100% en el edge vía claim JWT
+   `onboarding_completed`. Ver `docs/modules/onboarding.md`.
+5. **[x] Legal + cookies. ✅ Hecho (2026-07-22, F3-C5, PR #66).** Páginas Términos y Privacidad
+   (`(public)/legal/terms|privacy`), banner de cookie consent config-driven (flag
+   `cookieConsent`). Ver `docs/modules/legal-cookies.md`.
+6. **[x] Anuncios (broadcast). ✅ Hecho (2026-07-24, F3-C7, PR #73).** Tabla `announcements`
+   (global, sin `account_id`/`user_id`) + RPC `publish_announcement()` gateada con
+   `assert_platform_admin()` + UI admin en `/dashboard/admin/announcements`. Reusa el patrón (no
+   la tabla) de notificaciones de 2C — canal Realtime global `platform:announcements`, mergeado
+   en `NotificationBell` vía `useInboxItems()`. Web push queda FUERA. Ver
+   `docs/modules/announcements.md`.
 7. **[x] Gate de admin para `broadcast_alert_email` (deuda 2F). ✅ Hecho (2026-07-21, F3-C6).**
    `public.broadcast_alert_email` gateado con `PERFORM private.assert_platform_admin();`
    (whitelist + aal2 real, mismo guard que `admin_list_accounts`/`get_platform_audit_logs`
@@ -544,7 +559,7 @@ verde + `pnpm knip` limpio. Commits convencionales atómicos.
   - [x] 2D · Webhooks salientes + API keys (endpoints + deliveries vía pg_net/HMAC/pg_cron, `api_keys` hasheadas, `GET /api/v1/account`, tabs en `org/settings`)
   - [x] 2F · Jobs / colas (pgmq `email_queue` + RPC `broadcast_alert_email` + Edge Function `process-email-queue` + cron cada minuto vía pg_net — patrón de referencia, sin UI ni gate de admin todavía)
   - [x] 2G · Audit Log Viewer (RPC `get_account_audit_logs` + UI paginada en `dashboard/activity`, owner/admin only)
-- [ ] **F3** — Admin + Compliance + Onboarding
+- [x] **F3** — Admin + Compliance + Onboarding (7/7, cerrada 2026-07-24)
 - [ ] **F4** — Producto vendible (docs · landing · distribución)
 - [ ] **F5 (idea, sin comprometer — 2026-07-15)** — Vertical "Operación remota": PWA + chat + videollamada
 

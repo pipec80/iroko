@@ -9,7 +9,7 @@ Base de producción para micro-SaaS. Auth completa, multi-tenancy, i18n, observa
 | Framework       | Next.js 16 (App Router, React 19, React Compiler) |
 | Backend / Auth  | Supabase (PostgreSQL, RLS, RPCs, MFA, OAuth)      |
 | Estilos         | Tailwind CSS 4 + Material Design 3 tokens         |
-| i18n            | next-intl (es / en)                               |
+| i18n            | next-intl (en / es / pt / fr)                     |
 | Estado servidor | TanStack Query 5                                  |
 | Observabilidad  | Sentry, Vercel Analytics, Vercel Speed Insights   |
 | Tests           | Vitest (unit) + Playwright (E2E) + pgTAP (DB)     |
@@ -111,6 +111,7 @@ supabase/
 
 ## Documentación
 
-- `docs/modules/auth/BEST_PRACTICES.md` — guía completa de seguridad en auth
-- `docs/modules/auth/BITACORA.md` — decisiones técnicas documentadas
+- `docs/estado-fases.md` — tabla maestra de progreso por fase (qué está hecho, qué falta)
+- `docs/modules/` — doc por feature: `platform-admin.md`, `impersonation.md`, `gdpr.md`,
+  `onboarding.md`, `legal-cookies.md`, `admin-alerts.md`, `announcements.md`
 - `docs/audit/` — auditoría técnica completa (Fases 0–8)
