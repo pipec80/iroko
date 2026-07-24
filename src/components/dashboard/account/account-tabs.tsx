@@ -56,7 +56,7 @@ export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
   return (
     <Tabs value={currentTab} onValueChange={handleTabChange} className="flex flex-col gap-6">
       {/* Top Navigation */}
-      <div className="border-border w-full overflow-x-auto overflow-y-hidden border-b pb-px [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="border-border w-full scrollbar-none overflow-x-auto overflow-y-hidden border-b pb-px [&::-webkit-scrollbar]:hidden">
         <TabsList
           variant="line"
           className="flex h-auto w-full justify-start gap-1 bg-transparent p-0 sm:w-max sm:gap-6">
