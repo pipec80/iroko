@@ -262,6 +262,7 @@ DECLARE
   v_account_id uuid;
   v_role       text;
   v_has_mfa    boolean;
+  v_onboarding_completed boolean;
   v_imp_admin  uuid;
   v_imp_exp    timestamptz;
   v_claims     jsonb := event -> 'claims';
@@ -291,6 +292,15 @@ BEGIN
   ) INTO v_has_mfa;
 
   v_app_meta := v_app_meta || jsonb_build_object('mfa_enrolled', v_has_mfa);
+
+  -- F3-C4: onboarding gate — el edge guard fuerza el wizard mientras esté en false.
+  -- COALESCE fail-open: si no hay fila de profile, nunca trabar a nadie fuera de /dashboard.
+  SELECT p.onboarding_completed INTO v_onboarding_completed
+  FROM public.profiles p WHERE p.id = v_user_id;
+
+  v_app_meta := v_app_meta || jsonb_build_object(
+    'onboarding_completed', COALESCE(v_onboarding_completed, true)
+  );
 
   -- F3-C1: mirror platform_admins membership into the JWT so the edge proxy
   -- can gate /dashboard/admin without a DB round trip. Every RPC still
@@ -324,7 +334,7 @@ $$;
 ALTER FUNCTION "public"."custom_access_token_hook"("event" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") IS 'Supabase Auth custom_access_token hook. Writes app_metadata.account_id + app_metadata.role from the user''s default membership, app_metadata.mfa_enrolled (true when a verified MFA factor exists), app_metadata.is_platform_admin (F3-C1, mirrors public.platform_admins), and app_metadata.impersonated_by/impersonation_expires_at when the user is currently being impersonated (F3-C2). SECURITY DEFINER.';
+COMMENT ON FUNCTION "public"."custom_access_token_hook"("event" "jsonb") IS 'Supabase Auth custom_access_token hook. Writes app_metadata.account_id + app_metadata.role from the user''s default membership, app_metadata.mfa_enrolled (true when a verified MFA factor exists), app_metadata.onboarding_completed (F3-C4, mirrors public.profiles.onboarding_completed, fail-open true), app_metadata.is_platform_admin (F3-C1, mirrors public.platform_admins), and app_metadata.impersonated_by/impersonation_expires_at when the user is currently being impersonated (F3-C2). SECURITY DEFINER.';
 
 
 
@@ -1151,6 +1161,31 @@ COMMENT ON FUNCTION "public"."update_my_profile"("p_given_name" "text", "p_famil
 
 
 
+CREATE OR REPLACE FUNCTION "public"."complete_onboarding"() RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_uid uuid := (SELECT auth.uid());
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501';
+  END IF;
+
+  UPDATE public.profiles
+  SET onboarding_completed = true, updated_at = now()
+  WHERE id = v_uid AND deleted_at IS NULL;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."complete_onboarding"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."complete_onboarding"() IS 'Marca el onboarding wizard como completado para el usuario que llama (F3-C4).';
+
+
+
 CREATE TABLE IF NOT EXISTS "public"."accounts" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "type" "public"."account_type" DEFAULT 'team'::"public"."account_type" NOT NULL,
@@ -1668,6 +1703,11 @@ GRANT ALL ON FUNCTION "public"."accept_invitation"("p_token" "text") TO "service
 REVOKE ALL ON FUNCTION "public"."check_request"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."check_request"() TO "anon";
 GRANT ALL ON FUNCTION "public"."check_request"() TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."complete_onboarding"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."complete_onboarding"() TO "authenticated";
 
 
 
