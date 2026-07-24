@@ -21,7 +21,6 @@ const config: KnipConfig = {
     'sharp',
     'tailwindcss-animate',
     // Dev tooling — usados por configs de ESLint / testing / build, no importados en src/
-    '@eslint/js',
     '@testing-library/dom',
     '@testing-library/react',
     '@total-typescript/ts-reset',

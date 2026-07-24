@@ -1,11 +1,5 @@
 export type SubscriptionStatus =
-  | 'trialing'
-  | 'active'
-  | 'past_due'
-  | 'canceled'
-  | 'paused'
-  | 'unpaid'
-  | 'incomplete';
+  'trialing' | 'active' | 'past_due' | 'canceled' | 'paused' | 'unpaid' | 'incomplete';
 
 export type PlanInterval = 'month' | 'year';
 
