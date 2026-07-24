@@ -60,6 +60,20 @@ export const test = base.extend<AuthFixtures>({
 
     const userId = body.id;
 
+    // F3-C4: handle_new_user crea el profile con onboarding_completed=false por
+    // default — sin esto, el edge gate de middleware.ts redirigiría todo login
+    // fresco a /dashboard/onboarding, rompiendo cualquier spec que dependa de
+    // llegar a una sección real del dashboard tras autenticarse.
+    await request.patch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${userId}`, {
+      headers: {
+        apikey: serviceKey,
+        Authorization: `Bearer ${serviceKey}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      },
+      data: { onboarding_completed: true },
+    });
+
     // Login vía UI para establecer las cookies de sesión en el browser context.
     // Usar getByRole en lugar de form button[type="submit"] porque la página de login
     // tiene DOS botones submit (sign-in + magic link) y el selector genérico es ambiguo.

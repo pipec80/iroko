@@ -67,6 +67,13 @@ const teamMgmtTest = base.extend<TeamMgmtFixtures>({
     if (!ownerBody.id) throw new Error(`create owner failed: ${JSON.stringify(ownerBody)}`);
     const ownerId = ownerBody.id;
 
+    // F3-C4: sin esto, el edge gate redirige el login del owner a
+    // /dashboard/onboarding en vez de /dashboard/team.
+    await request.patch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${ownerId}`, {
+      headers: { ...adminHeaders, Prefer: 'return=minimal' },
+      data: { onboarding_completed: true },
+    });
+
     // 2. Create member user (also gets their own profile + account via trigger)
     const memberRes = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
       headers: adminHeaders,
