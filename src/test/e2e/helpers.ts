@@ -1,7 +1,29 @@
+import { execSync } from 'node:child_process';
+
 import type { APIRequestContext } from '@playwright/test';
 
 export const MAILPIT_BASE = 'http://127.0.0.1:54324';
 export const SUPABASE_URL = 'http://127.0.0.1:54321';
+
+/**
+ * Inserta/actualiza filas directo en Postgres vía el contenedor Docker de Supabase.
+ *
+ * Necesario porque el hardening de grants deja a service_role sin privilegios de
+ * lectura/escritura sobre varias tablas (profiles, accounts_memberships) — toda
+ * mutación pasa por RPCs SECURITY DEFINER. Para seeding de tests, psql como
+ * postgres dentro del contenedor es la vía soportada que no relaja los grants
+ * de producción.
+ */
+export function execSqlAsPostgres(sql: string): void {
+  const container = execSync('docker ps --filter "name=supabase_db" --format "{{.Names}}"')
+    .toString()
+    .trim()
+    .split('\n')[0];
+  if (!container) {
+    throw new Error('supabase_db container not found — is `supabase start` running?');
+  }
+  execSync(`docker exec ${container} psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "${sql}"`);
+}
 
 export function uniqueEmail(prefix = 'e2e'): string {
   return `${prefix}+${Date.now()}@saasboilerplate.local`;

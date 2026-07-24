@@ -1001,5 +1001,30 @@
     "mark_all_read": "Marcar todas como lidas",
     "just_now": "Agora mesmo",
     "view_all": "Ver todas"
+  },
+  "Onboarding": {
+    "step_org": "Confirmar organização",
+    "step_org_description": "É assim que o resto da equipe verá sua organização.",
+    "step_invite": "Convidar equipe",
+    "step_invite_description": "Adicione seus colegas de equipe — você pode fazer isso depois, se preferir.",
+    "step_plan": "Escolher plano",
+    "step_plan_description": "Escolha o plano que melhor se adapta à sua equipe. Você pode alterá-lo quando quiser.",
+    "step_branding": "Marca",
+    "step_branding_description": "Envie o logotipo da sua organização para personalizar o painel.",
+    "step_counter": "Etapa {current} de {total}",
+    "org_name_label": "Nome da organização",
+    "next": "Avançar",
+    "back": "Voltar",
+    "skip_setup": "Pular configuração",
+    "invite_later": "Convidar depois",
+    "upload_logo": "Enviar logo",
+    "save_logo": "Salvar logo",
+    "uploading": "Enviando…",
+    "remove_logo": "Remover logo",
+    "finish": "Concluir",
+    "finishing": "Concluindo…",
+    "error_invalid_name": "O nome deve ter entre 2 e 100 caracteres.",
+    "error_no_active_account": "Nenhuma conta ativa encontrada.",
+    "error_update_failed": "Não foi possível atualizar a organização."
   }
 }

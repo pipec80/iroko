@@ -23,6 +23,12 @@ vi.mock('@/env', () => ({
   },
 }));
 
+vi.mock('@/config/app.config', () => ({
+  appConfig: { features: { onboarding: true } },
+}));
+
+import { appConfig } from '@/config/app.config';
+
 import { updateSession } from './middleware';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -53,8 +59,24 @@ function mockAal2Session() {
   });
 }
 
+/** onboarding_completed=false, claim ausente cuando se omite el argumento. */
+function mockOnboardingSession(onboardingCompleted?: boolean) {
+  mocks.getClaims.mockResolvedValue({
+    data: {
+      claims: {
+        sub: 'user-uuid-1',
+        app_metadata:
+          onboardingCompleted === undefined ? {} : { onboarding_completed: onboardingCompleted },
+      },
+    },
+  });
+}
+
 describe('updateSession', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    appConfig.features.onboarding = true;
+  });
 
   describe('unauthenticated requests', () => {
     it('redirects /es/dashboard to /es/login preserving the destination in next=', async () => {
@@ -175,6 +197,57 @@ describe('updateSession', () => {
       mockSession();
       const response = await updateSession(makeRequest('/es/dashboard'));
       expect(response.headers.get('location')).toBeNull();
+    });
+  });
+
+  describe('onboarding gate', () => {
+    it('redirects to /dashboard/onboarding when the claim is false and the flag is on', async () => {
+      mockOnboardingSession(false);
+      const response = await updateSession(makeRequest('/es/dashboard/projects'));
+
+      expect(response.status).toBe(307);
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+        '/es/dashboard/onboarding',
+      );
+    });
+
+    it('does NOT redirect when already on /dashboard/onboarding (no loop)', async () => {
+      mockOnboardingSession(false);
+      const response = await updateSession(makeRequest('/es/dashboard/onboarding'));
+      expect(response.headers.get('location')).toBeNull();
+    });
+
+    it('does NOT redirect when the claim is true', async () => {
+      mockOnboardingSession(true);
+      const response = await updateSession(makeRequest('/es/dashboard/projects'));
+      expect(response.headers.get('location')).toBeNull();
+    });
+
+    it('does NOT redirect when the feature flag is off', async () => {
+      appConfig.features.onboarding = false;
+      mockOnboardingSession(false);
+      const response = await updateSession(makeRequest('/es/dashboard/projects'));
+      expect(response.headers.get('location')).toBeNull();
+    });
+
+    it('does not trap stale tokens missing the claim (undefined)', async () => {
+      mockOnboardingSession();
+      const response = await updateSession(makeRequest('/es/dashboard/projects'));
+      expect(response.headers.get('location')).toBeNull();
+    });
+
+    it('sends a fresh login straight to /dashboard/onboarding, not /dashboard (Server Action redirect does not re-run the middleware)', async () => {
+      mockOnboardingSession(false);
+      const response = await updateSession(makeRequest('/es/login'));
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+        '/es/dashboard/onboarding',
+      );
+    });
+
+    it('sends a fresh login to /dashboard when onboarding is already completed', async () => {
+      mockOnboardingSession(true);
+      const response = await updateSession(makeRequest('/es/login'));
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe('/es/dashboard');
     });
   });
 
