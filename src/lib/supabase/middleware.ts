@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+import { appConfig } from '@/config/app.config';
 import { env } from '@/env';
 import { routing } from '@/i18n/routing';
 import type { Database } from '@/types/database';
@@ -14,6 +15,7 @@ type JwtClaims = {
     is_platform_admin?: boolean;
     impersonated_by?: string;
     impersonation_expires_at?: string;
+    onboarding_completed?: boolean;
   } & Record<string, unknown>;
 };
 
@@ -139,6 +141,24 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return NextResponse.redirect(url);
   }
 
+  // Onboarding gate (F3-C4). The claim is minted by custom_access_token_hook —
+  // strict === false so tokens issued before this claim existed (undefined)
+  // are never trapped until their next natural refresh.
+  const onboardingPending =
+    claims != null &&
+    appConfig.features.onboarding &&
+    claims.app_metadata?.onboarding_completed === false;
+
+  if (
+    onboardingPending &&
+    pathWithoutLocale.startsWith('/dashboard') &&
+    !pathWithoutLocale.startsWith('/dashboard/onboarding')
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/dashboard/onboarding`;
+    return NextResponse.redirect(url);
+  }
+
   // Super-admin back-office gate (F3-C1). Runs after the generic MFA gate, so
   // by this point an admin who hasn't cleared aal2 yet has already been sent
   // to /login?mfa=required — this block only has to decide between "not an
@@ -189,9 +209,16 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // Authenticated users are bounced off the marketing root and auth-only pages —
   // unless they still owe an MFA challenge, in which case they must stay on
   // /login to complete it (otherwise the two redirects would loop).
+  //
+  // F3-C4: redirect() called from a Server Action (e.g. signInAction) resolves
+  // client-side and does not re-run the middleware for the resulting /dashboard
+  // navigation — so the onboarding gate above (which only matches paths already
+  // starting with /dashboard) never sees it. This is the request that actually
+  // runs the middleware for a fresh login, so it must pick the right destination
+  // itself instead of relying on a second pass that never happens.
   if (claims && !mfaPending && (isRoot(pathWithoutLocale) || isAuthOnly(pathWithoutLocale))) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/dashboard`;
+    url.pathname = onboardingPending ? `/${locale}/dashboard/onboarding` : `/${locale}/dashboard`;
     url.searchParams.delete('next');
     return NextResponse.redirect(url);
   }

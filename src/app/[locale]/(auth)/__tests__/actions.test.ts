@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   listFactors: vi.fn(),
   mfaChallenge: vi.fn(),
   mfaVerify: vi.fn(),
+  getClaims: vi.fn(),
   rpc: vi.fn(),
   redirect: vi.fn(),
 }));
@@ -24,6 +25,7 @@ vi.mock('@/lib/supabase/server', () => ({
       resetPasswordForEmail: mocks.resetPasswordForEmail,
       updateUser: mocks.updateUser,
       resend: mocks.resend,
+      getClaims: mocks.getClaims,
       mfa: {
         listFactors: mocks.listFactors,
         challenge: mocks.mfaChallenge,
@@ -52,6 +54,12 @@ vi.mock('@/env', () => ({
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'test-anon-key',
   },
 }));
+
+vi.mock('@/config/app.config', () => ({
+  appConfig: { features: { onboarding: true } },
+}));
+
+import { appConfig } from '@/config/app.config';
 
 import {
   signUpAction,
@@ -187,6 +195,8 @@ describe('signInAction', () => {
     vi.clearAllMocks();
     mockRedirectThrows();
     mocks.listFactors.mockResolvedValue({ data: { all: [] } });
+    mocks.getClaims.mockResolvedValue({ data: { claims: { app_metadata: {} } } });
+    appConfig.features.onboarding = true;
   });
 
   describe('validation', () => {
@@ -241,7 +251,42 @@ describe('signInAction', () => {
       const fd = makeFormData(validLoginData);
       await expect(signInAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
 
-      expect(mocks.redirect).toHaveBeenCalled();
+      expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+    });
+
+    // F3-C4: signInAction is the request that actually creates the session — the
+    // middleware runs BEFORE this action, so it can never see the freshly-minted
+    // claim to redirect the resulting navigation itself. The action must pick the
+    // right destination directly from the session it just created.
+    it('redirects to /dashboard/onboarding when the fresh session has onboarding_completed=false', async () => {
+      mocks.signInWithPassword.mockResolvedValue({
+        data: { user: { id: 'uuid-123' }, session: {} },
+        error: null,
+      });
+      mocks.getClaims.mockResolvedValue({
+        data: { claims: { app_metadata: { onboarding_completed: false } } },
+      });
+
+      const fd = makeFormData(validLoginData);
+      await expect(signInAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+      expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard/onboarding', locale: 'es' });
+    });
+
+    it('redirects to /dashboard (not onboarding) when the feature flag is off', async () => {
+      appConfig.features.onboarding = false;
+      mocks.signInWithPassword.mockResolvedValue({
+        data: { user: { id: 'uuid-123' }, session: {} },
+        error: null,
+      });
+      mocks.getClaims.mockResolvedValue({
+        data: { claims: { app_metadata: { onboarding_completed: false } } },
+      });
+
+      const fd = makeFormData(validLoginData);
+      await expect(signInAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+      expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
     });
 
     it('returns mfa_required when user has a verified TOTP factor', async () => {
@@ -268,6 +313,8 @@ describe('verifyMfaAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRedirectThrows();
+    mocks.getClaims.mockResolvedValue({ data: { claims: { app_metadata: {} } } });
+    appConfig.features.onboarding = true;
   });
 
   describe('validation', () => {
@@ -319,6 +366,20 @@ describe('verifyMfaAction', () => {
       code: '123456',
     });
     expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+  });
+
+  // F3-C4: same fresh-session-decides-the-destination fix as signInAction.
+  it('redirects to /dashboard/onboarding when the verified session has onboarding_completed=false', async () => {
+    mocks.mfaChallenge.mockResolvedValue({ data: { id: 'challenge-1' }, error: null });
+    mocks.mfaVerify.mockResolvedValue({ error: null });
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { app_metadata: { onboarding_completed: false } } },
+    });
+
+    const fd = makeFormData({ code: '123456', factorId: 'factor-1' });
+    await expect(verifyMfaAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard/onboarding', locale: 'es' });
   });
 });
 

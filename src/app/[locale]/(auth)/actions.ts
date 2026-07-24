@@ -2,6 +2,7 @@
 
 import { getLocale } from 'next-intl/server';
 
+import { appConfig } from '@/config/app.config';
 import { env } from '@/env';
 import { redirect } from '@/i18n/routing';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
@@ -17,6 +18,25 @@ import {
   signupSchema,
   updatePasswordSchema,
 } from '@/lib/validation/auth';
+
+/**
+ * F3-C4: decide the post-auth destination from the session just created,
+ * instead of relying on the edge middleware to catch the resulting navigation.
+ * redirect() called inside a Server Action does not reliably re-run the
+ * middleware for the destination it navigates to, so the middleware's
+ * onboarding gate never sees this transition — this is the one place that
+ * actually has the freshly-minted claim.
+ */
+function resolvePostAuthDestination(
+  hrefWithoutLocale: string,
+  onboardingCompleted: unknown,
+): string {
+  const needsOnboarding =
+    appConfig.features.onboarding &&
+    onboardingCompleted === false &&
+    !hrefWithoutLocale.startsWith('/dashboard/onboarding');
+  return needsOnboarding ? '/dashboard/onboarding' : hrefWithoutLocale;
+}
 
 export type AuthActionState = {
   error?: string;
@@ -77,7 +97,15 @@ export async function signInAction(
   const locale = await getLocale();
   const next = safeRedirectPath(formData.get('next') as string | null, locale);
   const hrefWithoutLocale = next.replace(new RegExp(`^/${locale}`), '') || '/dashboard';
-  redirect({ href: hrefWithoutLocale, locale });
+  // data.user.app_metadata reflects auth.users directly — the onboarding_completed
+  // claim only exists inside the JWT minted by custom_access_token_hook, so it must
+  // be read from the freshly-issued token via getClaims(), same as the middleware.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const href = resolvePostAuthDestination(
+    hrefWithoutLocale,
+    claimsData?.claims.app_metadata?.onboarding_completed,
+  );
+  redirect({ href, locale });
   return {};
 }
 
@@ -118,7 +146,14 @@ export async function verifyMfaAction(
   logger.info({ action: 'auth.mfa.success' }, 'MFA Challenge Verified');
 
   const locale = await getLocale();
-  redirect({ href: '/dashboard', locale });
+  // Same as signInAction: onboarding_completed only lives in the JWT the hook
+  // mints, not in the user object returned by the verify call.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const href = resolvePostAuthDestination(
+    '/dashboard',
+    claimsData?.claims.app_metadata?.onboarding_completed,
+  );
+  redirect({ href, locale });
   return {};
 }
 

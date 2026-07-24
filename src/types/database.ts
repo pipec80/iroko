@@ -1441,6 +1441,7 @@ export type Database = {
         Returns: number
       }
       check_request: { Args: never; Returns: undefined }
+      complete_onboarding: { Args: never; Returns: undefined }
       consume_recovery_code: { Args: { p_code: string }; Returns: boolean }
       count_unused_recovery_codes: { Args: never; Returns: number }
       create_api_key: {
@@ -1693,6 +1694,10 @@ export type Database = {
       remove_member: {
         Args: { p_account_id: string; p_user_id: string }
         Returns: boolean
+      }
+      rename_account: {
+        Args: { p_account_id: string; p_name: string }
+        Returns: undefined
       }
       replace_robot_config: {
         Args: {

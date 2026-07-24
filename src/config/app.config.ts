@@ -48,6 +48,8 @@ export type AppConfig = {
     activityLog: boolean;
     /** Show the cookie consent banner (GDPR/ePrivacy). Set false to hide it entirely. */
     cookieConsent: boolean;
+    /** Show the post-signup onboarding wizard. false = onboarding_completed se asume completo. */
+    onboarding: boolean;
     /** Per-vertical toggles. */
     verticals: {
       /** Demo vertical — robot configuration uploader. Set false to hide from nav. */
@@ -85,6 +87,7 @@ export const appConfig: AppConfig = {
     members: true,
     activityLog: true,
     cookieConsent: true,
+    onboarding: true,
     verticals: {
       robot: true,
     },

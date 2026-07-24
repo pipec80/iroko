@@ -1,6 +1,6 @@
 import { expect, test as base, type Page } from '@playwright/test';
 
-const SUPABASE_URL = 'http://127.0.0.1:54321';
+import { execSqlAsPostgres, SUPABASE_URL } from '../helpers';
 
 type AuthFixtures = {
   /** Página con sesión activa. El usuario de test se elimina al finalizar. */
@@ -59,6 +59,15 @@ export const test = base.extend<AuthFixtures>({
     }
 
     const userId = body.id;
+
+    // F3-C4: handle_new_user crea el profile con onboarding_completed=false por
+    // default — sin esto, el edge gate de middleware.ts redirigiría todo login
+    // fresco a /dashboard/onboarding, rompiendo cualquier spec que dependa de
+    // llegar a una sección real del dashboard tras autenticarse. service_role
+    // no tiene UPDATE sobre profiles (grants hardening) — vía psql como postgres.
+    execSqlAsPostgres(
+      `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${userId}'`,
+    );
 
     // Login vía UI para establecer las cookies de sesión en el browser context.
     // Usar getByRole en lugar de form button[type="submit"] porque la página de login
