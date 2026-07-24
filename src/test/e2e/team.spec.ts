@@ -1,29 +1,7 @@
-import { execSync } from 'node:child_process';
-
 import { type Page, test as base, expect } from '@playwright/test';
 
 import { test as authTest } from './fixtures/auth';
-
-const SUPABASE_URL = 'http://127.0.0.1:54321';
-
-/**
- * Inserta filas directo en Postgres vía el contenedor Docker de Supabase.
- *
- * Necesario porque el hardening de grants (migrations 040000/190000) deja a
- * service_role SIN privilegios sobre accounts_memberships — toda mutación va
- * por RPCs SECURITY DEFINER. Para seeding de tests, psql como postgres dentro
- * del contenedor es la vía soportada que no relaja los grants de producción.
- */
-function execSqlAsPostgres(sql: string): void {
-  const container = execSync('docker ps --filter "name=supabase_db" --format "{{.Names}}"')
-    .toString()
-    .trim()
-    .split('\n')[0];
-  if (!container) {
-    throw new Error('supabase_db container not found — is `supabase start` running?');
-  }
-  execSync(`docker exec ${container} psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "${sql}"`);
-}
+import { execSqlAsPostgres, SUPABASE_URL } from './helpers';
 
 /**
  * Team management E2E tests.
@@ -68,11 +46,11 @@ const teamMgmtTest = base.extend<TeamMgmtFixtures>({
     const ownerId = ownerBody.id;
 
     // F3-C4: sin esto, el edge gate redirige el login del owner a
-    // /dashboard/onboarding en vez de /dashboard/team.
-    await request.patch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${ownerId}`, {
-      headers: { ...adminHeaders, Prefer: 'return=minimal' },
-      data: { onboarding_completed: true },
-    });
+    // /dashboard/onboarding en vez de /dashboard/team. service_role no tiene
+    // UPDATE sobre profiles (grants hardening) — vía psql como postgres.
+    execSqlAsPostgres(
+      `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${ownerId}'`,
+    );
 
     // 2. Create member user (also gets their own profile + account via trigger)
     const memberRes = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
