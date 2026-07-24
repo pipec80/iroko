@@ -36,10 +36,12 @@ export const confirmOrgName = withServerAction(async function confirmOrgName(
   if (accountId == null) return { error: 'no_active_account' };
 
   const supabase = await createClient();
-  const { error } = await supabase
-    .from('accounts')
-    .update({ name: parsed.data.name })
-    .eq('id', accountId);
+  // authenticated no tiene GRANT UPDATE directo sobre accounts (grants hardening) —
+  // pasa por RPC SECURITY DEFINER, mismo patrón que set_account_logo.
+  const { error } = await supabase.rpc('rename_account', {
+    p_account_id: accountId,
+    p_name: parsed.data.name,
+  });
 
   if (error) {
     logger.error(

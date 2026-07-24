@@ -731,6 +731,26 @@ COMMENT ON FUNCTION "public"."set_account_logo"("p_account_id" "uuid", "p_path" 
 
 
 
+CREATE OR REPLACE FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") RETURNS void
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  PERFORM private.assert_account_admin(p_account_id);
+
+  UPDATE public.accounts
+  SET name = p_name, updated_at = now()
+  WHERE id = p_account_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") OWNER TO "postgres";
+
+COMMENT ON FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") IS 'Renombra la cuenta. Owner/admin únicamente vía private.assert_account_admin (F3-C4).';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role" DEFAULT 'member'::"public"."membership_role") RETURNS TABLE("email" "text", "token" "text")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
@@ -1826,6 +1846,11 @@ GRANT ALL ON FUNCTION "public"."list_team_members"("p_account_id" "uuid") TO "se
 REVOKE ALL ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") TO "authenticated";
 
 
 

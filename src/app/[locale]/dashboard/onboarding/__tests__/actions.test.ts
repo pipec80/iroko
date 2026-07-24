@@ -2,8 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
-  update: vi.fn(),
-  eq: vi.fn(),
   refreshSession: vi.fn(),
   redirect: vi.fn(),
   getActiveAccountId: vi.fn(),
@@ -12,7 +10,6 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
     rpc: mocks.rpc,
-    from: vi.fn(() => ({ update: mocks.update })),
     auth: { refreshSession: mocks.refreshSession },
   }),
 }));
@@ -78,15 +75,14 @@ describe('getOnboardingOrg', () => {
 describe('confirmOrgName', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.eq.mockResolvedValue({ error: null });
-    mocks.update.mockReturnValue({ eq: mocks.eq });
+    mocks.rpc.mockResolvedValue({ error: null });
     mocks.getActiveAccountId.mockResolvedValue('acc-1');
   });
 
   it('rejects names shorter than 2 characters', async () => {
     const result = await confirmOrgName('a');
     expect(result).toEqual({ error: 'invalid_name' });
-    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('rejects names longer than 100 characters', async () => {
@@ -94,10 +90,12 @@ describe('confirmOrgName', () => {
     expect(result).toEqual({ error: 'invalid_name' });
   });
 
-  it('trims and updates accounts.name for a valid name', async () => {
+  it('trims and calls rename_account for a valid name', async () => {
     const result = await confirmOrgName('  Mi Empresa  ');
-    expect(mocks.update).toHaveBeenCalledWith({ name: 'Mi Empresa' });
-    expect(mocks.eq).toHaveBeenCalledWith('id', 'acc-1');
+    expect(mocks.rpc).toHaveBeenCalledWith('rename_account', {
+      p_account_id: 'acc-1',
+      p_name: 'Mi Empresa',
+    });
     expect(result).toEqual({ success: true });
   });
 
@@ -105,11 +103,11 @@ describe('confirmOrgName', () => {
     mocks.getActiveAccountId.mockResolvedValue(null);
     const result = await confirmOrgName('Mi Empresa');
     expect(result).toEqual({ error: 'no_active_account' });
-    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it('maps the update error to { error }', async () => {
-    mocks.eq.mockResolvedValue({ error: { message: 'boom', code: 'X' } });
+  it('maps the rename_account error to { error }', async () => {
+    mocks.rpc.mockResolvedValue({ error: { message: 'boom', code: 'X' } });
     const result = await confirmOrgName('Mi Empresa');
     expect(result).toEqual({ error: 'boom' });
   });

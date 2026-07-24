@@ -1695,6 +1695,10 @@ export type Database = {
         Args: { p_account_id: string; p_user_id: string }
         Returns: boolean
       }
+      rename_account: {
+        Args: { p_account_id: string; p_name: string }
+        Returns: undefined
+      }
       replace_robot_config: {
         Args: {
           p_account_id: string
