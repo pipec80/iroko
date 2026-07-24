@@ -85,7 +85,7 @@ export const updateProfileAction = withServerAction(async function updateProfile
 
   if (error) {
     logger.warn({ userId, action: 'settings.updateProfile', code: error.code }, 'Update failed');
-    return { error: error.code ?? 'update_failed' };
+    return { error: error.message ?? 'update_failed' };
   }
 
   revalidatePath('/[locale]/dashboard/account', 'page');
@@ -113,7 +113,7 @@ export const updateLocalePreferenceAction = withServerAction(
         { userId, action: 'settings.updateLocale', code: error.code },
         'Locale update failed',
       );
-      return { error: error.code ?? 'update_failed' };
+      return { error: error.message ?? 'update_failed' };
     }
 
     return { success: 'profile_updated' };
@@ -219,7 +219,7 @@ export const uploadAvatarAction = withServerAction(async function uploadAvatarAc
       { userId, action: 'settings.updateAvatarUrl', code: rpcError.code },
       'Set avatar URL failed',
     );
-    return { error: rpcError.code ?? 'update_avatar_failed' };
+    return { error: rpcError.message ?? 'update_avatar_failed' };
   }
 
   revalidatePath('/[locale]/dashboard/account', 'page');
@@ -326,7 +326,7 @@ export const generateRecoveryCodesAction = withServerAction(
         { userId, action: 'settings.generateRecoveryCodes', code: error.code },
         'Recovery codes generation failed',
       );
-      return { error: error.code ?? 'recovery_generate_failed' };
+      return { error: error.message ?? 'recovery_generate_failed' };
     }
 
     logger.info({ userId, action: 'recovery_codes_generated' }, 'Recovery codes generated');
@@ -348,7 +348,7 @@ export const revokeSessionAction = withServerAction(async function revokeSession
   const { error } = await supabase.rpc('revoke_my_session', { p_session_id: sessionId });
   if (error) {
     logger.warn({ userId, action: 'settings.revokeSession', code: error.code }, 'Revoke failed');
-    return { error: error.code ?? 'revoke_failed' };
+    return { error: error.message ?? 'revoke_failed' };
   }
 
   revalidatePath('/[locale]/dashboard/account', 'page');
