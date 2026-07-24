@@ -59,8 +59,8 @@ function mockAal2Session() {
   });
 }
 
-/** onboarding_completed=false, claim ausente cuando se pasa undefined. */
-function mockOnboardingSession(onboardingCompleted: boolean | undefined) {
+/** onboarding_completed=false, claim ausente cuando se omite el argumento. */
+function mockOnboardingSession(onboardingCompleted?: boolean) {
   mocks.getClaims.mockResolvedValue({
     data: {
       claims: {
