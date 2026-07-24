@@ -97,9 +97,13 @@ export async function signInAction(
   const locale = await getLocale();
   const next = safeRedirectPath(formData.get('next') as string | null, locale);
   const hrefWithoutLocale = next.replace(new RegExp(`^/${locale}`), '') || '/dashboard';
+  // data.user.app_metadata reflects auth.users directly — the onboarding_completed
+  // claim only exists inside the JWT minted by custom_access_token_hook, so it must
+  // be read from the freshly-issued token via getClaims(), same as the middleware.
+  const { data: claimsData } = await supabase.auth.getClaims();
   const href = resolvePostAuthDestination(
     hrefWithoutLocale,
-    data.user?.app_metadata?.onboarding_completed,
+    claimsData?.claims.app_metadata?.onboarding_completed,
   );
   redirect({ href, locale });
   return {};
@@ -129,7 +133,7 @@ export async function verifyMfaAction(
     return { error: 'mfa_challenge_failed' };
   }
 
-  const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
+  const { error: verifyError } = await supabase.auth.mfa.verify({
     factorId: parsed.data.factorId,
     challengeId: challengeData.id,
     code: parsed.data.code,
@@ -142,9 +146,12 @@ export async function verifyMfaAction(
   logger.info({ action: 'auth.mfa.success' }, 'MFA Challenge Verified');
 
   const locale = await getLocale();
+  // Same as signInAction: onboarding_completed only lives in the JWT the hook
+  // mints, not in the user object returned by the verify call.
+  const { data: claimsData } = await supabase.auth.getClaims();
   const href = resolvePostAuthDestination(
     '/dashboard',
-    verifyData?.user?.app_metadata?.onboarding_completed,
+    claimsData?.claims.app_metadata?.onboarding_completed,
   );
   redirect({ href, locale });
   return {};
