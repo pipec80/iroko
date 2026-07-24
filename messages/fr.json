@@ -219,13 +219,18 @@
       "delete_account_confirm_label": "Tapez SUPPRIMER pour confirmer",
       "delete_account_confirm_placeholder": "SUPPRIMER",
       "delete_account_button": "Supprimer mon compte",
+      "export_data_heading": "Exporter mes données",
+      "export_data_description": "Téléchargez une copie de toutes les données personnelles que nous conservons à votre sujet.",
+      "export_data_button": "Exporter mes données",
+      "export_data_downloading": "Préparation…",
       "success": {
         "password_updated": "Mot de passe mis à jour.",
         "reset_link_sent": "Nous vous avons envoyé le lien de réinitialisation.",
         "mfa_enabled": "Authentification à deux facteurs activée avec succès.",
         "mfa_disabled": "Authentification à deux facteurs désactivée.",
         "recovery_codes_generated": "Nouveaux codes de récupération générés.",
-        "recovery_codes_copied": "Codes copiés dans le presse-papiers."
+        "recovery_codes_copied": "Codes copiés dans le presse-papiers.",
+        "data_exported": "Données exportées."
       },
       "error": {
         "mfa_already_enabled": "Le 2FA est déjà activé. Désactivez-le d'abord.",
@@ -266,6 +271,9 @@
       "upload_failed": "Impossible de télécharger l'image.",
       "no_file": "Sélectionnez d'abord un fichier.",
       "no_email_on_account": "Ce compte n'a pas d'e-mail associé.",
+      "export_failed": "Impossible d'exporter vos données. Réessayez.",
+      "delete_failed": "Impossible de supprimer votre compte. Réessayez.",
+      "sole_owner_must_transfer": "Vous êtes l'unique propriétaire de : {accounts}. Transférez la propriété de ces comptes avant de supprimer le vôtre.",
       "invalid_url": "Saisissez une URL valide (doit commencer par https://).",
       "generic": "Une erreur s'est produite. Réessayez.",
       "required": "Ce champ est obligatoire.",

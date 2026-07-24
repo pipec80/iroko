@@ -219,13 +219,18 @@
       "delete_account_confirm_label": "Type DELETE to confirm",
       "delete_account_confirm_placeholder": "DELETE",
       "delete_account_button": "Delete my account",
+      "export_data_heading": "Export my data",
+      "export_data_description": "Download a copy of all the personal data we hold about you.",
+      "export_data_button": "Export my data",
+      "export_data_downloading": "Preparing…",
       "success": {
         "password_updated": "Password updated.",
         "reset_link_sent": "We sent you the reset link.",
         "mfa_enabled": "Two-factor authentication enabled successfully.",
         "mfa_disabled": "Two-factor authentication disabled.",
         "recovery_codes_generated": "New recovery codes generated.",
-        "recovery_codes_copied": "Codes copied to clipboard."
+        "recovery_codes_copied": "Codes copied to clipboard.",
+        "data_exported": "Data exported."
       },
       "error": {
         "mfa_already_enabled": "2FA is already enabled. Disable it first.",
@@ -266,6 +271,9 @@
       "upload_failed": "Could not upload the image.",
       "no_file": "Select a file first.",
       "no_email_on_account": "This account has no email associated.",
+      "export_failed": "Couldn't export your data. Try again.",
+      "delete_failed": "Couldn't delete your account. Try again.",
+      "sole_owner_must_transfer": "You're the sole owner of: {accounts}. Transfer ownership of those accounts before deleting yours.",
       "invalid_url": "Enter a valid URL (must start with https://).",
       "generic": "Something went wrong. Try again.",
       "required": "This field is required.",

@@ -219,13 +219,18 @@
       "delete_account_confirm_label": "Digite EXCLUIR para confirmar",
       "delete_account_confirm_placeholder": "EXCLUIR",
       "delete_account_button": "Excluir minha conta",
+      "export_data_heading": "Exportar meus dados",
+      "export_data_description": "Baixe uma cópia de todos os dados pessoais que guardamos sobre você.",
+      "export_data_button": "Exportar meus dados",
+      "export_data_downloading": "Preparando…",
       "success": {
         "password_updated": "Senha atualizada.",
         "reset_link_sent": "Enviamos o link para o seu e-mail.",
         "mfa_enabled": "Autenticação de dois fatores habilitada com sucesso.",
         "mfa_disabled": "Autenticação de dois fatores desabilitada.",
         "recovery_codes_generated": "Novos códigos de recuperação gerados.",
-        "recovery_codes_copied": "Códigos copiados para a área de transferência."
+        "recovery_codes_copied": "Códigos copiados para a área de transferência.",
+        "data_exported": "Dados exportados."
       },
       "error": {
         "mfa_already_enabled": "O 2FA já está habilitado. Desative primeiro.",
@@ -266,6 +271,9 @@
       "upload_failed": "Não foi possível enviar a imagem.",
       "no_file": "Selecione um arquivo primeiro.",
       "no_email_on_account": "Esta conta não possui e-mail associado.",
+      "export_failed": "Não foi possível exportar seus dados. Tente novamente.",
+      "delete_failed": "Não foi possível excluir sua conta. Tente novamente.",
+      "sole_owner_must_transfer": "Você é o único proprietário de: {accounts}. Transfira a propriedade dessas contas antes de excluir a sua.",
       "invalid_url": "Insira uma URL válida (deve começar com https://).",
       "generic": "Ocorreu um erro. Tente novamente.",
       "required": "Este campo é obrigatório.",

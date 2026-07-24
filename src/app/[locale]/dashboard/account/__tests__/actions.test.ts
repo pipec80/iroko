@@ -59,6 +59,7 @@ import {
   uploadAvatarAction,
   requestPasswordResetFromSettingsAction,
   deleteAccountAction,
+  exportMyDataAction,
   generateRecoveryCodesAction,
   revokeSessionAction,
   revokeAllOtherSessionsAction,
@@ -205,12 +206,35 @@ describe('deleteAccountAction', () => {
     expect(result.error).toBe('not_authenticated');
   });
 
-  it('should return RPC error code when soft-delete fails', async () => {
+  it('should return the RPC error message (not the SQLSTATE code) when delete_my_account fails', async () => {
     mockAuthenticated();
-    mocks.rpc.mockResolvedValue({ error: { code: 'permission_denied' } });
+    mocks.rpc.mockResolvedValue({ error: { code: '42501', message: 'permission_denied' } });
     const fd = makeFormData({ confirmation: 'ELIMINAR' });
     const result = await deleteAccountAction(PREV, fd);
     expect(result.error).toBe('permission_denied');
+  });
+
+  it('should surface the blocking account names when the caller is a sole team owner', async () => {
+    mockAuthenticated();
+    mocks.rpc.mockResolvedValue({
+      error: {
+        code: 'P0001',
+        message: 'sole_owner_must_transfer',
+        details: 'Acme Inc (acme-inc)',
+      },
+    });
+    const fd = makeFormData({ confirmation: 'ELIMINAR' });
+    const result = await deleteAccountAction(PREV, fd);
+    expect(result.error).toBe('sole_owner_must_transfer');
+    expect(result.blockingAccounts).toBe('Acme Inc (acme-inc)');
+  });
+
+  it('should call the delete_my_account RPC (not the old request_account_deletion)', async () => {
+    mockAuthenticated();
+    mocks.rpc.mockResolvedValue({ error: null });
+    const fd = makeFormData({ confirmation: 'ELIMINAR' });
+    await expect(deleteAccountAction(PREV, fd)).rejects.toThrow('redirect');
+    expect(mocks.rpc).toHaveBeenCalledWith('delete_my_account');
   });
 
   it('should also accept "DELETE" as confirmation phrase (EN locale)', async () => {
@@ -229,6 +253,37 @@ describe('deleteAccountAction', () => {
     expect(mocks.redirect).toHaveBeenCalledWith(
       expect.objectContaining({ href: expect.stringContaining('/login?deleted=1') }),
     );
+  });
+});
+
+// ─── exportMyDataAction ──────────────────────────────────────────────────────
+
+describe('exportMyDataAction', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('should return not_authenticated when no session', async () => {
+    mockUnauthenticated();
+    const result = await exportMyDataAction();
+    expect(result.error).toBe('not_authenticated');
+    expect(result.data).toBeNull();
+  });
+
+  it('should return the RPC error message when export_my_data fails', async () => {
+    mockAuthenticated();
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: '42501', message: 'boom' } });
+    const result = await exportMyDataAction();
+    expect(result.error).toBe('boom');
+    expect(result.data).toBeNull();
+  });
+
+  it('should return the exported jsonb snapshot on success', async () => {
+    mockAuthenticated();
+    const snapshot = { exported_at: '2026-07-24T00:00:00Z', profile: { id: 'user-uuid-123' } };
+    mocks.rpc.mockResolvedValue({ data: snapshot, error: null });
+    const result = await exportMyDataAction();
+    expect(result.error).toBeUndefined();
+    expect(result.data).toEqual(snapshot);
+    expect(mocks.rpc).toHaveBeenCalledWith('export_my_data');
   });
 });
 

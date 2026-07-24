@@ -1494,6 +1494,7 @@ export type Database = {
         }[]
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
+      delete_my_account: { Args: never; Returns: undefined }
       delete_webhook_endpoint: {
         Args: { p_endpoint_id: string }
         Returns: undefined
@@ -1502,6 +1503,7 @@ export type Database = {
         Args: { p_reason?: string; p_session_id: string }
         Returns: undefined
       }
+      export_my_data: { Args: never; Returns: Json }
       generate_recovery_codes: { Args: never; Returns: string[] }
       get_account_audit_logs: {
         Args: {
