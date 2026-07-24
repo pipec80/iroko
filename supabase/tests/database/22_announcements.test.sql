@@ -7,7 +7,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(14);
+SELECT plan(16);
 
 -- ── Seed an admin and a non-admin. handle_new_profile auto-creates a
 --    personal account + owner membership per auth.users row — irrelevant
@@ -166,6 +166,23 @@ SELECT is(
   'Only the one successful publish_announcement call left a row — every rejected attempt above inserted nothing'
 );
 RESET role;
+
+-- ============================================================================
+-- 15-16. Regression: deleting the publishing admin's auth.users row must SET
+--     NULL on created_by, not block the delete (bug found while building
+--     F3-C3/GDPR purge — created_by was NOT NULL + FK NO ACTION originally).
+-- ============================================================================
+SELECT lives_ok(
+  $$DELETE FROM auth.users WHERE id = '00000000-0000-0000-0000-000000002601'$$,
+  'Deleting the admin who published an announcement does not fail on the FK'
+);
+SELECT ok(
+  EXISTS(
+    SELECT 1 FROM public.announcements
+    WHERE title = 'Mantenimiento programado' AND created_by IS NULL
+  ),
+  'The announcement survives with created_by set to NULL after the author is deleted'
+);
 
 SELECT * FROM finish();
 ROLLBACK;
