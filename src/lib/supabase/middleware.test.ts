@@ -235,6 +235,20 @@ describe('updateSession', () => {
       const response = await updateSession(makeRequest('/es/dashboard/projects'));
       expect(response.headers.get('location')).toBeNull();
     });
+
+    it('sends a fresh login straight to /dashboard/onboarding, not /dashboard (Server Action redirect does not re-run the middleware)', async () => {
+      mockOnboardingSession(false);
+      const response = await updateSession(makeRequest('/es/login'));
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe(
+        '/es/dashboard/onboarding',
+      );
+    });
+
+    it('sends a fresh login to /dashboard when onboarding is already completed', async () => {
+      mockOnboardingSession(true);
+      const response = await updateSession(makeRequest('/es/login'));
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe('/es/dashboard');
+    });
   });
 
   describe('stale token handling', () => {

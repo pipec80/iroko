@@ -209,9 +209,16 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // Authenticated users are bounced off the marketing root and auth-only pages —
   // unless they still owe an MFA challenge, in which case they must stay on
   // /login to complete it (otherwise the two redirects would loop).
+  //
+  // F3-C4: redirect() called from a Server Action (e.g. signInAction) resolves
+  // client-side and does not re-run the middleware for the resulting /dashboard
+  // navigation — so the onboarding gate above (which only matches paths already
+  // starting with /dashboard) never sees it. This is the request that actually
+  // runs the middleware for a fresh login, so it must pick the right destination
+  // itself instead of relying on a second pass that never happens.
   if (claims && !mfaPending && (isRoot(pathWithoutLocale) || isAuthOnly(pathWithoutLocale))) {
     const url = request.nextUrl.clone();
-    url.pathname = `/${locale}/dashboard`;
+    url.pathname = onboardingPending ? `/${locale}/dashboard/onboarding` : `/${locale}/dashboard`;
     url.searchParams.delete('next');
     return NextResponse.redirect(url);
   }
