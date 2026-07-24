@@ -643,6 +643,36 @@ export type Database = {
           },
         ]
       }
+      announcements: {
+        Row: {
+          body: string | null
+          created_at: string
+          created_by: string
+          id: string
+          link: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          link?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          link?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       api_keys: {
         Row: {
           account_id: string
@@ -1691,6 +1721,29 @@ export type Database = {
         }[]
       }
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
+      publish_announcement: {
+        Args: {
+          p_body?: string
+          p_link?: string
+          p_title: string
+          p_type: string
+        }
+        Returns: {
+          body: string | null
+          created_at: string
+          created_by: string
+          id: string
+          link: string | null
+          title: string
+          type: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "announcements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       remove_member: {
         Args: { p_account_id: string; p_user_id: string }
         Returns: boolean

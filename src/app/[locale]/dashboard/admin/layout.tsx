@@ -39,6 +39,9 @@ export default async function AdminLayout({
         <Link href="/dashboard/admin/alerts" className="text-sm font-medium">
           {t('nav_alerts')}
         </Link>
+        <Link href="/dashboard/admin/announcements" className="text-sm font-medium">
+          {t('nav_announcements')}
+        </Link>
       </nav>
       {children}
     </div>
