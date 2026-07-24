@@ -2,6 +2,7 @@
 
 import { getLocale } from 'next-intl/server';
 
+import { appConfig } from '@/config/app.config';
 import { env } from '@/env';
 import { redirect } from '@/i18n/routing';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
@@ -17,6 +18,25 @@ import {
   signupSchema,
   updatePasswordSchema,
 } from '@/lib/validation/auth';
+
+/**
+ * F3-C4: decide the post-auth destination from the session just created,
+ * instead of relying on the edge middleware to catch the resulting navigation.
+ * redirect() called inside a Server Action does not reliably re-run the
+ * middleware for the destination it navigates to, so the middleware's
+ * onboarding gate never sees this transition — this is the one place that
+ * actually has the freshly-minted claim.
+ */
+function resolvePostAuthDestination(
+  hrefWithoutLocale: string,
+  onboardingCompleted: unknown,
+): string {
+  const needsOnboarding =
+    appConfig.features.onboarding &&
+    onboardingCompleted === false &&
+    !hrefWithoutLocale.startsWith('/dashboard/onboarding');
+  return needsOnboarding ? '/dashboard/onboarding' : hrefWithoutLocale;
+}
 
 export type AuthActionState = {
   error?: string;
@@ -77,7 +97,11 @@ export async function signInAction(
   const locale = await getLocale();
   const next = safeRedirectPath(formData.get('next') as string | null, locale);
   const hrefWithoutLocale = next.replace(new RegExp(`^/${locale}`), '') || '/dashboard';
-  redirect({ href: hrefWithoutLocale, locale });
+  const href = resolvePostAuthDestination(
+    hrefWithoutLocale,
+    data.user?.app_metadata?.onboarding_completed,
+  );
+  redirect({ href, locale });
   return {};
 }
 
@@ -105,7 +129,7 @@ export async function verifyMfaAction(
     return { error: 'mfa_challenge_failed' };
   }
 
-  const { error: verifyError } = await supabase.auth.mfa.verify({
+  const { data: verifyData, error: verifyError } = await supabase.auth.mfa.verify({
     factorId: parsed.data.factorId,
     challengeId: challengeData.id,
     code: parsed.data.code,
@@ -118,7 +142,11 @@ export async function verifyMfaAction(
   logger.info({ action: 'auth.mfa.success' }, 'MFA Challenge Verified');
 
   const locale = await getLocale();
-  redirect({ href: '/dashboard', locale });
+  const href = resolvePostAuthDestination(
+    '/dashboard',
+    verifyData?.user?.app_metadata?.onboarding_completed,
+  );
+  redirect({ href, locale });
   return {};
 }
 

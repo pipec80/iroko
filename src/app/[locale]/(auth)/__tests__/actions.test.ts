@@ -53,6 +53,12 @@ vi.mock('@/env', () => ({
   },
 }));
 
+vi.mock('@/config/app.config', () => ({
+  appConfig: { features: { onboarding: true } },
+}));
+
+import { appConfig } from '@/config/app.config';
+
 import {
   signUpAction,
   signInAction,
@@ -187,6 +193,7 @@ describe('signInAction', () => {
     vi.clearAllMocks();
     mockRedirectThrows();
     mocks.listFactors.mockResolvedValue({ data: { all: [] } });
+    appConfig.features.onboarding = true;
   });
 
   describe('validation', () => {
@@ -241,7 +248,42 @@ describe('signInAction', () => {
       const fd = makeFormData(validLoginData);
       await expect(signInAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
 
-      expect(mocks.redirect).toHaveBeenCalled();
+      expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+    });
+
+    // F3-C4: signInAction is the request that actually creates the session — the
+    // middleware runs BEFORE this action, so it can never see the freshly-minted
+    // claim to redirect the resulting navigation itself. The action must pick the
+    // right destination directly from the session it just created.
+    it('redirects to /dashboard/onboarding when the fresh session has onboarding_completed=false', async () => {
+      mocks.signInWithPassword.mockResolvedValue({
+        data: {
+          user: { id: 'uuid-123', app_metadata: { onboarding_completed: false } },
+          session: {},
+        },
+        error: null,
+      });
+
+      const fd = makeFormData(validLoginData);
+      await expect(signInAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+      expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard/onboarding', locale: 'es' });
+    });
+
+    it('redirects to /dashboard (not onboarding) when the feature flag is off', async () => {
+      appConfig.features.onboarding = false;
+      mocks.signInWithPassword.mockResolvedValue({
+        data: {
+          user: { id: 'uuid-123', app_metadata: { onboarding_completed: false } },
+          session: {},
+        },
+        error: null,
+      });
+
+      const fd = makeFormData(validLoginData);
+      await expect(signInAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+      expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
     });
 
     it('returns mfa_required when user has a verified TOTP factor', async () => {
@@ -268,6 +310,7 @@ describe('verifyMfaAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRedirectThrows();
+    appConfig.features.onboarding = true;
   });
 
   describe('validation', () => {
@@ -319,6 +362,20 @@ describe('verifyMfaAction', () => {
       code: '123456',
     });
     expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+  });
+
+  // F3-C4: same fresh-session-decides-the-destination fix as signInAction.
+  it('redirects to /dashboard/onboarding when the verified session has onboarding_completed=false', async () => {
+    mocks.mfaChallenge.mockResolvedValue({ data: { id: 'challenge-1' }, error: null });
+    mocks.mfaVerify.mockResolvedValue({
+      data: { user: { app_metadata: { onboarding_completed: false } } },
+      error: null,
+    });
+
+    const fd = makeFormData({ code: '123456', factorId: 'factor-1' });
+    await expect(verifyMfaAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
+
+    expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard/onboarding', locale: 'es' });
   });
 });
 
