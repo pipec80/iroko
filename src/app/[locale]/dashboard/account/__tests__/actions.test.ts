@@ -126,12 +126,12 @@ describe('updateProfileAction', () => {
     expect(result.error).toBe('not_authenticated');
   });
 
-  it('should return RPC error code when update fails', async () => {
+  it('should return the RPC error message (not the SQLSTATE code) when update fails', async () => {
     mockAuthenticated();
-    mocks.rpc.mockResolvedValue({ error: { code: 'P0001' } });
+    mocks.rpc.mockResolvedValue({ error: { code: 'P0002', message: 'profile_not_found' } });
     const fd = makeFormData(validProfileData);
     const result = await updateProfileAction(PREV, fd);
-    expect(result.error).toBe('P0001');
+    expect(result.error).toBe('profile_not_found');
     expect(result.success).toBeUndefined();
   });
 
@@ -298,11 +298,11 @@ describe('generateRecoveryCodesAction', () => {
     expect(result.error).toBe('not_authenticated');
   });
 
-  it('should return error code when RPC fails', async () => {
+  it('should return the RPC error message (not the SQLSTATE code) when it fails', async () => {
     mockAuthenticated();
-    mocks.rpc.mockResolvedValue({ error: { code: 'recovery_generate_failed' } });
+    mocks.rpc.mockResolvedValue({ error: { code: '42501', message: 'not_authenticated' } });
     const result = await generateRecoveryCodesAction(PREV, new FormData());
-    expect(result.error).toBe('recovery_generate_failed');
+    expect(result.error).toBe('not_authenticated');
   });
 
   it('should return codes array and revalidate on success', async () => {
@@ -331,9 +331,9 @@ describe('revokeSessionAction', () => {
     expect(result.error).toBe('not_authenticated');
   });
 
-  it('should return RPC error code when revoke fails', async () => {
+  it('should return the RPC error message (not the SQLSTATE code) when revoke fails', async () => {
     mockAuthenticated();
-    mocks.rpc.mockResolvedValue({ error: { code: 'session_not_found' } });
+    mocks.rpc.mockResolvedValue({ error: { code: 'P0002', message: 'session_not_found' } });
     const result = await revokeSessionAction('550e8400-e29b-41d4-a716-446655440000');
     expect(result.error).toBe('session_not_found');
   });
@@ -478,10 +478,10 @@ describe('uploadAvatarAction', () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it('should return RPC error code when profile avatar_url update fails', async () => {
-    mocks.rpc.mockResolvedValue({ error: { code: 'P0001' } });
+  it('should return the RPC error message (not the SQLSTATE code) when profile avatar_url update fails', async () => {
+    mocks.rpc.mockResolvedValue({ error: { code: 'P0001', message: 'update_avatar_failed' } });
     const result = await uploadAvatarAction(PREV, makeAvatarForm(makeFile(100, 'image/png')));
-    expect(result.error).toBe('P0001');
+    expect(result.error).toBe('update_avatar_failed');
   });
 
   it('should upload under the user folder, store db path and revalidate', async () => {
