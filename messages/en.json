@@ -1001,5 +1001,21 @@
     "mark_all_read": "Mark all as read",
     "just_now": "Just now",
     "view_all": "View all"
+  },
+  "Onboarding": {
+    "step_org": "Confirm organization",
+    "step_invite": "Invite your team",
+    "step_plan": "Choose a plan",
+    "step_branding": "Branding",
+    "org_name_label": "Organization name",
+    "next": "Next",
+    "skip_setup": "Skip setup",
+    "invite_later": "Invite later",
+    "upload_logo": "Upload logo",
+    "remove_logo": "Remove logo",
+    "finish": "Finish",
+    "error_invalid_name": "The name must be between 2 and 100 characters.",
+    "error_no_active_account": "No active account was found.",
+    "error_update_failed": "Could not update the organization."
   }
 }

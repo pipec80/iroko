@@ -1001,5 +1001,21 @@
     "mark_all_read": "Marcar todas como lidas",
     "just_now": "Agora mesmo",
     "view_all": "Ver todas"
+  },
+  "Onboarding": {
+    "step_org": "Confirmar organização",
+    "step_invite": "Convidar equipe",
+    "step_plan": "Escolher plano",
+    "step_branding": "Marca",
+    "org_name_label": "Nome da organização",
+    "next": "Avançar",
+    "skip_setup": "Pular configuração",
+    "invite_later": "Convidar depois",
+    "upload_logo": "Enviar logo",
+    "remove_logo": "Remover logo",
+    "finish": "Concluir",
+    "error_invalid_name": "O nome deve ter entre 2 e 100 caracteres.",
+    "error_no_active_account": "Nenhuma conta ativa encontrada.",
+    "error_update_failed": "Não foi possível atualizar a organização."
   }
 }
