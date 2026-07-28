@@ -450,7 +450,9 @@
     "link_product": "Produto",
     "link_pricing": "Preços",
     "login": "Entrar",
-    "get_started": "Começar grátis →"
+    "get_started": "Começar grátis →",
+    "open_menu": "Abrir menu de navegação",
+    "menu_description": "Menu de navegação com os principais links do site."
   },
   "PublicFooter": {
     "brand_description": "O tronco comum para os seus micro-SaaS. Autenticação, organizações, billing e i18n — tudo conectado e pronto para implantar.",

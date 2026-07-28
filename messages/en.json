@@ -450,7 +450,9 @@
     "link_product": "Product",
     "link_pricing": "Pricing",
     "login": "Sign in",
-    "get_started": "Get started free →"
+    "get_started": "Get started free →",
+    "open_menu": "Open navigation menu",
+    "menu_description": "Navigation menu with the site's main links."
   },
   "PublicFooter": {
     "brand_description": "The shared trunk for your micro-SaaS. Authentication, organizations, billing and i18n — all wired up and ready to deploy.",

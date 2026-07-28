@@ -450,7 +450,9 @@
     "link_product": "Produit",
     "link_pricing": "Tarifs",
     "login": "Se connecter",
-    "get_started": "Commencer gratuitement →"
+    "get_started": "Commencer gratuitement →",
+    "open_menu": "Ouvrir le menu de navigation",
+    "menu_description": "Menu de navigation avec les principaux liens du site."
   },
   "PublicFooter": {
     "brand_description": "Le tronc commun pour vos micro-SaaS. Authentification, organisations, facturation et i18n — tout câblé et prêt à déployer.",

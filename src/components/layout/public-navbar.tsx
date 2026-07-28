@@ -2,14 +2,24 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { Menu } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
 
 export function PublicNavbar() {
   const t = useTranslations('PublicNav');
   const [scrolled, setScrolled] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -58,7 +68,7 @@ export function PublicNavbar() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto hidden items-center gap-2 lg:flex">
           <Button variant="ghost" asChild className="h-9 text-sm">
             <Link href="/login">{t('login')}</Link>
           </Button>
@@ -68,6 +78,51 @@ export function PublicNavbar() {
             style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
             <Link href="/signup">{t('get_started')}</Link>
           </Button>
+        </div>
+
+        <div className="ml-auto flex items-center lg:hidden">
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={t('open_menu')}>
+                <Menu className="size-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px]">
+              <SheetHeader>
+                <SheetTitle className="text-left">{appConfig.brand}</SheetTitle>
+                <SheetDescription className="sr-only">{t('menu_description')}</SheetDescription>
+              </SheetHeader>
+              <div className="flex flex-col gap-6 px-4 pb-4">
+                <nav className="flex flex-col gap-4">
+                  {navLinks.map(({ label, href }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={() => setOpen(false)}
+                      className="text-foreground hover:text-primary text-base font-semibold transition-colors">
+                      {label}
+                    </Link>
+                  ))}
+                </nav>
+                <hr className="border-border" />
+                <div className="flex flex-col gap-3">
+                  <Button variant="outline" asChild className="w-full justify-center">
+                    <Link href="/login" onClick={() => setOpen(false)}>
+                      {t('login')}
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    className="w-full justify-center"
+                    style={{ background: 'var(--color-ink)', color: 'var(--color-bone)' }}>
+                    <Link href="/signup" onClick={() => setOpen(false)}>
+                      {t('get_started')}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
