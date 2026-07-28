@@ -56,8 +56,13 @@ describe('AccountsTable', () => {
   it('renders the initial entries with a real, keyboard-reachable link per row', () => {
     renderWithIntl(<AccountsTable initialEntries={[ACTIVE_ENTRY]} initialCursor={null} />);
 
-    const link = screen.getByRole('link', { name: 'Acme Testing Co' });
-    expect(link.getAttribute('href')).toBe('/dashboard/admin/accounts/acc-1');
+    // Two layouts coexist in the DOM (mobile cards + desktop table); Tailwind's
+    // `hidden` hides one visually via CSS, which jsdom doesn't evaluate.
+    const links = screen.getAllByRole('link', { name: 'Acme Testing Co' });
+    expect(links.length).toBeGreaterThanOrEqual(1);
+    for (const link of links) {
+      expect(link.getAttribute('href')).toBe('/dashboard/admin/accounts/acc-1');
+    }
   });
 
   it('shows the loaded count in the header', () => {
@@ -80,7 +85,9 @@ describe('AccountsTable', () => {
   it('shows the empty state when there are no entries', () => {
     renderWithIntl(<AccountsTable initialEntries={[]} initialCursor={null} />);
 
-    expect(screen.getByText('Ninguna cuenta coincide con tu búsqueda.')).toBeDefined();
+    expect(
+      screen.getAllByText('Ninguna cuenta coincide con tu búsqueda.').length,
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it('debounces the search input before calling getAdminAccounts', async () => {
@@ -109,7 +116,11 @@ describe('AccountsTable', () => {
       target: { value: 'bravo' },
     });
 
-    await waitFor(() => expect(screen.getByRole('link', { name: 'Bravo Ventures' })).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getAllByRole('link', { name: 'Bravo Ventures' }).length).toBeGreaterThanOrEqual(
+        1,
+      ),
+    );
     expect(screen.queryByRole('link', { name: 'Acme Testing Co' })).toBeNull();
   });
 
@@ -135,9 +146,15 @@ describe('AccountsTable', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cargar más' }));
 
-    await waitFor(() => expect(screen.getByRole('link', { name: 'Bravo Ventures' })).toBeDefined());
+    await waitFor(() =>
+      expect(screen.getAllByRole('link', { name: 'Bravo Ventures' }).length).toBeGreaterThanOrEqual(
+        1,
+      ),
+    );
     expect(mocks.getAdminAccounts).toHaveBeenCalledWith({ search: null, cursor });
     // Original entry is still there — load more appends, doesn't replace.
-    expect(screen.getByRole('link', { name: 'Acme Testing Co' })).toBeDefined();
+    expect(screen.getAllByRole('link', { name: 'Acme Testing Co' }).length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 });

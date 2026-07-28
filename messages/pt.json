@@ -47,7 +47,8 @@
     "nav_billing": "Billing",
     "nav_settings": "Ajustes",
     "new_org": "Nova organização",
-    "no_org": "Sem organização"
+    "no_org": "Sem organização",
+    "org_switcher_label": "Trocar de organização"
   },
   "Dashboard": {
     "page_title": "Início",

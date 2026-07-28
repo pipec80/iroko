@@ -114,20 +114,17 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
             {t('accounts_search_placeholder')}
           </label>
           <Search
+            size={14}
+            strokeWidth={1.5}
             className="absolute top-1/2 left-3 -translate-y-1/2"
-            style={{ width: 14, height: 14, color: 'var(--text-tertiary)', strokeWidth: 1.5 }}
+            style={{ color: 'var(--text-tertiary)' }}
           />
           <input
             id="accounts-search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('accounts_search_placeholder')}
-            className="toolbar-control w-full text-[13px]"
-            style={{
-              padding: '0 12px 0 34px',
-              color: 'var(--text-primary)',
-              fontFamily: 'inherit',
-            }}
+            className="toolbar-control text-foreground w-full py-0 pr-3 pl-[34px] text-[13px]"
           />
         </div>
         <select
@@ -154,8 +151,45 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
         </select>
       </div>
 
-      {/* Table */}
-      <div className="card overflow-x-auto">
+      {/* Mobile — stacked cards */}
+      <div className="space-y-2 md:hidden">
+        {filtered.length === 0 ?
+          <p className="text-muted-foreground py-16 text-center text-sm">{t('no_accounts')}</p>
+        : filtered.map((entry, idx) => (
+            <div key={entry.accountId} className="card flex flex-col gap-2 p-3">
+              <div className="flex items-center gap-3">
+                <span className="avatar-32 shrink-0" style={{ background: accountTone(idx) }}>
+                  {accountInitials(entry.name)}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    href={`/dashboard/admin/accounts/${entry.accountId}`}
+                    className="text-foreground block truncate text-sm font-medium hover:underline">
+                    {entry.name}
+                  </Link>
+                  <p className="text-muted-foreground truncate text-xs">
+                    {entry.ownerEmail ?? '—'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="chip chip-sm chip-neutral">{entry.planSlug ?? t('no_plan')}</span>
+                {entry.subscriptionStatus && (
+                  <span className="chip chip-sm" style={statusChipStyle(entry.subscriptionStatus)}>
+                    {entry.subscriptionStatus}
+                  </span>
+                )}
+                <span className="text-muted-foreground ml-auto text-xs">
+                  {t('col_members')}: {entry.memberCount}
+                </span>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+
+      {/* Desktop — table */}
+      <div className="card hidden overflow-x-auto md:block">
         <table className="w-full min-w-[860px] border-collapse">
           <thead>
             <tr className="col-header bg-surface-2">
@@ -177,7 +211,7 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-border divide-y">
             {filtered.length === 0 ?
               <tr>
                 <td colSpan={6} className="px-6 py-16 text-center">
@@ -185,10 +219,7 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
                 </td>
               </tr>
             : filtered.map((entry, idx) => (
-                <tr
-                  key={entry.accountId}
-                  className="hover:bg-surface-2 transition-colors"
-                  style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
+                <tr key={entry.accountId} className="hover:bg-surface-2 transition-colors">
                   <td className="py-[14px] pr-3 pl-[22px]">
                     <span className="avatar-32" style={{ background: accountTone(idx) }}>
                       {accountInitials(entry.name)}
@@ -205,13 +236,7 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
                     {entry.ownerEmail ?? '—'}
                   </td>
                   <td className="py-[14px]">
-                    <span
-                      className="chip chip-sm"
-                      style={{
-                        background: 'var(--surface-2)',
-                        color: 'var(--text-secondary)',
-                        border: '1px solid var(--border)',
-                      }}>
+                    <span className="chip chip-sm chip-neutral">
                       {entry.planSlug ?? t('no_plan')}
                     </span>
                   </td>

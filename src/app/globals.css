@@ -459,6 +459,11 @@
     font-size: 10px;
     letter-spacing: 0.18em;
   }
+  .chip-neutral {
+    background: var(--surface-2);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
 
   /* ── Icon button — transparent square ghost button ── */
   .btn-icon {
@@ -620,7 +625,12 @@
     font-weight: 600;
     cursor: pointer;
     border: 0;
-    transition: all 200ms ease;
+    transition:
+      background-color 200ms ease,
+      color 200ms ease,
+      border-color 200ms ease,
+      box-shadow 200ms ease,
+      opacity 200ms ease;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;

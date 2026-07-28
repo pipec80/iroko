@@ -114,6 +114,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
   const router = useRouter();
   const t = useTranslations('UserMenu');
   const tAdmin = useTranslations('Admin');
+  const tNav = useTranslations('Navigation');
   const { theme, setTheme } = useTheme();
   const pageTitle = getPageTitle(pathname, tAdmin);
   const firstOrg = orgs[0];
@@ -197,8 +198,9 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
             />
             <input
               ref={searchInputRef}
-              type="text"
-              placeholder="Buscar..."
+              type="search"
+              placeholder={tNav('search_placeholder')}
+              aria-label={tNav('search_placeholder')}
               className="focus-visible:ring-primary/30 focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:outline-none"
               style={{
                 height: 32,
