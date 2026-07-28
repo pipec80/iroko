@@ -477,7 +477,7 @@
   }
   .btn-icon:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.2);
+    box-shadow: 0 0 0 3px rgba(217, 33, 33, 0.2);
   }
   .btn-icon:disabled {
     opacity: 0.4;
@@ -505,7 +505,7 @@
   }
   .toolbar-control:focus-visible {
     border-color: var(--color-iron);
-    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.16);
+    box-shadow: 0 0 0 3px var(--color-poppy-wash-2);
   }
 
   .dark .toolbar-control {
@@ -581,7 +581,7 @@
   }
   .nav-item--active {
     font-weight: 700;
-    background: rgba(184, 81, 58, 0.1);
+    background: var(--color-iron-wash);
     color: var(--color-iron);
   }
   .nav-item--inactive {
@@ -642,7 +642,7 @@
   }
   .btn-iron:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.3);
+    box-shadow: 0 0 0 3px rgba(217, 33, 33, 0.3);
   }
   .btn-iron:disabled {
     opacity: 0.5;
@@ -665,7 +665,7 @@
   }
   .btn-outline:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.2);
+    box-shadow: 0 0 0 3px rgba(217, 33, 33, 0.2);
   }
   .btn-outline:disabled {
     opacity: 0.5;
@@ -688,7 +688,7 @@
   }
   .btn-ghost:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.2);
+    box-shadow: 0 0 0 3px rgba(217, 33, 33, 0.2);
   }
   .btn-ghost:disabled {
     opacity: 0.5;
@@ -731,7 +731,7 @@
   }
   .input:focus {
     border-color: var(--color-iron);
-    box-shadow: 0 0 0 3px rgba(184, 81, 58, 0.16);
+    box-shadow: 0 0 0 3px var(--color-poppy-wash-2);
   }
 
   /* ── Form field label ── */
