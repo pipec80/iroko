@@ -64,7 +64,9 @@ export default function ForgotPasswordPage() {
             />
           </div>
           {state.fieldErrors?.email && (
-            <p role="alert" className="text-destructive text-xs">
+            <p
+              role="alert"
+              className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
               {t(`errors.${state.fieldErrors.email[0] ?? ''}` as 'errors.generic', {
                 default: state.fieldErrors.email[0] ?? '',
               })}
@@ -73,7 +75,9 @@ export default function ForgotPasswordPage() {
         </div>
 
         {error && (
-          <p role="alert" className="text-destructive text-sm">
+          <p
+            role="alert"
+            className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm font-medium">
             {error}
           </p>
         )}

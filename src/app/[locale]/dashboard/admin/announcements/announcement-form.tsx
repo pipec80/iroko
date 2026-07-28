@@ -100,7 +100,9 @@ export function AnnouncementForm() {
         />
       </div>
       {error && (
-        <p role="alert" className="text-destructive text-sm">
+        <p
+          role="alert"
+          className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm font-medium">
           {error}
         </p>
       )}
