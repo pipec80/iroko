@@ -62,7 +62,7 @@ export default async function AdminAccountsPage({
               <Link
                 key={entry.accountId}
                 href={`/dashboard/admin/accounts/${entry.accountId}`}
-                className="members-row py-[14px]"
+                className="members-row hover:bg-surface-2 py-[14px] transition-colors"
                 style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
                 <span />
                 <span className="text-foreground truncate text-sm font-medium">{entry.name}</span>
