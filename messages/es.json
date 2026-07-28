@@ -328,7 +328,12 @@
     "col_status": "Estado",
     "col_joined": "Miembro desde",
     "status_invited": "Invitado",
-    "error_seat_limit": "Tu plan no tiene asientos disponibles. Mejorá el plan para invitar más miembros."
+    "error_seat_limit": "Tu plan no tiene asientos disponibles. Mejorá el plan para invitar más miembros.",
+    "error_emails_required": "Ingresá al menos un correo electrónico.",
+    "error_invalid_email_format": "Uno o más correos electrónicos no tienen un formato válido.",
+    "error_email_too_long": "Uno de los correos electrónicos es demasiado largo.",
+    "error_max_10_emails": "Podés invitar hasta 10 correos electrónicos por vez.",
+    "error_generic": "Ocurrió un error. Intentá de nuevo."
   },
   "ActivityLog": {
     "title": "Actividad",

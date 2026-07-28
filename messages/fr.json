@@ -328,7 +328,12 @@
     "col_status": "Statut",
     "col_joined": "Membre depuis",
     "status_invited": "Invité",
-    "error_seat_limit": "Votre plan n'a plus de places disponibles. Passez à un plan supérieur pour inviter plus de membres."
+    "error_seat_limit": "Votre plan n'a plus de places disponibles. Passez à un plan supérieur pour inviter plus de membres.",
+    "error_emails_required": "Saisissez au moins une adresse e-mail.",
+    "error_invalid_email_format": "Une ou plusieurs adresses e-mail ont un format invalide.",
+    "error_email_too_long": "L'une des adresses e-mail est trop longue.",
+    "error_max_10_emails": "Vous pouvez inviter jusqu'à 10 e-mails à la fois.",
+    "error_generic": "Une erreur est survenue. Veuillez réessayer."
   },
   "ActivityLog": {
     "title": "Activité",

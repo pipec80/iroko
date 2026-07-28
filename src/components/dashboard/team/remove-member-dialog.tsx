@@ -50,8 +50,10 @@ export function RemoveMemberDialog({ userId, displayName }: Props) {
         </DialogHeader>
 
         {state.error && (
-          <p className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
-            {state.error}
+          <p
+            role="alert"
+            className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
+            {t('error_generic')}
           </p>
         )}
 

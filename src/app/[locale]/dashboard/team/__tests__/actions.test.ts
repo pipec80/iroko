@@ -156,15 +156,15 @@ describe('inviteMembers', () => {
     expect(result.error).toBe('no_account');
   });
 
-  it('should return RPC error message when invite_members fails', async () => {
+  it('should map unknown RPC errors to a safe generic code without leaking the raw message', async () => {
     mockAuthenticatedWithAccount();
     mocks.rpc.mockResolvedValue({
       data: null,
-      error: { message: 'invite quota exceeded', code: 'P0001' },
+      error: { message: 'Only owner or admin can invite members', code: 'P0001' },
     });
     const fd = makeFormData({ emails: 'user@example.com', role: 'member' });
     const result = await inviteMembers(fd);
-    expect(result.error).toBe('invite quota exceeded');
+    expect(result.error).toBe('invite_failed');
   });
 
   it('should surface seat_limit_reached as a typed error', async () => {
@@ -255,12 +255,12 @@ describe('removeMember', () => {
     expect(result.error).toBe('no_account');
   });
 
-  it('should return RPC error message when remove_member fails', async () => {
+  it('should map RPC errors to a safe generic code without leaking the raw message', async () => {
     mockAuthenticatedWithAccount();
-    mocks.rpc.mockResolvedValue({ error: { message: 'cannot remove last owner' } });
+    mocks.rpc.mockResolvedValue({ error: { message: 'Cannot remove the account owner' } });
     const fd = makeFormData({ userId: '550e8400-e29b-41d4-a716-446655440000' });
     const result = await removeMember(fd);
-    expect(result.error).toBe('cannot remove last owner');
+    expect(result.error).toBe('remove_failed');
   });
 
   it('should return success and revalidate on happy path', async () => {

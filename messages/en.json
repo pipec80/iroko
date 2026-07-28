@@ -328,7 +328,12 @@
     "col_status": "Status",
     "col_joined": "Member since",
     "status_invited": "Invited",
-    "error_seat_limit": "Your plan has no seats left. Upgrade to invite more members."
+    "error_seat_limit": "Your plan has no seats left. Upgrade to invite more members.",
+    "error_emails_required": "Enter at least one email address.",
+    "error_invalid_email_format": "One or more email addresses have an invalid format.",
+    "error_email_too_long": "One of the email addresses is too long.",
+    "error_max_10_emails": "You can invite up to 10 emails at a time.",
+    "error_generic": "Something went wrong. Please try again."
   },
   "ActivityLog": {
     "title": "Activity",
