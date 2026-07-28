@@ -869,6 +869,7 @@
   },
   "Billing": {
     "page_title": "Facturación",
+    "page_heading": "Plan y facturación",
     "page_description": "Gestiona tu plan, método de pago e historial de facturas.",
     "current_plan": "Plan actual",
     "toggle_monthly": "Mensual",
@@ -897,7 +898,19 @@
     "mock_pay_btn": "Pagar",
     "mock_decline_btn": "Declinar",
     "interval_month": "mensual",
-    "interval_year": "anual"
+    "interval_year": "anual",
+    "status_trialing": "En prueba",
+    "status_active": "Activa",
+    "status_past_due": "Pago vencido",
+    "status_canceled": "Cancelada",
+    "status_paused": "Pausada",
+    "status_unpaid": "Sin pagar",
+    "status_incomplete": "Incompleta",
+    "invoice_status_draft": "Borrador",
+    "invoice_status_open": "Pendiente",
+    "invoice_status_paid": "Pagada",
+    "invoice_status_void": "Anulada",
+    "invoice_status_uncollectible": "Incobrable"
   },
   "Projects": {
     "page_eyebrow": "Bosque",

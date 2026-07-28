@@ -871,6 +871,7 @@
   },
   "Billing": {
     "page_title": "Facturation",
+    "page_heading": "Plan et facturation",
     "page_description": "Gérez votre plan, méthode de paiement et historique de factures.",
     "current_plan": "Plan actuel",
     "toggle_monthly": "Mensuel",
@@ -899,7 +900,19 @@
     "mock_pay_btn": "Payer",
     "mock_decline_btn": "Refuser",
     "interval_month": "mensuel",
-    "interval_year": "annuel"
+    "interval_year": "annuel",
+    "status_trialing": "Essai",
+    "status_active": "Active",
+    "status_past_due": "Paiement en retard",
+    "status_canceled": "Annulée",
+    "status_paused": "En pause",
+    "status_unpaid": "Impayée",
+    "status_incomplete": "Incomplète",
+    "invoice_status_draft": "Brouillon",
+    "invoice_status_open": "En attente",
+    "invoice_status_paid": "Payée",
+    "invoice_status_void": "Annulée",
+    "invoice_status_uncollectible": "Irrécouvrable"
   },
   "Projects": {
     "page_eyebrow": "Forêt",

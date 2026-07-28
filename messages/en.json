@@ -869,6 +869,7 @@
   },
   "Billing": {
     "page_title": "Billing",
+    "page_heading": "Plan & billing",
     "page_description": "Manage your plan, payment method and invoice history.",
     "current_plan": "Current plan",
     "toggle_monthly": "Monthly",
@@ -897,7 +898,19 @@
     "mock_pay_btn": "Pay",
     "mock_decline_btn": "Decline",
     "interval_month": "monthly",
-    "interval_year": "yearly"
+    "interval_year": "yearly",
+    "status_trialing": "Trialing",
+    "status_active": "Active",
+    "status_past_due": "Past due",
+    "status_canceled": "Canceled",
+    "status_paused": "Paused",
+    "status_unpaid": "Unpaid",
+    "status_incomplete": "Incomplete",
+    "invoice_status_draft": "Draft",
+    "invoice_status_open": "Open",
+    "invoice_status_paid": "Paid",
+    "invoice_status_void": "Void",
+    "invoice_status_uncollectible": "Uncollectible"
   },
   "Projects": {
     "page_eyebrow": "Forest",

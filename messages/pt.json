@@ -869,6 +869,7 @@
   },
   "Billing": {
     "page_title": "Cobrança",
+    "page_heading": "Plano e cobrança",
     "page_description": "Gerencie seu plano, método de pagamento e histórico de faturas.",
     "current_plan": "Plano atual",
     "toggle_monthly": "Mensal",
@@ -897,7 +898,19 @@
     "mock_pay_btn": "Pagar",
     "mock_decline_btn": "Recusar",
     "interval_month": "mensal",
-    "interval_year": "anual"
+    "interval_year": "anual",
+    "status_trialing": "Em teste",
+    "status_active": "Ativa",
+    "status_past_due": "Pagamento atrasado",
+    "status_canceled": "Cancelada",
+    "status_paused": "Pausada",
+    "status_unpaid": "Não paga",
+    "status_incomplete": "Incompleta",
+    "invoice_status_draft": "Rascunho",
+    "invoice_status_open": "Pendente",
+    "invoice_status_paid": "Paga",
+    "invoice_status_void": "Anulada",
+    "invoice_status_uncollectible": "Incobrável"
   },
   "Projects": {
     "page_eyebrow": "Floresta",

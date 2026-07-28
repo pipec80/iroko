@@ -16,6 +16,24 @@ import { cn } from '@/lib/utils';
 
 type Interval = 'month' | 'year';
 
+const SUBSCRIPTION_STATUS_KEYS: Record<string, string> = {
+  trialing: 'status_trialing',
+  active: 'status_active',
+  past_due: 'status_past_due',
+  canceled: 'status_canceled',
+  paused: 'status_paused',
+  unpaid: 'status_unpaid',
+  incomplete: 'status_incomplete',
+};
+
+const INVOICE_STATUS_KEYS: Record<string, string> = {
+  draft: 'invoice_status_draft',
+  open: 'invoice_status_open',
+  paid: 'invoice_status_paid',
+  void: 'invoice_status_void',
+  uncollectible: 'invoice_status_uncollectible',
+};
+
 export function BillingTab() {
   const t = useTranslations('Billing');
   const locale = useLocale();
@@ -68,7 +86,7 @@ export function BillingTab() {
     <div className="space-y-8">
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-foreground text-xl font-bold">{t('current_plan')}</h2>
+          <span className="eyebrow">{t('current_plan')}</span>
           <div className="border-border flex rounded-lg border p-0.5">
             <button
               type="button"
@@ -131,9 +149,7 @@ function PlanCard({
   const isFree = plan.slug === 'free';
 
   return (
-    <div
-      className="border-border bg-background relative rounded-xl border p-6 shadow-sm"
-      data-testid={`plan-card-${plan.slug}`}>
+    <div className="card relative p-6" data-testid={`plan-card-${plan.slug}`}>
       {isCurrent && (
         <div
           className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase"
@@ -141,11 +157,13 @@ function PlanCard({
           {t('plan_current_badge')}
         </div>
       )}
-      <h3 className="text-foreground mb-1 text-lg font-bold">{plan.name}</h3>
+      <h3 className="display-italic mb-1 text-2xl">{plan.name}</h3>
       <p className="text-muted-foreground mb-4 text-sm">{plan.description}</p>
       <div className="mb-4 flex items-baseline gap-1">
-        <span className="text-foreground font-mono text-2xl font-bold">{price}</span>
-        {!isFree && <span className="text-muted-foreground text-sm">/{plan.interval}</span>}
+        <span className="mono text-foreground text-2xl font-bold">{price}</span>
+        {!isFree && (
+          <span className="text-muted-foreground text-sm">/{t(`interval_${plan.interval}`)}</span>
+        )}
       </div>
       {plan.trialDays > 0 && !isCurrent && (
         <p className="text-muted-foreground mb-4 text-[12px]">
@@ -157,8 +175,7 @@ function PlanCard({
         disabled={isCurrent || isFree || isSubscribing}
         onClick={onSubscribe}
         data-testid={`subscribe-${plan.slug}`}
-        className="w-full rounded-md py-2.5 text-sm font-bold tracking-widest text-white uppercase shadow-md transition-all hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-        style={{ background: 'var(--color-cobalt)' }}>
+        className={cn('w-full justify-center', isCurrent || isFree ? 'btn-outline' : 'btn-iron')}>
         {isCurrent ?
           t('plan_current_badge')
         : isFree ?
@@ -187,36 +204,45 @@ function SubscriptionStatusPanel({
 
   if (!overview) return null;
 
+  const statusLabel = t((SUBSCRIPTION_STATUS_KEYS[overview.status] ?? overview.status) as never);
+
   return (
     <section
-      className="border-border rounded-xl border p-6 shadow-sm"
-      style={{ background: 'var(--surface-1)' }}
+      className="card relative overflow-hidden p-7"
+      style={{ background: 'var(--color-night)', color: 'var(--color-bone)', border: 0 }}
       data-testid="current-plan">
-      <h3 className="text-foreground text-lg font-bold">{overview.planName}</h3>
-      <p className="text-muted-foreground mt-2 text-[11px] font-semibold tracking-wide uppercase">
-        {t('status_label')}
-      </p>
-      <p className="text-foreground mt-1 text-sm font-semibold">{overview.status}</p>
-      {overview.currentPeriodEnd &&
-        (overview.cancelAtPeriodEnd ?
-          <p className="text-muted-foreground mt-2 text-[12px]">
-            {t('cancels_on', { date: formatDate(overview.currentPeriodEnd) })}
-          </p>
-        : <p className="text-muted-foreground mt-2 text-[12px]">
-            {t('renews_on', { date: formatDate(overview.currentPeriodEnd) })}
-          </p>)}
-      {!overview.cancelAtPeriodEnd && (
-        <button
-          type="button"
-          disabled={cancel.isPending}
-          onClick={() => {
-            if (window.confirm(t('cancel_confirm'))) cancel.mutate();
-          }}
-          className="mt-4 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
-          style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
-          {t('cancel_btn')}
-        </button>
-      )}
+      <div className="iroko-grid pointer-events-none absolute inset-0 opacity-30" />
+      <div className="relative">
+        <span className="eyebrow-sm" style={{ color: 'var(--color-gold)' }}>
+          {t('current_plan')}
+        </span>
+        <h3 className="display-italic mt-1 text-[32px]" style={{ color: 'var(--color-bone)' }}>
+          {overview.planName}
+        </h3>
+        <p className="mt-2 text-sm" style={{ color: 'rgba(245,236,218,0.7)' }}>
+          {t('status_label')}: {statusLabel}
+        </p>
+        {overview.currentPeriodEnd &&
+          (overview.cancelAtPeriodEnd ?
+            <p className="mt-1 text-[13px]" style={{ color: 'rgba(245,236,218,0.55)' }}>
+              {t('cancels_on', { date: formatDate(overview.currentPeriodEnd) })}
+            </p>
+          : <p className="mt-1 text-[13px]" style={{ color: 'rgba(245,236,218,0.55)' }}>
+              {t('renews_on', { date: formatDate(overview.currentPeriodEnd) })}
+            </p>)}
+        {!overview.cancelAtPeriodEnd && (
+          <button
+            type="button"
+            disabled={cancel.isPending}
+            onClick={() => {
+              if (window.confirm(t('cancel_confirm'))) cancel.mutate();
+            }}
+            className="mt-5 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
+            style={{ borderColor: 'rgba(245,236,218,0.25)', color: 'var(--color-bone)' }}>
+            {t('cancel_btn')}
+          </button>
+        )}
+      </div>
     </section>
   );
 }
@@ -250,51 +276,52 @@ function InvoiceHistory() {
     );
 
   return (
-    <section
-      className="border-border rounded-xl border p-6 shadow-sm"
-      style={{ background: 'var(--surface-1)' }}>
-      <h2 className="text-foreground mb-4 text-xl font-bold">{t('history_title')}</h2>
+    <section>
+      <span className="eyebrow mb-3 block">{t('history_title')}</span>
 
       {isPending ?
         <p className="text-muted-foreground text-[12px]">{t('billing_loading')}</p>
       : entries.length === 0 ?
         <p className="text-muted-foreground text-[12px]">{t('history_empty')}</p>
-      : <>
-          <table className="w-full border-collapse text-left">
+      : <div className="card overflow-x-auto">
+          <table className="w-full min-w-[560px] border-collapse text-left">
             <thead>
-              <tr className="border-border bg-muted/40 border-b">
-                <th className="text-muted-foreground px-2 py-3 text-[10px] font-black tracking-widest uppercase">
+              <tr className="col-header table-header-row bg-surface-2">
+                <th scope="col" className="px-[22px] py-3">
                   {t('col_date')}
                 </th>
-                <th className="text-muted-foreground px-2 py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                <th scope="col" className="py-3 text-right">
                   {t('col_amount')}
                 </th>
-                <th className="text-muted-foreground px-2 py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                <th scope="col" className="py-3 text-right">
                   {t('col_status')}
                 </th>
-                <th className="text-muted-foreground px-2 py-3 text-right text-[10px] font-black tracking-widest uppercase">
+                <th scope="col" className="px-[22px] py-3 text-right">
                   {t('col_receipt')}
                 </th>
               </tr>
             </thead>
-            <tbody className="text-sm">
-              {entries.map((invoice, idx) => (
-                <tr
-                  key={invoice.id}
-                  className={cn(
-                    'border-border/50 hover:bg-muted/30 border-b transition-colors',
-                    idx % 2 !== 0 && 'bg-muted/20',
-                  )}>
-                  <td className="text-muted-foreground px-2 py-3 font-mono text-[11px]">
+            <tbody className="divide-border divide-y text-sm">
+              {entries.map((invoice) => (
+                <tr key={invoice.id} className="hover:bg-surface-2 transition-colors">
+                  <td className="mono text-muted-foreground px-[22px] py-[14px] text-[12px]">
                     {formatDate(invoice.createdAt)}
                   </td>
-                  <td className="text-foreground px-2 py-3 text-right font-mono text-xs font-bold">
+                  <td className="mono text-foreground py-[14px] text-right text-[13px] font-bold">
                     {formatAmount(invoice)}
                   </td>
-                  <td className="text-muted-foreground px-2 py-3 text-right text-[11px]">
-                    {invoice.status}
+                  <td className="py-[14px] text-right">
+                    <span
+                      className="chip chip-sm"
+                      style={
+                        invoice.status === 'paid' ?
+                          { background: 'var(--color-success-wash)', color: 'var(--color-success)' }
+                        : { background: 'var(--surface-2)', color: 'var(--text-secondary)' }
+                      }>
+                      {t((INVOICE_STATUS_KEYS[invoice.status] ?? invoice.status) as never)}
+                    </span>
                   </td>
-                  <td className="px-2 py-3 text-right">
+                  <td className="px-[22px] py-[14px] text-right">
                     {invoice.hostedUrl && (
                       <a
                         href={invoice.hostedUrl}
@@ -310,17 +337,17 @@ function InvoiceHistory() {
               ))}
             </tbody>
           </table>
-          {hasNextPage && (
-            <button
-              type="button"
-              disabled={isFetchingNextPage}
-              onClick={() => void fetchNextPage()}
-              className="border-border text-foreground mt-4 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50">
-              {t('load_more')}
-            </button>
-          )}
-        </>
+        </div>
       }
+      {hasNextPage && (
+        <button
+          type="button"
+          disabled={isFetchingNextPage}
+          onClick={() => void fetchNextPage()}
+          className="border-border text-foreground mt-4 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50">
+          {t('load_more')}
+        </button>
+      )}
     </section>
   );
 }
