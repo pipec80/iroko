@@ -189,7 +189,7 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
                   key={entry.accountId}
                   className="hover:bg-surface-2 transition-colors"
                   style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
-                  <td className="py-[14px] pl-[22px]">
+                  <td className="py-[14px] pr-3 pl-[22px]">
                     <span className="avatar-32" style={{ background: accountTone(idx) }}>
                       {accountInitials(entry.name)}
                     </span>
