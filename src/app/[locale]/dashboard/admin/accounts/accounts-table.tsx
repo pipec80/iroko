@@ -192,7 +192,7 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
       <div className="card hidden overflow-x-auto md:block">
         <table className="w-full min-w-[860px] border-collapse">
           <thead>
-            <tr className="col-header bg-surface-2">
+            <tr className="col-header table-header-row bg-surface-2">
               <th scope="col" className="w-8 py-3 pl-[22px]" />
               <th scope="col" className="py-3 text-left">
                 {t('col_account_name')}

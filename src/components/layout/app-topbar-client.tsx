@@ -68,15 +68,16 @@ type Props = {
   orgs: OrgAccount[];
 };
 
-// Matches NAV_ITEMS labels in sidebar exactly
-const PAGE_TITLES: Record<string, string> = {
-  '/dashboard': 'Overview',
-  '/dashboard/projects': 'Proyectos',
-  '/dashboard/members': 'Miembros',
-  '/dashboard/billing': 'Billing',
-  '/dashboard/org/settings': 'Ajustes',
-  '/dashboard/account': 'Mi cuenta',
-  '/dashboard/robot': `${appConfig.brand} Robot`,
+// Matches NAV_ITEMS labels in sidebar exactly — values are Navigation namespace keys.
+const PAGE_TITLE_KEYS: Record<string, string> = {
+  '/dashboard': 'nav_overview',
+  '/dashboard/projects': 'nav_projects',
+  '/dashboard/members': 'nav_members',
+  '/dashboard/activity': 'nav_activity',
+  '/dashboard/team': 'nav_team',
+  '/dashboard/billing': 'nav_billing',
+  '/dashboard/org/settings': 'nav_settings',
+  '/dashboard/account': 'nav_account',
 };
 
 // Admin routes aren't in the sidebar NAV_ITEMS the map above mirrors, so they
@@ -88,16 +89,21 @@ const ADMIN_PAGE_TITLE_KEYS: Record<string, string> = {
   '/dashboard/admin/announcements': 'nav_announcements',
 };
 
-function getPageTitle(pathname: string, tAdmin: ReturnType<typeof useTranslations>): string {
+function getPageTitle(
+  pathname: string,
+  tAdmin: ReturnType<typeof useTranslations>,
+  tNav: ReturnType<typeof useTranslations>,
+): string {
   for (const [route, key] of Object.entries(ADMIN_PAGE_TITLE_KEYS)) {
     if (pathname.startsWith(route)) return tAdmin(key);
   }
-  for (const [route, title] of Object.entries(PAGE_TITLES)) {
+  if (pathname.startsWith('/dashboard/robot')) return `${appConfig.brand} Robot`;
+  for (const [route, key] of Object.entries(PAGE_TITLE_KEYS)) {
     if (pathname === route || (route !== '/dashboard' && pathname.startsWith(route))) {
-      return title;
+      return tNav(key);
     }
   }
-  return 'Dashboard';
+  return tNav('nav_overview');
 }
 
 function userInitials(displayName: string): string {
@@ -116,7 +122,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
   const tAdmin = useTranslations('Admin');
   const tNav = useTranslations('Navigation');
   const { theme, setTheme } = useTheme();
-  const pageTitle = getPageTitle(pathname, tAdmin);
+  const pageTitle = getPageTitle(pathname, tAdmin, tNav);
   const firstOrg = orgs[0];
   const orgLabel = firstOrg?.name.toUpperCase() ?? 'IROKO';
 

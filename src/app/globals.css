@@ -303,6 +303,25 @@
 }
 
 @layer utilities {
+  /* Material Symbols — ligature font loaded via <link> in app/layout.tsx.
+     Without these properties the browser renders the raw ligature text
+     (e.g. "verified_user") instead of the glyph. */
+  .material-symbols-outlined {
+    font-family: 'Material Symbols Outlined';
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+  }
+
   /* Frosted glass — light surface */
   .glass {
     background-color: rgba(255, 255, 255, 0.86);
@@ -421,6 +440,13 @@
     letter-spacing: 0.2em;
     text-transform: uppercase;
     color: var(--text-tertiary);
+  }
+
+  /* ── Table header row — separates the header from the body even when
+     bg-surface-2 and the card's own background resolve to the same value
+     (true in dark mode: --surface-2 === --surface-elevated) ── */
+  .table-header-row {
+    border-bottom: 1px solid var(--border);
   }
 
   /* ── Avatar initials — 32 × 32 rounded square with initials ── */

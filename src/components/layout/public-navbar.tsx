@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/sheet';
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
+import { cn } from '@/lib/utils';
 
 export function PublicNavbar() {
   const t = useTranslations('PublicNav');
@@ -34,12 +35,11 @@ export function PublicNavbar() {
 
   return (
     <header
-      className="fixed inset-x-0 top-0 z-50 transition-all duration-300"
-      style={{
-        background: scrolled ? 'rgba(245,236,218,0.86)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(12px)' : 'none',
-        borderBottom: scrolled ? '1px solid rgba(14,17,23,0.08)' : '1px solid transparent',
-      }}>
+      className={cn(
+        'fixed inset-x-0 top-0 z-50 border-b border-transparent transition-all duration-300',
+        scrolled &&
+          'border-border/50 bg-[rgba(245,236,218,0.86)] backdrop-blur-md dark:bg-[rgba(14,17,23,0.86)]',
+      )}>
       <div className="mx-auto flex max-w-7xl items-center gap-8 px-8 py-4">
         <Link href="/" className="flex shrink-0 items-center gap-2">
           <svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true">

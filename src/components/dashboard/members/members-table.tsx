@@ -189,7 +189,7 @@ export function MembersTable({ members, timezone = 'UTC', accountId, currentUser
       <div className="card overflow-x-auto">
         <div className="min-w-[800px]">
           {/* Header row */}
-          <div className="col-header members-row bg-surface-2 py-3">
+          <div className="col-header table-header-row members-row bg-surface-2 py-3">
             <span />
             <span>{t('col_member')}</span>
             <span>{t('role_label')}</span>
