@@ -74,7 +74,6 @@ const PAGE_TITLE_KEYS: Record<string, string> = {
   '/dashboard/projects': 'nav_projects',
   '/dashboard/members': 'nav_members',
   '/dashboard/activity': 'nav_activity',
-  '/dashboard/team': 'nav_team',
   '/dashboard/billing': 'nav_billing',
   '/dashboard/org/settings': 'nav_settings',
   '/dashboard/account': 'nav_account',

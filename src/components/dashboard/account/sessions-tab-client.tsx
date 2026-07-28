@@ -25,16 +25,23 @@ type Labels = {
   none: string;
   session_revoked: string;
   other_sessions_revoked: string;
+  device_unknown: string;
+  device_iphone: string;
+  device_android: string;
+  device_windows: string;
+  device_macos: string;
+  device_linux: string;
+  device_browser: string;
 };
 
-function summarizeUserAgent(ua: string | null): string {
-  if (!ua) return 'Unknown device';
-  if (/iPhone/i.test(ua)) return 'iPhone';
-  if (/Android/i.test(ua)) return 'Android';
-  if (/Windows NT/i.test(ua)) return 'Windows';
-  if (/Macintosh/i.test(ua)) return 'macOS';
-  if (/Linux/i.test(ua)) return 'Linux';
-  return ua.split(' ')[0] || 'Browser';
+function summarizeUserAgent(ua: string | null, labels: Labels): string {
+  if (!ua) return labels.device_unknown;
+  if (/iPhone/i.test(ua)) return labels.device_iphone;
+  if (/Android/i.test(ua)) return labels.device_android;
+  if (/Windows NT/i.test(ua)) return labels.device_windows;
+  if (/Macintosh/i.test(ua)) return labels.device_macos;
+  if (/Linux/i.test(ua)) return labels.device_linux;
+  return ua.split(' ')[0] || labels.device_browser;
 }
 
 function formatDate(value: string | null, locale: string): string {
@@ -116,7 +123,7 @@ export function SessionsTabClient({ sessions, locale, labels }: Props) {
                     data-testid="session-item"
                     className="border-outline-variant/5 border-b last:border-b-0">
                     <td className="py-3 pr-4">
-                      <div className="font-medium">{summarizeUserAgent(s.user_agent)}</div>
+                      <div className="font-medium">{summarizeUserAgent(s.user_agent, labels)}</div>
                       {i === 0 && (
                         <span className="bg-primary/10 text-primary mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold">
                           {labels.current_badge}
