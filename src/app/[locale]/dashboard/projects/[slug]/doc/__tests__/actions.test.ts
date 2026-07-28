@@ -82,13 +82,13 @@ describe('createDocument', () => {
   it('returns session error when there are no claims', async () => {
     mocks.getClaims.mockResolvedValue({ data: null });
     const result = await createDocument(makeFormData(validDoc));
-    expect(result.error).toMatch(/sesión/i);
+    expect(result.error).toBe('invalid_session');
   });
 
   it('returns account error when get_my_account_id resolves empty', async () => {
     mocks.rpc.mockResolvedValue({ data: null, error: null });
     const result = await createDocument(makeFormData(validDoc));
-    expect(result.error).toMatch(/cuenta/i);
+    expect(result.error).toBe('account_not_found');
   });
 
   it('derives account_id server-side — never trusts the form', async () => {
@@ -103,7 +103,7 @@ describe('createDocument', () => {
   it('returns generic error when persistence throws — no internals leaked', async () => {
     mocks.create.mockRejectedValue(new Error('relation "project_documents" does not exist'));
     const result = await createDocument(makeFormData(validDoc));
-    expect(result.error).toMatch(/no se pudo crear/i);
+    expect(result.error).toBe('create_failed');
     expect(result.error).not.toContain('relation');
   });
 

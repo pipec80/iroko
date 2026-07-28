@@ -51,7 +51,7 @@ export const createProject = withServerAction(async function createProject(
   }
 
   const ctx = await getAccountContext();
-  if (!ctx) return { error: 'Sesión no válida. Recarga la página e intenta de nuevo.' };
+  if (!ctx) return { error: 'invalid_session' };
 
   try {
     await create({
@@ -71,9 +71,9 @@ export const createProject = withServerAction(async function createProject(
     );
 
     if (message.includes('unique') || message.includes('duplicate')) {
-      return { error: 'Ya existe un proyecto con ese nombre. Elige uno diferente.' };
+      return { error: 'duplicate_name' };
     }
-    return { error: 'No se pudo crear el proyecto. Intenta de nuevo.' };
+    return { error: 'create_failed' };
   }
 
   logger.info(

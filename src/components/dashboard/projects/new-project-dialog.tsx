@@ -20,6 +20,15 @@ import { appConfig } from '@/config/app.config';
 
 type ProjectType = 'docs' | 'automation' | 'agent';
 
+const ERROR_KEYS: Record<string, string> = {
+  name_required: 'error_name_required',
+  name_too_long: 'error_name_too_long',
+  description_too_long: 'error_description_too_long',
+  duplicate_name: 'error_duplicate_name',
+  invalid_session: 'error_generic',
+  create_failed: 'error_generic',
+};
+
 const TONE_LABELS: Record<ProjectTone, string> = {
   iron: 'Iron',
   gold: 'Gold',
@@ -110,7 +119,7 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
           <DialogDescription>{t('dialog_desc', { brand: appConfig.brand })}</DialogDescription>
         </DialogHeader>
 
-        <form ref={formRef} action={action} className="space-y-4">
+        <form ref={formRef} action={action} noValidate className="space-y-4">
           {/* Name */}
           <div className="space-y-2">
             <label htmlFor="project-name" className="text-on-surface text-sm font-semibold">
@@ -123,6 +132,7 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
               required
               maxLength={80}
               placeholder={t('form_name_placeholder')}
+              aria-invalid={!!state.error}
               className="bg-surface-container-low border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none"
             />
           </div>
@@ -214,8 +224,10 @@ export function NewProjectDialog({ variant }: NewProjectDialogProps) {
           </div>
 
           {state.error && (
-            <p className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
-              {state.error}
+            <p
+              role="alert"
+              className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
+              {t((ERROR_KEYS[state.error] ?? 'error_generic') as never)}
             </p>
           )}
 

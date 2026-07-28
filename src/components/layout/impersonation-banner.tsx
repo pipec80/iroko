@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { endImpersonation } from '@/app/[locale]/dashboard/admin/accounts/[accountId]/impersonation-actions';
@@ -22,6 +22,10 @@ function minutesLeftFor(expiresAt: string): number {
 export function ImpersonationBanner({ targetName, targetEmail, expiresAt }: Props) {
   const t = useTranslations('Impersonation');
   const [minutesLeft, setMinutesLeft] = useState(() => minutesLeftFor(expiresAt));
+  const [state, action, isPending] = useActionState(
+    async () => await endImpersonation(),
+    {} as { error?: string },
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -40,12 +44,15 @@ export function ImpersonationBanner({ targetName, targetEmail, expiresAt }: Prop
       <span>
         {t('banner_text', { name: targetName, email: targetEmail })} ·{' '}
         {t('banner_time_remaining', { minutes: minutesLeft })}
+        {state.error && (
+          <>
+            {' · '}
+            <span role="alert">{t('banner_error')}</span>
+          </>
+        )}
       </span>
-      <form
-        action={async () => {
-          await endImpersonation();
-        }}>
-        <Button type="submit" size="sm" variant="outline">
+      <form action={action}>
+        <Button type="submit" size="sm" variant="outline" disabled={isPending}>
           {t('banner_exit_button')}
         </Button>
       </form>

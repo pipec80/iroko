@@ -31,7 +31,7 @@ export function StepOrg({
   );
 
   return (
-    <form action={submit} className="space-y-4">
+    <form action={submit} noValidate className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor={inputId}>{t('org_name_label')}</Label>
         <Input
@@ -42,9 +42,14 @@ export function StepOrg({
           minLength={MIN_ORG_NAME_LENGTH}
           maxLength={MAX_ORG_NAME_LENGTH}
           required
+          aria-invalid={!!state.error}
         />
       </div>
-      {state.error && <p className="text-destructive text-sm">{t(`error_${state.error}`)}</p>}
+      {state.error && (
+        <p role="alert" className="text-destructive text-sm">
+          {t(`error_${state.error}`)}
+        </p>
+      )}
       <Button type="submit" disabled={isPending}>
         {t('next')}
       </Button>

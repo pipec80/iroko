@@ -85,9 +85,10 @@ function RowActions({ member, displayName }: RowActionsProps) {
           </DialogHeader>
           {state.error && (
             <p
+              role="alert"
               className="rounded-lg px-3 py-2 text-xs font-medium"
               style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
-              {state.error}
+              {t('error_generic')}
             </p>
           )}
           <DialogFooter>

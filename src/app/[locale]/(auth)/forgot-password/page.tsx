@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
         <p className="text-muted-foreground text-sm">{t('forgot_password_desc')}</p>
       </div>
 
-      <form action={formAction} className="space-y-5">
+      <form action={formAction} noValidate className="space-y-5">
         <div className="space-y-1.5">
           <Label className="text-foreground block text-sm font-semibold" htmlFor="email">
             {t('email')}
@@ -60,10 +60,15 @@ export default function ForgotPasswordPage() {
               placeholder="name@company.com"
               required
               type="email"
+              aria-invalid={!!state.fieldErrors?.email}
             />
           </div>
           {state.fieldErrors?.email && (
-            <p className="text-destructive text-xs">{state.fieldErrors.email[0]}</p>
+            <p role="alert" className="text-destructive text-xs">
+              {t(`errors.${state.fieldErrors.email[0] ?? ''}` as 'errors.generic', {
+                default: state.fieldErrors.email[0] ?? '',
+              })}
+            </p>
           )}
         </div>
 
@@ -72,7 +77,11 @@ export default function ForgotPasswordPage() {
             {error}
           </p>
         )}
-        {success && <p className="text-primary text-sm">{success}</p>}
+        {success && (
+          <p role="status" className="text-primary text-sm">
+            {success}
+          </p>
+        )}
 
         <CaptchaField resetKey={captchaResetKey} onReadyChange={setCaptchaReady} />
         <Button type="submit" disabled={pending || !captchaReady} className="h-11 w-full">
