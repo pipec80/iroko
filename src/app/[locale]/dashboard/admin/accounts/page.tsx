@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { AccountsTable } from './accounts-table';
 import { getAdminAccounts } from './actions';
-import { Link } from '@/i18n/routing';
 
 export async function generateMetadata({
   params,
@@ -31,6 +31,7 @@ export default async function AdminAccountsPage({
   }
 
   const entries = data?.entries ?? [];
+  const nextCursor = data?.nextCursor ?? null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -43,46 +44,7 @@ export default async function AdminAccountsPage({
         </p>
       </header>
 
-      <div className="card overflow-x-auto">
-        <div className="min-w-[860px]">
-          <div className="col-header members-row bg-surface-2 py-3">
-            <span />
-            <span>{t('col_account_name')}</span>
-            <span>{t('col_owner_email')}</span>
-            <span>{t('col_plan')}</span>
-            <span>{t('col_subscription_status')}</span>
-            <span className="text-right">{t('col_members')}</span>
-          </div>
-
-          {entries.length === 0 ?
-            <div className="flex items-center justify-center px-6 py-16">
-              <p className="text-muted-foreground text-sm">{t('no_accounts')}</p>
-            </div>
-          : entries.map((entry, idx) => (
-              <Link
-                key={entry.accountId}
-                href={`/dashboard/admin/accounts/${entry.accountId}`}
-                className="members-row hover:bg-surface-2 py-[14px] transition-colors"
-                style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
-                <span />
-                <span className="text-foreground truncate text-sm font-medium">{entry.name}</span>
-                <span className="text-muted-foreground truncate text-sm">
-                  {entry.ownerEmail ?? '—'}
-                </span>
-                <span className="text-muted-foreground text-sm">
-                  {entry.planSlug ?? t('no_plan')}
-                </span>
-                <span className="text-muted-foreground text-sm">
-                  {entry.subscriptionStatus ?? '—'}
-                </span>
-                <span className="text-muted-foreground text-right text-sm">
-                  {entry.memberCount}
-                </span>
-              </Link>
-            ))
-          }
-        </div>
-      </div>
+      <AccountsTable initialEntries={entries} initialCursor={nextCursor} />
     </div>
   );
 }
