@@ -252,7 +252,7 @@
 
   --text-primary: #e6e8eb;
   --text-secondary: rgba(230, 232, 235, 0.72);
-  --text-tertiary: rgba(230, 232, 235, 0.5);
+  --text-tertiary: rgba(230, 232, 235, 0.6);
 
   --border: rgba(230, 232, 235, 0.1);
   --border-strong: rgba(230, 232, 235, 0.2);
@@ -763,6 +763,12 @@
 }
 .iroko-fade-in {
   animation: iroko-fade-in 500ms cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iroko-fade-in {
+    animation: none;
+  }
 }
 
 /* ── Markdown preview styles ── */
