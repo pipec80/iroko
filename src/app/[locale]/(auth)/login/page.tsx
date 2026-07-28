@@ -309,12 +309,12 @@ export default function LoginPage() {
         <p className="text-muted-foreground text-xs">
           {t.rich('terms_privacy', {
             terms: (chunks) => (
-              <Link href="/" className="text-primary font-medium hover:underline">
+              <Link href="/legal/terms" className="text-primary font-medium hover:underline">
                 {chunks}
               </Link>
             ),
             privacy: (chunks) => (
-              <Link href="/" className="text-primary font-medium hover:underline">
+              <Link href="/legal/privacy" className="text-primary font-medium hover:underline">
                 {chunks}
               </Link>
             ),
