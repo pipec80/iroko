@@ -64,7 +64,7 @@ export default async function ContactPage({ params }: { params: Promise<{ locale
                   </Label>
                   <div className="relative">
                     <select
-                      className="border-border bg-background text-foreground focus:ring-primary h-11 w-full cursor-pointer appearance-none rounded-md border px-4 py-2 text-sm shadow-sm transition-all focus:ring-1 focus:outline-none"
+                      className="border-border bg-background text-foreground focus:ring-primary h-11 w-full cursor-pointer appearance-none rounded-md border px-4 py-2 text-sm scheme-light shadow-sm transition-all focus:ring-1 focus:outline-none dark:scheme-dark"
                       id="company_size"
                       name="company_size"
                       defaultValue="">

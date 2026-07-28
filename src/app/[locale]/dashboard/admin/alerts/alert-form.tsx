@@ -28,6 +28,16 @@ export function AlertForm() {
     e.preventDefault();
     setError(null);
     setSuccessCount(null);
+
+    if (!subject.trim()) {
+      setError(t('error_subject_required'));
+      return;
+    }
+    if (!body.trim()) {
+      setError(t('error_body_required'));
+      return;
+    }
+
     startTransition(async () => {
       const result = await sendPlatformAlert({ subject, body });
       if (result.error) {
@@ -41,7 +51,7 @@ export function AlertForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card flex max-w-xl flex-col gap-4 p-6">
+    <form onSubmit={handleSubmit} noValidate className="card flex max-w-xl flex-col gap-4 p-6">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="alert-subject">{t('alerts_subject_label')}</Label>
         <Input
@@ -50,6 +60,7 @@ export function AlertForm() {
           onChange={(e) => setSubject(e.target.value)}
           maxLength={200}
           required
+          aria-invalid={!!error}
         />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -61,11 +72,16 @@ export function AlertForm() {
           maxLength={5000}
           rows={5}
           required
+          aria-invalid={!!error}
         />
       </div>
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      )}
       {successCount !== null && (
-        <p className="text-sm" style={{ color: 'var(--color-success)' }}>
+        <p role="status" className="text-sm" style={{ color: 'var(--color-success)' }}>
           {t('alerts_success', { count: successCount })}
         </p>
       )}
