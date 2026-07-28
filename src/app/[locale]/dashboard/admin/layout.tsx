@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { setRequestLocale } from 'next-intl/server';
 
-import { Link } from '@/i18n/routing';
+import { AdminNav } from './admin-nav';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -25,24 +25,9 @@ export default async function AdminLayout({
   const isPlatformAdmin = data?.claims?.app_metadata?.is_platform_admin === true;
   if (!isPlatformAdmin) notFound();
 
-  const t = await getTranslations('Admin');
-
   return (
     <div className="flex flex-col gap-6">
-      <nav className="flex gap-4 border-b border-(--border) pb-3">
-        <Link href="/dashboard/admin/accounts" className="text-sm font-medium">
-          {t('nav_accounts')}
-        </Link>
-        <Link href="/dashboard/admin/audit" className="text-sm font-medium">
-          {t('nav_audit')}
-        </Link>
-        <Link href="/dashboard/admin/alerts" className="text-sm font-medium">
-          {t('nav_alerts')}
-        </Link>
-        <Link href="/dashboard/admin/announcements" className="text-sm font-medium">
-          {t('nav_announcements')}
-        </Link>
-      </nav>
+      <AdminNav />
       {children}
     </div>
   );
