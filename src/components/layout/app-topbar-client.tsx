@@ -79,7 +79,19 @@ const PAGE_TITLES: Record<string, string> = {
   '/dashboard/robot': `${appConfig.brand} Robot`,
 };
 
-function getPageTitle(pathname: string): string {
+// Admin routes aren't in the sidebar NAV_ITEMS the map above mirrors, so they
+// resolve their title from the same `Admin` namespace the admin tabs use.
+const ADMIN_PAGE_TITLE_KEYS: Record<string, string> = {
+  '/dashboard/admin/accounts': 'nav_accounts',
+  '/dashboard/admin/audit': 'nav_audit',
+  '/dashboard/admin/alerts': 'nav_alerts',
+  '/dashboard/admin/announcements': 'nav_announcements',
+};
+
+function getPageTitle(pathname: string, tAdmin: ReturnType<typeof useTranslations>): string {
+  for (const [route, key] of Object.entries(ADMIN_PAGE_TITLE_KEYS)) {
+    if (pathname.startsWith(route)) return tAdmin(key);
+  }
   for (const [route, title] of Object.entries(PAGE_TITLES)) {
     if (pathname === route || (route !== '/dashboard' && pathname.startsWith(route))) {
       return title;
@@ -101,8 +113,9 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('UserMenu');
+  const tAdmin = useTranslations('Admin');
   const { theme, setTheme } = useTheme();
-  const pageTitle = getPageTitle(pathname);
+  const pageTitle = getPageTitle(pathname, tAdmin);
   const firstOrg = orgs[0];
   const orgLabel = firstOrg?.name.toUpperCase() ?? 'IROKO';
 
