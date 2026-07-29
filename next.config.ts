@@ -82,6 +82,7 @@ const nextConfig: NextConfig = {
     ],
   },
   reactCompiler: true,
+  serverExternalPackages: ['exceljs'],
   typedRoutes: true,
   trailingSlash: false,
   typescript: {
