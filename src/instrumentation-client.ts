@@ -35,3 +35,7 @@ Sentry.init({
 
   debug: false,
 });
+
+// Instrumenta las navegaciones del App Router como spans (requerido por la
+// convención instrumentation-client de Next.js 15+).
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

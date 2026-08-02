@@ -16,14 +16,14 @@ recomendaciones oficiales ya están aplicadas. Hay **1 problema crítico**
 está perdiendo los eventos del navegador en producción), **1 desactualización**
 (el archivo de cliente usa la convención vieja) y varias mejoras opcionales.
 
-| #   | Hallazgo                                                                                                        | Severidad      |
-| --- | --------------------------------------------------------------------------------------------------------------- | -------------- |
-| 1   | `/sentry-tunnel` no está excluido del matcher del proxy → el túnel se rompe con la redirección de locale        | 🔴 Crítico     |
-| 2   | `sentry.client.config.ts` es la convención vieja → renombrar a `instrumentation-client.ts` + hook de navegación | 🟠 Recomendado |
-| 3   | Falta `Sentry.setUser` → los issues no se pueden correlacionar con usuarios                                     | 🟡 Opcional    |
-| 4   | Revisar `dataCollection` (v10.57+) para alinear con la postura GDPR ya adoptada en Replay                       | 🟡 Opcional    |
-| 5   | Logs de Sentry + integración Pino disponibles, no activados (decisión razonable en plan free)                   | 🟡 Opcional    |
-| 6   | `ignoreErrors` es más idiomático que el regex en `beforeSend` para filtrar por mensaje                          | 🔵 Cosmético   |
+| #   | Hallazgo                                                                                                                                       | Severidad      |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1   | `/sentry-tunnel` no está excluido del matcher del proxy → el túnel se rompe con la redirección de locale — **✅ aplicado en esta rama**        | 🔴 Crítico     |
+| 2   | `sentry.client.config.ts` es la convención vieja → renombrar a `instrumentation-client.ts` + hook de navegación — **✅ aplicado en esta rama** | 🟠 Recomendado |
+| 3   | Falta `Sentry.setUser` → los issues no se pueden correlacionar con usuarios                                                                    | 🟡 Opcional    |
+| 4   | Revisar `dataCollection` (v10.57+) para alinear con la postura GDPR ya adoptada en Replay                                                      | 🟡 Opcional    |
+| 5   | Logs de Sentry + integración Pino disponibles, no activados (decisión razonable en plan free)                                                  | 🟡 Opcional    |
+| 6   | `ignoreErrors` es más idiomático que el regex en `beforeSend` para filtrar por mensaje                                                         | 🔵 Cosmético   |
 
 ## Lo que ya está bien (alineado con la doc oficial)
 
@@ -210,9 +210,11 @@ Cuotas aproximadas del plan Developer (verificar en Settings → Usage & Billing
 
 ## Plan de acción sugerido
 
-1. **Ahora (este branch)**: fix del matcher del proxy (#1) + rename a
-   `instrumentation-client.ts` con `onRouterTransitionStart` (#2). Ambos son
-   pequeños, seguros y el #1 probablemente esté perdiendo datos hoy.
+1. **✅ Aplicado en esta rama**: fix del matcher del proxy (#1) + rename a
+   `src/instrumentation-client.ts` con `onRouterTransitionStart` (#2).
+   **Pendiente de verificar tras el deploy**: abrir el preview/producción con
+   DevTools → Network y confirmar que `POST /sentry-tunnel` devuelve 200
+   (antes del fix: 307 → 404).
 2. **Corto plazo**: `Sentry.setUser({ id })` (#3) y decisión explícita sobre
    `dataCollection` (#4).
 3. **Cuando haga falta**: evaluar logs con Pino (#5) según cuota disponible,
