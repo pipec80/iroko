@@ -16,14 +16,14 @@ recomendaciones oficiales ya están aplicadas. Hay **1 problema crítico**
 está perdiendo los eventos del navegador en producción), **1 desactualización**
 (el archivo de cliente usa la convención vieja) y varias mejoras opcionales.
 
-| # | Hallazgo | Severidad |
-|---|----------|-----------|
-| 1 | `/sentry-tunnel` no está excluido del matcher del proxy → el túnel se rompe con la redirección de locale | 🔴 Crítico |
-| 2 | `sentry.client.config.ts` es la convención vieja → renombrar a `instrumentation-client.ts` + hook de navegación | 🟠 Recomendado |
-| 3 | Falta `Sentry.setUser` → los issues no se pueden correlacionar con usuarios | 🟡 Opcional |
-| 4 | Revisar `dataCollection` (v10.57+) para alinear con la postura GDPR ya adoptada en Replay | 🟡 Opcional |
-| 5 | Logs de Sentry + integración Pino disponibles, no activados (decisión razonable en plan free) | 🟡 Opcional |
-| 6 | `ignoreErrors` es más idiomático que el regex en `beforeSend` para filtrar por mensaje | 🔵 Cosmético |
+| #   | Hallazgo                                                                                                        | Severidad      |
+| --- | --------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1   | `/sentry-tunnel` no está excluido del matcher del proxy → el túnel se rompe con la redirección de locale        | 🔴 Crítico     |
+| 2   | `sentry.client.config.ts` es la convención vieja → renombrar a `instrumentation-client.ts` + hook de navegación | 🟠 Recomendado |
+| 3   | Falta `Sentry.setUser` → los issues no se pueden correlacionar con usuarios                                     | 🟡 Opcional    |
+| 4   | Revisar `dataCollection` (v10.57+) para alinear con la postura GDPR ya adoptada en Replay                       | 🟡 Opcional    |
+| 5   | Logs de Sentry + integración Pino disponibles, no activados (decisión razonable en plan free)                   | 🟡 Opcional    |
+| 6   | `ignoreErrors` es más idiomático que el regex en `beforeSend` para filtrar por mensaje                          | 🔵 Cosmético   |
 
 ## Lo que ya está bien (alineado con la doc oficial)
 
@@ -42,8 +42,8 @@ está perdiendo los eventos del navegador en producción), **1 desactualización
   del ejemplo oficial.
 - ✅ **Replay conservador**: `replaysSessionSampleRate: 0.05` (la doc sugiere
   0.1; 0.05 es incluso mejor para plan free) + `replaysOnErrorSampleRate: 1.0`
-  + `maskAllText`/`maskAllInputs` (GDPR). El CSP ya tiene `worker-src blob:`
-  que Replay necesita.
+  - `maskAllText`/`maskAllInputs` (GDPR). El CSP ya tiene `worker-src blob:`
+    que Replay necesita.
 - ✅ **Filtrado de ruido** en `beforeSend` (ChunkLoadError, NetworkError,
   interrupciones de prerender de Next 16) — la doc recomienda filtrar
   precisamente este tipo de errores no accionables; clave en plan free
@@ -83,7 +83,7 @@ La doc oficial lo advierte textualmente para Next.js 16:
 >
 > ```ts
 > export const config = {
->   matcher: ["/((?!sentry-tunnel|_next/static|_next/image|favicon.ico).*)"],
+>   matcher: ['/((?!sentry-tunnel|_next/static|_next/image|favicon.ico).*)'],
 > };
 > ```
 
@@ -97,7 +97,7 @@ source: '/((?!api|sentry-tunnel|_next/static|_next/image|favicon.ico|manifest.js
 en producción y confirmar que llega a Issues. En la pestaña Network se debe ver
 `POST /sentry-tunnel` → 200 (hoy debería verse el 307 → 404 que confirma el bug).
 
-*Nota:* los eventos de **servidor** no pasan por el túnel (Node envía directo),
+_Nota:_ los eventos de **servidor** no pasan por el túnel (Node envía directo),
 por eso los issues de servidor (p. ej. IROKO-6) sí llegaban — el bug afecta
 solo al lado cliente.
 
@@ -197,7 +197,7 @@ Cuotas aproximadas del plan Developer (verificar en Settings → Usage & Billing
    `0` y quedarse solo con `replaysOnErrorSampleRate: 1.0` — los replays de
    error son los que de verdad valen.
 2. **Trazas**: `0.1` está bien de partida. La doc recomienda vigilar
-   Settings → Stats (categoría *spans*) y ajustar. Si se agota, bajar a `0.05`
+   Settings → Stats (categoría _spans_) y ajustar. Si se agota, bajar a `0.05`
    o usar `tracesSampler` para excluir rutas de bajo valor (health checks,
    assets).
 3. **Errores**: el filtrado de ruido ya implementado es la mejor defensa de la
