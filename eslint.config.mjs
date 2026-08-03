@@ -135,6 +135,7 @@ const eslintConfig = defineConfig([
     'node_modules/**',
     'public/**',
     'dist/**',
+    'docs/**',
     'cypress/**',
     'jest/**',
     // Static HTML/JSX design references, not shipped app code.
