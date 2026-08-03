@@ -497,21 +497,32 @@ COMMENT ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval
 
 
 CREATE OR REPLACE FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") RETURNS "uuid"
-    LANGUAGE "sql" STABLE SECURITY DEFINER
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-  SELECT c.account_id
+DECLARE
+  v_account_id uuid;
+BEGIN
+  SELECT c.account_id INTO v_account_id
   FROM billing.subscriptions s
   JOIN billing.customers c ON c.id = s.customer_id
   WHERE s.external_subscription_id = p_external_subscription_id
   LIMIT 1;
+
+  IF v_account_id IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  PERFORM private.assert_account_admin(v_account_id);
+  RETURN v_account_id;
+END;
 $$;
 
 
 ALTER FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") IS 'Resuelve accountId a partir del id de suscripción del proveedor (F2-2A-providers, cancelación diferida de MercadoPago). NULL si no hay match.';
+COMMENT ON FUNCTION "public"."get_account_id_by_external_subscription"("p_external_subscription_id" "text") IS 'Resuelve accountId a partir del id de suscripción del proveedor para cancelación diferida. Solo owner/admin de la cuenta; NULL si no hay match.';
 
 
 CREATE OR REPLACE FUNCTION "public"."broadcast_alert_email"("p_subject" "text", "p_body" "text") RETURNS integer

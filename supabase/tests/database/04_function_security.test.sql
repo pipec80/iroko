@@ -4,7 +4,20 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(1);
+SELECT plan(2);
+
+SELECT is(
+  (
+    SELECT coalesce(array_agg(p.proname::text ORDER BY p.proname), ARRAY[]::text[])
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE p.prosecdef = true
+      AND n.nspname = 'public'
+      AND has_function_privilege('anon', p.oid, 'EXECUTE')
+  ),
+  ARRAY['check_request', 'get_active_plans']::text[],
+  'Solo las RPC SECURITY DEFINER públicas documentadas son ejecutables por anon'
+);
 
 SELECT is(
   (

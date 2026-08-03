@@ -4,7 +4,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(11);
+SELECT plan(15);
 
 -- ── Seed: owner (0821) y member (0822) en el team 0920 ──────────────────────
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
@@ -59,10 +59,38 @@ SELECT set_config(
 SELECT throws_ok(
   $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
       'http://insecure.com/hook', ARRAY['member.joined'])$$,
-  'invalid_url',
+  'unsafe_webhook_url',
   'URL http:// es rechazada'
 );
 
+
+SELECT throws_ok(
+  $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
+      'https://127.0.0.1/hook', ARRAY['member.joined'])$$,
+  'unsafe_webhook_url',
+  'la RPC rechaza loopback IPv4 aunque se llame sin Zod'
+);
+
+SELECT throws_ok(
+  $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
+      'https://169.254.169.254/latest/meta-data', ARRAY['member.joined'])$$,
+  'unsafe_webhook_url',
+  'la RPC rechaza link-local de metadata aunque se llame sin Zod'
+);
+
+SELECT throws_ok(
+  $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
+      'https://[::1]/hook', ARRAY['member.joined'])$$,
+  'unsafe_webhook_url',
+  'la RPC rechaza literales IPv6'
+);
+
+SELECT throws_ok(
+  $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
+      'https://metadata.internal/hook', ARRAY['member.joined'])$$,
+  'unsafe_webhook_url',
+  'la RPC rechaza dominios internos'
+);
 SELECT throws_ok(
   $$SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
       'https://example.com/hook', ARRAY['no.such.event'])$$,
