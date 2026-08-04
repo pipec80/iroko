@@ -49,7 +49,10 @@ export const createApiKey = withServerAction(async function createApiKey(
       { action: 'api_key.create', code: error.code, message: error.message },
       'create_api_key failed',
     );
-    return { data: null, error: error.message ?? 'create_failed' };
+    return {
+      data: null,
+      error: error.message === 'not_authorized' ? 'not_authorized' : 'create_failed',
+    };
   }
 
   const row = data?.[0];
@@ -72,7 +75,10 @@ export const listApiKeys = withServerAction(async function listApiKeys(): Promis
       { action: 'api_key.list', code: error.code, message: error.message },
       'list_api_keys failed',
     );
-    return { data: null, error: error.message ?? 'fetch_failed' };
+    return {
+      data: null,
+      error: error.message === 'not_authorized' ? 'not_authorized' : 'fetch_failed',
+    };
   }
 
   const keys: ApiKey[] = (data ?? []).map((row) => ({
@@ -108,7 +114,7 @@ export const revokeApiKey = withServerAction(async function revokeApiKey(input: 
       { action: 'api_key.revoke', code: error.code, message: error.message },
       'revoke_api_key failed',
     );
-    return { data: null, error: error.message ?? 'revoke_failed' };
+    return { data: null, error: 'revoke_failed' };
   }
 
   return { data: true };

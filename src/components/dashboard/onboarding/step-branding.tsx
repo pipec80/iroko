@@ -18,6 +18,7 @@ import { storageUrl } from '@/lib/storage';
 
 export function StepBranding() {
   const t = useTranslations('Onboarding');
+  const tSettings = useTranslations('Settings');
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [hasFile, setHasFile] = useState(false);
@@ -92,7 +93,13 @@ export function StepBranding() {
               </Button>
             )}
           </div>
-          {logoState.error && <p className="text-destructive mt-2 text-sm">{logoState.error}</p>}
+          {logoState.error && (
+            <p role="alert" className="text-destructive mt-2 text-sm">
+              {tSettings(`errors.${logoState.error}` as 'errors.generic', {
+                default: tSettings('errors.generic'),
+              })}
+            </p>
+          )}
         </div>
       </form>
 

@@ -10,7 +10,7 @@ export const INVITABLE_ROLES = ['admin', 'member', 'viewer'] as const;
 export const inviteSchema = z.object({
   emails: z
     .string()
-    .min(1, 'At least one email is required')
+    .min(1, 'emails_required')
     .transform((raw) =>
       raw
         .split(',')
@@ -19,16 +19,16 @@ export const inviteSchema = z.object({
     )
     .pipe(
       z
-        .array(z.string().email('Invalid email format').max(254, 'Email too long'))
-        .min(1, 'At least one valid email is required')
-        .max(10, 'Maximum 10 emails per invitation'),
+        .array(z.string().email('invalid_email_format').max(254, 'email_too_long'))
+        .min(1, 'emails_required')
+        .max(10, 'max_10_emails'),
     ),
   role: z.enum(INVITABLE_ROLES),
 });
 
 /** Schema para eliminar un miembro del equipo. */
 export const removeMemberSchema = z.object({
-  userId: z.string().uuid('Invalid user ID'),
+  userId: z.string().uuid('invalid_user_id'),
 });
 
 export type InviteInput = z.infer<typeof inviteSchema>;

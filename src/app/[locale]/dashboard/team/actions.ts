@@ -101,9 +101,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
       'invite_members failed',
     );
     const knownError =
-      error.message?.includes('seat_limit_reached') ?
-        'seat_limit_reached'
-      : (error.message ?? 'invite_failed');
+      error.message?.includes('seat_limit_reached') ? 'seat_limit_reached' : 'invite_failed';
     return { error: knownError };
   }
 
@@ -170,7 +168,7 @@ export const removeMember = withServerAction(async function removeMember(
       { action: 'team.remove', code: error.code, message: error.message },
       'remove_member failed',
     );
-    return { error: error.message ?? 'remove_failed' };
+    return { error: 'remove_failed' };
   }
 
   logger.info(

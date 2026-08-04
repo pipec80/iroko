@@ -132,8 +132,8 @@ export function AuditLogTable({
           <div
             className={
               variant === 'platform' ?
-                'col-header platform-activity-row bg-surface-2 py-3'
-              : 'col-header activity-row bg-surface-2 py-3'
+                'col-header table-header-row platform-activity-row bg-surface-2 py-3'
+              : 'col-header table-header-row activity-row bg-surface-2 py-3'
             }>
             <span>{t('col_actor')}</span>
             <span>{t('col_action')}</span>

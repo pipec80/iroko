@@ -43,7 +43,11 @@ export default async function AuthClickPage({
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-4">
         <div className="w-full max-w-sm text-center">
-          <p className="text-destructive text-sm">{t('errors.confirmation_failed')}</p>
+          <p
+            role="alert"
+            className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm font-medium">
+            {t('errors.confirmation_failed')}
+          </p>
           <Link href="/login" className="text-primary mt-4 block text-sm font-semibold">
             {t('back_to_login')}
           </Link>

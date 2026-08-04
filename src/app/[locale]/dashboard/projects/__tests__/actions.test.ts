@@ -85,13 +85,13 @@ describe('createProject', () => {
     it('returns session error when there are no claims', async () => {
       mocks.getClaims.mockResolvedValue({ data: null });
       const result = await createProject(makeFormData(validProject));
-      expect(result.error).toMatch(/sesión/i);
+      expect(result.error).toBe('invalid_session');
     });
 
     it('returns session error when get_my_account_id resolves empty', async () => {
       mocks.rpc.mockResolvedValue({ data: null, error: null });
       const result = await createProject(makeFormData(validProject));
-      expect(result.error).toMatch(/sesión/i);
+      expect(result.error).toBe('invalid_session');
     });
   });
 
@@ -101,13 +101,13 @@ describe('createProject', () => {
         new Error('duplicate key value violates unique constraint "projects_slug_key"'),
       );
       const result = await createProject(makeFormData(validProject));
-      expect(result.error).toMatch(/ya existe/i);
+      expect(result.error).toBe('duplicate_name');
     });
 
     it('maps any other DB error to a generic message — no internals leaked', async () => {
       mocks.create.mockRejectedValue(new Error('connection refused 10.0.0.5:5432'));
       const result = await createProject(makeFormData(validProject));
-      expect(result.error).toMatch(/no se pudo crear/i);
+      expect(result.error).toBe('create_failed');
       expect(result.error).not.toContain('10.0.0.5');
     });
 

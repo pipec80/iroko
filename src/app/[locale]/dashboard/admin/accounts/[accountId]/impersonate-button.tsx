@@ -71,7 +71,13 @@ export function ImpersonateButton({
             placeholder={t('reason_placeholder')}
           />
         </div>
-        {error && <p className="text-destructive text-sm">{error}</p>}
+        {error && (
+          <p
+            role="alert"
+            className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm font-medium">
+            {error}
+          </p>
+        )}
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
             {t('cancel_button')}

@@ -17,7 +17,7 @@
 -- supabase/schemas/webhooks.sql se actualiza como espejo en el mismo commit.
 -- ============================================================================
 
-CREATE EXTENSION IF NOT EXISTS pg_net;
+CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;
 
 CREATE TYPE public.webhook_delivery_status AS ENUM ('pending', 'success', 'failed', 'exhausted');
 
@@ -40,6 +40,56 @@ $$;
 COMMENT ON FUNCTION private.webhook_event_catalog() IS
   'Catálogo canónico de eventos de webhook (F2-2D/2A-core). Debe coincidir con WEBHOOK_EVENT_TYPES en src/lib/validation/webhooks.ts.';
 REVOKE EXECUTE ON FUNCTION private.webhook_event_catalog() FROM PUBLIC;
+
+-- Defense in depth for direct PostgREST calls. The final egress layer must
+-- still prevent DNS rebinding when resolving public hostnames.
+CREATE OR REPLACE FUNCTION private.assert_safe_webhook_url(p_url text)
+RETURNS void
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path = ''
+AS $$
+DECLARE
+  v_authority text;
+  v_host      text;
+  v_ip        inet;
+BEGIN
+  IF p_url IS NULL OR char_length(p_url) > 2000 THEN
+    RAISE EXCEPTION 'unsafe_webhook_url';
+  END IF;
+  v_authority := substring(p_url FROM '^https://([^/?#]+)');
+  IF v_authority IS NULL OR v_authority LIKE '%@%' OR v_authority LIKE '[%' THEN
+    RAISE EXCEPTION 'unsafe_webhook_url';
+  END IF;
+  IF v_authority !~ '^([A-Za-z0-9.-]+)(:[0-9]{1,5})?$' THEN
+    RAISE EXCEPTION 'unsafe_webhook_url';
+  END IF;
+  v_host := lower(trim(trailing '.' FROM split_part(v_authority, ':', 1)));
+  IF v_host = '' OR v_host IN ('localhost', 'localhost.localdomain')
+     OR v_host LIKE '%.localhost'
+     OR v_host LIKE '%.local'
+     OR v_host LIKE '%.internal'
+     OR v_host ~ '^[0-9]+$' THEN
+    RAISE EXCEPTION 'unsafe_webhook_url';
+  END IF;
+  IF v_host ~ '^[0-9.]+$' THEN
+    BEGIN
+      v_ip := v_host::inet;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE EXCEPTION 'unsafe_webhook_url';
+    END;
+    IF v_ip <<= ANY (ARRAY[
+      '0.0.0.0/8'::inet, '10.0.0.0/8'::inet, '100.64.0.0/10'::inet,
+      '127.0.0.0/8'::inet, '169.254.0.0/16'::inet, '172.16.0.0/12'::inet,
+      '192.0.0.0/24'::inet, '192.0.2.0/24'::inet, '192.168.0.0/16'::inet,
+      '198.18.0.0/15'::inet, '198.51.100.0/24'::inet, '203.0.113.0/24'::inet,
+      '224.0.0.0/4'::inet, '240.0.0.0/4'::inet
+    ]) THEN
+      RAISE EXCEPTION 'unsafe_webhook_url';
+    END IF;
+  END IF;
+END;
+$$;
 
 -- ============================================================================
 -- Tablas
@@ -310,9 +360,7 @@ DECLARE
   v_secret_id uuid;
 BEGIN
   PERFORM private.assert_account_admin(p_account_id);
-  IF p_url IS NULL OR p_url !~ '^https://' THEN
-    RAISE EXCEPTION 'invalid_url';
-  END IF;
+  PERFORM private.assert_safe_webhook_url(p_url);
   IF p_events IS NULL OR array_length(p_events, 1) IS NULL
      OR NOT (p_events <@ private.webhook_event_catalog()) THEN
     RAISE EXCEPTION 'invalid_events';
@@ -371,9 +419,7 @@ BEGIN
     RAISE EXCEPTION 'not_found';
   END IF;
   PERFORM private.assert_account_admin(v_account_id);
-  IF p_url IS NULL OR p_url !~ '^https://' THEN
-    RAISE EXCEPTION 'invalid_url';
-  END IF;
+  PERFORM private.assert_safe_webhook_url(p_url);
   IF p_events IS NULL OR array_length(p_events, 1) IS NULL
      OR NOT (p_events <@ private.webhook_event_catalog()) THEN
     RAISE EXCEPTION 'invalid_events';

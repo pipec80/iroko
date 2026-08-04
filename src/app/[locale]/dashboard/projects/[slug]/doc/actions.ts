@@ -8,8 +8,8 @@ import { createClient } from '@/lib/supabase/server';
 import { create } from '@/lib/project-documents';
 
 const createDocumentSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido').max(120),
-  description: z.string().max(300).optional(),
+  name: z.string().min(1, 'name_required').max(120, 'name_too_long'),
+  description: z.string().max(300, 'description_too_long').optional(),
   projectId: z.string().uuid(),
 });
 
@@ -32,11 +32,11 @@ export const createDocument = withServerAction(async function createDocument(
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const userId = claimsData?.claims.sub;
-  if (!userId) return { error: 'Sesión no válida. Recarga la página e intenta de nuevo.' };
+  if (!userId) return { error: 'invalid_session' };
 
   // Derive accountId server-side via SECURITY DEFINER RPC — never trust client input.
   const { data: accountId } = await supabase.rpc('get_my_account_id');
-  if (!accountId) return { error: 'No se pudo determinar la cuenta. Recarga la página.' };
+  if (!accountId) return { error: 'account_not_found' };
 
   try {
     const doc = await create({
@@ -56,6 +56,6 @@ export const createDocument = withServerAction(async function createDocument(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'create_failed';
     logger.warn({ action: 'documents.create', accountId, message }, 'createDocument failed');
-    return { error: 'No se pudo crear el documento. Intenta de nuevo.' };
+    return { error: 'create_failed' };
   }
 });

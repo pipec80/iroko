@@ -1,9 +1,20 @@
 import { Suspense } from 'react';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import type { Metadata } from 'next';
 import { SessionsTab } from '@/components/dashboard/account/sessions-tab';
 import { AccountTabs } from '@/components/dashboard/account/account-tabs';
 import { createClient } from '@/lib/supabase/server';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Settings' });
+  return { title: t('title'), description: t('profile.description') };
+}
 
 export default async function AccountPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

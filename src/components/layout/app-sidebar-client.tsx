@@ -117,7 +117,13 @@ export function AppSidebarClient({ orgs }: Props) {
 
       {/* Org switcher */}
       <div className="px-3">
-        <button type="button" onClick={() => setIsOpen((v) => !v)} className="org-switcher">
+        <button
+          type="button"
+          onClick={() => setIsOpen((v) => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-label={t('org_switcher_label')}
+          className="org-switcher">
           {selectedOrg ?
             <>
               {storageUrl(selectedOrg.logo_url) ?
@@ -187,11 +193,21 @@ export function AppSidebarClient({ orgs }: Props) {
 
         {/* Dropdown — in flow, pushes nav down */}
         {isOpen && (
-          <div className="surface-card mb-2 p-1.5" style={{ boxShadow: 'var(--shadow-md)' }}>
+          <div
+            role="listbox"
+            tabIndex={-1}
+            aria-label={t('org_switcher_label')}
+            className="surface-card mb-2 p-1.5"
+            style={{ boxShadow: 'var(--shadow-md)' }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setIsOpen(false);
+            }}>
             {orgs.map((org, i) => (
               <button
                 key={org.account_id}
                 type="button"
+                role="option"
+                aria-selected={i === selectedIndex}
                 onClick={() => {
                   setSelectedIndex(i);
                   setIsOpen(false);
