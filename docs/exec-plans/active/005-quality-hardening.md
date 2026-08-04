@@ -1,12 +1,32 @@
 # Plan 005 — Quality and Operations Hardening
 
 - Priority: P1
-- Status: Blocked until P0 findings are stable
+- Status: In progress — A/B/C/D closed, F partial, E not started
 - Scope: multiple small PRs are preferred over one large implementation
 
 ## Objective
 
 Close the quality, caching, documentation and CI gaps found during the platform audit without weakening current protections or increasing unnecessary infrastructure.
+
+## Progress (2026-08-04)
+
+- **A — Versioned documentation:** Completed. README's "Documentación" section no
+  longer points at gitignored local paths; the 14 files under versioned `docs/`
+  scanned clean for secrets.
+- **B — Cache correctness:** Completed (AUD-008). `updateSession()` no longer
+  forces `private, no-store` on anonymous requests with nothing to refresh.
+- **C — CI immutability:** Completed (AUD-009/010/011). Knip blocking, Gitleaks
+  required, `db-types` fails on drift instead of committing.
+- **D — Build artifacts:** Completed (AUD-012). Removed the dead
+  `.next/standalone` upload — nothing consumed it and standalone output was
+  never enabled.
+- **E — Testing maturity:** Not started. Scope needs to be agreed before
+  starting — the impersonation E2E fixture alone (platform-admin + enrolled
+  MFA/TOTP) is new test infrastructure, not a quick fix.
+- **F — Documentation/config consistency:** Partially resolved (AUD-015,
+  AUD-018). Node/pnpm versions, Vercel org, and Google OAuth env vars fixed;
+  `vercel.live` allowlisted in CSP for previews only. Central application
+  URLs/support addresses not yet addressed.
 
 ## Workstreams
 

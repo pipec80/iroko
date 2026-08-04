@@ -70,6 +70,7 @@ function isPublicAuth(pathWithoutLocale: string): boolean {
  */
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   let supabaseResponse = NextResponse.next({ request });
+  let sessionCookiesRefreshed = false;
 
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -80,6 +81,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
+          sessionCookiesRefreshed = true;
           for (const { name, value } of cookiesToSet) request.cookies.set(name, value);
           supabaseResponse = NextResponse.next({ request });
           for (const { name, value, options } of cookiesToSet)
@@ -223,9 +225,14 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return NextResponse.redirect(url);
   }
 
-  // Prevent CDN caching of responses with refreshed session cookies.
-  // See https://supabase.com/docs/guides/auth/server-side/advanced-guide#can-i-use-server-side-rendering-with-a-cdn-or-cache
-  supabaseResponse.headers.set('Cache-Control', 'private, no-store');
+  // Prevent CDN caching only when there's actual session state to protect —
+  // an authenticated response (claims != null) or a cookie refresh just
+  // happened. Anonymous marketing pages with nothing to refresh regain
+  // normal framework/CDN caching. See
+  // https://supabase.com/docs/guides/auth/server-side/advanced-guide#can-i-use-server-side-rendering-with-a-cdn-or-cache
+  if (claims != null || sessionCookiesRefreshed) {
+    supabaseResponse.headers.set('Cache-Control', 'private, no-store');
+  }
 
   return supabaseResponse;
 }

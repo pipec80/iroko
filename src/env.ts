@@ -23,6 +23,8 @@ export const env = createEnv({
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
     MERCADOPAGO_ACCESS_TOKEN: z.string().min(1).optional(),
     MERCADOPAGO_WEBHOOK_SECRET: z.string().min(1).optional(),
+    // Injected automatically by Vercel — never set manually. Absent outside Vercel.
+    VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -47,6 +49,7 @@ export const env = createEnv({
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
     MERCADOPAGO_ACCESS_TOKEN: process.env.MERCADOPAGO_ACCESS_TOKEN,
     MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
+    VERCEL_ENV: process.env.VERCEL_ENV,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,

@@ -13,12 +13,12 @@ Base de producción para micro-SaaS. Auth completa, multi-tenancy, i18n, observa
 | Estado servidor | TanStack Query 5                                  |
 | Observabilidad  | Sentry, Vercel Analytics, Vercel Speed Insights   |
 | Tests           | Vitest (unit) + Playwright (E2E) + pgTAP (DB)     |
-| Deploy          | Vercel (pipec80-projects/iroko)                   |
+| Deploy          | Vercel (pipec80-labs/iroko)                       |
 
 ## Requisitos
 
-- Node.js 22+
-- pnpm 10+
+- Node.js 24+
+- pnpm 11+
 - Docker Desktop (para Supabase local)
 - Cuenta Supabase (para producción)
 
@@ -111,7 +111,13 @@ supabase/
 
 ## Documentación
 
-- `docs/estado-fases.md` — tabla maestra de progreso por fase (qué está hecho, qué falta)
-- `docs/modules/` — doc por feature: `platform-admin.md`, `impersonation.md`, `gdpr.md`,
-  `onboarding.md`, `legal-cookies.md`, `admin-alerts.md`, `announcements.md`
-- `docs/audit/` — auditoría técnica completa (Fases 0–8)
+Versionada en el repo — ver `docs/index.md` para el índice completo:
+
+- `docs/audits/` — auditorías de plataforma con hallazgos y evidencia de cierre
+- `docs/exec-plans/` — planes de estabilización activos y completados
+- `docs/runbooks/` — guías operativas paso a paso
+- `docs/quality/` — Definition of Done y estrategia de testing
+
+`docs/estado-fases.md`, `docs/modules/` y `docs/audit/` son notas de desarrollo
+privadas del mantenedor original (gitignored) — no existen en un checkout
+limpio de este boilerplate.
