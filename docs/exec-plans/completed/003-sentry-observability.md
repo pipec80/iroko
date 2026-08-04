@@ -1,8 +1,24 @@
 # Plan 003 — Complete Sentry Browser Observability
 
 - Priority: P0
-- Status: In progress in draft PR #91
+- Status: Completed (2026-08-04, PR #91)
 - Production merge/deploy: requires human approval
+
+## Closure note (2026-08-04)
+
+PR #91 rebased clean on current `main`, full CI green (11/11 checks). Two new
+regression tests added (`src/proxy.test.ts`, `src/test/e2e/sentry-tunnel.spec.ts`)
+that fail against the original bug and pass with the fix — neither existed before.
+Manually verified on the Vercel preview: a controlled browser exception landed in
+Sentry as issue `IROKO-7` with full metadata, an attached Session Replay, and a
+trace/span — proof the tunnel delivers events end-to-end. `IROKO-8` (a CSP report
+for `vercel.live`, unrelated) further confirms the `/sentry-tunnel` pipeline is
+intact. Server-side capture unaffected (this PR never touches
+`sentry.server.config.ts`/`instrumentation.ts`). Privacy decision documented in
+`docs/audits/2026-08-03-sentry-audit.md`: Session Replay and Vercel
+Analytics/SpeedInsights still run without a consent gate — tracked as acceptance
+criteria in plans 005/006, not blocking this fix. See
+`docs/audits/2026-08-02-full-platform-audit.md` (AUD-005) for full evidence.
 
 ## Problem
 
