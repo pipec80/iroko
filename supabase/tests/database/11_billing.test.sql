@@ -3,7 +3,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(11);
+SELECT plan(13);
 
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
   confirmation_token, email_confirmed_at, recovery_token, aud, role)
@@ -97,6 +97,21 @@ SELECT is(
 SELECT is(
   (SELECT external_subscription_id FROM public.get_billing_overview('00000000-0000-0000-0000-000000000930')),
   'mock_sub_test', 'get_billing_overview expone el external_subscription_id para poder cancelar');
+
+SELECT is(
+  public.get_account_id_by_external_subscription('mock_sub_test'),
+  '00000000-0000-0000-0000-000000000930'::uuid,
+  'owner puede resolver la suscripción de su propia cuenta para cancelar'
+);
+
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000000832','role','authenticated')::text, true);
+
+SELECT throws_ok(
+  $$SELECT public.get_account_id_by_external_subscription('mock_sub_test')$$,
+  'not_authorized',
+  'member no puede resolver el ID externo de suscripción de la cuenta'
+);
 
 SELECT * FROM finish();
 ROLLBACK;
