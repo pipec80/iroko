@@ -21,12 +21,11 @@ No production writes, deployments, migrations, emails or destructive actions wer
 
 Iroko has a strong foundation: multi-tenant authorization, MFA, typed Server Actions, RLS/RPC design, extensive CI, unit/E2E/pgTAP tests, CSP, audit logging and automated deployments.
 
-PostHog should not be added yet. Two P0 items must be closed first:
+PostHog should not be added yet. One P0 item must be closed first:
 
 1. Deploy and correctly invoke the email queue worker in Cloud.
-2. align the declared and resolved Next.js versions.
 
-> **Revalidated 2026-08-04:** the Sentry browser tunnel correction (originally P0 item 2, PR #91) is closed — see AUD-005 below.
+> **Revalidated 2026-08-04:** the Next.js version alignment (originally P0 item 2) is closed — see AUD-006 below. The Sentry browser tunnel correction (originally P0 item 2 in the previous revalidation, PR #91) is also closed — see AUD-005 below.
 
 > **Revalidated 2026-08-03:** recovering and versioning the Supabase Cloud migrations (originally P0 item 1) is closed — see AUD-001 below. The remaining three P0 items are unaffected.
 
@@ -55,7 +54,7 @@ PostHog should not be added yet. Two P0 items must be closed first:
 | AUD-003 | Email Edge Function source exists but no Edge Function is deployed           | P0       | Confirmed                        | 002  | Open      |
 | AUD-004 | pg_net reports DNS failures although cron executions show succeeded          | P0       | Confirmed                        | 002  | Open      |
 | AUD-005 | Sentry browser tunnel is intercepted by locale proxy                         | P0       | Resolved by PR #91 (2026-08-04)  | 003  | Completed |
-| AUD-006 | Next.js declared/resolved versions disagree                                  | P0       | Confirmed                        | 004  | Open      |
+| AUD-006 | Next.js declared/resolved versions disagree                                  | P0       | Resolved (2026-08-04)            | 004  | Completed |
 | AUD-007 | `docs/` was globally ignored                                                 | P1       | Resolved by PR #92 (2026-08-04)  | 005  | Completed |
 | AUD-018 | CSP blocks `vercel.live` feedback widget script on preview deployments       | P2       | Confirmed (2026-08-04)           | 005  | Open      |
 | AUD-019 | ESLint had no `ignores` for local Supabase Edge Runtime build artifacts      | P2       | Resolved by PR #91 (2026-08-04)  | 005  | Completed |
@@ -131,23 +130,19 @@ PR #91 addresses the problem by excluding the route and migrating the client ini
 
 A manual `fetch('/sentry-tunnel', ...)` with a hand-built envelope returned 404 both locally and on the preview — a false lead from a malformed test envelope (likely missing the `Content-Type` the tunnel handler expects), not a real regression; the real SDK-generated request succeeded, as `IROKO-7` proves.
 
-### AUD-006 — Next.js version mismatch
+### AUD-006 — Next.js version mismatch (Resolved 2026-08-04)
 
 The inspected repository declared Next.js 16.2.12 in `package.json`, while workspace override/lock resolution kept the effective installed version at 16.2.11.
 
-Risk:
+Risk (historical):
 
 - developers and Dependabot reason about a version different from the deployed version;
 - security and regression fixes may not actually be active;
 - builds become harder to reproduce.
 
-Required response:
+**Root cause (found via `git log -S` on both files):** the `pnpm-workspace.yaml` override was introduced at `16.2.11` in PR #71, together with `package.json` at the same version — a deliberate single-version pin so `@react-email/ui` (which fixes `next@16.2.6` as a direct dependency) couldn't pull a second, older copy into the tree. Nine days later, Dependabot's PR #82 bumped `next` in `package.json` to `16.2.12` (a docs/TypeScript-7-compat backport per the official changelog, no breaking changes) but never touched the override — Dependabot doesn't track `pnpm.overrides`. The override wasn't a deliberate downgrade; it just silently fell behind a routine bump.
 
-- select one supported version;
-- remove or update the stale override;
-- regenerate the lockfile with the repository package manager;
-- verify installed version locally and in CI;
-- run typecheck, lint, unit, E2E and build checks.
+**Closure evidence (2026-08-04):** raised the override to `next: 16.2.12` in `pnpm-workspace.yaml`, regenerated `pnpm-lock.yaml`. `pnpm why next` reports `Found 1 version of next` at `16.2.12`, with `@react-email/ui` still correctly forced onto that single instance. `pnpm validate` (typecheck, lint, 590 unit tests), `pnpm knip`, and a production build all pass clean.
 
 ### AUD-018 — CSP blocks the Vercel Live feedback widget on previews
 
@@ -245,7 +240,7 @@ Update this table after each remediation.
 | AUD-001     | #100 | local `main` / linked Cloud | 119/119 migrations, identical last version                                    | Claude Code | 2026-08-03 | Completed |
 | AUD-002–004 | —    | —                           | —                                                                             | —           | —          | Open      |
 | AUD-005     | #91  | Vercel preview (deployed)   | Controlled browser exception landed as Sentry issue IROKO-7 with replay+trace | Claude Code | 2026-08-04 | Completed |
-| AUD-006     | —    | —                           | —                                                                             | —           | —          | Open      |
+| AUD-006     | —    | local `main`                | `pnpm why next` → Found 1 version at 16.2.12; validate+knip+build clean       | Claude Code | 2026-08-04 | Completed |
 | AUD-007     | #92  | local `main`                | `.gitignore` allowlists `docs/{local,private,drafts,generated,exports}` only  | Claude Code | 2026-08-04 | Completed |
 | AUD-018     | —    | Vercel preview (deployed)   | CSP report landed as Sentry issue IROKO-8, `script-src-elem` for vercel.live  | Claude Code | 2026-08-04 | Open      |
 | AUD-019     | #91  | local `main`                | `pnpm lint` clean (1 pre-existing unrelated warning)                          | Claude Code | 2026-08-04 | Completed |
