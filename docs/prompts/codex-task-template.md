@@ -2,7 +2,7 @@
 
 Use this template after the master reconnaissance has selected and a human has approved one execution plan.
 
-```md
+````md
 # Task: <bounded title>
 
 ## Context
@@ -11,7 +11,7 @@ Repository: `pipec80/iroko`
 Plan: `docs/exec-plans/active/<plan>.md`
 Audit finding IDs: `<AUD-...>`
 
-Read `AGENTS.md`, the plan, the audit and the Definition of Done before acting.
+Read `AGENTS.md` (local, no versionado — if absent in your checkout, skip it), the plan, the audit and the Definition of Done before acting.
 
 ## Goal
 
@@ -38,7 +38,7 @@ Read `AGENTS.md`, the plan, the audit and the Definition of Done before acting.
 - no secrets or personal data in Git/logs;
 - no direct push to `main`;
 - no weakening checks to make CI pass;
-- follow all stop conditions in `AGENTS.md`.
+- follow all stop conditions in `AGENTS.md` when present (local, no versionado).
 
 ## Required process
 
@@ -73,6 +73,7 @@ pnpm knip
 pnpm test
 pnpm build
 ```
+````
 
 Add database, Playwright, provider, security and preview checks as applicable.
 
@@ -96,4 +97,7 @@ Add database, Playwright, provider, security and preview checks as applicable.
 - remaining risks;
 - PR details;
 - updated audit/plan status.
+
+```
+
 ```

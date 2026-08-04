@@ -92,7 +92,7 @@ git status --short
 Read:
 
 ```powershell
-Get-Content AGENTS.md
+Get-Content AGENTS.md   # local, no versionado (decidido en #97) — sáltalo si no existe en tu checkout
 Get-Content docs\index.md
 Get-Content docs\audits\2026-08-02-full-platform-audit.md
 Get-ChildItem docs\exec-plans\active
@@ -103,7 +103,7 @@ Review the Git diff against `main`:
 ```powershell
 git diff --stat origin/main...HEAD
 git diff --check origin/main...HEAD
-git diff origin/main...HEAD -- .gitignore AGENTS.md docs
+git diff origin/main...HEAD -- .gitignore docs
 ```
 
 The branch is documentation-only except for the selective `.gitignore` change.

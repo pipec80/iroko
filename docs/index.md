@@ -15,14 +15,14 @@ This directory is the versioned source of truth for engineering audits, executio
 
 Execute these plans in dependency order. P2 is blocked until all P0 work is completed and verified.
 
-| Order | Plan | Priority | Status |
-| --- | --- | --- | --- |
-| 1 | [Supabase migration drift](exec-plans/active/001-supabase-migration-drift.md) | P0 | Open |
-| 2 | [Email worker in Supabase Cloud](exec-plans/active/002-email-worker-cloud.md) | P0 | Open |
-| 3 | [Sentry browser observability](exec-plans/active/003-sentry-observability.md) | P0 | PR #91 open |
-| 4 | [Next.js version alignment](exec-plans/active/004-nextjs-version-alignment.md) | P0 | Open |
-| 5 | [Quality and operations hardening](exec-plans/active/005-quality-hardening.md) | P1 | Blocked by P0 |
-| 6 | [PostHog product analytics](exec-plans/active/006-posthog-integration.md) | P2 | Blocked by P0/P1 |
+| Order | Plan                                                                           | Priority | Status           |
+| ----- | ------------------------------------------------------------------------------ | -------- | ---------------- |
+| 1     | [Supabase migration drift](exec-plans/active/001-supabase-migration-drift.md)  | P0       | Open             |
+| 2     | [Email worker in Supabase Cloud](exec-plans/active/002-email-worker-cloud.md)  | P0       | Open             |
+| 3     | [Sentry browser observability](exec-plans/active/003-sentry-observability.md)  | P0       | PR #91 open      |
+| 4     | [Next.js version alignment](exec-plans/active/004-nextjs-version-alignment.md) | P0       | Open             |
+| 5     | [Quality and operations hardening](exec-plans/active/005-quality-hardening.md) | P1       | Blocked by P0    |
+| 6     | [PostHog product analytics](exec-plans/active/006-posthog-integration.md)      | P2       | Blocked by P0/P1 |
 
 ## Directory policy
 
@@ -44,6 +44,8 @@ Intentionally local and ignored by Git:
 - `generated/`
 - `exports/`
 - files ending in `.local.md`, `.private.md`, `.draft.md` or `.pdf`
+
+At the repository root, `AGENTS.md` and `CLAUDE.md` are also intentionally local and ignored by Git (decided in #97): each developer/agent keeps their own copy, and their content is not the same across machines. Do not re-add either to version control as part of documentation work.
 
 Do not place credentials, database connection strings, service-role keys, customer data, signed URLs or private incident material in versioned documentation.
 
