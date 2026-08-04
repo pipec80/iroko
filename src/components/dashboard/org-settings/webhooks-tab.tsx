@@ -13,6 +13,14 @@ import {
   type WebhookDelivery,
   type WebhookEndpoint,
 } from '@/app/[locale]/dashboard/org/settings/actions-webhooks';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useOrgEntitlements } from '@/hooks/use-org-entitlements';
 import { FEATURE_KEYS } from '@/lib/billing/entitlement-keys';
 import { cn } from '@/lib/utils';
@@ -176,8 +184,13 @@ export function WebhooksTab() {
           </fieldset>
 
           {formError && (
-            <p className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
+            <p role="alert" className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
               {t('webhooks_validation_error')}
+            </p>
+          )}
+          {create.error && (
+            <p role="alert" className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
+              {t('webhooks_create_error')}
             </p>
           )}
 
@@ -193,7 +206,7 @@ export function WebhooksTab() {
         {isPending ?
           <p className="text-muted-foreground text-[12px]">{t('webhooks_loading')}</p>
         : error ?
-          <p className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
+          <p role="alert" className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
             {t('webhooks_error')}
           </p>
         : (data ?? []).length === 0 ?
@@ -223,6 +236,7 @@ function EndpointRow({ endpoint }: { endpoint: WebhookEndpoint }) {
   const t = useTranslations('OrgSettings');
   const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const update = useMutation({
     mutationFn: async (enabled: boolean) => {
@@ -243,7 +257,10 @@ function EndpointRow({ endpoint }: { endpoint: WebhookEndpoint }) {
       const result = await deleteWebhookEndpoint({ id: endpoint.id });
       if (result.error) throw new Error(result.error);
     },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ENDPOINTS_KEY }),
+    onSuccess: () => {
+      setConfirmingDelete(false);
+      void queryClient.invalidateQueries({ queryKey: ENDPOINTS_KEY });
+    },
   });
 
   return (
@@ -289,16 +306,49 @@ function EndpointRow({ endpoint }: { endpoint: WebhookEndpoint }) {
           </button>
           <button
             type="button"
-            onClick={() => {
-              if (window.confirm(t('webhooks_delete_confirm'))) remove.mutate();
-            }}
+            onClick={() => setConfirmingDelete(true)}
             className="rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-opacity hover:opacity-80"
             style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
             {t('webhooks_delete_btn')}
           </button>
         </div>
       </div>
+      {update.error && (
+        <p role="alert" className="px-4 pb-3 text-[12px]" style={{ color: 'var(--color-poppy)' }}>
+          {t('webhooks_update_error')}
+        </p>
+      )}
       {expanded && <DeliveriesTable endpointId={endpoint.id} />}
+
+      <Dialog open={confirmingDelete} onOpenChange={setConfirmingDelete}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('webhooks_delete_btn')}</DialogTitle>
+            <DialogDescription>{t('webhooks_delete_confirm')}</DialogDescription>
+          </DialogHeader>
+          {remove.error && (
+            <p role="alert" className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
+              {t('webhooks_delete_error')}
+            </p>
+          )}
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              className="border-border text-foreground rounded-lg border px-4 py-2 text-[13px] font-medium transition-opacity hover:opacity-80">
+              {t('webhooks_delete_cancel')}
+            </button>
+            <button
+              type="button"
+              disabled={remove.isPending}
+              onClick={() => remove.mutate()}
+              className="rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              style={{ background: 'var(--color-poppy)' }}>
+              {t('webhooks_delete_btn')}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -345,7 +395,7 @@ function DeliveriesTable({ endpointId }: { endpointId: string }) {
       {isPending ?
         <p className="text-muted-foreground text-[12px]">{t('webhooks_loading')}</p>
       : error ?
-        <p className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
+        <p role="alert" className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
           {t('webhooks_error')}
         </p>
       : entries.length === 0 ?

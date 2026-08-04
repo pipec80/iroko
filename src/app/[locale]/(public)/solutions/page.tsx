@@ -101,6 +101,7 @@ export default async function SolutionsPage({ params }: { params: Promise<{ loca
                 featured ?
                   {
                     background: 'var(--color-ink)',
+                    border: '1px solid rgba(245,236,218,0.12)',
                     boxShadow: '0 16px 48px rgba(14,17,23,0.2)',
                   }
                 : {

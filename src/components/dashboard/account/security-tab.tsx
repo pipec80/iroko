@@ -76,7 +76,9 @@ function ExportDataCard() {
           </p>
         )}
         {success && (
-          <div className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+          <div
+            role="status"
+            className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
             <CheckCircle size={18} strokeWidth={1.75} />
             {t('security.success.data_exported')}
           </div>
@@ -132,8 +134,13 @@ export function SecurityTab() {
                 aria-invalid={!!pwState.fieldErrors?.current_password}
               />
               {pwState.fieldErrors?.current_password && (
-                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
-                  {pwState.fieldErrors.current_password[0]}
+                <p
+                  role="alert"
+                  className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                  {t(
+                    `errors.${pwState.fieldErrors.current_password[0] ?? ''}` as 'errors.generic',
+                    { default: pwState.fieldErrors.current_password[0] ?? '' },
+                  )}
                 </p>
               )}
             </div>
@@ -148,7 +155,9 @@ export function SecurityTab() {
                 aria-invalid={!!pwState.fieldErrors?.password}
               />
               {pwState.fieldErrors?.password && (
-                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                <p
+                  role="alert"
+                  className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
                   {t(`errors.${pwState.fieldErrors.password[0] ?? ''}` as 'errors.generic', {
                     default: pwState.fieldErrors.password[0] ?? '',
                   })}
@@ -166,7 +175,9 @@ export function SecurityTab() {
                 aria-invalid={!!pwState.fieldErrors?.confirm_password}
               />
               {pwState.fieldErrors?.confirm_password && (
-                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                <p
+                  role="alert"
+                  className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
                   {t(
                     `errors.${pwState.fieldErrors.confirm_password[0] ?? ''}` as 'errors.generic',
                     {
@@ -184,7 +195,9 @@ export function SecurityTab() {
                 </p>
               )}
               {pwState.success === 'password_updated' && !isPwDirty && (
-                <div className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+                <div
+                  role="status"
+                  className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
                   <CheckCircle size={18} strokeWidth={1.75} />
                   {t('security.success.password_updated')}
                 </div>
@@ -219,7 +232,9 @@ export function SecurityTab() {
             </p>
           )}
           {resetState.success === 'reset_link_sent' && (
-            <div className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+            <div
+              role="status"
+              className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
               <CheckCircle size={18} strokeWidth={1.75} />
               {t('security.success.reset_link_sent')}
             </div>
@@ -252,7 +267,9 @@ export function SecurityTab() {
                 aria-invalid={!!delState.fieldErrors?.confirmation}
               />
               {delState.fieldErrors?.confirmation && (
-                <p className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
+                <p
+                  role="alert"
+                  className="bg-error/10 text-error mt-1.5 rounded-lg px-3 py-2 text-xs font-medium">
                   {t('errors.invalid_confirmation_phrase')}
                 </p>
               )}

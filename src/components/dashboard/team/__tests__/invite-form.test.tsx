@@ -59,6 +59,32 @@ describe('InviteForm', () => {
     );
   });
 
+  it('shows the translated message with role="alert" for a known error code', async () => {
+    mocks.inviteMembers.mockResolvedValue({ error: 'emails_required' });
+    renderWithIntl(<InviteForm />);
+
+    fireEvent.change(screen.getByLabelText('Correos electrónicos'), {
+      target: { value: 'a@b.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar invitación' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Ingresá al menos un correo electrónico.');
+  });
+
+  it('falls back to the generic translated message for an unrecognized error code', async () => {
+    mocks.inviteMembers.mockResolvedValue({ error: 'some_unmapped_backend_code' });
+    renderWithIntl(<InviteForm />);
+
+    fireEvent.change(screen.getByLabelText('Correos electrónicos'), {
+      target: { value: 'a@b.com' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar invitación' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Ocurrió un error. Intentá de nuevo.');
+  });
+
   it('renders the secondaryButton slot', () => {
     renderWithIntl(<InviteForm secondaryButton={<button type="button">Cancelar</button>} />);
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDefined();

@@ -17,6 +17,15 @@ import { INVITABLE_ROLES } from '@/lib/validation/team';
 
 type InvitableRole = (typeof INVITABLE_ROLES)[number];
 
+const ERROR_KEYS: Record<string, string> = {
+  emails_required: 'error_emails_required',
+  invalid_email_format: 'error_invalid_email_format',
+  email_too_long: 'error_email_too_long',
+  max_10_emails: 'error_max_10_emails',
+  no_account: 'error_generic',
+  invite_failed: 'error_generic',
+};
+
 export function InviteForm({
   onSuccess,
   secondaryButton,
@@ -85,6 +94,7 @@ export function InviteForm({
           name="emails"
           rows={3}
           placeholder={t('emails_placeholder')}
+          aria-invalid={!!state.error}
           className="bg-surface-container-low border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none"
         />
         <p className="text-on-surface-variant text-xs opacity-60">{t('emails_hint')}</p>
@@ -92,7 +102,7 @@ export function InviteForm({
 
       {/* Error display */}
       {state.error && (
-        <p className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
+        <p role="alert" className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
           {state.error === 'seat_limit_reached' ?
             <>
               {t('error_seat_limit')}{' '}
@@ -100,7 +110,7 @@ export function InviteForm({
                 {tOrgSettings('plan_gate_cta')}
               </Link>
             </>
-          : state.error}
+          : t((ERROR_KEYS[state.error] ?? 'error_generic') as never)}
         </p>
       )}
 

@@ -89,7 +89,7 @@ export function MfaSetup() {
       const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
 
       if (error) {
-        toast.error(error.message);
+        toast.error(t('error.mfa_enroll_failed'));
         setIsEnrolling(false);
         return;
       }
@@ -115,7 +115,7 @@ export function MfaSetup() {
     try {
       const challenge = await supabase.auth.mfa.challenge({ factorId });
       if (challenge.error) {
-        toast.error(challenge.error.message);
+        toast.error(t('error.mfa_verify_failed'));
         return;
       }
 
@@ -126,7 +126,7 @@ export function MfaSetup() {
       });
 
       if (verify.error) {
-        toast.error(verify.error.message);
+        toast.error(t('error.mfa_verify_failed'));
         return;
       }
 
@@ -145,7 +145,7 @@ export function MfaSetup() {
     try {
       const { error } = await supabase.auth.mfa.unenroll({ factorId: id });
       if (error) {
-        toast.error(error.message);
+        toast.error(t('error.mfa_unenroll_failed'));
         return;
       }
       toast.success(t('success.mfa_disabled'));

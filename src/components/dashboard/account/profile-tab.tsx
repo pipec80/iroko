@@ -134,12 +134,18 @@ export function ProfileTab({ profile, email, role }: Props) {
                 </Button>
               </div>
               {avatarState.success === 'avatar_updated' && !hasFile && (
-                <div className="bg-primary/10 text-primary mt-3 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+                <div
+                  role="status"
+                  className="bg-primary/10 text-primary mt-3 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
                   <CheckCircle size={18} strokeWidth={1.75} />
                   {t('profile.success.avatar_updated')}
                 </div>
               )}
-              {avatarError && <p className="text-error mt-2 text-xs">{avatarError}</p>}
+              {avatarError && (
+                <p role="alert" className="text-error mt-2 text-xs">
+                  {avatarError}
+                </p>
+              )}
             </div>
           </form>
         </CardContent>
@@ -386,7 +392,9 @@ export function ProfileTab({ profile, email, role }: Props) {
                 </p>
               )}
               {profileState.success === 'profile_updated' && !profilePending && (
-                <div className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+                <div
+                  role="status"
+                  className="bg-primary/10 text-primary mb-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
                   <CheckCircle size={18} strokeWidth={1.75} />
                   {t('profile.success.profile_updated')}
                 </div>
@@ -448,7 +456,9 @@ export function ProfileTab({ profile, email, role }: Props) {
             </p>
           )}
           {emailState.success === 'email_change_requested' && !isEmailDirty && (
-            <div className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
+            <div
+              role="status"
+              className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
               <CheckCircle size={18} strokeWidth={1.75} />
               {t('profile.success.email_change_requested')}
             </div>

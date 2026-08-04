@@ -85,9 +85,10 @@ function RowActions({ member, displayName }: RowActionsProps) {
           </DialogHeader>
           {state.error && (
             <p
+              role="alert"
               className="rounded-lg px-3 py-2 text-xs font-medium"
               style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
-              {state.error}
+              {t('error_generic')}
             </p>
           )}
           <DialogFooter>
@@ -188,7 +189,7 @@ export function MembersTable({ members, timezone = 'UTC', accountId, currentUser
       <div className="card overflow-x-auto">
         <div className="min-w-[800px]">
           {/* Header row */}
-          <div className="col-header members-row bg-surface-2 py-3">
+          <div className="col-header table-header-row members-row bg-surface-2 py-3">
             <span />
             <span>{t('col_member')}</span>
             <span>{t('role_label')}</span>
@@ -244,11 +245,13 @@ export function MembersTable({ members, timezone = 'UTC', accountId, currentUser
                     <div className="text-foreground truncate text-sm font-semibold">
                       {displayName}
                     </div>
-                    <div
-                      className="truncate font-mono text-[11px]"
-                      style={{ color: 'var(--text-tertiary)' }}>
-                      {member.email}
-                    </div>
+                    {displayName !== member.email && (
+                      <div
+                        className="truncate font-mono text-[11px]"
+                        style={{ color: 'var(--text-tertiary)' }}>
+                        {member.email}
+                      </div>
+                    )}
                   </div>
 
                   {/* Role chip */}
