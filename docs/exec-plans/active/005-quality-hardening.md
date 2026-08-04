@@ -67,7 +67,8 @@ Align:
 - Node and pnpm requirements in README, package metadata, CI and Vercel;
 - `.env.example` with enabled local integrations such as OAuth providers;
 - central application URLs and support addresses with the intended deployment/domain strategy;
-- CSP/reporting endpoints with environment configuration rather than clone-specific hardcoding where practical.
+- CSP/reporting endpoints with environment configuration rather than clone-specific hardcoding where practical;
+- CSP `script-src` for preview-only origins (AUD-018): `vercel.live` is blocked on every Vercel preview deployment, generating a CSP report per page load. Decide whether to allowlist it for `VERCEL_ENV === 'preview'` only, or accept the feedback widget staying disabled and filter the report out of Sentry's error quota.
 
 ## Execution model
 
