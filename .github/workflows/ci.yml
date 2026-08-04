@@ -1,10 +1,11 @@
 # CI Pipeline — Iroko SaaS Boilerplate
 #
 # Jobs (paralelos donde sea posible):
-#   quality   → typecheck + lint + format:check + knip
+#   quality   → typecheck + lint + format:check + knip (bloqueante)
 #   security  → pnpm audit --prod (solo deps de producción)
+#   gitleaks  → escaneo de secretos en el historial completo del repo
 #   test      → vitest con coverage report
-#   db-types  → verifica que src/types/database.ts esté sincronizado con el schema
+#   db-types  → verifica que src/types/database.ts esté sincronizado con el schema (falla en diff, no comitea)
 #   db-tests  → corre supabase/tests/database/*.test.sql con pgTAP
 #   e2e       → Playwright contra Supabase local (solo en PRs y main)
 #   e2e-status → job sintético para branch protection (siempre reporta resultado)
@@ -23,7 +24,7 @@
 #   SENTRY_AUTH_TOKEN
 #
 # Branch protection recomendada (GitHub → Settings → Branches → main):
-#   - Require status checks: quality, e2e-status, build
+#   - Require status checks: quality, gitleaks, e2e-status, build
 #   - Require branches to be up to date before merging
 #   - Do not allow bypassing the above settings
 
@@ -51,8 +52,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# Mínimo privilegio por defecto; db-types eleva a contents: write para poder
-# commitear el sync de types.
+# Mínimo privilegio por defecto — ningún job necesita escribir al repo.
 permissions:
   contents: read
 
@@ -96,7 +96,6 @@ jobs:
 
       - name: Dead code check (knip)
         run: pnpm knip
-        continue-on-error: true
 
   # ─────────────────────────────────────────────
   # JOB 2: Auditoría de seguridad (solo prod deps)
@@ -124,6 +123,27 @@ jobs:
       # --prod omite devDependencies; --audit-level=high falla solo en high/critical
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high
+
+  # ─────────────────────────────────────────────
+  # JOB 2b: Escaneo de secretos (Gitleaks)
+  # Corría solo como script local (pnpm security:gitleaks) sin estar
+  # conectado a CI — AUD-010. Ahora es un gate obligatorio.
+  # ─────────────────────────────────────────────
+  gitleaks:
+    name: Gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          # Gitleaks escanea todo el historial de commits, no solo el working tree.
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ─────────────────────────────────────────────
   # JOB 3: Tests unitarios con coverage
@@ -166,15 +186,12 @@ jobs:
     name: Database Types
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    permissions:
-      contents: write
     env:
       SUPABASE_ACCESS_TOKEN: dummy_token_for_local_db
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Setup Supabase CLI
@@ -205,15 +222,14 @@ jobs:
             sleep 15
           done
 
-      - name: Sync database types
+      - name: Verify database types are in sync
         run: |
           supabase gen types --local --lang typescript --schema public,billing,audit > src/types/database.ts
           if ! git diff --ignore-space-at-eol --exit-code --quiet src/types/database.ts; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add src/types/database.ts
-            git commit -m "chore: sync database types [skip ci]"
-            git push
+            echo "::error::src/types/database.ts is out of sync with the schema."
+            echo "Run 'pnpm supa:gen:types' locally and commit the result."
+            git diff --ignore-space-at-eol src/types/database.ts
+            exit 1
           fi
 
       # Después de gen types para incluir postgres-meta (que gen types pullea
@@ -416,13 +432,13 @@ jobs:
   # ─────────────────────────────────────────────
   # JOB 7: Build de producción (gate final)
   # Solo corre en PRs hacia main y en pushes directos a main.
-  # Bloqueado por quality + test + db-types + db-tests + e2e.
+  # Bloqueado por quality + gitleaks + test + db-types + db-tests + e2e.
   # ─────────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [quality, test, db-types, db-tests, e2e]
+    needs: [quality, gitleaks, test, db-types, db-tests, e2e]
     if: |
       !startsWith(github.head_ref, 'dependabot/') &&
       (github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
@@ -439,7 +455,6 @@ jobs:
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
     steps:
       - name: Checkout
-        # Usa HEAD del branch para incluir el commit de db-types si lo hubo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           ref: ${{ github.head_ref || github.ref_name }}
@@ -458,14 +473,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-
-      - name: Upload build artifact (standalone)
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        if: success()
-        with:
-          name: nextjs-build
-          path: |
-            .next/standalone
-            .next/static
-            public
-          retention-days: 1
