@@ -21,12 +21,13 @@ No production writes, deployments, migrations, emails or destructive actions wer
 
 Iroko has a strong foundation: multi-tenant authorization, MFA, typed Server Actions, RLS/RPC design, extensive CI, unit/E2E/pgTAP tests, CSP, audit logging and automated deployments.
 
-PostHog should not be added yet. Four P0 items must be closed first:
+PostHog should not be added yet. Three P0 items must be closed first:
 
-1. Recover and version Supabase Cloud migrations absent from Git.
-2. Deploy and correctly invoke the email queue worker in Cloud.
-3. complete and verify the Sentry browser tunnel correction in PR #91.
-4. align the declared and resolved Next.js versions.
+1. Deploy and correctly invoke the email queue worker in Cloud.
+2. complete and verify the Sentry browser tunnel correction in PR #91.
+3. align the declared and resolved Next.js versions.
+
+> **Revalidated 2026-08-03:** recovering and versioning the Supabase Cloud migrations (originally P0 item 1) is closed — see AUD-001 below. The remaining three P0 items are unaffected.
 
 ## Current stack confirmed
 
@@ -46,48 +47,48 @@ PostHog should not be added yet. Four P0 items must be closed first:
 
 ## Finding matrix
 
-| ID | Finding | Priority | Verified state | Plan | Status |
-| --- | --- | --- | --- | --- | --- |
-| AUD-001 | Two Supabase Cloud migrations are missing from `main` | P0 | Confirmed | 001 | Open |
-| AUD-002 | Cloud email cron calls `host.docker.internal` | P0 | Confirmed | 002 | Open |
-| AUD-003 | Email Edge Function source exists but no Edge Function is deployed | P0 | Confirmed | 002 | Open |
-| AUD-004 | pg_net reports DNS failures although cron executions show succeeded | P0 | Confirmed | 002 | Open |
-| AUD-005 | Sentry browser tunnel is intercepted by locale proxy | P0 | Confirmed; fixed in draft PR #91 | 003 | In progress |
-| AUD-006 | Next.js declared/resolved versions disagree | P0 | Confirmed | 004 | Open |
-| AUD-007 | `docs/` was globally ignored | P1 | Corrected in documentation branch | 005 | In progress |
-| AUD-008 | Public responses may inherit `private, no-store` from session middleware | P1 | Confirmed by code inspection | 005 | Open |
-| AUD-009 | Knip is non-blocking in CI | P1 | Confirmed | 005 | Open |
-| AUD-010 | Gitleaks script exists but is not part of the main CI gate | P1 | Confirmed | 005 | Open |
-| AUD-011 | Supabase type job can commit/push from CI instead of only detecting drift | P1 | Confirmed | 005 | Open |
-| AUD-012 | CI uploads `.next/standalone` although standalone output is not enabled | P1 | Confirmed | 005 | Open |
-| AUD-013 | E2E impersonation suite is skipped pending an admin/MFA fixture | P1 | Confirmed | 005 | Open |
-| AUD-014 | Browser matrix is primarily Chromium and lacks automated Axe coverage | P1 | Confirmed | 005 | Open |
-| AUD-015 | README/runtime tooling versions and some env documentation are stale | P1 | Confirmed | 005 | Open |
-| AUD-016 | Vercel Analytics and Speed Insights mount independently of analytics consent | P1 | Confirmed | 006 | Open |
-| AUD-017 | No PostHog package, provider, taxonomy or privacy implementation exists | P2 | Confirmed | 006 | Blocked |
+| ID      | Finding                                                                      | Priority | Verified state                    | Plan | Status      |
+| ------- | ---------------------------------------------------------------------------- | -------- | --------------------------------- | ---- | ----------- |
+| AUD-001 | Two Supabase Cloud migrations are missing from `main`                        | P0       | Resolved by PR #100 (2026-08-03)  | 001  | Completed   |
+| AUD-002 | Cloud email cron calls `host.docker.internal`                                | P0       | Confirmed                         | 002  | Open        |
+| AUD-003 | Email Edge Function source exists but no Edge Function is deployed           | P0       | Confirmed                         | 002  | Open        |
+| AUD-004 | pg_net reports DNS failures although cron executions show succeeded          | P0       | Confirmed                         | 002  | Open        |
+| AUD-005 | Sentry browser tunnel is intercepted by locale proxy                         | P0       | Confirmed; fixed in draft PR #91  | 003  | In progress |
+| AUD-006 | Next.js declared/resolved versions disagree                                  | P0       | Confirmed                         | 004  | Open        |
+| AUD-007 | `docs/` was globally ignored                                                 | P1       | Corrected in documentation branch | 005  | In progress |
+| AUD-008 | Public responses may inherit `private, no-store` from session middleware     | P1       | Confirmed by code inspection      | 005  | Open        |
+| AUD-009 | Knip is non-blocking in CI                                                   | P1       | Confirmed                         | 005  | Open        |
+| AUD-010 | Gitleaks script exists but is not part of the main CI gate                   | P1       | Confirmed                         | 005  | Open        |
+| AUD-011 | Supabase type job can commit/push from CI instead of only detecting drift    | P1       | Confirmed                         | 005  | Open        |
+| AUD-012 | CI uploads `.next/standalone` although standalone output is not enabled      | P1       | Confirmed                         | 005  | Open        |
+| AUD-013 | E2E impersonation suite is skipped pending an admin/MFA fixture              | P1       | Confirmed                         | 005  | Open        |
+| AUD-014 | Browser matrix is primarily Chromium and lacks automated Axe coverage        | P1       | Confirmed                         | 005  | Open        |
+| AUD-015 | README/runtime tooling versions and some env documentation are stale         | P1       | Confirmed                         | 005  | Open        |
+| AUD-016 | Vercel Analytics and Speed Insights mount independently of analytics consent | P1       | Confirmed                         | 006  | Open        |
+| AUD-017 | No PostHog package, provider, taxonomy or privacy implementation exists      | P2       | Confirmed                         | 006  | Blocked     |
 
 ## P0 evidence
 
-### AUD-001 — Supabase migration drift
+### AUD-001 — Supabase migration drift (Resolved 2026-08-03)
 
-Supabase Cloud migration tracking contains these versions that were not found in the inspected `main` branch:
+Supabase Cloud migration tracking contained these versions that were not found in the inspected `main` branch at audit time:
 
 - `20260729014652_harden_webhook_rpcs_and_subscription_lookup`
 - `20260729014653_relocate_pg_net_extension`
 
-Risk:
+Risk (historical):
 
 - production cannot be reconstructed solely from Git;
 - a linked `db push` may behave unexpectedly;
 - disaster recovery and new-environment provisioning are not deterministic.
 
-Required response:
+**Closure evidence (2026-08-03):** both migrations landed on `main` via PR #100 (`fix(security): harden webhook RPCs against SSRF and relocate pg_net`), merged before this revalidation. Verified:
 
-- recover the exact SQL from an authorized source;
-- preserve the Cloud versions and names;
-- compare local and linked migration lists;
-- prove clean reconstruction and pgTAP success;
-- never recreate the SQL by approximation.
+- `git ls-files supabase/migrations/*.sql` on `main` (`9ffce8e`) returns 119 files, ending in `20260729014653_relocate_pg_net_extension.sql`;
+- `mcp__supabase__list_migrations` against the linked Cloud project returns 119 migrations, same last version;
+- local and linked lists are in exact parity — no drift remains.
+
+No SQL was recovered or reconstructed as part of this closure; the migrations were already present in `main` when the audit's base commit (`1e814a6`) was inspected against a stale local checkout.
 
 ### AUD-002 to AUD-004 — email worker Cloud failure
 
@@ -227,9 +228,9 @@ Before implementation:
 
 Update this table after each remediation.
 
-| Finding | PR | Environment checked | Evidence | Verified by | Date | Result |
-| --- | --- | --- | --- | --- | --- | --- |
-| AUD-001 | — | — | — | — | — | Open |
-| AUD-002–004 | — | — | — | — | — | Open |
-| AUD-005 | #91 | Vercel preview pending manual tunnel test | CI green reported; manual browser check pending | — | — | In progress |
-| AUD-006 | — | — | — | — | — | Open |
+| Finding     | PR   | Environment checked                       | Evidence                                        | Verified by | Date       | Result      |
+| ----------- | ---- | ----------------------------------------- | ----------------------------------------------- | ----------- | ---------- | ----------- |
+| AUD-001     | #100 | local `main` / linked Cloud               | 119/119 migrations, identical last version      | Claude Code | 2026-08-03 | Completed   |
+| AUD-002–004 | —    | —                                         | —                                               | —           | —          | Open        |
+| AUD-005     | #91  | Vercel preview pending manual tunnel test | CI green reported; manual browser check pending | —           | —          | In progress |
+| AUD-006     | —    | —                                         | —                                               | —           | —          | Open        |

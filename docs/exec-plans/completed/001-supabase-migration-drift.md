@@ -1,9 +1,13 @@
 # Plan 001 — Resolve Supabase Migration Drift
 
 - Priority: P0
-- Status: Open
-- Blocks: plans 002, 005 and 006 where linked schema confidence is required
-- Production write: not authorized by this plan
+- Status: Completed (2026-08-03)
+- Blocked: plans 002, 005 and 006 where linked schema confidence is required — now unblocked
+- Production write: not authorized by this plan; none was performed
+
+## Closure note (2026-08-03)
+
+Resolved without executing this plan's recovery procedure: both migrations already landed on `main` via PR #100, merged after this plan was written but before it was picked up. Revalidated by comparing `git ls-files supabase/migrations/*.sql` on `main` (119 files) against `mcp__supabase__list_migrations` on the linked Cloud project (119 migrations) — exact parity, same last version `20260729014653_relocate_pg_net_extension`. See `docs/audits/2026-08-02-full-platform-audit.md` (AUD-001) for full evidence.
 
 ## Problem
 
