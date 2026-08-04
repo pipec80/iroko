@@ -30,9 +30,13 @@ const DEMO_IMG_HOSTS = [
   'https://i.pravatar.cc',
 ];
 
-function buildCspHeader(isDev: boolean): string {
+export function buildCspHeader(isDev: boolean, isPreview: boolean): string {
   const localOrigin = isDev ? 'http://127.0.0.1:54321' : '';
   const localWsOrigin = isDev ? 'ws://127.0.0.1:54321' : '';
+  // AUD-018: Vercel injects a feedback widget script only on preview deployments
+  // (VERCEL_ENV=preview) — never in production. Without this, every preview page
+  // load generated a blocked-script CSP report, burning Sentry's error quota.
+  const vercelLiveOrigin = isPreview ? 'https://vercel.live' : '';
 
   const directives: string[] = [
     "default-src 'self'",
@@ -47,7 +51,15 @@ function buildCspHeader(isDev: boolean): string {
     // See SECURITY.md.
     isDev ?
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:"
-    : "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://challenges.cloudflare.com",
+    : [
+        "script-src 'self' 'unsafe-inline'",
+        'https://va.vercel-scripts.com',
+        'https://vitals.vercel-insights.com',
+        'https://challenges.cloudflare.com',
+        vercelLiveOrigin,
+      ]
+        .filter(Boolean)
+        .join(' '),
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     ["img-src 'self' blob: data:", ...PRODUCTION_IMG_HOSTS, ...DEMO_IMG_HOSTS, localOrigin]
       .filter(Boolean)
@@ -61,6 +73,7 @@ function buildCspHeader(isDev: boolean): string {
       'https://vitals.vercel-insights.com',
       'https://va.vercel-scripts.com',
       SENTRY_INGEST_ORIGIN,
+      vercelLiveOrigin,
       localOrigin,
       localWsOrigin,
     ]
@@ -106,7 +119,8 @@ function applySecurityHeaders(response: { headers: Headers }, cspHeader: string)
 
 export async function proxy(request: NextRequest) {
   const isDev = env.NODE_ENV === 'development';
-  const cspHeader = buildCspHeader(isDev);
+  const isPreview = env.VERCEL_ENV === 'preview';
+  const cspHeader = buildCspHeader(isDev, isPreview);
 
   const supabaseResponse = await updateSession(request);
   if (supabaseResponse.status >= 300 && supabaseResponse.status < 400) {

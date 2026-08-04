@@ -34,7 +34,7 @@ vi.mock('@/config/app.config', () => ({
   appConfig: { features: { onboarding: true } },
 }));
 
-import { config } from './proxy';
+import { buildCspHeader, config } from './proxy';
 
 // Next.js compiles matcher.source with path-to-regexp, anchored to the full
 // path — a bare `new RegExp(source).test(path)` (no anchors) finds matches
@@ -72,5 +72,29 @@ describe('proxy matcher', () => {
 
   it('should exclude any path with a file extension', () => {
     expect(matchesProxy('/logo.png')).toBe(false);
+  });
+});
+
+describe('buildCspHeader', () => {
+  it('should NOT allow vercel.live in production (isPreview=false)', () => {
+    const csp = buildCspHeader(false, false);
+    expect(csp).not.toContain('vercel.live');
+  });
+
+  // AUD-018: the Vercel Live feedback widget script (only injected on preview
+  // deployments) was blocked by CSP, generating a report per page load.
+  it('should allow vercel.live in script-src and connect-src on preview (isPreview=true)', () => {
+    const csp = buildCspHeader(false, true);
+    const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'));
+    const connectSrc = csp.split('; ').find((d) => d.startsWith('connect-src'));
+
+    expect(scriptSrc).toContain('https://vercel.live');
+    expect(connectSrc).toContain('https://vercel.live');
+  });
+
+  it('should still allow vercel.live in dev regardless of isPreview (dev already allows https:)', () => {
+    const csp = buildCspHeader(true, false);
+    const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'));
+    expect(scriptSrc).toBe("script-src 'self' 'unsafe-inline' 'unsafe-eval' https:");
   });
 });
