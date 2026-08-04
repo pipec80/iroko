@@ -166,9 +166,9 @@ teamMgmtTest.describe('Team — remove member', () => {
       const memberText = page.getByText(/e2e\+team-member/);
       await expect(memberText).toBeVisible({ timeout: 10_000 });
 
-      // Click the remove button — only non-owner active members have it
-      // (title is the Spanish translation of "remove_member")
-      await page.getByTitle(/eliminar miembro/i).click();
+      // Open the row's actions menu — only non-owner active members have one
+      // (aria-label is the Spanish translation of "member_actions: Acciones para {name}")
+      await page.getByRole('button', { name: /^acciones para/i }).click();
 
       // Confirm removal in the dialog
       await expect(page.getByRole('dialog')).toBeVisible();

@@ -245,11 +245,13 @@ export function MembersTable({ members, timezone = 'UTC', accountId, currentUser
                     <div className="text-foreground truncate text-sm font-semibold">
                       {displayName}
                     </div>
-                    <div
-                      className="truncate font-mono text-[11px]"
-                      style={{ color: 'var(--text-tertiary)' }}>
-                      {member.email}
-                    </div>
+                    {displayName !== member.email && (
+                      <div
+                        className="truncate font-mono text-[11px]"
+                        style={{ color: 'var(--text-tertiary)' }}>
+                        {member.email}
+                      </div>
+                    )}
                   </div>
 
                   {/* Role chip */}
