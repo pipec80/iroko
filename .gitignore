@@ -66,9 +66,17 @@ supabase/.temp/
 supabase/.branches/
 supabase/functions/temp-func/
 
-# notas locales con credenciales (NUNCA commitear)
+# documentación local, privada o generada (NUNCA commitear)
 docs/info.txt
-/docs/
+/docs/local/
+/docs/private/
+/docs/drafts/
+/docs/generated/
+/docs/exports/
+docs/**/*.local.md
+docs/**/*.private.md
+docs/**/*.draft.md
+docs/**/*.pdf
 
 # scratch / herramientas locales (no pertenecen al repo)
 /scratch/
@@ -85,9 +93,6 @@ supabase/snippets/
 # QA screenshots y artefactos de automatización
 *.png
 .playwright-mcp/
-
-
-.vercel
 
 # pytest (artefactos de tooling local)
 .pytest_cache/
