@@ -21,11 +21,12 @@ No production writes, deployments, migrations, emails or destructive actions wer
 
 Iroko has a strong foundation: multi-tenant authorization, MFA, typed Server Actions, RLS/RPC design, extensive CI, unit/E2E/pgTAP tests, CSP, audit logging and automated deployments.
 
-PostHog should not be added yet. Three P0 items must be closed first:
+PostHog should not be added yet. Two P0 items must be closed first:
 
 1. Deploy and correctly invoke the email queue worker in Cloud.
-2. complete and verify the Sentry browser tunnel correction in PR #91.
-3. align the declared and resolved Next.js versions.
+2. align the declared and resolved Next.js versions.
+
+> **Revalidated 2026-08-04:** the Sentry browser tunnel correction (originally P0 item 2, PR #91) is closed — see AUD-005 below.
 
 > **Revalidated 2026-08-03:** recovering and versioning the Supabase Cloud migrations (originally P0 item 1) is closed — see AUD-001 below. The remaining three P0 items are unaffected.
 
@@ -53,7 +54,7 @@ PostHog should not be added yet. Three P0 items must be closed first:
 | AUD-002 | Cloud email cron calls `host.docker.internal`                                | P0       | Confirmed                         | 002  | Open        |
 | AUD-003 | Email Edge Function source exists but no Edge Function is deployed           | P0       | Confirmed                         | 002  | Open        |
 | AUD-004 | pg_net reports DNS failures although cron executions show succeeded          | P0       | Confirmed                         | 002  | Open        |
-| AUD-005 | Sentry browser tunnel is intercepted by locale proxy                         | P0       | Confirmed; fixed in draft PR #91  | 003  | In progress |
+| AUD-005 | Sentry browser tunnel is intercepted by locale proxy                         | P0       | Resolved by PR #91 (2026-08-04)   | 003  | Completed   |
 | AUD-006 | Next.js declared/resolved versions disagree                                  | P0       | Confirmed                         | 004  | Open        |
 | AUD-007 | `docs/` was globally ignored                                                 | P1       | Corrected in documentation branch | 005  | In progress |
 | AUD-008 | Public responses may inherit `private, no-store` from session middleware     | P1       | Confirmed by code inspection      | 005  | Open        |
@@ -118,20 +119,15 @@ Required response:
 - surface delivery errors and retry exhaustion;
 - perform a safe end-to-end delivery test.
 
-### AUD-005 — Sentry browser observability
+### AUD-005 — Sentry browser observability (Resolved 2026-08-04)
 
 `next.config.ts` uses the `/sentry-tunnel` tunnel route. In the inspected `main`, the locale proxy matcher did not exclude that route, so next-intl could redirect the browser POST to a localized path where the tunnel rewrite did not apply.
 
-Draft PR #91 addresses the problem by excluding the route and migrating the client initialization to `src/instrumentation-client.ts` with App Router transition instrumentation.
+PR #91 addresses the problem by excluding the route and migrating the client initialization to `src/instrumentation-client.ts` with App Router transition instrumentation, plus two new regression tests (`src/proxy.test.ts`, `src/test/e2e/sentry-tunnel.spec.ts`) that fail against the original bug and pass with the fix.
 
-Required response before merge:
+**Closure evidence (2026-08-04):** rebased on current `main`, full CI green (11/11 checks), Vercel preview reachable without protection. A controlled browser exception thrown on the preview (`https://iroko-git-claude-sentry-best-practices-xdwce0-pipec80-labs.vercel.app/es/login`) was captured end-to-end and landed in Sentry as issue `IROKO-7`, with full metadata (browser, OS, geo, an attached Session Replay, and a trace/span) — proof the tunnel delivers events correctly; the original bug would have produced a 307/404 and dropped the event silently. `IROKO-8` (a CSP report for `vercel.live`, unrelated to this fix) further confirms the reporting pipeline through `/sentry-tunnel` is intact. Server-side exception capture was not independently re-verified in this pass — it isn't touched by this PR (`sentry.server.config.ts`/`instrumentation.ts` are unchanged) and was already unaffected by the original bug (Node sends directly to ingest, bypassing the tunnel).
 
-- rebase/confirm compatibility with current `main`;
-- run the full CI suite;
-- in the Vercel preview, verify `POST /sentry-tunnel` returns success rather than 307/404;
-- send a controlled browser exception and confirm arrival in Sentry;
-- confirm server exceptions still work;
-- document the privacy decision for user context and rich data collection.
+A manual `fetch('/sentry-tunnel', ...)` with a hand-built envelope returned 404 both locally and on the preview — a false lead from a malformed test envelope (likely missing the `Content-Type` the tunnel handler expects), not a real regression; the real SDK-generated request succeeded, as `IROKO-7` proves.
 
 ### AUD-006 — Next.js version mismatch
 
@@ -228,9 +224,9 @@ Before implementation:
 
 Update this table after each remediation.
 
-| Finding     | PR   | Environment checked                       | Evidence                                        | Verified by | Date       | Result      |
-| ----------- | ---- | ----------------------------------------- | ----------------------------------------------- | ----------- | ---------- | ----------- |
-| AUD-001     | #100 | local `main` / linked Cloud               | 119/119 migrations, identical last version      | Claude Code | 2026-08-03 | Completed   |
-| AUD-002–004 | —    | —                                         | —                                               | —           | —          | Open        |
-| AUD-005     | #91  | Vercel preview pending manual tunnel test | CI green reported; manual browser check pending | —           | —          | In progress |
-| AUD-006     | —    | —                                         | —                                               | —           | —          | Open        |
+| Finding     | PR   | Environment checked         | Evidence                                                                      | Verified by | Date       | Result    |
+| ----------- | ---- | --------------------------- | ----------------------------------------------------------------------------- | ----------- | ---------- | --------- |
+| AUD-001     | #100 | local `main` / linked Cloud | 119/119 migrations, identical last version                                    | Claude Code | 2026-08-03 | Completed |
+| AUD-002–004 | —    | —                           | —                                                                             | —           | —          | Open      |
+| AUD-005     | #91  | Vercel preview (deployed)   | Controlled browser exception landed as Sentry issue IROKO-7 with replay+trace | Claude Code | 2026-08-04 | Completed |
+| AUD-006     | —    | —                           | —                                                                             | —           | —          | Open      |

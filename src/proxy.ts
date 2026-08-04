@@ -138,7 +138,12 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|.*\\..*).*)',
+      // sentry-tunnel excluido: es el tunnelRoute de withSentryConfig (ver
+      // next.config.ts) — si next-intl lo intercepta, redirige el POST del SDK
+      // a /es/sentry-tunnel donde el rewrite del túnel no existe (404) y los
+      // eventos del navegador se pierden.
+      source:
+        '/((?!api|sentry-tunnel|_next/static|_next/image|favicon.ico|manifest.json|.*\\..*).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },
