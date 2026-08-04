@@ -122,6 +122,12 @@ describe('updateSession', () => {
       const response = await updateSession(makeRequest('/es/pricing'));
       expect(response.headers.get('location')).toBeNull();
     });
+
+    it('does NOT force private,no-store on anonymous requests with no session cookies to refresh', async () => {
+      mockNoSession();
+      const response = await updateSession(makeRequest('/es/pricing'));
+      expect(response.headers.get('cache-control')).toBeNull();
+    });
   });
 
   describe('authenticated requests', () => {
