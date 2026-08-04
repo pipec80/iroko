@@ -5,6 +5,7 @@ This directory is the versioned source of truth for engineering audits, executio
 ## Start here
 
 - [Full platform audit — 2026-08-02](audits/2026-08-02-full-platform-audit.md)
+- [Sentry browser observability audit — 2026-08-03](audits/2026-08-03-sentry-audit.md)
 - [Definition of Done](quality/definition-of-done.md)
 - [Testing strategy](quality/testing-strategy.md)
 - [Local synchronization and Codex runbook](runbooks/local-sync-and-codex.md)

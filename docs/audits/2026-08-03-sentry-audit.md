@@ -208,6 +208,28 @@ Cuotas aproximadas del plan Developer (verificar en Settings → Usage & Billing
 5. **Alertas**: en plan free hay alertas por email — configurar al menos una
    alerta de "new issue" en production para no depender de entrar al dashboard.
 
+## Decisión de privacidad (Plan 003, revalidado 2026-08-03)
+
+El Plan 003 exige documentar explícitamente si el consentimiento de analítica
+gobierna la telemetría opcional. Estado real del repo hoy:
+
+- `sentry.client.config.ts:20-27` (ahora `src/instrumentation-client.ts`) corre
+  **Session Replay al 5% de las sesiones sin ningún gate de consentimiento** —
+  se inicializa incondicionalmente al cargar el cliente.
+- `src/app/[locale]/layout.tsx:47-48` monta `<Analytics/>` y `<SpeedInsights/>`
+  (Vercel) igual de incondicionalmente.
+- El proyecto ya tiene un modelo de consentimiento propio
+  (`src/lib/cookie-consent.ts`, categorías `analytics`/`marketing`) con
+  `hasConsent(category)` exportado — pero **ningún componente de runtime lo
+  consume todavía**; sus únicas referencias en `src/` son sus propios tests.
+
+**Decisión tomada para este PR**: no bloquear el fix del túnel por este gap.
+Verificar que un evento de error del navegador llega a Sentry es el alcance de
+este PR; condicionar Replay/Analytics/SpeedInsights a `hasConsent('analytics')`
+es trabajo de los planes 005/006 (`docs/exec-plans/active/`), donde ya está
+listado como acceptance criteria explícito. Documentado aquí para que no se
+pierda entre PRs.
+
 ## Plan de acción sugerido
 
 1. **✅ Aplicado en esta rama**: fix del matcher del proxy (#1) + rename a
