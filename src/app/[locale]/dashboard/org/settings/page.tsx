@@ -75,18 +75,25 @@ export default function OrgSettingsPage() {
 
 function SecurityTab() {
   const t = useTranslations('OrgSettings');
+  const comingSoon = t('integrations_coming_soon');
   return (
     <div className="card space-y-5 p-6">
       <h2 className="text-foreground text-[14px] font-semibold">{t('security_section_title')}</h2>
       <div className="space-y-4">
-        <ToggleRow title={t('security_toggle_mfa_title')} desc={t('security_toggle_mfa_desc')} />
+        <ToggleRow
+          title={t('security_toggle_mfa_title')}
+          desc={t('security_toggle_mfa_desc')}
+          comingSoonLabel={comingSoon}
+        />
         <ToggleRow
           title={t('security_toggle_sessions_title')}
           desc={t('security_toggle_sessions_desc')}
+          comingSoonLabel={comingSoon}
         />
         <ToggleRow
           title={t('security_toggle_audit_title')}
           desc={t('security_toggle_audit_desc')}
+          comingSoonLabel={comingSoon}
         />
       </div>
     </div>
@@ -119,42 +126,53 @@ function DangerTab() {
           </h3>
           <p className="text-muted-foreground max-w-sm text-[12px]">{t('danger_delete_desc')}</p>
         </div>
-        <button
-          type="button"
-          className="shrink-0 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80"
-          style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
-          {t('danger_delete_btn')}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-muted-foreground font-mono text-[9px] tracking-widest uppercase opacity-60">
+            {t('integrations_coming_soon')}
+          </span>
+          <button
+            type="button"
+            disabled
+            title={t('integrations_coming_soon')}
+            className="cursor-not-allowed rounded-lg border px-4 py-2 text-[13px] font-semibold opacity-40"
+            style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
+            {t('danger_delete_btn')}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function ToggleRow({ title, desc }: { title: string; desc: string }) {
-  const [on, setOn] = useState(false);
+function ToggleRow({
+  title,
+  desc,
+  comingSoonLabel,
+}: {
+  title: string;
+  desc: string;
+  comingSoonLabel: string;
+}) {
   return (
     <div className="border-border flex items-center justify-between gap-6 border-b pb-4 last:border-0 last:pb-0">
       <div className="space-y-0.5">
         <p className="text-foreground text-[13px] font-medium">{title}</p>
         <p className="text-muted-foreground text-[11px]">{desc}</p>
       </div>
-      <button
-        type="button"
-        onClick={() => setOn((v) => !v)}
-        className={cn(
-          'relative h-5 w-9 shrink-0 rounded-full transition-colors',
-          on ? 'bg-cobalt' : 'bg-surface-3',
-        )}
-        style={{ background: on ? 'var(--color-cobalt)' : undefined }}
-        role="switch"
-        aria-checked={on}>
-        <span
-          className={cn(
-            'absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow transition-transform',
-            on && 'translate-x-4',
-          )}
-        />
-      </button>
+      <div className="flex shrink-0 items-center gap-2">
+        <span className="text-muted-foreground font-mono text-[9px] tracking-widest uppercase opacity-60">
+          {comingSoonLabel}
+        </span>
+        <button
+          type="button"
+          disabled
+          title={comingSoonLabel}
+          className="bg-surface-3 relative h-5 w-9 cursor-not-allowed rounded-full opacity-50"
+          role="switch"
+          aria-checked={false}>
+          <span className="absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow" />
+        </button>
+      </div>
     </div>
   );
 }

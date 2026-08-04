@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
 
 import {
@@ -14,6 +15,15 @@ import {
 } from '@/components/ui/dialog';
 import { createDocument } from '@/app/[locale]/dashboard/projects/[slug]/doc/actions';
 
+const ERROR_KEYS: Record<string, string> = {
+  name_required: 'error_name_required',
+  name_too_long: 'error_name_too_long',
+  description_too_long: 'error_description_too_long',
+  invalid_session: 'error_generic',
+  account_not_found: 'error_generic',
+  create_failed: 'error_generic',
+};
+
 interface NewDocumentDialogProps {
   projectId: string;
   projectSlug: string;
@@ -21,6 +31,7 @@ interface NewDocumentDialogProps {
 }
 
 export function NewDocumentDialog({ projectId, projectSlug, variant }: NewDocumentDialogProps) {
+  const t = useTranslations('Projects');
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -52,12 +63,12 @@ export function NewDocumentDialog({ projectId, projectSlug, variant }: NewDocume
           <Plus size={14} style={{ color: 'var(--color-iron)' }} strokeWidth={1.5} />
         </div>
         <span className="text-muted-foreground group-hover:text-foreground text-[13px] font-medium transition-colors">
-          Nuevo documento
+          {t('doc_dialog_title')}
         </span>
       </button>
     : <button type="button" className="btn btn-iron" style={{ padding: '10px 18px', fontSize: 13 }}>
         <Plus size={14} strokeWidth={1.5} />
-        Nuevo documento
+        {t('doc_dialog_title')}
       </button>;
 
   return (
@@ -66,16 +77,14 @@ export function NewDocumentDialog({ projectId, projectSlug, variant }: NewDocume
 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Nuevo documento</DialogTitle>
-          <DialogDescription>
-            Un documento es una página de conocimiento dentro del proyecto.
-          </DialogDescription>
+          <DialogTitle>{t('doc_dialog_title')}</DialogTitle>
+          <DialogDescription>{t('doc_dialog_desc')}</DialogDescription>
         </DialogHeader>
 
-        <form ref={formRef} action={action} className="space-y-4">
+        <form ref={formRef} action={action} noValidate className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="doc-name" className="text-on-surface text-sm font-semibold">
-              Nombre
+              {t('form_name_label')}
             </label>
             <input
               id="doc-name"
@@ -83,29 +92,34 @@ export function NewDocumentDialog({ projectId, projectSlug, variant }: NewDocume
               type="text"
               required
               maxLength={120}
-              placeholder="ej. Brief del cliente, Instrucciones de deploy"
+              placeholder={t('doc_form_name_placeholder')}
+              aria-invalid={!!state.error}
               className="bg-surface-container-low border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none"
             />
           </div>
 
           <div className="space-y-2">
             <label htmlFor="doc-desc" className="text-on-surface text-sm font-semibold">
-              Descripción{' '}
-              <span className="text-on-surface-variant font-normal opacity-60">(opcional)</span>
+              {t('form_desc_label')}{' '}
+              <span className="text-on-surface-variant font-normal opacity-60">
+                {t('form_desc_optional')}
+              </span>
             </label>
             <textarea
               id="doc-desc"
               name="description"
               rows={2}
               maxLength={300}
-              placeholder="ej. Contexto del cliente para el equipo"
+              placeholder={t('doc_form_desc_placeholder')}
               className="bg-surface-container-low border-outline-variant/30 text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary w-full rounded-lg border px-3 py-2.5 text-sm transition-colors focus:outline-none"
             />
           </div>
 
           {state.error && (
-            <p className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
-              {state.error}
+            <p
+              role="alert"
+              className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
+              {t((ERROR_KEYS[state.error] ?? 'error_generic') as never)}
             </p>
           )}
 
@@ -114,13 +128,13 @@ export function NewDocumentDialog({ projectId, projectSlug, variant }: NewDocume
               type="button"
               onClick={() => setOpen(false)}
               className="border-outline-variant/30 text-on-surface hover:bg-surface-container-high rounded-lg border px-4 py-2 text-sm font-medium transition-colors">
-              Cancelar
+              {t('btn_cancel')}
             </button>
             <button
               type="submit"
               disabled={isPending}
               className="bg-primary text-on-primary rounded-lg px-4 py-2 text-sm font-bold shadow-md transition-all hover:shadow-lg active:scale-95 disabled:opacity-50">
-              {isPending ? 'Creando…' : 'Crear documento'}
+              {isPending ? t('btn_creating') : t('doc_btn_create')}
             </button>
           </DialogFooter>
         </form>

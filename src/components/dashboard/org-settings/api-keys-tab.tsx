@@ -134,6 +134,17 @@ export function ApiKeysTab() {
           )}
         </form>
 
+        {create.error && (
+          <p role="alert" className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
+            {t('api_keys_create_error')}
+          </p>
+        )}
+        {revoke.error && (
+          <p role="alert" className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
+            {t('api_keys_revoke_error')}
+          </p>
+        )}
+
         {atLimit && (
           <p className="text-muted-foreground text-[12px]">
             {t('api_keys_limit_hint')}{' '}

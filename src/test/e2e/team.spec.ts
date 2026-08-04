@@ -46,7 +46,7 @@ const teamMgmtTest = base.extend<TeamMgmtFixtures>({
     const ownerId = ownerBody.id;
 
     // F3-C4: sin esto, el edge gate redirige el login del owner a
-    // /dashboard/onboarding en vez de /dashboard/team. service_role no tiene
+    // /dashboard/onboarding en vez de /dashboard/members. service_role no tiene
     // UPDATE sobre profiles (grants hardening) — vía psql como postgres.
     execSqlAsPostgres(
       `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${ownerId}'`,
@@ -133,8 +133,8 @@ authTest.describe('Team — invite member', () => {
     async ({ authenticatedPage: page }) => {
       const invitedEmail = `e2e+invited+${Date.now()}@saasboilerplate.local`;
 
-      await page.goto('/es/dashboard/team');
-      await page.waitForURL(/\/es\/dashboard\/team/);
+      await page.goto('/es/dashboard/members');
+      await page.waitForURL(/\/es\/dashboard\/members/);
 
       // Open the invite dialog
       await page.getByRole('button', { name: /invitar miembro/i }).click();
@@ -159,16 +159,16 @@ teamMgmtTest.describe('Team — remove member', () => {
   teamMgmtTest(
     'remove dialog: confirm → member row disappears from the list',
     async ({ teamPage: page }) => {
-      await page.goto('/es/dashboard/team');
-      await page.waitForURL(/\/es\/dashboard\/team/);
+      await page.goto('/es/dashboard/members');
+      await page.waitForURL(/\/es\/dashboard\/members/);
 
       // The seeded member's email contains "e2e+team-member" — wait for their row
       const memberText = page.getByText(/e2e\+team-member/);
       await expect(memberText).toBeVisible({ timeout: 10_000 });
 
-      // Click the remove button — only non-owner active members have it
-      // (title is the Spanish translation of "remove_member")
-      await page.getByTitle(/eliminar miembro/i).click();
+      // Open the row's actions menu — only non-owner active members have one
+      // (aria-label is the Spanish translation of "member_actions: Acciones para {name}")
+      await page.getByRole('button', { name: /^acciones para/i }).click();
 
       // Confirm removal in the dialog
       await expect(page.getByRole('dialog')).toBeVisible();

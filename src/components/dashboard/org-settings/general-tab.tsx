@@ -16,6 +16,7 @@ import { storageUrl } from '@/lib/storage';
 /** Tab general de org/settings: logo de la organización + campos básicos (F3-3H-2). */
 export function GeneralTab() {
   const t = useTranslations('OrgSettings');
+  const tSettings = useTranslations('Settings');
   const [logoState, logoAction, logoPending] = useActionState<OrgLogoActionState, FormData>(
     updateOrgLogo,
     {},
@@ -103,11 +104,19 @@ export function GeneralTab() {
             </div>
             {logoState.success === 'logo_updated' && !hasFile && (
               <div
+                role="status"
                 className="mt-3 flex items-center gap-2 text-[12px]"
                 style={{ color: 'var(--color-cobalt)' }}>
                 <CheckCircle size={16} strokeWidth={1.75} />
                 {t('general_logo_success')}
               </div>
+            )}
+            {logoState.error && (
+              <p role="alert" className="text-destructive mt-3 text-[12px]">
+                {tSettings(`errors.${logoState.error}` as 'errors.generic', {
+                  default: tSettings('errors.generic'),
+                })}
+              </p>
             )}
           </div>
         </form>

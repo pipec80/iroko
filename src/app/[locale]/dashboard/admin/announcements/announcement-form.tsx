@@ -32,6 +32,12 @@ export function AnnouncementForm() {
     e.preventDefault();
     setError(null);
     setSuccess(false);
+
+    if (!title.trim()) {
+      setError(t('announcements_error_validation'));
+      return;
+    }
+
     startTransition(async () => {
       const result = await publishAnnouncement({ type, title, body, link });
       if (result.error) {
@@ -46,14 +52,14 @@ export function AnnouncementForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card flex max-w-xl flex-col gap-4 p-6">
+    <form onSubmit={handleSubmit} noValidate className="card flex max-w-xl flex-col gap-4 p-6">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="announcement-type">{t('announcements_type_label')}</Label>
         <select
           id="announcement-type"
           value={type}
           onChange={(e) => setType(e.target.value as (typeof ANNOUNCEMENT_TYPES)[number])}
-          className="border-border-strong h-9 w-full rounded-md border bg-transparent px-2.5 py-1 text-base outline-none md:text-sm">
+          className="border-border-strong h-9 w-full rounded-md border bg-transparent px-2.5 py-1 text-base scheme-light outline-none md:text-sm dark:scheme-dark">
           {ANNOUNCEMENT_TYPES.map((value) => (
             <option key={value} value={value}>
               {t(`announcements_type_${value}` as never)}
@@ -69,6 +75,7 @@ export function AnnouncementForm() {
           onChange={(e) => setTitle(e.target.value)}
           maxLength={200}
           required
+          aria-invalid={!!error}
         />
       </div>
       <div className="flex flex-col gap-1.5">
@@ -92,9 +99,15 @@ export function AnnouncementForm() {
           placeholder="https://…"
         />
       </div>
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      {error && (
+        <p
+          role="alert"
+          className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm font-medium">
+          {error}
+        </p>
+      )}
       {success && (
-        <p className="text-sm" style={{ color: 'var(--color-success)' }}>
+        <p role="status" className="text-sm" style={{ color: 'var(--color-success)' }}>
           {t('announcements_success')}
         </p>
       )}

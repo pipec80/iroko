@@ -13,8 +13,8 @@ export const PROJECT_TYPES = ['docs', 'automation', 'agent'] as const;
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export const createProjectSchema = z.object({
-  name: z.string().min(1, 'El nombre es requerido').max(80, 'Máximo 80 caracteres'),
-  description: z.string().max(300, 'Máximo 300 caracteres').optional(),
+  name: z.string().min(1, 'name_required').max(80, 'name_too_long'),
+  description: z.string().max(300, 'description_too_long').optional(),
   tone: z.enum(PROJECT_TONES).default('iron'),
   type: z.enum(PROJECT_TYPES).default('docs'),
 });

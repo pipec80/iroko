@@ -57,7 +57,9 @@ next-env.d.ts
 # .github tracked: workflows, templates, dependabot, CODEOWNERS must be in git
 /.temp/
 /.kiro/
+/.scratch/
 .mcp.json
+AGENTS.md
 
 # supabase local runtime (no commitear)
 supabase/.temp/
@@ -69,7 +71,9 @@ docs/info.txt
 /docs/
 
 # scratch / herramientas locales (no pertenecen al repo)
+/scratch/
 nuevo4.txt
+data-local.txt
 knip-output.txt
 skills-lock.json
 .antigravitycli/

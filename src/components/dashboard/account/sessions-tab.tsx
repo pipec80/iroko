@@ -29,6 +29,13 @@ export async function SessionsTab() {
         none: t('none'),
         session_revoked: t('success.session_revoked'),
         other_sessions_revoked: t('success.other_sessions_revoked'),
+        device_unknown: t('device_unknown'),
+        device_iphone: t('device_iphone'),
+        device_android: t('device_android'),
+        device_windows: t('device_windows'),
+        device_macos: t('device_macos'),
+        device_linux: t('device_linux'),
+        device_browser: t('device_browser'),
       }}
     />
   );

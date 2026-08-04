@@ -31,7 +31,7 @@ export default function ResetPasswordPage() {
         <p className="text-muted-foreground text-sm">{t('reset_password_desc')}</p>
       </div>
 
-      <form action={formAction} className="space-y-5">
+      <form action={formAction} noValidate className="space-y-5">
         <div className="space-y-1.5">
           <Label className="text-foreground block text-sm font-semibold" htmlFor="password">
             {t('new_password')}
@@ -49,10 +49,17 @@ export default function ResetPasswordPage() {
               required
               type="password"
               minLength={8}
+              aria-invalid={!!state.fieldErrors?.password}
             />
           </div>
           {state.fieldErrors?.password && (
-            <p className="text-destructive text-xs">{state.fieldErrors.password[0]}</p>
+            <p
+              role="alert"
+              className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
+              {t(`errors.${state.fieldErrors.password[0] ?? ''}` as 'errors.generic', {
+                default: state.fieldErrors.password[0] ?? '',
+              })}
+            </p>
           )}
         </div>
 
@@ -73,10 +80,13 @@ export default function ResetPasswordPage() {
               required
               type="password"
               minLength={8}
+              aria-invalid={!!state.fieldErrors?.confirm_password}
             />
           </div>
           {state.fieldErrors?.confirm_password && (
-            <p className="text-destructive text-xs">
+            <p
+              role="alert"
+              className="bg-destructive/10 text-destructive mt-1.5 rounded-md px-3 py-2 text-xs font-medium">
               {t(`errors.${state.fieldErrors.confirm_password[0] ?? ''}` as 'errors.generic', {
                 default: state.fieldErrors.confirm_password[0] ?? '',
               })}
@@ -85,7 +95,9 @@ export default function ResetPasswordPage() {
         </div>
 
         {error && (
-          <p role="alert" className="text-destructive text-sm">
+          <p
+            role="alert"
+            className="bg-destructive/10 text-destructive rounded-md px-3 py-2 text-sm font-medium">
             {error}
           </p>
         )}
