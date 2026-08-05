@@ -63,11 +63,13 @@ PostHog should not be added yet. One P0 item must be closed first:
 | AUD-010 | Gitleaks script exists but is not part of the main CI gate                   | P1       | Resolved (2026-08-04)            | 005  | Completed   |
 | AUD-011 | Supabase type job can commit/push from CI instead of only detecting drift    | P1       | Resolved (2026-08-04)            | 005  | Completed   |
 | AUD-012 | CI uploads `.next/standalone` although standalone output is not enabled      | P1       | Resolved (2026-08-04)            | 005  | Completed   |
-| AUD-013 | E2E impersonation suite is skipped pending an admin/MFA fixture              | P1       | Confirmed                        | 005  | Open        |
-| AUD-014 | Browser matrix is primarily Chromium and lacks automated Axe coverage        | P1       | Confirmed                        | 005  | Open        |
+| AUD-013 | E2E impersonation suite is skipped pending an admin/MFA fixture              | P1       | Resolved (2026-08-05)            | 005  | Completed   |
+| AUD-014 | Browser matrix is primarily Chromium and lacks automated Axe coverage        | P1       | Resolved (2026-08-05)            | 005  | Completed   |
 | AUD-015 | README/runtime tooling versions and some env documentation are stale         | P1       | Partially resolved (2026-08-04)  | 005  | In progress |
 | AUD-016 | Vercel Analytics and Speed Insights mount independently of analytics consent | P1       | Confirmed                        | 006  | Open        |
 | AUD-017 | No PostHog package, provider, taxonomy or privacy implementation exists      | P2       | Confirmed                        | 006  | Blocked     |
+| AUD-020 | CSP blocked the local Supabase origin in production-mode builds (E2E)        | P1       | Resolved (2026-08-05)            | 005  | Completed   |
+| AUD-021 | `notFound()` in `dashboard/admin/*` returns HTTP 200, not 404 (streaming)    | P2       | Documented (2026-08-05)          | 005  | Deferred    |
 
 ## P0 evidence
 
@@ -158,6 +160,22 @@ Required response (Plan 005, config-consistency workstream): decide whether to a
 
 **Closure evidence:** `supabase/.temp/**` added to `globalIgnores` in PR #91. `pnpm lint` now returns clean (one pre-existing, unrelated warning in `src/app/layout.tsx` about custom fonts).
 
+### AUD-020 — CSP blocked the local Supabase origin outside dev builds (Resolved 2026-08-05)
+
+Discovered while investigating an intermittent E2E failure on `settings.spec.ts`. `buildCspHeader()` in `src/proxy.ts` only added `http://127.0.0.1:54321` to `connect-src`/`img-src` when `NODE_ENV === 'development'`. The full E2E suite runs the app with `next build && next start` (production mode) against local Supabase, so this condition was never true during E2E — every client-side call to Supabase local (notifications, announcements, realtime websocket) was silently blocked by CSP for the entire suite, not just the one flaky test. The retries and re-renders those blocked calls triggered were the actual cause of the intermittent failure, not a `useActionState` race as first suspected.
+
+**Fix:** the local origin is now derived from the actually configured `NEXT_PUBLIC_SUPABASE_URL` — if its hostname is `127.0.0.1` or `localhost`, it's allowed regardless of `NODE_ENV`. Real production deployments never set a loopback URL there, so this doesn't weaken production CSP.
+
+**Closure evidence:** two new `buildCspHeader` test cases in `src/proxy.test.ts` (loopback URL allowed outside dev; Cloud URL never allows a loopback origin). `settings.spec.ts`'s previously-flaky test run clean across multiple isolated repeats after the fix.
+
+### AUD-021 — `notFound()` in `dashboard/admin/*` returns HTTP 200, not 404 (Documented 2026-08-05, deferred)
+
+Found while building the impersonation E2E fixture (AUD-013): as a non-admin (impersonated) session, `/dashboard/admin/*` correctly renders the app's 404 page — no account data is exposed — but the actual HTTP response status is `200`, not `404`. Root cause: `notFound()` is thrown from an async Server Component (`getAdminAccounts()` is awaited first) inside a tree that has already started streaming its shell with a `200` status; Next.js cannot retroactively change the status code once streaming has begun. The comment in `src/lib/supabase/middleware.ts` claiming `AdminLayout`'s `notFound()` "produces a genuine 404 status" is stale.
+
+Risk: low — the content-level boundary (no data leak) holds, which is the property that actually matters for this route's security. The wrong status code only affects automated tooling that checks HTTP status rather than rendered content (e.g. a status-code-based scanner would not recognize this route as gated).
+
+Deferred: fixing this requires either restructuring the route to resolve the admin check before any streaming begins, or accepting the framework limitation. Out of scope for the testing-maturity work that surfaced it; a future pass should re-evaluate once a concrete need (e.g. compliance scanning) makes it worth the restructuring cost.
+
 ## Security assessment
 
 ### Strong controls confirmed
@@ -207,11 +225,19 @@ Hardening work — done (2026-08-04, AUD-009/010/011/012):
 - ~~change database type generation to `generate + diff --exit-code` rather than CI-authored commits~~ — done, `db-types` now fails instead of committing;
 - ~~remove the standalone artifact or explicitly enable and test standalone output~~ — done, removed (nothing consumed it, `output: 'standalone'` was never enabled).
 
+Hardening work — done (2026-08-05, AUD-013/014/020, Plan 005 workstream E):
+
+- ~~add WebKit and automated accessibility (Axe) coverage~~ — done: a `webkit` project scoped to `@smoke` specs (new `e2e-webkit` CI job), and `runAxeCheck()` wired into login/settings/billing/dashboard specs. Found and fixed 4 real WCAG issues (decorative flag icon missing `aria-hidden`, two unlabeled filter `<select>`s, two contrast tokens below AA — see commit history on the `test/plan-005-e-testing-maturity` branch);
+- ~~add an admin/MFA impersonation fixture and enable the E2E suite~~ — done: `fixtures/platform-admin.ts` enrolls a real TOTP factor and completes the actual MFA challenge via the UI to reach a genuine aal2 session (`private.assert_platform_admin()` checks GoTrue's real `aal` claim, not just `mfa_enrolled`);
+- ~~make `process-email-queue` testable~~ — done: split into `handler.ts` (pure, dependency-injected) + `pgmq-queue.ts`, 8 new Deno tests, new `edge-functions` CI job;
+- ~~add contract tests that exercise real provider SDKs/algorithms instead of fully-mocked ones~~ — done for Stripe (real `webhooks.constructEvent` against a signed fixture) and MercadoPago (HMAC vector computed independently with `node:crypto`, not reusing the app's own algorithm);
+- found and fixed AUD-020 (CSP blocking local Supabase during E2E) along the way — see below.
+
 Hardening work — still open:
 
-- add WebKit, accessibility scanning and an admin/MFA impersonation fixture (Plan 005 workstream E, scope not yet agreed);
 - add a Cloud smoke check for Sentry tunnel, Supabase workers and provider callbacks;
-- ensure Vercel automation bypass is correctly configured for protected previews.
+- ensure Vercel automation bypass is correctly configured for protected previews;
+- AUD-021 (`notFound()` returning 200 instead of 404 in `dashboard/admin/*`) — documented, deferred, not blocking.
 
 ## Caching and runtime behavior (Resolved 2026-08-04, AUD-008)
 
@@ -251,3 +277,7 @@ Update this table after each remediation.
 | AUD-011     | —    | local `main`                | `db-types` job now `exit 1` on drift instead of `git commit && push`                                                                            | Claude Code | 2026-08-04 | Completed |
 | AUD-012     | —    | local `main`                | Removed the `.next/standalone` upload step; nothing downloaded the artifact                                                                     | Claude Code | 2026-08-04 | Completed |
 | AUD-015     | —    | local `main`                | README Node/pnpm/org fixed, `.nvmrc`+`engines` added, `.env.example` Google OAuth documented — central URLs/support addresses not yet addressed | Claude Code | 2026-08-04 | Partial   |
+| AUD-013     | —    | local `main`                | `impersonation.spec.ts` un-skipped, 3/3 clean isolated runs — real TOTP enrolled + real UI MFA challenge reaches a genuine aal2 session         | Claude Code | 2026-08-05 | Completed |
+| AUD-014     | —    | local `main`                | `pnpm test:e2e:webkit` 16/16 green; `runAxeCheck()` in 4 specs found and fixed 4 real WCAG issues, verified clean single-worker after fixing    | Claude Code | 2026-08-05 | Completed |
+| AUD-020     | —    | local `main`                | New `buildCspHeader` cases in `proxy.test.ts`; `settings.spec.ts`'s previously-flaky test clean across repeated isolated runs after the fix     | Claude Code | 2026-08-05 | Completed |
+| AUD-021     | —    | local `main`                | Confirmed via trace: rendered content is the real 404 (no data leak), HTTP status is 200 — documented inline, deferred (not blocking)           | Claude Code | 2026-08-05 | Deferred  |
