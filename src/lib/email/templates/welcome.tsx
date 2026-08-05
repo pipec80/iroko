@@ -27,7 +27,7 @@ export function WelcomeEmail({
   firstName = 'allí',
   appName = 'Iroko',
   dashboardUrl = 'http://localhost:3000/es/dashboard',
-  supportEmail = 'support@iroko.vercel.app',
+  supportEmail = 'support@example.com',
 }: WelcomeEmailProps): React.ReactElement {
   return (
     <Html lang="es">

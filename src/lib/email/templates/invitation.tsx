@@ -38,7 +38,7 @@ export function InvitationEmail({
   teamRole,
   inviteUrl,
   appName = 'Iroko',
-  supportEmail = 'support@iroko.vercel.app',
+  supportEmail = 'support@example.com',
 }: InvitationEmailProps): React.ReactElement {
   return (
     <Html lang="es">

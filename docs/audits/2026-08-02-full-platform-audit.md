@@ -47,29 +47,29 @@ PostHog should not be added yet. One P0 item must be closed first:
 
 ## Finding matrix
 
-| ID      | Finding                                                                      | Priority | Verified state                     | Plan | Status      |
-| ------- | ---------------------------------------------------------------------------- | -------- | ---------------------------------- | ---- | ----------- |
-| AUD-001 | Two Supabase Cloud migrations are missing from `main`                        | P0       | Resolved by PR #100 (2026-08-03)   | 001  | Completed   |
-| AUD-002 | Cloud email cron calls `host.docker.internal`                                | P0       | Confirmed                          | 002  | Open        |
-| AUD-003 | Email Edge Function source exists but no Edge Function is deployed           | P0       | Confirmed                          | 002  | Open        |
-| AUD-004 | pg_net reports DNS failures although cron executions show succeeded          | P0       | Confirmed                          | 002  | Open        |
-| AUD-005 | Sentry browser tunnel is intercepted by locale proxy                         | P0       | Resolved by PR #91 (2026-08-04)    | 003  | Completed   |
-| AUD-006 | Next.js declared/resolved versions disagree                                  | P0       | Resolved (2026-08-04)              | 004  | Completed   |
-| AUD-007 | `docs/` was globally ignored                                                 | P1       | Resolved by PR #92 (2026-08-04)    | 005  | Completed   |
-| AUD-018 | CSP blocks `vercel.live` feedback widget script on preview deployments       | P2       | Resolved (2026-08-04)              | 005  | Completed   |
-| AUD-019 | ESLint had no `ignores` for local Supabase Edge Runtime build artifacts      | P2       | Resolved by PR #91 (2026-08-04)    | 005  | Completed   |
-| AUD-008 | Public responses may inherit `private, no-store` from session middleware     | P1       | Resolved (2026-08-04)              | 005  | Completed   |
-| AUD-009 | Knip is non-blocking in CI                                                   | P1       | Resolved (2026-08-04)              | 005  | Completed   |
-| AUD-010 | Gitleaks script exists but is not part of the main CI gate                   | P1       | Resolved (2026-08-04)              | 005  | Completed   |
-| AUD-011 | Supabase type job can commit/push from CI instead of only detecting drift    | P1       | Resolved (2026-08-04)              | 005  | Completed   |
-| AUD-012 | CI uploads `.next/standalone` although standalone output is not enabled      | P1       | Resolved (2026-08-04)              | 005  | Completed   |
-| AUD-013 | E2E impersonation suite is skipped pending an admin/MFA fixture              | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed   |
-| AUD-014 | Browser matrix is primarily Chromium and lacks automated Axe coverage        | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed   |
-| AUD-015 | README/runtime tooling versions and some env documentation are stale         | P1       | Partially resolved (2026-08-04)    | 005  | In progress |
-| AUD-016 | Vercel Analytics and Speed Insights mount independently of analytics consent | P1       | Confirmed                          | 006  | Open        |
-| AUD-017 | No PostHog package, provider, taxonomy or privacy implementation exists      | P2       | Confirmed                          | 006  | Blocked     |
-| AUD-020 | CSP blocked the local Supabase origin in production-mode builds (E2E)        | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed   |
-| AUD-021 | `notFound()` in `dashboard/admin/*` returns HTTP 200, not 404 (streaming)    | P2       | Documented by PR #105 (2026-08-05) | 005  | Deferred    |
+| ID      | Finding                                                                      | Priority | Verified state                     | Plan | Status    |
+| ------- | ---------------------------------------------------------------------------- | -------- | ---------------------------------- | ---- | --------- |
+| AUD-001 | Two Supabase Cloud migrations are missing from `main`                        | P0       | Resolved by PR #100 (2026-08-03)   | 001  | Completed |
+| AUD-002 | Cloud email cron calls `host.docker.internal`                                | P0       | Confirmed                          | 002  | Open      |
+| AUD-003 | Email Edge Function source exists but no Edge Function is deployed           | P0       | Confirmed                          | 002  | Open      |
+| AUD-004 | pg_net reports DNS failures although cron executions show succeeded          | P0       | Confirmed                          | 002  | Open      |
+| AUD-005 | Sentry browser tunnel is intercepted by locale proxy                         | P0       | Resolved by PR #91 (2026-08-04)    | 003  | Completed |
+| AUD-006 | Next.js declared/resolved versions disagree                                  | P0       | Resolved (2026-08-04)              | 004  | Completed |
+| AUD-007 | `docs/` was globally ignored                                                 | P1       | Resolved by PR #92 (2026-08-04)    | 005  | Completed |
+| AUD-018 | CSP blocks `vercel.live` feedback widget script on preview deployments       | P2       | Resolved (2026-08-04)              | 005  | Completed |
+| AUD-019 | ESLint had no `ignores` for local Supabase Edge Runtime build artifacts      | P2       | Resolved by PR #91 (2026-08-04)    | 005  | Completed |
+| AUD-008 | Public responses may inherit `private, no-store` from session middleware     | P1       | Resolved (2026-08-04)              | 005  | Completed |
+| AUD-009 | Knip is non-blocking in CI                                                   | P1       | Resolved (2026-08-04)              | 005  | Completed |
+| AUD-010 | Gitleaks script exists but is not part of the main CI gate                   | P1       | Resolved (2026-08-04)              | 005  | Completed |
+| AUD-011 | Supabase type job can commit/push from CI instead of only detecting drift    | P1       | Resolved (2026-08-04)              | 005  | Completed |
+| AUD-012 | CI uploads `.next/standalone` although standalone output is not enabled      | P1       | Resolved (2026-08-04)              | 005  | Completed |
+| AUD-013 | E2E impersonation suite is skipped pending an admin/MFA fixture              | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed |
+| AUD-014 | Browser matrix is primarily Chromium and lacks automated Axe coverage        | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed |
+| AUD-015 | README/runtime tooling versions and some env documentation are stale         | P1       | Resolved (2026-08-05)              | 005  | Completed |
+| AUD-016 | Vercel Analytics and Speed Insights mount independently of analytics consent | P1       | Confirmed                          | 006  | Open      |
+| AUD-017 | No PostHog package, provider, taxonomy or privacy implementation exists      | P2       | Confirmed                          | 006  | Blocked   |
+| AUD-020 | CSP blocked the local Supabase origin in production-mode builds (E2E)        | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed |
+| AUD-021 | `notFound()` in `dashboard/admin/*` returns HTTP 200, not 404 (streaming)    | P2       | Documented by PR #105 (2026-08-05) | 005  | Deferred  |
 
 ## P0 evidence
 
@@ -262,23 +262,23 @@ Before implementation:
 
 Update this table after each remediation.
 
-| Finding     | PR   | Environment checked         | Evidence                                                                                                                                        | Verified by | Date       | Result    |
-| ----------- | ---- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- | --------- |
-| AUD-001     | #100 | local `main` / linked Cloud | 119/119 migrations, identical last version                                                                                                      | Claude Code | 2026-08-03 | Completed |
-| AUD-002–004 | —    | —                           | —                                                                                                                                               | —           | —          | Open      |
-| AUD-005     | #91  | Vercel preview (deployed)   | Controlled browser exception landed as Sentry issue IROKO-7 with replay+trace                                                                   | Claude Code | 2026-08-04 | Completed |
-| AUD-006     | —    | local `main`                | `pnpm why next` → Found 1 version at 16.2.12; validate+knip+build clean                                                                         | Claude Code | 2026-08-04 | Completed |
-| AUD-007     | #92  | local `main`                | `.gitignore` allowlists `docs/{local,private,drafts,generated,exports}` only                                                                    | Claude Code | 2026-08-04 | Completed |
-| AUD-018     | —    | Vercel preview (deployed)   | CSP report landed as Sentry issue IROKO-8, `script-src-elem` for vercel.live                                                                    | Claude Code | 2026-08-04 | Completed |
-| AUD-019     | #91  | local `main`                | `pnpm lint` clean (1 pre-existing unrelated warning)                                                                                            | Claude Code | 2026-08-04 | Completed |
-| AUD-008     | —    | local `main`                | `middleware.test.ts` new case: anon request to `/es/pricing` has no `Cache-Control` header (594/594 unit tests pass)                            | Claude Code | 2026-08-04 | Completed |
-| AUD-009     | —    | local `main`                | `pnpm knip` exit 0 without `continue-on-error`; verified before removing it                                                                     | Claude Code | 2026-08-04 | Completed |
-| AUD-010     | —    | local `main`                | `gitleaks` job added to CI, required by `build`'s `needs:`                                                                                      | Claude Code | 2026-08-04 | Completed |
-| AUD-011     | —    | local `main`                | `db-types` job now `exit 1` on drift instead of `git commit && push`                                                                            | Claude Code | 2026-08-04 | Completed |
-| AUD-012     | —    | local `main`                | Removed the `.next/standalone` upload step; nothing downloaded the artifact                                                                     | Claude Code | 2026-08-04 | Completed |
-| AUD-015     | —    | local `main`                | README Node/pnpm/org fixed, `.nvmrc`+`engines` added, `.env.example` Google OAuth documented — central URLs/support addresses not yet addressed | Claude Code | 2026-08-04 | Partial   |
-| AUD-013     | #105 | local `main`                | `impersonation.spec.ts` un-skipped, 3/3 clean isolated runs — real TOTP enrolled + real UI MFA challenge reaches a genuine aal2 session         | Claude Code | 2026-08-05 | Completed |
-| AUD-014     | #105 | local `main`                | `pnpm test:e2e:webkit` 16/16 green; `runAxeCheck()` in 4 specs found and fixed 4 real WCAG issues, verified clean single-worker after fixing    | Claude Code | 2026-08-05 | Completed |
-| AUD-020     | #105 | local `main`                | New `buildCspHeader` cases in `proxy.test.ts`; `settings.spec.ts`'s previously-flaky test clean across repeated isolated runs after the fix     | Claude Code | 2026-08-05 | Completed |
-| AUD-021     | #105 | local `main`                | Confirmed via trace: rendered content is the real 404 (no data leak), HTTP status is 200 — documented inline, deferred (not blocking)           | Claude Code | 2026-08-05 | Deferred  |
-| —           | #105 | linked Cloud                | Post-merge: `supabase migration list --linked` → 119/119 migrations in parity, no local-only/Cloud-only drift (PR touched no schema)            | Claude Code | 2026-08-05 | Completed |
+| Finding     | PR   | Environment checked         | Evidence                                                                                                                                                                                                                                                | Verified by | Date       | Result    |
+| ----------- | ---- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- | --------- |
+| AUD-001     | #100 | local `main` / linked Cloud | 119/119 migrations, identical last version                                                                                                                                                                                                              | Claude Code | 2026-08-03 | Completed |
+| AUD-002–004 | —    | —                           | —                                                                                                                                                                                                                                                       | —           | —          | Open      |
+| AUD-005     | #91  | Vercel preview (deployed)   | Controlled browser exception landed as Sentry issue IROKO-7 with replay+trace                                                                                                                                                                           | Claude Code | 2026-08-04 | Completed |
+| AUD-006     | —    | local `main`                | `pnpm why next` → Found 1 version at 16.2.12; validate+knip+build clean                                                                                                                                                                                 | Claude Code | 2026-08-04 | Completed |
+| AUD-007     | #92  | local `main`                | `.gitignore` allowlists `docs/{local,private,drafts,generated,exports}` only                                                                                                                                                                            | Claude Code | 2026-08-04 | Completed |
+| AUD-018     | —    | Vercel preview (deployed)   | CSP report landed as Sentry issue IROKO-8, `script-src-elem` for vercel.live                                                                                                                                                                            | Claude Code | 2026-08-04 | Completed |
+| AUD-019     | #91  | local `main`                | `pnpm lint` clean (1 pre-existing unrelated warning)                                                                                                                                                                                                    | Claude Code | 2026-08-04 | Completed |
+| AUD-008     | —    | local `main`                | `middleware.test.ts` new case: anon request to `/es/pricing` has no `Cache-Control` header (594/594 unit tests pass)                                                                                                                                    | Claude Code | 2026-08-04 | Completed |
+| AUD-009     | —    | local `main`                | `pnpm knip` exit 0 without `continue-on-error`; verified before removing it                                                                                                                                                                             | Claude Code | 2026-08-04 | Completed |
+| AUD-010     | —    | local `main`                | `gitleaks` job added to CI, required by `build`'s `needs:`                                                                                                                                                                                              | Claude Code | 2026-08-04 | Completed |
+| AUD-011     | —    | local `main`                | `db-types` job now `exit 1` on drift instead of `git commit && push`                                                                                                                                                                                    | Claude Code | 2026-08-04 | Completed |
+| AUD-012     | —    | local `main`                | Removed the `.next/standalone` upload step; nothing downloaded the artifact                                                                                                                                                                             | Claude Code | 2026-08-04 | Completed |
+| AUD-015     | —    | local `main`                | README Node/pnpm/org fixed, `.nvmrc`+`engines` added, `.env.example` Google OAuth documented; `supportEmail` pointed at an unreceivable `vercel.app` address (fixed), 4 dead `appConfig.urls.*` fields removed (zero real consumers, confirmed by grep) | Claude Code | 2026-08-05 | Completed |
+| AUD-013     | #105 | local `main`                | `impersonation.spec.ts` un-skipped, 3/3 clean isolated runs — real TOTP enrolled + real UI MFA challenge reaches a genuine aal2 session                                                                                                                 | Claude Code | 2026-08-05 | Completed |
+| AUD-014     | #105 | local `main`                | `pnpm test:e2e:webkit` 16/16 green; `runAxeCheck()` in 4 specs found and fixed 4 real WCAG issues, verified clean single-worker after fixing                                                                                                            | Claude Code | 2026-08-05 | Completed |
+| AUD-020     | #105 | local `main`                | New `buildCspHeader` cases in `proxy.test.ts`; `settings.spec.ts`'s previously-flaky test clean across repeated isolated runs after the fix                                                                                                             | Claude Code | 2026-08-05 | Completed |
+| AUD-021     | #105 | local `main`                | Confirmed via trace: rendered content is the real 404 (no data leak), HTTP status is 200 — documented inline, deferred (not blocking)                                                                                                                   | Claude Code | 2026-08-05 | Deferred  |
+| —           | #105 | linked Cloud                | Post-merge: `supabase migration list --linked` → 119/119 migrations in parity, no local-only/Cloud-only drift (PR touched no schema)                                                                                                                    | Claude Code | 2026-08-05 | Completed |

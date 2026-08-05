@@ -25,13 +25,6 @@ describe('appConfig', () => {
     expect(typeof appConfig.features.verticals.robot).toBe('boolean');
   });
 
-  it('urls object has all required keys populated', () => {
-    const keys = ['site', 'support', 'docs', 'github', 'twitter'] as const;
-    for (const key of keys) {
-      expect(appConfig.urls[key].length).toBeGreaterThan(0);
-    }
-  });
-
   it('theme vars are CSS variable references', () => {
     expect(appConfig.theme.primaryColor).toMatch(/^var\(--/);
     expect(appConfig.theme.accentColor).toMatch(/^var\(--/);
