@@ -1,20 +1,26 @@
 import { describe, it, expect, vi } from 'vitest';
+import { NextRequest, NextResponse } from 'next/server';
 
 // next-intl/middleware resolves a bare "next/server" specifier internally,
 // which only Next's own bundler (webpack/Turbopack) can handle — Vite/Vitest
 // can't resolve it outside a Next build. Mock it so importing proxy.ts doesn't
-// try to load next-intl's real middleware; only `config` (a static export) is
-// under test here, never the request-handling logic.
+// try to load next-intl's real middleware — but keep the inner middleware fn
+// hoisted and controllable so `describe('proxy')` below can exercise the
+// actual request-handling logic, not just the static `config` export.
+const { intlMiddlewareMock } = vi.hoisted(() => ({ intlMiddlewareMock: vi.fn() }));
 vi.mock('next-intl/middleware', () => ({
-  default: vi.fn(() => vi.fn()),
+  default: vi.fn(() => intlMiddlewareMock),
 }));
 
 // proxy.ts imports updateSession from ./lib/supabase/middleware, which pulls in
 // @supabase/ssr, @/config/app.config, @/env and @/i18n/routing at module scope —
 // mock the same boundary middleware.test.ts uses so the import doesn't throw.
+// getClaims is hoisted/controllable so `describe('proxy')` can drive updateSession's
+// real branching (redirect vs. pass-through) through the real, unmocked function.
+const { getClaimsMock } = vi.hoisted(() => ({ getClaimsMock: vi.fn() }));
 vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(() => ({
-    auth: { getClaims: vi.fn() },
+    auth: { getClaims: getClaimsMock },
   })),
 }));
 
@@ -34,7 +40,11 @@ vi.mock('@/config/app.config', () => ({
   appConfig: { features: { onboarding: true } },
 }));
 
-import { buildCspHeader, config } from './proxy';
+import { buildCspHeader, config, proxy } from './proxy';
+
+function makeRequest(path: string): NextRequest {
+  return new NextRequest(`http://localhost:3000${path}`);
+}
 
 // Next.js compiles matcher.source with path-to-regexp, anchored to the full
 // path — a bare `new RegExp(source).test(path)` (no anchors) finds matches
@@ -120,5 +130,56 @@ describe('buildCspHeader', () => {
 
     expect(connectSrc).not.toContain('127.0.0.1');
     expect(connectSrc).not.toContain('localhost');
+  });
+
+  it('should not throw and should omit the local origin when NEXT_PUBLIC_SUPABASE_URL is malformed', () => {
+    const csp = buildCspHeader(false, false, 'not-a-valid-url');
+    const connectSrc = csp.split('; ').find((d) => d.startsWith('connect-src'));
+
+    expect(connectSrc).not.toContain('127.0.0.1');
+    expect(connectSrc).not.toContain('localhost');
+  });
+});
+
+describe('proxy', () => {
+  function mockIntlPassThrough(request: NextRequest): void {
+    intlMiddlewareMock.mockReturnValue(NextResponse.next({ request }));
+  }
+
+  it('returns updateSession redirect with security headers, without calling intlMiddleware', async () => {
+    getClaimsMock.mockResolvedValue({ data: null });
+    const request = makeRequest('/es/dashboard');
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toContain('/es/login');
+    expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
+    expect(intlMiddlewareMock).not.toHaveBeenCalled();
+  });
+
+  it("returns intlMiddleware's redirect with security headers, without merging supabaseResponse cookies", async () => {
+    getClaimsMock.mockResolvedValue({ data: null });
+    const request = makeRequest('/es/pricing');
+    intlMiddlewareMock.mockReturnValue(
+      NextResponse.redirect(new URL('/es/pricing/', 'http://localhost:3000'), 307),
+    );
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
+  });
+
+  it('passes through on a public page: merges cookies and applies security headers to the final response', async () => {
+    getClaimsMock.mockResolvedValue({ data: null });
+    const request = makeRequest('/es/pricing');
+    mockIntlPassThrough(request);
+
+    const response = await proxy(request);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
+    expect(response.headers.get('X-Frame-Options')).toBe('DENY');
   });
 });
