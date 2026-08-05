@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 
+import { runAxeCheck } from './axe';
 import { deleteUserByEmail, fetchLatestMessageTo, uniqueEmail } from './helpers';
 
 /**
@@ -20,13 +21,24 @@ test.describe('Auth flow', () => {
     expect(page.url()).toContain('next=%2Fes%2Fdashboard');
   });
 
-  test('login page renders both forms and switcher @smoke', async ({ page }) => {
+  test('login page renders both forms and switcher @smoke', async ({ page }, testInfo) => {
     await page.goto('/es/login');
     await expect(page.getByRole('heading', { name: /vuelve a tu tronco/i })).toBeVisible();
     await expect(page.locator('input[name="email"][type="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
     await expect(page.getByRole('button', { name: /iniciar sesión/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /enlace mágico/i })).toBeVisible();
+
+    // Salta en WebKit: mismo problema de renderizado documentado en
+    // hydration.spec.ts — el panel de marca (cita + stats, texto
+    // crema/dorado sobre fondo oscuro) no pinta su fondo en este entorno
+    // WebKit/Windows headless, así que axe mide el texto claro contra el
+    // blanco de la página en vez del fondo oscuro real, dando falsos
+    // positivos de contraste. No es un bug de producto — confirmado con el
+    // screenshot del fallo (misma página sin CSS aplicado que en hydration).
+    if (testInfo.project.name !== 'webkit') {
+      await runAxeCheck(page);
+    }
   });
 
   test('login with wrong password shows the generic credentials error', async ({ page }) => {

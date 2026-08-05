@@ -181,7 +181,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
           <div className="hidden items-center gap-[10px] lg:flex">
             <span
               className="font-mono text-[11px] font-semibold whitespace-nowrap uppercase"
-              style={{ letterSpacing: '0.16em', color: 'var(--text-tertiary)' }}>
+              style={{ letterSpacing: '0.16em', color: 'var(--text-secondary)' }}>
               {orgLabel}
             </span>
             <span style={{ color: 'var(--text-tertiary)', fontSize: 14, opacity: 0.5 }}>/</span>

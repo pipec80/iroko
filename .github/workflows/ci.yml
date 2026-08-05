@@ -8,7 +8,8 @@
 #   db-types  → verifica que src/types/database.ts esté sincronizado con el schema (falla en diff, no comitea)
 #   db-tests  → corre supabase/tests/database/*.test.sql con pgTAP
 #   edge-functions → deno test sobre supabase/functions/tests/ (toolchain propia, no pnpm/Node)
-#   e2e       → Playwright contra Supabase local (solo en PRs y main)
+#   e2e       → Playwright (chromium) contra Supabase local (solo en PRs y main)
+#   e2e-webkit → mismos specs @smoke, en WebKit (solo en PRs y main)
 #   e2e-status → job sintético para branch protection (siempre reporta resultado)
 #   build     → next build (solo en PRs y main, bloqueado por todos los anteriores)
 #
@@ -434,6 +435,110 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  # ─────────────────────────────────────────────
+  # JOB 6b: @smoke en WebKit — mismos specs read-only/sin-fixture-de-auth
+  # que ya corren contra producción en nightly.yml, duplicados en un segundo
+  # motor de renderizado. Mirrorea el setup de Supabase local del job `e2e`
+  # completo en vez de asumir que las rutas no autenticadas nunca llaman a
+  # Auth — más caro en minutos de CI, pero no introduce una suposición sin
+  # verificar en un gate bloqueante.
+  # ─────────────────────────────────────────────
+  e2e-webkit:
+    name: E2E Smoke (WebKit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SITE_URL: http://localhost:3000
+    if: |
+      !startsWith(github.head_ref, 'dependabot/') &&
+      (github.event_name == 'pull_request' ||
+      github.ref == 'refs/heads/main' ||
+      github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install ${{ github.actor == 'dependabot[bot]' && '--no-frozen-lockfile' || '--frozen-lockfile' }}
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-webkit-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps webkit
+
+      - name: Install Playwright system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps webkit
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v2
+        with:
+          version: 2.109.1
+
+      # Key propia por job — ver comentario en db-types.
+      - name: Restore Supabase Docker image cache
+        id: supabase-cache-e2e-webkit
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: /tmp/supabase-images.tar
+          key: supabase-images-e2e-webkit-${{ runner.os }}-${{ hashFiles('supabase/config.toml') }}
+
+      - name: Load cached Docker images
+        run: if [ -f /tmp/supabase-images.tar ]; then docker load -i /tmp/supabase-images.tar; fi
+
+      - name: Start local Supabase (full stack con Auth + Mailpit)
+        run: |
+          for i in 1 2 3; do
+            supabase start && break
+            if [ "$i" = 3 ]; then echo "All 3 attempts failed"; exit 1; fi
+            echo "Attempt $i failed — retrying in 15s..."
+            sleep 15
+          done
+
+      - name: Save Docker images to cache
+        if: steps.supabase-cache-e2e-webkit.outputs.cache-hit != 'true'
+        run: |
+          docker save $(docker images --format '{{.Repository}}:{{.Tag}}' | grep -E 'supabase|postgres') \
+            -o /tmp/supabase-images.tar
+
+      - name: Export Supabase local credentials
+        run: |
+          eval "$(supabase status -o env)"
+          echo "NEXT_PUBLIC_SUPABASE_URL=$API_URL" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "SUPABASE_SECRET_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
+
+      - name: Run E2E smoke tests (WebKit)
+        run: pnpm test:e2e:webkit
+        env:
+          SITE_URL: http://localhost:3000
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
+          MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: failure()
+        with:
+          name: playwright-report-webkit
+          path: playwright-report/
+          retention-days: 7
+
   # Job sintético para branch protection.
   # Apunta las required status checks a "E2E Status" en lugar de "E2E Tests"
   # para que "skipped" en feature branches no bloquee la protección de la rama.
@@ -441,12 +546,12 @@ jobs:
     name: E2E Status
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: e2e
+    needs: [e2e, e2e-webkit]
     if: always()
     steps:
       - name: Propagate E2E result
         run: |
-          if [ "${{ needs.e2e.result }}" = "failure" ]; then
+          if [ "${{ needs.e2e.result }}" = "failure" ] || [ "${{ needs.e2e-webkit.result }}" = "failure" ]; then
             echo "E2E tests failed"
             exit 1
           fi
@@ -461,7 +566,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [quality, gitleaks, test, db-types, db-tests, edge-functions, e2e]
+    needs: [quality, gitleaks, test, db-types, db-tests, edge-functions, e2e, e2e-webkit]
     if: |
       !startsWith(github.head_ref, 'dependabot/') &&
       (github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')

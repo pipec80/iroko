@@ -1,3 +1,4 @@
+import { runAxeCheck } from './axe';
 import { test as authTest, expect } from './fixtures/auth';
 
 /**
@@ -11,6 +12,7 @@ authTest.describe('Billing — mock checkout', () => {
   authTest('subscribing to Pro activates the plan', async ({ authenticatedPage: page }) => {
     await page.goto('/es/dashboard/billing');
     await page.waitForURL(/\/es\/dashboard\/billing/);
+    await runAxeCheck(page);
 
     // Elegir Pro → redirige a la hosted-page mock
     await page.getByTestId('subscribe-pro').click();

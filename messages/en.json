@@ -347,6 +347,8 @@
     "col_date": "Date",
     "filter_all_actions": "All actions",
     "filter_all_resources": "All resources",
+    "filter_action_label": "Filter by action",
+    "filter_resource_label": "Filter by resource type",
     "action_create": "Created",
     "action_update": "Updated",
     "action_delete": "Deleted",
