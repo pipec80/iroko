@@ -14,19 +14,6 @@ export type AppConfig = {
   brand: string;
   /** One-line product description for metadata and OG tags. */
   description: string;
-  /** URLs referenced across the app. */
-  urls: {
-    /** Canonical public URL of the deployed site. */
-    site: string;
-    /** Support contact URL or mailto link. */
-    support: string;
-    /** Documentation site URL. */
-    docs: string;
-    /** GitHub repository URL. */
-    github: string;
-    /** Twitter/X profile URL. */
-    twitter: string;
-  };
   /** Primary support email address. */
   supportEmail: string;
   /** Default i18n locale. */
@@ -71,14 +58,7 @@ export const appConfig: AppConfig = {
   brand: 'Iroko',
   description:
     'The SaaS boilerplate that maximises Supabase and runs on the free tier. Auth, billing, teams and deploy — ready on day one.',
-  urls: {
-    site: 'https://project-a89lv.vercel.app',
-    support: 'mailto:support@iroko.vercel.app',
-    docs: 'https://project-a89lv.vercel.app/docs',
-    github: 'https://github.com/pipec80/iroko',
-    twitter: 'https://twitter.com/iroko_saas',
-  },
-  supportEmail: 'support@iroko.vercel.app',
+  supportEmail: 'pipec800@gmail.com',
   defaultLocale: routing.defaultLocale,
   locales: routing.locales,
   features: {

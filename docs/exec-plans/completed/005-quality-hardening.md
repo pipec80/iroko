@@ -1,7 +1,7 @@
 # Plan 005 — Quality and Operations Hardening
 
 - Priority: P1
-- Status: In progress — A/B/C/D/E closed (agreed scope), F partial
+- Status: Completed (2026-08-05) — A/B/C/D/E (agreed scope)/F all closed
 - Scope: multiple small PRs are preferred over one large implementation
 
 ## Objective
@@ -38,10 +38,23 @@ Close the quality, caching, documentation and CI gaps found during the platform 
   (`notFound()` returning 200) as a deferred, non-blocking finding. Cloud
   smoke tests for async workers/observability tunnels remain open — not part
   of the scope agreed for this pass.
-- **F — Documentation/config consistency:** Partially resolved (AUD-015,
-  AUD-018). Node/pnpm versions, Vercel org, and Google OAuth env vars fixed;
-  `vercel.live` allowlisted in CSP for previews only. Central application
-  URLs/support addresses not yet addressed.
+- **F — Documentation/config consistency:** Completed (AUD-015, AUD-018).
+  Node/pnpm versions, Vercel org, and Google OAuth env vars fixed; `vercel.live`
+  allowlisted in CSP for previews only. Central application URLs/support
+  addresses closed: `appConfig.supportEmail` pointed at a `vercel.app` address
+  that cannot receive mail (Vercel doesn't provision mailboxes on its shared
+  domain) — replaced with a real inbox. `appConfig.urls.{docs,github,twitter,support}`
+  were dead config (zero consumers anywhere in the app, confirmed by grep) and
+  removed rather than fixed — `urls.docs` pointed at a `/docs` route that
+  doesn't exist. `urls.site` was also unused; the app's real canonical URL is
+  `env.SITE_URL`, already environment-driven. The email templates' own
+  preview-only defaults (`pnpm email:dev`) were updated to a generic
+  `support@example.com` rather than a real address, since the production path
+  already derives from `appConfig.supportEmail` and a boilerplate's template
+  source shouldn't hardcode a real person's contact info. A broader
+  repo-wide grep also caught 8 hardcoded occurrences of the same broken
+  address in the Terms/Privacy legal copy across all 4 locale files
+  (`messages/{en,es,fr,pt}.json`) — updated to the same real inbox.
 
 ## Workstreams
 

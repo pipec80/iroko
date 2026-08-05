@@ -16,14 +16,14 @@ This directory is the versioned source of truth for engineering audits, executio
 
 Execute these plans in dependency order. P2 is blocked until all P0 work is completed and verified.
 
-| Order | Plan                                                                              | Priority | Status                           |
-| ----- | --------------------------------------------------------------------------------- | -------- | -------------------------------- |
-| 1     | [Supabase migration drift](exec-plans/completed/001-supabase-migration-drift.md)  | P0       | Completed (2026-08-03, via #100) |
-| 2     | [Email worker in Supabase Cloud](exec-plans/active/002-email-worker-cloud.md)     | P0       | Open                             |
-| 3     | [Sentry browser observability](exec-plans/completed/003-sentry-observability.md)  | P0       | Completed (2026-08-04, via #91)  |
-| 4     | [Next.js version alignment](exec-plans/completed/004-nextjs-version-alignment.md) | P0       | Completed (2026-08-04)           |
-| 5     | [Quality and operations hardening](exec-plans/active/005-quality-hardening.md)    | P1       | Blocked by P0                    |
-| 6     | [PostHog product analytics](exec-plans/active/006-posthog-integration.md)         | P2       | Blocked by P0/P1                 |
+| Order | Plan                                                                              | Priority | Status                                   |
+| ----- | --------------------------------------------------------------------------------- | -------- | ---------------------------------------- |
+| 1     | [Supabase migration drift](exec-plans/completed/001-supabase-migration-drift.md)  | P0       | Completed (2026-08-03, via #100)         |
+| 2     | [Email worker in Supabase Cloud](exec-plans/active/002-email-worker-cloud.md)     | P0       | Open                                     |
+| 3     | [Sentry browser observability](exec-plans/completed/003-sentry-observability.md)  | P0       | Completed (2026-08-04, via #91)          |
+| 4     | [Next.js version alignment](exec-plans/completed/004-nextjs-version-alignment.md) | P0       | Completed (2026-08-04)                   |
+| 5     | [Quality and operations hardening](exec-plans/completed/005-quality-hardening.md) | P1       | Completed (2026-08-05)                   |
+| 6     | [PostHog product analytics](exec-plans/active/006-posthog-integration.md)         | P2       | Deferred — separate process, not started |
 
 ## Directory policy
 
