@@ -82,6 +82,22 @@ docs/**/*.private.md
 docs/**/*.draft.md
 docs/**/*.pdf
 
+# docs/index.md § Directory policy: solo audits/, exec-plans/, runbooks/,
+# quality/, prompts/, architecture/ y adr/ son públicas. Estas carpetas ya
+# existían localmente desde antes de esa decisión (PR #92) y nunca se habían
+# marcado explícitamente — quedaban como "untracked" en vez de "ignorado a
+# propósito". Nada se borra, siguen en disco.
+/docs/audit/
+/docs/codx-docs/
+/docs/database/
+/docs/html/
+/docs/intercon/
+/docs/modules/
+/docs/nextjs/
+/docs/plans/
+/docs/superpowers/
+/docs/estado-fases.md
+
 # scratch / herramientas locales (no pertenecen al repo)
 /scratch/
 nuevo4.txt
