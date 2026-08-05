@@ -308,7 +308,7 @@ export function AppSidebarClient({ orgs }: Props) {
       {/* Footer engine card */}
       <div className="p-3">
         <div className="surface-card px-3 py-2.5">
-          <p className="col-header opacity-60">Build</p>
+          <p className="col-header">Build</p>
           <div className="mt-1 flex items-center justify-between">
             <span
               className="font-mono text-[11px] font-semibold"

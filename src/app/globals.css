@@ -116,6 +116,14 @@
   --color-iron-deep: var(--color-crimson);
   --color-iron-soft: var(--color-poppy-soft);
 
+  /* Texto de nav activo: --color-iron sobre --color-iron-wash mide ~4.1:1 en
+     claro, bajo el piso AA de 4.5:1 para texto 13px bold. --color-iron-deep
+     (~5.8:1) mantiene el hue, solo más oscuro. En oscuro NO se toca — el
+     wash sobre fondo casi negro necesita un rojo más claro, no más oscuro
+     (--color-iron-deep ahí da ~2.3:1, peor que el ~3.3:1 actual); queda como
+     override separado abajo (.dark) hasta auditar contraste en modo oscuro. */
+  --nav-active-text: var(--color-iron-deep);
+
   /* Neutral ramp */
   --color-gray-50: #fafafa;
   --color-gray-100: #f4f4f5;
@@ -156,7 +164,11 @@
 
   --text-primary: var(--color-ink);
   --text-secondary: var(--color-gray-700);
-  --text-tertiary: var(--color-gray-500);
+  /* gray-500 on white measures ~4.3:1 for small/bold text (axe: .eyebrow-sm,
+     10px bold, measured 4.31 — below the 4.5:1 AA floor). gray-600 (~7.7:1)
+     keeps it visually distinct from --text-secondary while clearing AA with
+     margin for every bold/small/letter-spaced use of this token. */
+  --text-tertiary: var(--color-gray-600);
   --text-on-primary: var(--color-paper);
   --text-on-accent: var(--color-paper);
   --text-on-ink: var(--color-paper);
@@ -274,6 +286,12 @@
   --sidebar-border: rgba(230, 232, 235, 0.1);
 
   --input: rgba(230, 232, 235, 0.2);
+
+  /* Preserva el color de nav activo previo a este fix (--color-iron, no
+     -deep) — --color-iron-deep empeora el contraste sobre el wash casi
+     negro de este modo en vez de mejorarlo. Ver nota junto a la definición
+     base de --nav-active-text. */
+  --nav-active-text: var(--color-iron);
 }
 
 @layer base {
@@ -613,7 +631,7 @@
   .nav-item--active {
     font-weight: 700;
     background: var(--color-iron-wash);
-    color: var(--color-iron);
+    color: var(--nav-active-text);
   }
   .nav-item--inactive {
     font-weight: 500;

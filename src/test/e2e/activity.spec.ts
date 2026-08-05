@@ -1,3 +1,4 @@
+import { runAxeCheck } from './axe';
 import { test as authTest, expect } from './fixtures/auth';
 
 /**
@@ -11,5 +12,8 @@ authTest.describe('Activity — audit log viewer', () => {
     await page.waitForURL(/\/es\/dashboard\/activity/);
 
     await expect(page.getByRole('heading', { name: /registro de actividad/i })).toBeVisible();
+    // Cubre el shell del dashboard (sidebar, topbar) compartido con /dashboard
+    // home además del propio contenido de esta página.
+    await runAxeCheck(page);
   });
 });

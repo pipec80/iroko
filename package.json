@@ -29,8 +29,10 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=chromium",
+    "test:e2e:webkit": "playwright test --project=webkit --grep @smoke",
     "test:e2e:ui": "playwright test --ui",
+    "test:functions": "deno test supabase/functions/tests/",
     "analyze": "cross-env ANALYZE=true next build",
     "prepare": "husky",
     "--- VERCEL ---": "",
@@ -118,6 +120,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.12.1",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@next/bundle-analyzer": "^16.2.12",

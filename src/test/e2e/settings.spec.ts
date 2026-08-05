@@ -1,4 +1,6 @@
 import { expect, test as baseTest } from '@playwright/test';
+
+import { runAxeCheck } from './axe';
 import { test as authTest } from './fixtures/auth';
 
 /**
@@ -39,6 +41,7 @@ authTest.describe('Settings page — authenticated', () => {
     await expect(page.locator('input[name="given_name"]')).toBeVisible();
     await expect(page.locator('input[name="family_name"]')).toBeVisible();
     await expect(page.locator('form button[type="submit"]').first()).toBeVisible();
+    await runAxeCheck(page);
   });
 
   authTest(

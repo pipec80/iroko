@@ -347,6 +347,8 @@
     "col_date": "Data",
     "filter_all_actions": "Todas as ações",
     "filter_all_resources": "Todos os recursos",
+    "filter_action_label": "Filtrar por ação",
+    "filter_resource_label": "Filtrar por tipo de recurso",
     "action_create": "Criado",
     "action_update": "Atualizado",
     "action_delete": "Excluído",

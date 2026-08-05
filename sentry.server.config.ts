@@ -1,5 +1,7 @@
 import * as Sentry from '@sentry/nextjs';
 
+import { shouldFilterServerEvent } from '@/lib/sentry-filters';
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
@@ -17,15 +19,7 @@ Sentry.init({
   ],
 
   beforeSend(event) {
-    const msg = event.exception?.values?.[0]?.value ?? '';
-    if (/ChunkLoadError|Loading chunk|NetworkError/.test(msg)) return null;
-    // Next 16 (cacheComponents): interrupción esperada del prerender cuando el
-    // layout usa cookies() — React la maneja y la ruta cae a dynamic. Es señal
-    // de control de Next, no un error (IROKO-6 era esto desde los E2E locales).
-    if (/During prerendering, `cookies\(\)` rejects|HangingPromiseRejectionError/.test(msg)) {
-      return null;
-    }
-    return event;
+    return shouldFilterServerEvent(event) ? null : event;
   },
 
   debug: false,

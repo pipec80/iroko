@@ -67,6 +67,7 @@ export function PhoneCountryInput({ name, defaultValue, 'aria-invalid': ariaInva
               <CountryFlag
                 countryCode={selectedIso}
                 svg
+                aria-hidden="true"
                 style={{ width: '1.25em', height: '0.9em', flexShrink: 0 }}
               />
               <span className="tabular-nums">{selectedCountry.dialCode}</span>
@@ -117,6 +118,7 @@ export function PhoneCountryInput({ name, defaultValue, 'aria-invalid': ariaInva
                         <CountryFlag
                           countryCode={c.iso}
                           svg
+                          aria-hidden="true"
                           style={{ width: '1.4em', height: '1em', flexShrink: 0 }}
                         />
                         <span className="font-mono text-xs tracking-wide">{c.iso}</span>

@@ -79,7 +79,7 @@ describe('sendEmail', () => {
     );
   });
 
-  it('sendInvitationEmail llama a sendEmail con el inviteUrl en subject o body', async () => {
+  it('sendInvitationEmail pasa el inviteUrl real al template React (no solo el to)', async () => {
     mockSend.mockResolvedValue({ data: { id: 'email-3' }, error: null });
     const { sendInvitationEmail } = await import('@/lib/email');
 
@@ -89,10 +89,25 @@ describe('sendEmail', () => {
       inviteUrl: 'http://localhost:3000/es/auth/accept-invitation?token=abc123',
     });
 
-    expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'bob@example.com' }));
+    // El inviteUrl no viaja en subject/body — sendEmail solo acepta
+    // (to, subject, react); Resend renderiza el HTML a partir de `react`.
+    // La única forma real de verificar que el link llega es inspeccionar
+    // los props del elemento React que efectivamente se le pasó a Resend.
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'bob@example.com',
+        react: expect.objectContaining({
+          props: expect.objectContaining({
+            inviteUrl: 'http://localhost:3000/es/auth/accept-invitation?token=abc123',
+            inviterEmail: 'admin@example.com',
+            teamRole: 'member',
+          }),
+        }),
+      }),
+    );
   });
 
-  it('sendNotificationEmail llama a sendEmail con los datos de la notificación', async () => {
+  it('sendNotificationEmail pasa el contenido real de la notificación al template React', async () => {
     mockSend.mockResolvedValue({ data: { id: 'email-4' }, error: null });
     const { sendNotificationEmail } = await import('@/lib/email');
 
@@ -103,6 +118,19 @@ describe('sendEmail', () => {
       link: '/files/123',
     });
 
-    expect(mockSend).toHaveBeenCalledWith(expect.objectContaining({ to: 'carol@example.com' }));
+    expect(mockSend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'carol@example.com',
+        subject: 'Tu archivo está listo',
+        react: expect.objectContaining({
+          props: expect.objectContaining({
+            type: 'info',
+            title: 'Tu archivo está listo',
+            body: 'Descárgalo aquí',
+            link: '/files/123',
+          }),
+        }),
+      }),
+    );
   });
 });

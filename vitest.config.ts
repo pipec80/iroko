@@ -26,9 +26,15 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
-      // Se mide solo código con lógica: lib + server actions. La UI (shadcn,
-      // layouts, providers) se cubre vía E2E, no con coverage unitario.
-      include: ['src/lib/**/*.ts', 'src/app/**/actions.ts'],
+      // Se mide solo código con lógica: lib + server actions + route
+      // handlers + el edge proxy. La UI (shadcn, layouts, providers) se
+      // cubre vía E2E, no con coverage unitario.
+      include: [
+        'src/lib/**/*.{ts,tsx}',
+        'src/app/**/actions.ts',
+        'src/app/api/**/route.ts',
+        'src/proxy.ts',
+      ],
       exclude: [
         'src/test/**',
         'src/types/**',
@@ -39,7 +45,8 @@ export default defineConfig({
         'src/lib/supabase/admin.ts',
       ],
       // Trinquete: nunca bajarlos. Subirlos al cerrar cada fase de TESTING-PLAN.md.
-      // Real al calibrar (2026-06-12): 96.5 / 83.8 / 96 / 97 — margen ~5 puntos.
+      // Recalibrado (2026-08-05, Plan 005-E) al ampliar include con route
+      // handlers + proxy.ts: 93.9 / 82.8 / 95.8 / 94.7 — margen ~4 puntos.
       thresholds: {
         statements: 90,
         branches: 78,

@@ -50,13 +50,21 @@ export default defineConfig({
   },
 
   /* Configure projects for major browsers.
-   * Default to Chromium-only for speed. Add Firefox/WebKit/Mobile via CLI:
-   *   pnpm test:e2e --project firefox
+   * `pnpm test:e2e` pins --project=chromium (the full suite, for speed —
+   * running every spec on every configured project by default would double
+   * CI time). `pnpm test:e2e:webkit` pins --project=webkit --grep @smoke:
+   * those are the read-only, no-auth-fixture flows already safe against
+   * production, so they're cheap to duplicate across a second engine
+   * without re-running the full ~4-8 min E2E suite.
    */
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
     },
   ],
 

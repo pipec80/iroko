@@ -1,5 +1,7 @@
 import * as Sentry from '@sentry/nextjs';
 
+import { shouldFilterClientEvent } from '@/lib/sentry-filters';
+
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
@@ -28,9 +30,7 @@ Sentry.init({
 
   // Drop noise: network errors and chunk load failures are not actionable
   beforeSend(event) {
-    const msg = event.exception?.values?.[0]?.value ?? '';
-    if (/ChunkLoadError|Loading chunk|NetworkError/.test(msg)) return null;
-    return event;
+    return shouldFilterClientEvent(event) ? null : event;
   },
 
   debug: false,

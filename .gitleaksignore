@@ -5,3 +5,8 @@
 # sentry_key en CSP report-uri: es la clave pública del DSN de Sentry, ya expuesta en el bundle cliente.
 e0531fce291d3383bd3e475d8f8cba5d53620d75:src/proxy.ts:generic-api-key:10
 7fca9c17c0341e7dda621f1ee03395cbd0faa0af:src/proxy.ts:generic-api-key:24
+
+# RFC_6238_SECRET_BASE32: vector de prueba oficial de RFC 6238 Apéndice B
+# (base32 de la cadena ASCII "12345678901234567890"), público desde el propio
+# RFC, no un secreto real.
+4a6116415e338e23dbf2dbb773467e362dcb8ee3:src/test/totp.test.ts:generic-api-key:7

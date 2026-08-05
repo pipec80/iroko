@@ -101,6 +101,7 @@ export function AuditLogTable({
             setActionFilter(value);
             applyFilters(value, resourceFilter);
           }}
+          aria-label={t('filter_action_label')}
           className="toolbar-control cursor-pointer px-3">
           <option value="">{t('filter_all_actions')}</option>
           {AUDIT_ACTIONS.map((action) => (
@@ -116,6 +117,7 @@ export function AuditLogTable({
             setResourceFilter(value);
             applyFilters(actionFilter, value);
           }}
+          aria-label={t('filter_resource_label')}
           className="toolbar-control cursor-pointer px-3">
           <option value="">{t('filter_all_resources')}</option>
           {AUDIT_RESOURCE_TYPES.map((resource) => (

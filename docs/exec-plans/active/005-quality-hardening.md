@@ -1,14 +1,14 @@
 # Plan 005 — Quality and Operations Hardening
 
 - Priority: P1
-- Status: In progress — A/B/C/D closed, F partial, E not started
+- Status: In progress — A/B/C/D/E closed (agreed scope), F partial
 - Scope: multiple small PRs are preferred over one large implementation
 
 ## Objective
 
 Close the quality, caching, documentation and CI gaps found during the platform audit without weakening current protections or increasing unnecessary infrastructure.
 
-## Progress (2026-08-04)
+## Progress (2026-08-05)
 
 - **A — Versioned documentation:** Completed. README's "Documentación" section no
   longer points at gitignored local paths; the 14 files under versioned `docs/`
@@ -20,9 +20,17 @@ Close the quality, caching, documentation and CI gaps found during the platform 
 - **D — Build artifacts:** Completed (AUD-012). Removed the dead
   `.next/standalone` upload — nothing consumed it and standalone output was
   never enabled.
-- **E — Testing maturity:** Not started. Scope needs to be agreed before
-  starting — the impersonation E2E fixture alone (platform-admin + enrolled
-  MFA/TOTP) is new test infrastructure, not a quick fix.
+- **E — Testing maturity:** Completed for the agreed scope (AUD-013/014,
+  contract tests, coverage include). Impersonation E2E fixture with a real
+  TOTP-enrolled aal2 session; WebKit `@smoke` coverage + automated Axe checks
+  (found and fixed 4 real WCAG issues); `process-email-queue` split into a
+  testable handler with 8 Deno tests; contract tests against the real Stripe
+  SDK and an independently-computed MercadoPago HMAC vector; coverage include
+  widened to route handlers and `proxy.ts`. Found and fixed AUD-020 (CSP
+  blocking local Supabase during E2E) along the way; documented AUD-021
+  (`notFound()` returning 200) as a deferred, non-blocking finding. Cloud
+  smoke tests for async workers/observability tunnels remain open — not part
+  of the scope agreed for this pass.
 - **F — Documentation/config consistency:** Partially resolved (AUD-015,
   AUD-018). Node/pnpm versions, Vercel org, and Google OAuth env vars fixed;
   `vercel.live` allowlisted in CSP for previews only. Central application
@@ -72,13 +80,13 @@ Do not enable standalone merely to silence an upload step.
 
 ### E. Testing maturity
 
-- create a platform-admin fixture with enrolled MFA/AAL2 for impersonation E2E;
-- enable the currently skipped impersonation security flow;
-- add WebKit coverage for critical paths;
-- add automated Axe checks to selected pages/components;
-- add contract tests for Stripe, Mercado Pago, Resend, Supabase Functions, Sentry and future PostHog payloads;
-- add regression tests whenever a production bug is fixed;
-- add controlled Cloud smoke tests for asynchronous workers and observability tunnels.
+- ~~create a platform-admin fixture with enrolled MFA/AAL2 for impersonation E2E~~ — done, real TOTP enrollment + UI MFA challenge reaches a genuine aal2 session;
+- ~~enable the currently skipped impersonation security flow~~ — done;
+- ~~add WebKit coverage for critical paths~~ — done, `@smoke` subset only (see AUD-014);
+- ~~add automated Axe checks to selected pages/components~~ — done, found and fixed 4 real WCAG issues;
+- ~~add contract tests for Stripe, Mercado Pago, Resend, Supabase Functions, Sentry~~ — done (PostHog payloads deferred until PostHog itself is integrated — Plan 006);
+- add regression tests whenever a production bug is fixed — ongoing practice, not a one-time task;
+- add controlled Cloud smoke tests for asynchronous workers and observability tunnels — still open, not part of this pass's agreed scope.
 
 ### F. Documentation/config consistency
 
