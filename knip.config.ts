@@ -34,7 +34,7 @@ const config: KnipConfig = {
     'typescript-eslint',
     'tailwindcss',
   ],
-  ignoreBinaries: ['supabase', 'vercel', 'gitleaks'],
+  ignoreBinaries: ['supabase', 'vercel', 'gitleaks', 'deno'],
 };
 
 export default config;

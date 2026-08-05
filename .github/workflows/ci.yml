@@ -7,6 +7,7 @@
 #   test      → vitest con coverage report
 #   db-types  → verifica que src/types/database.ts esté sincronizado con el schema (falla en diff, no comitea)
 #   db-tests  → corre supabase/tests/database/*.test.sql con pgTAP
+#   edge-functions → deno test sobre supabase/functions/tests/ (toolchain propia, no pnpm/Node)
 #   e2e       → Playwright contra Supabase local (solo en PRs y main)
 #   e2e-status → job sintético para branch protection (siempre reporta resultado)
 #   build     → next build (solo en PRs y main, bloqueado por todos los anteriores)
@@ -289,6 +290,28 @@ jobs:
             -o /tmp/supabase-images.tar
 
   # ─────────────────────────────────────────────
+  # JOB 5b: Tests de Edge Functions (Deno) — toolchain separada de pnpm/Node,
+  # por eso es su propio job y no un step dentro de `test`. handler.ts no
+  # tiene imports (Web APIs + deps inyectadas), así que corre sin red y sin
+  # flags de permisos.
+  # ─────────────────────────────────────────────
+  edge-functions:
+    name: Edge Function Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
+      - name: Run Deno tests
+        run: deno test supabase/functions/tests/
+
+  # ─────────────────────────────────────────────
   # JOB 6: Tests E2E con Playwright + Supabase local
   #
   # Solo corre en PRs a main, pushes directos a main y workflow_dispatch.
@@ -438,7 +461,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [quality, gitleaks, test, db-types, db-tests, e2e]
+    needs: [quality, gitleaks, test, db-types, db-tests, edge-functions, e2e]
     if: |
       !startsWith(github.head_ref, 'dependabot/') &&
       (github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
