@@ -30,9 +30,28 @@ const DEMO_IMG_HOSTS = [
   'https://i.pravatar.cc',
 ];
 
-export function buildCspHeader(isDev: boolean, isPreview: boolean): string {
-  const localOrigin = isDev ? 'http://127.0.0.1:54321' : '';
-  const localWsOrigin = isDev ? 'ws://127.0.0.1:54321' : '';
+/**
+ * Resolves the local Supabase origin from the actually configured URL instead
+ * of NODE_ENV. The E2E suite runs `next build && next start` (production
+ * mode) against local Supabase, so gating on isDev alone blocked every client
+ * call to it (notifications, announcements, realtime websocket) under CSP.
+ * Safe in real production: NEXT_PUBLIC_SUPABASE_URL there is always the Cloud
+ * project's https://*.supabase.co URL, never a loopback host.
+ */
+function localSupabaseOrigin(supabaseUrl: string): { http: string; ws: string } | null {
+  try {
+    const { hostname, origin } = new URL(supabaseUrl);
+    if (hostname !== '127.0.0.1' && hostname !== 'localhost') return null;
+    return { http: origin, ws: origin.replace(/^http/, 'ws') };
+  } catch {
+    return null;
+  }
+}
+
+export function buildCspHeader(isDev: boolean, isPreview: boolean, supabaseUrl: string): string {
+  const local = localSupabaseOrigin(supabaseUrl);
+  const localOrigin = local?.http ?? '';
+  const localWsOrigin = local?.ws ?? '';
   // AUD-018: Vercel injects a feedback widget script only on preview deployments
   // (VERCEL_ENV=preview) — never in production. Without this, every preview page
   // load generated a blocked-script CSP report, burning Sentry's error quota.
@@ -120,7 +139,7 @@ function applySecurityHeaders(response: { headers: Headers }, cspHeader: string)
 export async function proxy(request: NextRequest) {
   const isDev = env.NODE_ENV === 'development';
   const isPreview = env.VERCEL_ENV === 'preview';
-  const cspHeader = buildCspHeader(isDev, isPreview);
+  const cspHeader = buildCspHeader(isDev, isPreview, env.NEXT_PUBLIC_SUPABASE_URL);
 
   const supabaseResponse = await updateSession(request);
   if (supabaseResponse.status >= 300 && supabaseResponse.status < 400) {

@@ -75,16 +75,19 @@ describe('proxy matcher', () => {
   });
 });
 
+const CLOUD_SUPABASE_URL = 'https://xxxx.supabase.co';
+const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
+
 describe('buildCspHeader', () => {
   it('should NOT allow vercel.live in production (isPreview=false)', () => {
-    const csp = buildCspHeader(false, false);
+    const csp = buildCspHeader(false, false, CLOUD_SUPABASE_URL);
     expect(csp).not.toContain('vercel.live');
   });
 
   // AUD-018: the Vercel Live feedback widget script (only injected on preview
   // deployments) was blocked by CSP, generating a report per page load.
   it('should allow vercel.live in script-src and connect-src on preview (isPreview=true)', () => {
-    const csp = buildCspHeader(false, true);
+    const csp = buildCspHeader(false, true, CLOUD_SUPABASE_URL);
     const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'));
     const connectSrc = csp.split('; ').find((d) => d.startsWith('connect-src'));
 
@@ -93,8 +96,29 @@ describe('buildCspHeader', () => {
   });
 
   it('should still allow vercel.live in dev regardless of isPreview (dev already allows https:)', () => {
-    const csp = buildCspHeader(true, false);
+    const csp = buildCspHeader(true, false, LOCAL_SUPABASE_URL);
     const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'));
     expect(scriptSrc).toBe("script-src 'self' 'unsafe-inline' 'unsafe-eval' https:");
+  });
+
+  // AUD-0XX: the E2E suite runs `next build && next start` (NODE_ENV=production),
+  // so isDev=false — but it still talks to local Supabase. Gating the local
+  // origin on isDev instead of the actual configured URL blocked every client
+  // call to Supabase local during E2E (notifications, announcements, realtime
+  // websocket), which surfaced as an intermittent settings.spec.ts failure.
+  it('should allow the local Supabase origin in connect-src when NEXT_PUBLIC_SUPABASE_URL is loopback, even outside dev', () => {
+    const csp = buildCspHeader(false, false, LOCAL_SUPABASE_URL);
+    const connectSrc = csp.split('; ').find((d) => d.startsWith('connect-src'));
+
+    expect(connectSrc).toContain('http://127.0.0.1:54321');
+    expect(connectSrc).toContain('ws://127.0.0.1:54321');
+  });
+
+  it('should NOT allow any loopback origin when NEXT_PUBLIC_SUPABASE_URL is a real Cloud project (prod safety)', () => {
+    const csp = buildCspHeader(false, false, CLOUD_SUPABASE_URL);
+    const connectSrc = csp.split('; ').find((d) => d.startsWith('connect-src'));
+
+    expect(connectSrc).not.toContain('127.0.0.1');
+    expect(connectSrc).not.toContain('localhost');
   });
 });
