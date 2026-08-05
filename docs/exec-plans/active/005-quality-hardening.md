@@ -10,6 +10,13 @@ Close the quality, caching, documentation and CI gaps found during the platform 
 
 ## Progress (2026-08-05)
 
+> **Merged 2026-08-05:** workstream E closed via PR #105 (`c023ff2`), squash-merged
+> to `main` with all CI gates green (Quality, Security, Gitleaks, Unit Tests,
+> DB Types/Tests, Edge Function Tests, E2E chromium + WebKit, CodeQL, Build).
+> Post-merge check: `supabase migration list --linked` shows 119/119 migrations
+> in parity (no local-only, no Cloud-only) — this PR touched no schema, so no
+> drift was expected or introduced. Local and remote branches deleted.
+
 - **A — Versioned documentation:** Completed. README's "Documentación" section no
   longer points at gitignored local paths; the 14 files under versioned `docs/`
   scanned clean for secrets.
