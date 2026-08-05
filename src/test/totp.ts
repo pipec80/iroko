@@ -55,12 +55,15 @@ export function generateTotp(
   counterBuffer.writeBigUInt64BE(BigInt(counter));
 
   const hmac = createHmac('sha1', base32Decode(secret)).update(counterBuffer).digest();
-  const offset = hmac[19]! & 0x0f;
+  // Buffer#readUInt8 throws on an out-of-range index instead of returning
+  // undefined — offset is always 0-15 (masked below) into a 20-byte SHA1
+  // digest, so this can only throw if that invariant is ever violated.
+  const offset = hmac.readUInt8(19) & 0x0f;
   const truncated =
-    ((hmac[offset]! & 0x7f) << 24) |
-    ((hmac[offset + 1]! & 0xff) << 16) |
-    ((hmac[offset + 2]! & 0xff) << 8) |
-    (hmac[offset + 3]! & 0xff);
+    ((hmac.readUInt8(offset) & 0x7f) << 24) |
+    (hmac.readUInt8(offset + 1) << 16) |
+    (hmac.readUInt8(offset + 2) << 8) |
+    hmac.readUInt8(offset + 3);
 
   return String(truncated % 10 ** digits).padStart(digits, '0');
 }
