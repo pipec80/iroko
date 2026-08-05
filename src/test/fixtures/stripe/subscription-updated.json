@@ -1,0 +1,33 @@
+{
+  "id": "evt_1PxSubUpdated00000000001",
+  "object": "event",
+  "api_version": "2025-03-31.basil",
+  "created": 1735689600,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "request": { "id": "req_subupdate001", "idempotency_key": null },
+  "type": "customer.subscription.updated",
+  "data": {
+    "object": {
+      "id": "sub_1PxSubUpdated00000000001",
+      "object": "subscription",
+      "status": "active",
+      "customer": "cus_PxCustomerFixture0001",
+      "metadata": { "accountId": "acc_fixture_001" },
+      "cancel_at_period_end": true,
+      "items": {
+        "object": "list",
+        "data": [
+          {
+            "id": "si_PxItemFixture0001",
+            "object": "subscription_item",
+            "current_period_start": 1735689600,
+            "current_period_end": 1738368000,
+            "price": { "id": "price_fixture_pro_monthly", "object": "price" }
+          }
+        ]
+      }
+    },
+    "previous_attributes": { "cancel_at_period_end": false }
+  }
+}
