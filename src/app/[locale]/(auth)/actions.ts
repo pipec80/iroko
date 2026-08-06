@@ -5,6 +5,7 @@ import { getLocale } from 'next-intl/server';
 import { appConfig } from '@/config/app.config';
 import { env } from '@/env';
 import { redirect } from '@/i18n/routing';
+import { captureServer } from '@/lib/analytics/server';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
@@ -92,6 +93,11 @@ export async function signInAction(
   // Log successful auth for compromise detection (SECURITY_AUDIT F-08)
   if (data.user) {
     logger.info({ userId: data.user.id, action: 'auth.signIn.success' }, 'Sign-in OK');
+    await captureServer({
+      event: 'login_completed',
+      properties: { method: 'password' },
+      distinctId: data.user.id,
+    });
   }
 
   const locale = await getLocale();
@@ -149,6 +155,17 @@ export async function verifyMfaAction(
   // Same as signInAction: onboarding_completed only lives in the JWT the hook
   // mints, not in the user object returned by the verify call.
   const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims.sub;
+  if (userId) {
+    await captureServer({ event: 'mfa_challenge_completed', properties: {}, distinctId: userId });
+    // login_completed fires here (not in signInAction) for MFA-gated
+    // sign-ins — the session isn't actually usable until this step passes.
+    await captureServer({
+      event: 'login_completed',
+      properties: { method: 'password' },
+      distinctId: userId,
+    });
+  }
   const href = resolvePostAuthDestination(
     '/dashboard',
     claimsData?.claims.app_metadata?.onboarding_completed,
@@ -177,7 +194,7 @@ export async function signUpAction(
   const supabase = await createClient();
   const locale = await getLocale();
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -190,6 +207,7 @@ export async function signUpAction(
 
   if (error) {
     // Anti-enumeration: treat existing-email the same as success to prevent user discovery.
+    // No new account was created here, so no signup_completed/account_created capture.
     if (error.code === 'user_already_exists' || error.code === 'email_exists') {
       logger.info(
         { action: 'auth.signUp' },
@@ -202,6 +220,21 @@ export async function signUpAction(
     }
     logger.warn({ action: 'auth.signUp', code: error.code }, 'Sign-up failed');
     return { error: error.code ?? 'signup_failed' };
+  }
+
+  if (data.user) {
+    await captureServer({
+      event: 'signup_completed',
+      properties: { method: 'password' },
+      distinctId: data.user.id,
+    });
+    // The DB trigger provisions the personal account synchronously within
+    // the same signUp() transaction — it already exists by the time we're here.
+    await captureServer({
+      event: 'account_created',
+      properties: { account_type: 'personal' },
+      distinctId: data.user.id,
+    });
   }
 
   redirect({

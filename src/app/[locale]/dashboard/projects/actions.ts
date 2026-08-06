@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
@@ -80,6 +81,12 @@ export const createProject = withServerAction(async function createProject(
     { action: 'projects.create.success', accountId: ctx.accountId, name: parsed.data.name },
     'Project created',
   );
+  await captureServer({
+    event: 'project_created',
+    properties: { type: parsed.data.type, tone: parsed.data.tone },
+    distinctId: ctx.userId,
+    accountId: ctx.accountId,
+  });
 
   revalidatePath('/[locale]/dashboard/projects', 'page');
   return { success: true };

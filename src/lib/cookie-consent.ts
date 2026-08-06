@@ -44,10 +44,44 @@ export function hasConsent(category: ConsentCategory): boolean {
   return state?.[category] ?? false;
 }
 
+const consentListeners = new Set<() => void>();
+
+/**
+ * Subscribes to consent changes made via `writeConsentCookie` or
+ * `reopenConsentBanner` (in this tab). Built for `useSyncExternalStore` —
+ * e.g. the analytics provider re-reading `hasConsent('analytics')` live when
+ * the user grants or revokes it from the footer's "cookie preferences" link,
+ * without a full page reload.
+ * @returns unsubscribe function
+ */
+export function subscribeToConsent(listener: () => void): () => void {
+  consentListeners.add(listener);
+  return () => consentListeners.delete(listener);
+}
+
+let forceBannerOpen = false;
+
 /** Persists the visitor's cookie choice for 1 year. `necessary` is always `true`. */
 export function writeConsentCookie(state: { analytics: boolean; marketing: boolean }): void {
   const value: ConsentState = { necessary: true, ...state };
   document.cookie = `${CONSENT_COOKIE_NAME}=${encodeURIComponent(
     JSON.stringify(value),
   )}; path=/; max-age=${CONSENT_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
+  forceBannerOpen = false;
+  for (const listener of consentListeners) listener();
+}
+
+/** True while the banner should render: no stored choice yet, or `reopenConsentBanner` was called. */
+export function isConsentBannerVisible(): boolean {
+  return forceBannerOpen || parseConsentCookie(document.cookie) === null;
+}
+
+/**
+ * Re-opens the consent banner (e.g. a footer "cookie preferences" link)
+ * without discarding the visitor's existing choice — only `writeConsentCookie`
+ * (Accept/Reject/Save inside the banner) changes it.
+ */
+export function reopenConsentBanner(): void {
+  forceBannerOpen = true;
+  for (const listener of consentListeners) listener();
 }

@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), getActiveAccountId: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  rpc: vi.fn(),
+  getActiveAccountId: vi.fn(),
+  getClaims: vi.fn(),
+  captureServer: vi.fn(),
+}));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn().mockResolvedValue({ rpc: mocks.rpc }),
+  createClient: vi.fn().mockResolvedValue({ rpc: mocks.rpc, auth: { getClaims: mocks.getClaims } }),
 }));
 
 vi.mock('@/lib/active-account', () => ({ getActiveAccountId: mocks.getActiveAccountId }));
+
+vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
 
 vi.mock('@sentry/nextjs', () => ({ withScope: vi.fn(), captureException: vi.fn() }));
 
@@ -35,6 +42,7 @@ describe('webhooks server actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('acct-1');
+    mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-1' } } });
   });
 
   it('should return validation_error for an http url without calling the RPC', async () => {
@@ -55,7 +63,7 @@ describe('webhooks server actions', () => {
     expect(result.error).toBe('no_account');
   });
 
-  it('should create an endpoint and return the secret once', async () => {
+  it('should create an endpoint, return the secret once, and capture webhook_created', async () => {
     mocks.rpc.mockResolvedValue({
       data: [{ id: ENDPOINT_ID, secret: 'whsec_abc' }],
       error: null,
@@ -72,6 +80,12 @@ describe('webhooks server actions', () => {
       p_description: 'ci',
       p_events: ['member.joined'],
     });
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'webhook_created',
+      properties: { event_count: 1 },
+      distinctId: 'user-1',
+      accountId: 'acct-1',
+    });
   });
 
   it('should surface RPC errors (not_authorized)', async () => {
@@ -79,6 +93,7 @@ describe('webhooks server actions', () => {
     const result = await listWebhookEndpoints();
     expect(result.data).toBeNull();
     expect(result.error).toBe('not_authorized');
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
   it('should map endpoint rows to camelCase', async () => {

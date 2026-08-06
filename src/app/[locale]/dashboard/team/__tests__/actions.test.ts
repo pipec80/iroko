@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   getClaims: vi.fn(),
   revalidatePath: vi.fn(),
+  captureServer: vi.fn(),
 }));
 
 const { mockSendInvitationEmail, mockGetUser, mockAdminFrom } = vi.hoisted(() => ({
@@ -51,6 +52,10 @@ vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn().mockReturnValue({
     from: mockAdminFrom,
   }),
+}));
+
+vi.mock('@/lib/analytics/server', () => ({
+  captureServer: mocks.captureServer,
 }));
 
 import { getTeamMembers, inviteMembers, removeMember } from '../actions';
@@ -122,7 +127,10 @@ describe('getTeamMembers', () => {
 // ─── inviteMembers ────────────────────────────────────────────────────────────
 
 describe('inviteMembers', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'owner@example.com' } } });
+  });
 
   it('should return validation error when emails field is empty', async () => {
     const fd = makeFormData({ emails: '', role: 'member' });
@@ -165,14 +173,21 @@ describe('inviteMembers', () => {
     const fd = makeFormData({ emails: 'user@example.com', role: 'member' });
     const result = await inviteMembers(fd);
     expect(result.error).toBe('invite_failed');
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
-  it('should surface seat_limit_reached as a typed error', async () => {
+  it('should surface seat_limit_reached as a typed error and capture feature_limit_reached', async () => {
     mockAuthenticatedWithAccount();
     mocks.rpc.mockResolvedValue({ data: null, error: { message: 'seat_limit_reached' } });
     const fd = makeFormData({ emails: 'user@example.com', role: 'member' });
     const result = await inviteMembers(fd);
     expect(result.error).toBe('seat_limit_reached');
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'feature_limit_reached',
+      properties: { limit_key: 'seats_max' },
+      distinctId: 'user-1',
+      accountId: ACCOUNT_ID,
+    });
   });
 
   it('should return success with count and revalidate on happy path', async () => {
@@ -184,12 +199,17 @@ describe('inviteMembers', () => {
       ],
       error: null,
     });
-    mockGetUser.mockResolvedValue({ data: { user: null } });
     const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
     const result = await inviteMembers(fd);
     expect(result.success).toBe(true);
     expect(result.count).toBe(2);
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team', 'page');
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'invitation_sent',
+      properties: { role: 'member', invited_count: 2 },
+      distinctId: 'user-1',
+      accountId: ACCOUNT_ID,
+    });
   });
 
   it('should send invitation emails after successful RPC', async () => {
@@ -200,7 +220,7 @@ describe('inviteMembers', () => {
     ];
     mockAuthenticatedWithAccount();
     mocks.rpc.mockResolvedValue({ data: fakeInvitations, error: null });
-    mockGetUser.mockResolvedValue({ data: { user: { email: 'owner@example.com' } } });
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'owner@example.com' } } });
     const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
 
     // Act

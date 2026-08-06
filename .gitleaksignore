@@ -8,5 +8,14 @@ e0531fce291d3383bd3e475d8f8cba5d53620d75:src/proxy.ts:generic-api-key:10
 
 # RFC_6238_SECRET_BASE32: vector de prueba oficial de RFC 6238 Apéndice B
 # (base32 de la cadena ASCII "12345678901234567890"), público desde el propio
-# RFC, no un secreto real.
+# RFC, no un secreto real. Dos fingerprints porque el fingerprint de gitleaks
+# incluye el commit donde se tocó la línea por última vez — PR #105 la volvió
+# a tocar, generando un fingerprint nuevo para el mismo falso positivo.
 4a6116415e338e23dbf2dbb773467e362dcb8ee3:src/test/totp.test.ts:generic-api-key:7
+c023ff2c63671575f71e34dcf7346100fcf6da9b:src/test/totp.test.ts:generic-api-key:7
+
+# 'test-secret-key-at-least-32-chars-long': placeholder literal en vi.mock('@/env')
+# para satisfacer la validación de longitud mínima de SUPABASE_SECRET_KEY, no un
+# secreto real.
+aee6172e1d3777f567380ec47519331b5a440b6b:src/app/[locale]/dashboard/admin/accounts/[accountId]/__tests__/impersonation-actions.test.ts:generic-api-key:61
+aee6172e1d3777f567380ec47519331b5a440b6b:src/lib/impersonation-cookie.test.ts:generic-api-key:6

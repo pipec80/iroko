@@ -3,6 +3,7 @@
 import { z } from 'zod';
 
 import { getActiveAccountId } from '@/lib/active-account';
+import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
@@ -57,6 +58,18 @@ export const createApiKey = withServerAction(async function createApiKey(
 
   const row = data?.[0];
   if (!row) return { data: null, error: 'create_failed' };
+
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims.sub;
+  if (userId) {
+    await captureServer({
+      event: 'api_key_created',
+      properties: { has_expiration: Boolean(parsed.data.expiresAt) },
+      distinctId: userId,
+      accountId,
+    });
+  }
+
   return { data: { id: row.id, key: row.key } };
 });
 

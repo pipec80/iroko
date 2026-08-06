@@ -1,12 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ rpc: vi.fn(), getActiveAccountId: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  rpc: vi.fn(),
+  getActiveAccountId: vi.fn(),
+  getClaims: vi.fn(),
+  captureServer: vi.fn(),
+}));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn().mockResolvedValue({ rpc: mocks.rpc }),
+  createClient: vi.fn().mockResolvedValue({ rpc: mocks.rpc, auth: { getClaims: mocks.getClaims } }),
 }));
 
 vi.mock('@/lib/active-account', () => ({ getActiveAccountId: mocks.getActiveAccountId }));
+
+vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
 
 vi.mock('@sentry/nextjs', () => ({ withScope: vi.fn(), captureException: vi.fn() }));
 
@@ -27,6 +34,7 @@ describe('api keys server actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('acct-1');
+    mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-1' } } });
   });
 
   it('should return no_account when there is no active account', async () => {
@@ -42,7 +50,7 @@ describe('api keys server actions', () => {
     expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
-  it('should create a key and return the plaintext once', async () => {
+  it('should create a key, return the plaintext once, and capture api_key_created', async () => {
     mocks.rpc.mockResolvedValue({ data: [{ id: 'k1', key: 'irk_secret' }], error: null });
     const result = await createApiKey({ name: 'ci' });
     expect(result.data).toEqual({ id: 'k1', key: 'irk_secret' });
@@ -51,6 +59,12 @@ describe('api keys server actions', () => {
       p_name: 'ci',
       p_expires_at: undefined,
     });
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'api_key_created',
+      properties: { has_expiration: false },
+      distinctId: 'user-1',
+      accountId: 'acct-1',
+    });
   });
 
   it('should surface the RPC error message (not_authorized)', async () => {
@@ -58,6 +72,7 @@ describe('api keys server actions', () => {
     const result = await createApiKey({ name: 'ci' });
     expect(result.data).toBeNull();
     expect(result.error).toBe('not_authorized');
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
   it('should map list rows to camelCase ApiKey objects', async () => {
