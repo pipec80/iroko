@@ -12,6 +12,7 @@ import {
   type Invoice,
   type PlanRow,
 } from '@/app/[locale]/dashboard/billing/actions';
+import { PlanViewedTracker } from '@/components/analytics/plan-viewed-tracker';
 import { cn } from '@/lib/utils';
 
 type Interval = 'month' | 'year';
@@ -84,6 +85,7 @@ export function BillingTab() {
 
   return (
     <div className="space-y-8">
+      <PlanViewedTracker source="billing_page" />
       <section>
         <div className="mb-4 flex items-center justify-between">
           <span className="eyebrow">{t('current_plan')}</span>

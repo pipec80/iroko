@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
 import { env } from '@/env';
+import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 
@@ -35,6 +36,7 @@ export async function GET(
   }
 
   logger.info({ userId: user.id, action: 'accept_invitation' }, 'Invitation accepted');
+  await captureServer({ event: 'invitation_accepted', properties: {}, distinctId: user.id });
 
   return NextResponse.redirect(`${env.SITE_URL}/${locale}/dashboard`);
 }

@@ -3,19 +3,25 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   refreshSession: vi.fn(),
+  getClaims: vi.fn(),
   redirect: vi.fn(),
   getActiveAccountId: vi.fn(),
+  captureServer: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
     rpc: mocks.rpc,
-    auth: { refreshSession: mocks.refreshSession },
+    auth: { refreshSession: mocks.refreshSession, getClaims: mocks.getClaims },
   }),
 }));
 
 vi.mock('@/lib/active-account', () => ({
   getActiveAccountId: mocks.getActiveAccountId,
+}));
+
+vi.mock('@/lib/analytics/server', () => ({
+  captureServer: mocks.captureServer,
 }));
 
 vi.mock('next-intl/server', () => ({
@@ -77,6 +83,7 @@ describe('confirmOrgName', () => {
     vi.clearAllMocks();
     mocks.rpc.mockResolvedValue({ error: null });
     mocks.getActiveAccountId.mockResolvedValue('acc-1');
+    mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-1' } } });
   });
 
   it('rejects names shorter than 2 characters', async () => {
@@ -97,6 +104,12 @@ describe('confirmOrgName', () => {
       p_name: 'Mi Empresa',
     });
     expect(result).toEqual({ success: true });
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'onboarding_step_completed',
+      properties: { step: 'org_name' },
+      distinctId: 'user-1',
+      accountId: 'acc-1',
+    });
   });
 
   it('returns no_active_account when there is no active account', async () => {
@@ -104,17 +117,24 @@ describe('confirmOrgName', () => {
     const result = await confirmOrgName('Mi Empresa');
     expect(result).toEqual({ error: 'no_active_account' });
     expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
   it('maps the rename_account error to { error }', async () => {
     mocks.rpc.mockResolvedValue({ error: { message: 'boom', code: 'X' } });
     const result = await confirmOrgName('Mi Empresa');
     expect(result).toEqual({ error: 'boom' });
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 });
 
 describe('completeOnboarding', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { sub: 'user-1', app_metadata: { account_id: 'acc-1' } } },
+    });
+  });
 
   it('calls the RPC, refreshes the session, and redirects to /dashboard', async () => {
     mocks.rpc.mockResolvedValue({ error: null });
@@ -126,6 +146,12 @@ describe('completeOnboarding', () => {
     // Riesgo #1: si se borra la llamada a refreshSession, este assert debe fallar fuerte.
     expect(mocks.refreshSession).toHaveBeenCalledTimes(1);
     expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'onboarding_completed',
+      properties: {},
+      distinctId: 'user-1',
+      accountId: 'acc-1',
+    });
   });
 
   it('returns an error and does not refresh or redirect when the RPC fails', async () => {
@@ -136,5 +162,6 @@ describe('completeOnboarding', () => {
     expect(result).toEqual({ error: 'db_error' });
     expect(mocks.refreshSession).not.toHaveBeenCalled();
     expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 });

@@ -58,6 +58,10 @@ export function buildCspHeader(isDev: boolean, isPreview: boolean, supabaseUrl: 
   const vercelLiveOrigin = isPreview ? 'https://vercel.live' : '';
 
   const directives: string[] = [
+    // PostHog (posthog-js) is served through the /ingest reverse proxy
+    // (rewrites in next.config.ts), so its script bundle, static assets and
+    // event ingestion are all same-origin ('self'). No *.posthog.com entry
+    // is needed anywhere in this policy — see docs/modules/analytics.md.
     "default-src 'self'",
     // NOTE: 'unsafe-inline' (no per-request nonce) — decisión heredada de cuando
     // cacheComponents estaba activo (nonces forzaban dynamic rendering en todas
@@ -174,9 +178,12 @@ export const config = {
       // sentry-tunnel excluido: es el tunnelRoute de withSentryConfig (ver
       // next.config.ts) — si next-intl lo intercepta, redirige el POST del SDK
       // a /es/sentry-tunnel donde el rewrite del túnel no existe (404) y los
-      // eventos del navegador se pierden.
+      // eventos del navegador se pierden. ingest excluido por el mismo motivo:
+      // es el reverse proxy first-party de PostHog (rewrites en next.config.ts)
+      // — un intercept de next-intl redirigiría el POST de captura a /es/ingest,
+      // donde el rewrite no existe (404) y los eventos se pierden.
       source:
-        '/((?!api|sentry-tunnel|_next/static|_next/image|favicon.ico|manifest.json|.*\\..*).*)',
+        '/((?!api|sentry-tunnel|ingest|_next/static|_next/image|favicon.ico|manifest.json|.*\\..*).*)',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },
         { type: 'header', key: 'purpose', value: 'prefetch' },

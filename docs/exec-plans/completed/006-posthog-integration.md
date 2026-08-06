@@ -1,8 +1,10 @@
 # Plan 006 — Integrate PostHog Product Analytics
 
 - Priority: P2
-- Status: Blocked
-- Blocking conditions: all P0 plans completed; relevant P1 consent/testing work completed
+- Status: Completed (2026-08-05) — implemented on `feat/posthog-integration`; see
+  `docs/modules/analytics.md` for the architecture record. Production enablement
+  (env vars in Vercel Production, not just Preview) remains a separate explicit approval per
+  the acceptance criteria below.
 - New external service and production configuration: requires human approval
 
 ## Objective

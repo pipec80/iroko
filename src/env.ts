@@ -25,6 +25,9 @@ export const env = createEnv({
     MERCADOPAGO_WEBHOOK_SECRET: z.string().min(1).optional(),
     // Injected automatically by Vercel — never set manually. Absent outside Vercel.
     VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
+    // Server-side posthog-node client. The real ingest host — never the
+    // same-origin `/ingest` proxy path, which only exists inside a request.
+    POSTHOG_HOST: z.string().url().default('https://us.i.posthog.com'),
   },
   client: {
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
@@ -34,6 +37,12 @@ export const env = createEnv({
     // Pair with [auth.captcha] secret in supabase/config.toml.
     // Local test key (always passes): 1x00000000000000000000AA
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+    // Optional by design (COMMANDMENTS.md): a missing token must never break
+    // the app. analytics/client.ts fails loud in dev, stays a no-op in prod.
+    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().optional(),
+    // Same-origin reverse proxy path (see next.config.ts rewrites) — never
+    // the raw PostHog host, so events aren't blocked by tracker blockers.
+    NEXT_PUBLIC_POSTHOG_HOST: z.string().default('/ingest'),
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
@@ -50,9 +59,12 @@ export const env = createEnv({
     MERCADOPAGO_ACCESS_TOKEN: process.env.MERCADOPAGO_ACCESS_TOKEN,
     MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    POSTHOG_HOST: process.env.POSTHOG_HOST ?? 'https://us.i.posthog.com',
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? '/ingest',
   },
 });

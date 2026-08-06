@@ -4,54 +4,57 @@ import { useState, useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/button';
-import { parseConsentCookie, writeConsentCookie } from '@/lib/cookie-consent';
+import {
+  isConsentBannerVisible,
+  parseConsentCookie,
+  subscribeToConsent,
+  writeConsentCookie,
+} from '@/lib/cookie-consent';
 import { cn } from '@/lib/utils';
-
-// Cookie consent never changes without a full page navigation from this
-// component's own actions, so there is nothing to subscribe to.
-function subscribeNoop() {
-  return () => {};
-}
-
-function hasConsentSnapshot(): boolean {
-  return parseConsentCookie(document.cookie) !== null;
-}
 
 // Matches what the server always assumes (no document.cookie access) —
 // reading the real cookie only on the client via useSyncExternalStore
 // avoids the SSR/hydration mismatch (React error #418) that a plain
 // useState(() => hasConsent()) initializer would produce.
-function hasConsentServerSnapshot(): boolean {
-  return true;
+function isVisibleServerSnapshot(): boolean {
+  return false;
 }
 
 export function CookieConsentBanner() {
   const t = useTranslations('CookieConsent');
-  const dismissed = useSyncExternalStore(
-    subscribeNoop,
-    hasConsentSnapshot,
-    hasConsentServerSnapshot,
+  const visible = useSyncExternalStore(
+    subscribeToConsent,
+    isConsentBannerVisible,
+    isVisibleServerSnapshot,
   );
   const [customizing, setCustomizing] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
-  const [dismissedOverride, setDismissedOverride] = useState(false);
 
-  if (dismissed || dismissedOverride) return null;
+  if (!visible) return null;
+
+  function openCustomize() {
+    // Pre-fill from the current choice — relevant when this is a reopen
+    // (footer link) after the visitor already consented once.
+    const current = parseConsentCookie(document.cookie);
+    setAnalytics(current?.analytics ?? false);
+    setMarketing(current?.marketing ?? false);
+    setCustomizing(true);
+  }
 
   function acceptAll() {
     writeConsentCookie({ analytics: true, marketing: true });
-    setDismissedOverride(true);
+    setCustomizing(false);
   }
 
   function rejectNonEssential() {
     writeConsentCookie({ analytics: false, marketing: false });
-    setDismissedOverride(true);
+    setCustomizing(false);
   }
 
   function savePreferences() {
     writeConsentCookie({ analytics, marketing });
-    setDismissedOverride(true);
+    setCustomizing(false);
   }
 
   return (
@@ -110,7 +113,7 @@ export function CookieConsentBanner() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setCustomizing(true)}
+              onClick={openCustomize}
               data-testid="cookie-consent-customize">
               {t('customize')}
             </Button>
