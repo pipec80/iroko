@@ -20,6 +20,7 @@
 #   SITE_URL
 #   RESEND_API_KEY      ← añadir como Secret (permite @ en el valor)
 #   FROM_EMAIL          ← añadir como Secret (permite @ en el valor)
+#   NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN  ← usado solo por el job E2E (ver docs/modules/analytics.md §8)
 #
 # Secrets adicionales SOLO en el environment "production" (main branch):
 #   NEXT_PUBLIC_SENTRY_DSN
@@ -423,6 +424,9 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
           MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
+          # Sin token, initAnalytics() no hace nada — 5 de los 7 escenarios de
+          # analytics.spec.ts esperan tráfico de captura real hacia /ingest.
+          NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ secrets.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
           # Sin NEXT_PUBLIC_TURNSTILE_SITE_KEY: CaptchaField no renderiza nada
           # y captchaReady arranca en true → botones habilitados desde el inicio.
           # Turnstile headless no dispara onSuccess aunque uses la test key.

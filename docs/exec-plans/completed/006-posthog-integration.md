@@ -1,10 +1,19 @@
 # Plan 006 — Integrate PostHog Product Analytics
 
 - Priority: P2
-- Status: Completed (2026-08-05) — implemented on `feat/posthog-integration`; see
-  `docs/modules/analytics.md` for the architecture record. Production enablement
-  (env vars in Vercel Production, not just Preview) remains a separate explicit approval per
-  the acceptance criteria below.
+- Status: Implemented (2026-08-06) — [PR #109](https://github.com/pipec80/iroko/pull/109)
+  (`feat/posthog-integration`), not yet merged. See `docs/modules/analytics.md` for the
+  architecture record. Production enablement (env vars in Vercel Production, not just Preview)
+  remains a separate explicit approval per the acceptance criteria below.
+- **Pending before merge:**
+  - `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` as a GitHub Actions repo secret — without it the `E2E`
+    CI job fails (5 of 7 `analytics.spec.ts` scenarios expect real capture traffic).
+  - `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN` in Vercel **Preview** env vars (not Production).
+  - CI on this PR was blocked for hours by an unrelated GitHub Actions platform incident
+    (2026-08-06, ~15:22–19:00+ UTC, see githubstatus.com) — workflow runs weren't starting at
+    all (`pending` with zero jobs, and even `workflow_dispatch` returned HTTP 500 on the first
+    attempt). Not a repo/code issue; re-check `gh run list --branch feat/posthog-integration`
+    once GitHub confirms recovery.
 - New external service and production configuration: requires human approval
 
 ## Objective
