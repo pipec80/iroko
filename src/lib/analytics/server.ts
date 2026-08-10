@@ -1,9 +1,12 @@
 import 'server-only';
 
+import { cookies } from 'next/headers';
 import { PostHog } from 'posthog-node';
 
-import { env } from '@/env';
+import { CONSENT_COOKIE_NAME, parseConsentValue } from '@/lib/cookie-consent';
 import { logger } from '@/lib/logger';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { env } from '@/env';
 
 import {
   parseAnalyticsEvent,
@@ -12,6 +15,30 @@ import {
 } from './events';
 
 let warnedMissingToken = false;
+
+/**
+ * Whether `distinctId` has consented to analytics. The browser's
+ * `cookie_consent` cookie (present on the same request for Server
+ * Actions/route handlers a user's own browser called) is the primary,
+ * always-fresh signal. Payment-provider webhooks carry no browser cookie at
+ * all, so `subscription_activated` — the one event not tied to the caller's
+ * own request — falls back to `profiles.analytics_consent`, which
+ * AnalyticsProvider keeps synced for logged-in users. Absence of a signal
+ * either way defaults to "not consented" (opt-out by default).
+ */
+async function hasAnalyticsConsent(distinctId: string): Promise<boolean> {
+  const cookieStore = await cookies();
+  const cookieConsent = parseConsentValue(cookieStore.get(CONSENT_COOKIE_NAME)?.value);
+  if (cookieConsent) return cookieConsent.analytics;
+
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from('profiles')
+    .select('analytics_consent')
+    .eq('id', distinctId)
+    .maybeSingle();
+  return data?.analytics_consent ?? false;
+}
 
 // COMMANDMENTS.md: same contract as client.ts — loud once in dev, silent no-op in prod.
 function warnMissingTokenOnce(): void {
@@ -37,10 +64,11 @@ export type CaptureServerInput<TName extends AnalyticsEventName> = {
 };
 
 /**
- * Captures a single server-side analytics event via posthog-node. Creates a
- * short-lived client, flushes immediately (`flushAt: 1`) and always shuts it
- * down — Server Actions/route handlers can terminate right after returning,
- * so nothing may be left queued.
+ * Captures a single server-side analytics event via posthog-node, after
+ * confirming `input.distinctId` has consented (see `hasAnalyticsConsent`).
+ * Creates a short-lived client, flushes immediately (`flushAt: 1`) and
+ * always shuts it down — Server Actions/route handlers can terminate right
+ * after returning, so nothing may be left queued.
  *
  * Never throws on a delivery failure: a PostHog outage must not break the
  * business operation it's instrumenting (same pattern as email delivery in
@@ -55,6 +83,8 @@ export async function captureServer<TName extends AnalyticsEventName>(
     warnMissingTokenOnce();
     return;
   }
+
+  if (!(await hasAnalyticsConsent(input.distinctId))) return;
 
   const validated = parseAnalyticsEvent(input.event, input.properties);
   const properties = input.insertId ? { ...validated, $insert_id: input.insertId } : validated;

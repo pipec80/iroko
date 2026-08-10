@@ -23,10 +23,33 @@ const { envMock } = vi.hoisted(() => ({
 }));
 vi.mock('@/env', () => ({ env: envMock }));
 
+const { cookieGetMock } = vi.hoisted(() => ({ cookieGetMock: vi.fn() }));
+vi.mock('next/headers', () => ({
+  cookies: vi.fn(async () => ({ get: cookieGetMock })),
+}));
+
+const { maybeSingleMock } = vi.hoisted(() => ({ maybeSingleMock: vi.fn() }));
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({ eq: vi.fn(() => ({ maybeSingle: maybeSingleMock })) })),
+    })),
+  })),
+}));
+
+/** Encodes a `cookie_consent` value the way `writeConsentCookie` does. */
+function consentCookieValue(analytics: boolean): string {
+  return encodeURIComponent(JSON.stringify({ necessary: true, analytics, marketing: false }));
+}
+
 describe('captureServer', () => {
   beforeEach(() => {
     vi.resetModules();
     envMock.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = 'phc_test_token';
+    // Default: consented via cookie, matching every pre-existing test below
+    // that isn't specifically exercising the consent gate.
+    cookieGetMock.mockReturnValue({ value: consentCookieValue(true) });
+    maybeSingleMock.mockResolvedValue({ data: null });
   });
 
   it('is a no-op when the project token is missing', async () => {
@@ -128,5 +151,64 @@ describe('captureServer', () => {
       }),
     ).resolves.toBeUndefined();
     expect(loggerMock.error).toHaveBeenCalled();
+  });
+
+  describe('consent gate', () => {
+    it('does not capture when the cookie explicitly rejects analytics', async () => {
+      cookieGetMock.mockReturnValue({ value: consentCookieValue(false) });
+      const { captureServer } = await import('../server');
+
+      await captureServer({
+        event: 'mfa_challenge_completed',
+        properties: {},
+        distinctId: 'user-uuid',
+      });
+
+      expect(captureMock).not.toHaveBeenCalled();
+      // No cookie signal to work from means no DB fallback should be needed either.
+      expect(maybeSingleMock).not.toHaveBeenCalled();
+    });
+
+    it('falls back to profiles.analytics_consent when no cookie is present (e.g. a webhook)', async () => {
+      cookieGetMock.mockReturnValue();
+      maybeSingleMock.mockResolvedValue({ data: { analytics_consent: true } });
+      const { captureServer } = await import('../server');
+
+      await captureServer({
+        event: 'subscription_activated',
+        properties: { plan_slug: 'pro', interval: 'month', provider: 'mock' },
+        distinctId: 'account-owner-uuid',
+      });
+
+      expect(captureMock).toHaveBeenCalledOnce();
+    });
+
+    it('does not capture when no cookie is present and profiles.analytics_consent is not true', async () => {
+      cookieGetMock.mockReturnValue();
+      maybeSingleMock.mockResolvedValue({ data: { analytics_consent: null } });
+      const { captureServer } = await import('../server');
+
+      await captureServer({
+        event: 'subscription_activated',
+        properties: { plan_slug: 'pro', interval: 'month', provider: 'mock' },
+        distinctId: 'account-owner-uuid',
+      });
+
+      expect(captureMock).not.toHaveBeenCalled();
+    });
+
+    it('does not capture when no cookie is present and the profile row does not exist', async () => {
+      cookieGetMock.mockReturnValue();
+      maybeSingleMock.mockResolvedValue({ data: null });
+      const { captureServer } = await import('../server');
+
+      await captureServer({
+        event: 'mfa_challenge_completed',
+        properties: {},
+        distinctId: 'user-uuid',
+      });
+
+      expect(captureMock).not.toHaveBeenCalled();
+    });
   });
 });

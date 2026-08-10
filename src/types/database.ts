@@ -1050,6 +1050,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          analytics_consent: boolean | null
           avatar_url: string | null
           bio: string | null
           birth_date: string | null
@@ -1070,6 +1071,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          analytics_consent?: boolean | null
           avatar_url?: string | null
           bio?: string | null
           birth_date?: string | null
@@ -1090,6 +1092,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          analytics_consent?: boolean | null
           avatar_url?: string | null
           bio?: string | null
           birth_date?: string | null
@@ -1784,6 +1787,7 @@ export type Database = {
           p_website_url?: string
         }
         Returns: {
+          analytics_consent: boolean | null
           avatar_url: string | null
           bio: string | null
           birth_date: string | null

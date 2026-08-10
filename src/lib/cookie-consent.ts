@@ -20,22 +20,29 @@ function isConsentState(value: unknown): value is ConsentState {
 }
 
 /**
- * Parses the `cookie_consent` cookie out of a raw `document.cookie` string.
- * Never throws — corrupted or missing cookies resolve to `null` (treated as "no consent").
+ * Parses a single cookie's raw value (already extracted — e.g. from
+ * `next/headers`'s `cookies().get(CONSENT_COOKIE_NAME)?.value` server-side,
+ * or from `parseConsentCookie`'s `document.cookie` split client-side). Never
+ * throws — corrupted or missing values resolve to `null` ("no consent").
  */
-export function parseConsentCookie(cookieString: string): ConsentState | null {
-  const entries = cookieString.split(';').map((entry) => entry.trim());
-  const match = entries.find((entry) => entry.startsWith(`${CONSENT_COOKIE_NAME}=`));
-  if (!match) return null;
-
-  const rawValue = match.slice(CONSENT_COOKIE_NAME.length + 1);
-
+export function parseConsentValue(rawValue: string | undefined): ConsentState | null {
+  if (!rawValue) return null;
   try {
     const parsed: unknown = JSON.parse(decodeURIComponent(rawValue));
     return isConsentState(parsed) ? parsed : null;
   } catch {
     return null;
   }
+}
+
+/**
+ * Parses the `cookie_consent` cookie out of a raw `document.cookie` string.
+ * Never throws — corrupted or missing cookies resolve to `null` (treated as "no consent").
+ */
+export function parseConsentCookie(cookieString: string): ConsentState | null {
+  const entries = cookieString.split(';').map((entry) => entry.trim());
+  const match = entries.find((entry) => entry.startsWith(`${CONSENT_COOKIE_NAME}=`));
+  return parseConsentValue(match?.slice(CONSENT_COOKIE_NAME.length + 1));
 }
 
 /** Reads consent for a single category from the current document. Defaults to `false`. */

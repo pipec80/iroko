@@ -1,7 +1,12 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 
 import { test as adminTest } from './fixtures/platform-admin';
-import { deleteUserByEmail, fetchLatestMessageTo, uniqueEmail } from './helpers';
+import {
+  deleteUserByEmail,
+  fetchLatestMessageTo,
+  querySqlAsPostgres,
+  uniqueEmail,
+} from './helpers';
 
 /**
  * PostHog analytics E2E (Plan 006). Intercepts every request to the /ingest
@@ -265,6 +270,20 @@ test.describe('Analytics — signup to project funnel', () => {
       await page.getByRole('button', { name: 'Finalizar' }).click();
       await page.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
     }
+
+    // AnalyticsProvider persists the accepted consent to profiles.analytics_consent
+    // once the user is authenticated — captureServer()'s webhook fallback
+    // (src/lib/analytics/server.ts) depends on this being kept in sync, not
+    // just the cookie, since a webhook carries no browser cookie at all.
+    await expect
+      .poll(
+        () =>
+          querySqlAsPostgres(
+            `SELECT analytics_consent FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = '${email}'`,
+          ),
+        { timeout: 10_000 },
+      )
+      .toBe('t');
 
     // 4. project_created.
     const beforeProject = countCaptureRequests(ingest.urls);

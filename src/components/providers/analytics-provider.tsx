@@ -29,6 +29,7 @@ function getAnalyticsConsentServerSnapshot(): boolean {
 }
 
 type SyncedIdentity = { userId: string | null; impersonated: boolean };
+type SyncedConsent = { userId: string | null; consent: boolean | null };
 
 /**
  * Loads posthog-js only after analytics consent is granted (never before —
@@ -56,6 +57,49 @@ export function AnalyticsProvider(): null {
   // TOKEN_REFRESHED (and other) auth events fire onAuthStateChange without a
   // real navigation — dedupe so a pageview isn't re-sent for the same path.
   const lastPageviewPathnameRef = useRef<string | null>(null);
+  const lastSyncedConsentRef = useRef<SyncedConsent>({ userId: null, consent: null });
+
+  // Persists cookie_consent.analytics to profiles.analytics_consent for
+  // logged-in users. captureServer() falls back to this column when a
+  // request carries no browser cookie at all (payment-provider webhooks) —
+  // see src/lib/analytics/server.ts. Deliberately independent from the
+  // effect below: it must run (and sync a rejection) even when
+  // hasAnalyticsConsent is false, and shouldn't re-run on every navigation.
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+
+    async function syncConsentToDb(): Promise<void> {
+      const { data } = await supabase.auth.getClaims();
+      if (cancelled) return;
+      const claims = data?.claims;
+      // No session, or impersonating: this browser's cookie doesn't belong
+      // to the target user's own choice — never overwrite their record.
+      if (!claims || claims.app_metadata?.impersonated_by) return;
+      if (
+        lastSyncedConsentRef.current.userId === claims.sub &&
+        lastSyncedConsentRef.current.consent === hasAnalyticsConsent
+      ) {
+        return;
+      }
+      lastSyncedConsentRef.current = { userId: claims.sub, consent: hasAnalyticsConsent };
+      await supabase
+        .from('profiles')
+        .update({ analytics_consent: hasAnalyticsConsent })
+        .eq('id', claims.sub);
+    }
+
+    void syncConsentToDb();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(() => void syncConsentToDb());
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, [hasAnalyticsConsent]);
 
   useEffect(() => {
     if (!hasAnalyticsConsent) {
