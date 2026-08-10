@@ -1,5 +1,6 @@
 import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
+import { notify } from '@/lib/notifications';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 import { getPaymentProvider } from './registry';
@@ -74,12 +75,24 @@ export async function handleProviderWebhook(
       ownerId &&
       (providerName === 'mock' || providerName === 'stripe' || providerName === 'mercadopago')
     ) {
+      const planSlug = event.planSlug ?? 'free';
       await captureServer({
         event: 'subscription_activated',
-        properties: { plan_slug: event.planSlug ?? 'free', interval, provider: providerName },
+        properties: { plan_slug: planSlug, interval, provider: providerName },
         distinctId: ownerId,
         accountId: event.accountId,
         insertId: event.externalEventId,
+      });
+      await notify(ownerId, {
+        type: 'success',
+        title: `Tu plan ${planSlug} está activo`,
+        link: '/dashboard/billing',
+        emailDelivery: true,
+      }).catch((err: unknown) => {
+        logger.error(
+          { action: 'billing.webhook.notify', accountId: event.accountId },
+          err instanceof Error ? err.message : 'Unknown error',
+        );
       });
     }
   }

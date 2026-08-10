@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   verifyWebhook: vi.fn(),
   maybeSingle: vi.fn(),
   captureServer: vi.fn(),
+  notify: vi.fn(async () => {}),
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -25,6 +26,7 @@ vi.mock('../registry', () => ({
 }));
 
 vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
+vi.mock('@/lib/notifications', () => ({ notify: mocks.notify }));
 
 vi.mock('@sentry/nextjs', () => ({ withScope: vi.fn(), captureException: vi.fn() }));
 
@@ -89,6 +91,20 @@ describe('handleProviderWebhook', () => {
       accountId: 'a1',
       insertId: 'evt_1',
     });
+    expect(mocks.notify).toHaveBeenCalledWith('owner-1', {
+      type: 'success',
+      title: 'Tu plan pro está activo',
+      link: '/dashboard/billing',
+      emailDelivery: true,
+    });
+  });
+
+  it('should still return 200 when notify() fails', async () => {
+    mocks.verifyWebhook.mockResolvedValue(validEvent);
+    mocks.rpc.mockResolvedValue({ data: 'applied', error: null });
+    mocks.notify.mockRejectedValueOnce(new Error('insert failed'));
+    const res = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
+    expect(res.status).toBe(200);
   });
 
   it('should forward the real provider name to apply_subscription_event and to the capture', async () => {
@@ -110,13 +126,15 @@ describe('handleProviderWebhook', () => {
     const res = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
     expect(res.status).toBe(200);
     expect(mocks.captureServer).not.toHaveBeenCalled();
+    expect(mocks.notify).not.toHaveBeenCalled();
   });
 
-  it('should not capture for a subscription_updated event (not an activation)', async () => {
+  it('should not capture or notify for a subscription_updated event (not an activation)', async () => {
     mocks.verifyWebhook.mockResolvedValue({ ...validEvent, type: 'subscription_updated' });
     mocks.rpc.mockResolvedValue({ data: 'applied', error: null });
     await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
     expect(mocks.captureServer).not.toHaveBeenCalled();
+    expect(mocks.notify).not.toHaveBeenCalled();
   });
 
   it('should return 500 when the RPC errors', async () => {
@@ -125,5 +143,6 @@ describe('handleProviderWebhook', () => {
     const res = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
     expect(res.status).toBe(500);
     expect(mocks.captureServer).not.toHaveBeenCalled();
+    expect(mocks.notify).not.toHaveBeenCalled();
   });
 });

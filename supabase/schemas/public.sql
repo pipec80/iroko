@@ -74,7 +74,7 @@ CREATE TYPE "public"."project_type" AS ENUM (
 ALTER TYPE "public"."project_type" OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."accept_invitation"("p_token" "text") RETURNS "uuid"
+CREATE OR REPLACE FUNCTION "public"."accept_invitation"("p_token" "text") RETURNS TABLE("account_id" "uuid", "invited_by" "uuid")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -108,7 +108,7 @@ BEGIN
   SET status = 'accepted', updated_at = now()
   WHERE id = v_invitation.id;
 
-  RETURN v_invitation.account_id;
+  RETURN QUERY SELECT v_invitation.account_id, v_invitation.invited_by;
 END;
 $$;
 
@@ -116,7 +116,7 @@ $$;
 ALTER FUNCTION "public"."accept_invitation"("p_token" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."accept_invitation"("p_token" "text") IS 'Accepts an invitation by token and creates the membership. SECURITY DEFINER: mutates invitations+memberships (direct write revoked). Uses auth.uid().';
+COMMENT ON FUNCTION "public"."accept_invitation"("p_token" "text") IS 'Accepts an invitation by token and creates the membership. Returns the inviter''s user id (nullable) so the caller can notify them. SECURITY DEFINER: mutates invitations+memberships (direct write revoked). Uses auth.uid().';
 
 
 

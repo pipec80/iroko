@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { env } from '@/env';
 import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
+import { notify } from '@/lib/notifications';
 import { createClient } from '@/lib/supabase/server';
 
 export async function GET(
@@ -28,7 +29,7 @@ export async function GET(
     return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?next=${next}`);
   }
 
-  const { error } = await supabase.rpc('accept_invitation', { p_token: token });
+  const { data, error } = await supabase.rpc('accept_invitation', { p_token: token }).single();
 
   if (error) {
     logger.warn({ userId: user.id, action: 'accept_invitation', code: error.code }, error.message);
@@ -37,6 +38,19 @@ export async function GET(
 
   logger.info({ userId: user.id, action: 'accept_invitation' }, 'Invitation accepted');
   await captureServer({ event: 'invitation_accepted', properties: {}, distinctId: user.id });
+
+  if (data.invited_by) {
+    await notify(data.invited_by, {
+      type: 'success',
+      title: `${user.email} aceptó tu invitación`,
+      link: `/${locale}/dashboard/team`,
+    }).catch((err: unknown) => {
+      logger.error(
+        { action: 'accept_invitation.notify', inviterId: data.invited_by },
+        err instanceof Error ? err.message : 'Unknown error',
+      );
+    });
+  }
 
   return NextResponse.redirect(`${env.SITE_URL}/${locale}/dashboard`);
 }
