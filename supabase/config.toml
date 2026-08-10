@@ -527,8 +527,12 @@ policy = "oneshot"
 inspector_port = 8083
 # deno_version = 2   # no documentado en CLI spec
 
-# Worker de email_queue (F2-2F): solo lo invoca el cron interno de pg_cron
-# vía pg_net, nunca un end user — no necesita verificación de JWT por request.
+# Worker de email_queue (F2-2F): solo lo invoca el cron interno de pg_cron vía
+# pg_net, nunca un end user directamente — verify_jwt en false porque las
+# secret keys nuevas de Supabase no son JWT (pg_net no puede mandarlas como
+# Authorization: Bearer). El handler valida un secreto compartido propio
+# (header X-Cron-Secret, Vault + `supabase secrets set` — Plan 002, migración
+# 20260810190000_email_worker_url_and_auth.sql).
 [functions.process-email-queue]
 verify_jwt = false
 
