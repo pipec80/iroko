@@ -1,12 +1,15 @@
 # Plan 002 — Deploy and Verify the Cloud Email Worker
 
 - Priority: P0
-- Status: Open — consolidated scope (2026-08-10): the worker deploy below, plus
-  everything else email-related found sitting unfinished in the codebase while
-  auditing this plan. No verified Resend domain yet (purchase pending) — every
-  test send stays scoped to the account owner's own inbox until then.
+- Status: Completed (2026-08-10, PR #110, merged `899da9b`) — consolidated
+  scope: the worker deploy below, plus everything else email-related found
+  sitting unfinished in the codebase while auditing this plan. No verified
+  Resend domain yet (purchase pending) — every test send stayed scoped to
+  the account owner's own inbox; a real sender domain remains a separate,
+  unblocked follow-up (see [[project_resend_deploy]]).
 - Depends on: Plan 001 when a migration change is required
-- Production deployment/write: requires explicit human approval
+- Production deployment/write: requires explicit human approval — done,
+  with explicit approval, 2026-08-10
 
 ## Consolidated scope (2026-08-10)
 
@@ -216,9 +219,13 @@ places that must match (`seed.sql` and `supabase/functions/.env`) were
 verified identical by direct read. Re-run `pnpm supa:reset` once RAM
 allows, to fully close this out.
 
-**Still open:** delete the OLD (pre-rotation) Resend API key — deferred
-until the Vercel side also confirms it's on the new key, which needs a
-redeploy (next merge to `main` triggers it automatically).
+**Closed 2026-08-10, after merge:** PR #110 merged (`899da9b`); the
+resulting Vercel production deployment went `READY` on the new Resend
+key. With that confirmed, the OLD `Onboarding` key (exposed since
+2026-06-19) was deleted via `remove-api-key` — nothing was left
+depending on it (local, worker Cloud, GitHub Actions, Vercel
+Production+Preview all already on `Onboarding-2026-08`). Nothing left
+open in this plan.
 
 ## Problem
 
