@@ -20,16 +20,13 @@ function isConsentState(value: unknown): value is ConsentState {
 }
 
 /**
- * Parses the `cookie_consent` cookie out of a raw `document.cookie` string.
- * Never throws — corrupted or missing cookies resolve to `null` (treated as "no consent").
+ * Parses a single cookie's raw value (already extracted — e.g. from
+ * `next/headers`'s `cookies().get(CONSENT_COOKIE_NAME)?.value` server-side,
+ * or from `parseConsentCookie`'s `document.cookie` split client-side). Never
+ * throws — corrupted or missing values resolve to `null` ("no consent").
  */
-export function parseConsentCookie(cookieString: string): ConsentState | null {
-  const entries = cookieString.split(';').map((entry) => entry.trim());
-  const match = entries.find((entry) => entry.startsWith(`${CONSENT_COOKIE_NAME}=`));
-  if (!match) return null;
-
-  const rawValue = match.slice(CONSENT_COOKIE_NAME.length + 1);
-
+export function parseConsentValue(rawValue: string | undefined): ConsentState | null {
+  if (!rawValue) return null;
   try {
     const parsed: unknown = JSON.parse(decodeURIComponent(rawValue));
     return isConsentState(parsed) ? parsed : null;
@@ -38,11 +35,38 @@ export function parseConsentCookie(cookieString: string): ConsentState | null {
   }
 }
 
+/**
+ * Parses the `cookie_consent` cookie out of a raw `document.cookie` string.
+ * Never throws — corrupted or missing cookies resolve to `null` (treated as "no consent").
+ */
+export function parseConsentCookie(cookieString: string): ConsentState | null {
+  const entries = cookieString.split(';').map((entry) => entry.trim());
+  const match = entries.find((entry) => entry.startsWith(`${CONSENT_COOKIE_NAME}=`));
+  return parseConsentValue(match?.slice(CONSENT_COOKIE_NAME.length + 1));
+}
+
 /** Reads consent for a single category from the current document. Defaults to `false`. */
 export function hasConsent(category: ConsentCategory): boolean {
   const state = parseConsentCookie(document.cookie);
   return state?.[category] ?? false;
 }
+
+const consentListeners = new Set<() => void>();
+
+/**
+ * Subscribes to consent changes made via `writeConsentCookie` or
+ * `reopenConsentBanner` (in this tab). Built for `useSyncExternalStore` —
+ * e.g. the analytics provider re-reading `hasConsent('analytics')` live when
+ * the user grants or revokes it from the footer's "cookie preferences" link,
+ * without a full page reload.
+ * @returns unsubscribe function
+ */
+export function subscribeToConsent(listener: () => void): () => void {
+  consentListeners.add(listener);
+  return () => consentListeners.delete(listener);
+}
+
+let forceBannerOpen = false;
 
 /** Persists the visitor's cookie choice for 1 year. `necessary` is always `true`. */
 export function writeConsentCookie(state: { analytics: boolean; marketing: boolean }): void {
@@ -50,4 +74,21 @@ export function writeConsentCookie(state: { analytics: boolean; marketing: boole
   document.cookie = `${CONSENT_COOKIE_NAME}=${encodeURIComponent(
     JSON.stringify(value),
   )}; path=/; max-age=${CONSENT_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
+  forceBannerOpen = false;
+  for (const listener of consentListeners) listener();
+}
+
+/** True while the banner should render: no stored choice yet, or `reopenConsentBanner` was called. */
+export function isConsentBannerVisible(): boolean {
+  return forceBannerOpen || parseConsentCookie(document.cookie) === null;
+}
+
+/**
+ * Re-opens the consent banner (e.g. a footer "cookie preferences" link)
+ * without discarding the visitor's existing choice — only `writeConsentCookie`
+ * (Accept/Reject/Save inside the banner) changes it.
+ */
+export function reopenConsentBanner(): void {
+  forceBannerOpen = true;
+  for (const listener of consentListeners) listener();
 }

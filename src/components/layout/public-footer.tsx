@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { Link } from '@/i18n/routing';
+import { CookiePreferencesLink } from '@/components/layout/cookie-preferences-link';
 import { appConfig } from '@/config/app.config';
 
 export async function PublicFooter() {
@@ -104,6 +105,7 @@ export async function PublicFooter() {
                 {label}
               </Link>
             ))}
+            {appConfig.features.cookieConsent && <CookiePreferencesLink />}
           </div>
         </div>
 

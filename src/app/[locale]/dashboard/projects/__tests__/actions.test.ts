@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   create: vi.fn(),
   revalidatePath: vi.fn(),
+  captureServer: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -15,6 +16,8 @@ vi.mock('@/lib/supabase/server', () => ({
 }));
 
 vi.mock('@/lib/projects', () => ({ create: mocks.create }));
+
+vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
 
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
@@ -102,6 +105,7 @@ describe('createProject', () => {
       );
       const result = await createProject(makeFormData(validProject));
       expect(result.error).toBe('duplicate_name');
+      expect(mocks.captureServer).not.toHaveBeenCalled();
     });
 
     it('maps any other DB error to a generic message — no internals leaked', async () => {
@@ -109,6 +113,7 @@ describe('createProject', () => {
       const result = await createProject(makeFormData(validProject));
       expect(result.error).toBe('create_failed');
       expect(result.error).not.toContain('10.0.0.5');
+      expect(mocks.captureServer).not.toHaveBeenCalled();
     });
 
     it('derives a normalized slug from the name (accents and spaces)', async () => {
@@ -129,6 +134,12 @@ describe('createProject', () => {
 
       expect(result.success).toBe(true);
       expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/projects', 'page');
+      expect(mocks.captureServer).toHaveBeenCalledWith({
+        event: 'project_created',
+        properties: { type: 'docs', tone: 'iron' },
+        distinctId: 'user-uuid-1',
+        accountId: 'acct-uuid-1',
+      });
     });
   });
 });

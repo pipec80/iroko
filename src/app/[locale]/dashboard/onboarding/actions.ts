@@ -5,6 +5,7 @@ import { z } from 'zod';
 
 import { redirect } from '@/i18n/routing';
 import { getActiveAccountId } from '@/lib/active-account';
+import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
@@ -51,6 +52,17 @@ export const confirmOrgName = withServerAction(async function confirmOrgName(
     return { error: error.message ?? 'update_failed' };
   }
 
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims.sub;
+  if (userId) {
+    await captureServer({
+      event: 'onboarding_step_completed',
+      properties: { step: 'org_name' },
+      distinctId: userId,
+      accountId,
+    });
+  }
+
   return { success: true };
 });
 
@@ -62,6 +74,18 @@ export const completeOnboarding = withServerAction(async function completeOnboar
   if (error) {
     logger.error({ action: 'onboarding.complete', code: error.code }, 'complete_onboarding failed');
     return { error: error.message ?? 'complete_failed' };
+  }
+
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims.sub;
+  const accountId = claimsData?.claims.app_metadata?.account_id as string | undefined;
+  if (userId) {
+    await captureServer({
+      event: 'onboarding_completed',
+      properties: {},
+      distinctId: userId,
+      accountId,
+    });
   }
 
   // Crítico: reemite el JWT con onboarding_completed=true; sin esto el edge gate

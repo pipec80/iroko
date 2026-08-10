@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   verify: vi.fn(),
   sign: vi.fn(),
   rpc: vi.fn(),
+  getClaims: vi.fn(),
+  captureServer: vi.fn(),
 }));
 
 vi.mock('@/lib/active-account', () => ({ getActiveAccountId: mocks.getActiveAccountId }));
@@ -19,8 +21,9 @@ vi.mock('@/lib/billing/signing', () => ({
   verifyMockPayload: mocks.verify,
 }));
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn().mockResolvedValue({ rpc: mocks.rpc }),
+  createClient: vi.fn().mockResolvedValue({ rpc: mocks.rpc, auth: { getClaims: mocks.getClaims } }),
 }));
+vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
 vi.mock('@sentry/nextjs', () => ({ withScope: vi.fn(), captureException: vi.fn() }));
 vi.mock('@/env', () => ({
   env: {
@@ -52,9 +55,10 @@ describe('billing actions', () => {
       createCheckout: mocks.createCheckout,
       cancelSubscription: mocks.cancelSubscription,
     });
+    mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-1' } } });
   });
 
-  it('startCheckout returns the provider checkout url', async () => {
+  it('startCheckout returns the provider checkout url and captures checkout_started', async () => {
     mocks.createCheckout.mockResolvedValue({
       url: 'http://localhost:3000/es/billing/mock-checkout?data=x',
     });
@@ -67,6 +71,12 @@ describe('billing actions', () => {
         interval: 'month',
       }),
     );
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'checkout_started',
+      properties: { plan_slug: 'pro', interval: 'month' },
+      distinctId: 'user-1',
+      accountId: 'a1',
+    });
   });
 
   it('startCheckout rejects an invalid interval', async () => {
@@ -158,6 +168,12 @@ describe('billing actions', () => {
       }),
     );
     expect(mocks.handle).toHaveBeenCalledWith('mock', 'signed-cancel-event', 'mock');
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'subscription_cancel_requested',
+      properties: {},
+      distinctId: 'user-1',
+      accountId: 'a1',
+    });
   });
 
   it('cancelSubscription returns cancel_failed when the webhook handler errors', async () => {
@@ -178,6 +194,7 @@ describe('billing actions', () => {
     const res = await cancelSubscription();
     expect(res.data).toBeNull();
     expect(res.error).toBe('cancel_failed');
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
   it('cancelSubscription calls the real provider adapter when the account uses a non-mock provider', async () => {
@@ -204,6 +221,12 @@ describe('billing actions', () => {
     expect(mocks.cancelSubscription).toHaveBeenCalledWith('sub_stripe_123', true);
     expect(mocks.handle).not.toHaveBeenCalled();
     expect(res.data).toBe(true);
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'subscription_cancel_requested',
+      properties: {},
+      distinctId: 'user-1',
+      accountId: 'a1',
+    });
   });
 
   it('cancelSubscription returns no_subscription when a real provider has no external_subscription_id', async () => {

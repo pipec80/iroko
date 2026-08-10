@@ -3,6 +3,7 @@
 import { z } from 'zod';
 
 import { getActiveAccountId } from '@/lib/active-account';
+import { captureServer } from '@/lib/analytics/server';
 import { getPaymentProvider } from '@/lib/billing/registry';
 import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
 import type { NormalizedEvent } from '@/lib/billing/types';
@@ -92,6 +93,19 @@ export const startCheckout = withServerAction(async function startCheckout(input
     successUrl: `${env.SITE_URL}/es/dashboard/billing?status=success`,
     cancelUrl: `${env.SITE_URL}/es/dashboard/billing?status=cancelled`,
   });
+
+  const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims.sub;
+  if (userId) {
+    await captureServer({
+      event: 'checkout_started',
+      properties: { plan_slug: parsed.data.planSlug, interval: parsed.data.interval },
+      distinctId: userId,
+      accountId,
+    });
+  }
+
   return { data: { url } };
 });
 
@@ -136,6 +150,9 @@ export const cancelSubscription = withServerAction(async function cancelSubscrip
   if (!accountId) return { data: null, error: 'no_account' };
 
   const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims.sub;
+
   const { data: overview, error } = await supabase.rpc('get_billing_overview', {
     p_account_id: accountId,
   });
@@ -147,6 +164,14 @@ export const cancelSubscription = withServerAction(async function cancelSubscrip
     if (!current.external_subscription_id) return { data: null, error: 'no_subscription' };
     const provider = getPaymentProvider(current.provider);
     await provider.cancelSubscription(current.external_subscription_id, true);
+    if (userId) {
+      await captureServer({
+        event: 'subscription_cancel_requested',
+        properties: {},
+        distinctId: userId,
+        accountId,
+      });
+    }
     return { data: true };
   }
 
@@ -164,6 +189,14 @@ export const cancelSubscription = withServerAction(async function cancelSubscrip
   const signed = await signMockPayload(event);
   const res = await handleProviderWebhook('mock', signed, 'mock');
   if (res.status >= 400) return { data: null, error: 'cancel_failed' };
+  if (userId) {
+    await captureServer({
+      event: 'subscription_cancel_requested',
+      properties: {},
+      distinctId: userId,
+      accountId,
+    });
+  }
   return { data: true };
 });
 

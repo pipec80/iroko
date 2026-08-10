@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from '@/i18n/routing';
+import { track } from '@/lib/analytics/client';
 
 import type { AuthActionState } from '../actions';
 import { oauthAction, signUpAction } from '../actions';
@@ -58,7 +59,11 @@ export default function SignupPage() {
         <p className="text-muted-foreground mt-2 text-sm">{t('signup_desc')}</p>
       </div>
 
-      <form action={formAction} className="space-y-4" noValidate>
+      <form
+        action={formAction}
+        onSubmit={() => track('signup_started', { method: 'password' })}
+        className="space-y-4"
+        noValidate>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-foreground block text-sm font-semibold" htmlFor="first_name">

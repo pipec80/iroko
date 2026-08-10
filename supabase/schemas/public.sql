@@ -1122,6 +1122,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "website_url" "text",
     "company" "text",
     "pending_deletion" boolean DEFAULT false NOT NULL,
+    "analytics_consent" boolean,
     CONSTRAINT "profiles_bio_check" CHECK (("char_length"("bio") <= 500)),
     CONSTRAINT "profiles_company_check" CHECK (("char_length"("company") <= 100)),
     CONSTRAINT "profiles_website_url_check" CHECK (("char_length"("website_url") <= 255))
@@ -1144,6 +1145,10 @@ COMMENT ON COLUMN "public"."profiles"."website_url" IS 'Personal or professional
 
 
 COMMENT ON COLUMN "public"."profiles"."company" IS 'Company or organization name.';
+
+
+
+COMMENT ON COLUMN "public"."profiles"."analytics_consent" IS 'Synced from the cookie_consent.analytics cookie whenever AnalyticsProvider observes it for a logged-in user. NULL = never synced. Lets captureServer() (e.g. billing webhooks, which carry no browser cookie) check consent without one.';
 
 
 

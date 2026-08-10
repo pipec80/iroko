@@ -483,7 +483,8 @@
     "link_about": "Acerca de",
     "link_contact": "Contacto",
     "link_privacy": "Privacidad",
-    "link_terms": "Términos"
+    "link_terms": "Términos",
+    "link_cookie_preferences": "Preferencias de cookies"
   },
   "LegalTerms": {
     "eyebrow": "Legal",
@@ -557,7 +558,8 @@
       {
         "heading": "3. Cookies",
         "paragraphs": [
-          "Utilizamos cookies necesarias para el funcionamiento del servicio y, con tu consentimiento, cookies de analítica y marketing. Puedes gestionar tus preferencias en cualquier momento desde el banner de cookies."
+          "Utilizamos cookies necesarias para el funcionamiento del servicio y, con tu consentimiento, cookies de analítica y marketing. Puedes gestionar tus preferencias en cualquier momento desde el banner de cookies.",
+          "Cuando aceptas cookies de analítica, usamos PostHog (Estados Unidos) para entender cómo se usa el producto. Te identificamos con un ID interno, nunca con tu email, y no grabamos sesiones de pantalla."
         ]
       },
       {

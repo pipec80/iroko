@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   update: vi.fn(),
   revalidatePath: vi.fn(),
+  captureServer: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -19,6 +20,8 @@ vi.mock('@/lib/project-documents', () => ({
   create: mocks.create,
   update: mocks.update,
 }));
+
+vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
 
 vi.mock('next/cache', () => ({ revalidatePath: mocks.revalidatePath }));
 
@@ -105,12 +108,19 @@ describe('createDocument', () => {
     const result = await createDocument(makeFormData(validDoc));
     expect(result.error).toBe('create_failed');
     expect(result.error).not.toContain('relation');
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
   it('returns the new docId on success', async () => {
     const result = await createDocument(makeFormData(validDoc));
     expect(result.docId).toBe(DOC_ID);
     expect(result.error).toBeUndefined();
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'document_uploaded',
+      properties: {},
+      distinctId: 'user-uuid-1',
+      accountId: 'acct-uuid-1',
+    });
   });
 });
 

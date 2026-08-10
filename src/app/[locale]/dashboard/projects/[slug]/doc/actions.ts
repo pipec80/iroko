@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 
+import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
@@ -51,6 +52,12 @@ export const createDocument = withServerAction(async function createDocument(
       { action: 'documents.create.success', accountId, docId: doc.id },
       'Document created',
     );
+    await captureServer({
+      event: 'document_uploaded',
+      properties: {},
+      distinctId: userId,
+      accountId,
+    });
 
     return { docId: doc.id };
   } catch (err) {

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
   rpc: vi.fn(),
   redirect: vi.fn(),
+  captureServer: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -57,6 +58,10 @@ vi.mock('@/env', () => ({
 
 vi.mock('@/config/app.config', () => ({
   appConfig: { features: { onboarding: true } },
+}));
+
+vi.mock('@/lib/analytics/server', () => ({
+  captureServer: mocks.captureServer,
 }));
 
 import { appConfig } from '@/config/app.config';
@@ -144,6 +149,7 @@ describe('signUpAction', () => {
           href: expect.stringContaining('/signup/confirmation'),
         }),
       );
+      expect(mocks.captureServer).not.toHaveBeenCalled();
     });
 
     it('redirects when email_exists variant is returned', async () => {
@@ -159,6 +165,7 @@ describe('signUpAction', () => {
           href: expect.stringContaining('/signup/confirmation'),
         }),
       );
+      expect(mocks.captureServer).not.toHaveBeenCalled();
     });
 
     it('returns error code for other signup failures — not enumeration-safe errors', async () => {
@@ -171,9 +178,10 @@ describe('signUpAction', () => {
 
       expect(result.error).toBe('over_email_send_rate_limit');
       expect(mocks.redirect).not.toHaveBeenCalled();
+      expect(mocks.captureServer).not.toHaveBeenCalled();
     });
 
-    it('redirects to /signup/confirmation on successful new signup', async () => {
+    it('redirects to /signup/confirmation on successful new signup and captures signup_completed + account_created', async () => {
       mocks.signUp.mockResolvedValue({ error: null, data: { user: { id: 'uuid-123' } } });
 
       const fd = makeFormData(validSignupData);
@@ -184,6 +192,16 @@ describe('signUpAction', () => {
           href: expect.stringContaining('/signup/confirmation'),
         }),
       );
+      expect(mocks.captureServer).toHaveBeenCalledWith({
+        event: 'signup_completed',
+        properties: { method: 'password' },
+        distinctId: 'uuid-123',
+      });
+      expect(mocks.captureServer).toHaveBeenCalledWith({
+        event: 'account_created',
+        properties: { account_type: 'personal' },
+        distinctId: 'uuid-123',
+      });
     });
   });
 });
@@ -252,6 +270,11 @@ describe('signInAction', () => {
       await expect(signInAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
 
       expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+      expect(mocks.captureServer).toHaveBeenCalledWith({
+        event: 'login_completed',
+        properties: { method: 'password' },
+        distinctId: 'uuid-123',
+      });
     });
 
     // F3-C4: signInAction is the request that actually creates the session — the
@@ -302,6 +325,8 @@ describe('signInAction', () => {
       const result = await signInAction(PREV, fd);
 
       expect(result.success).toBe('mfa_required');
+      // login isn't complete until the MFA step passes — no premature capture.
+      expect(mocks.captureServer).not.toHaveBeenCalled();
       expect(result.mfaFactorId).toBe('factor-totp');
     });
   });
@@ -313,7 +338,7 @@ describe('verifyMfaAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRedirectThrows();
-    mocks.getClaims.mockResolvedValue({ data: { claims: { app_metadata: {} } } });
+    mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-1', app_metadata: {} } } });
     appConfig.features.onboarding = true;
   });
 
@@ -351,6 +376,7 @@ describe('verifyMfaAction', () => {
 
     expect(result.error).toBe('invalid_mfa_code');
     expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
   it('verifies against the challenge and redirects to /dashboard on success', async () => {
@@ -366,6 +392,16 @@ describe('verifyMfaAction', () => {
       code: '123456',
     });
     expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'mfa_challenge_completed',
+      properties: {},
+      distinctId: 'user-1',
+    });
+    expect(mocks.captureServer).toHaveBeenCalledWith({
+      event: 'login_completed',
+      properties: { method: 'password' },
+      distinctId: 'user-1',
+    });
   });
 
   // F3-C4: same fresh-session-decides-the-destination fix as signInAction.

@@ -60,6 +60,12 @@ describe('proxy matcher', () => {
     expect(matchesProxy('/sentry-tunnel')).toBe(false);
   });
 
+  it('should exclude /ingest so next-intl cannot locale-redirect PostHog capture requests', () => {
+    expect(matchesProxy('/ingest')).toBe(false);
+    expect(matchesProxy('/ingest/e')).toBe(false);
+    expect(matchesProxy('/ingest/static/array.js')).toBe(false);
+  });
+
   it('should intercept normal app routes', () => {
     expect(matchesProxy('/dashboard')).toBe(true);
     expect(matchesProxy('/es/dashboard')).toBe(true);
@@ -138,6 +144,14 @@ describe('buildCspHeader', () => {
 
     expect(connectSrc).not.toContain('127.0.0.1');
     expect(connectSrc).not.toContain('localhost');
+  });
+
+  // PostHog traffic goes through the same-origin /ingest reverse proxy
+  // (next.config.ts rewrites) — adding *.posthog.com here would be a sign
+  // someone bypassed the proxy and started calling PostHog directly.
+  it('should never allow *.posthog.com — PostHog traffic must stay same-origin via /ingest', () => {
+    const csp = buildCspHeader(false, false, CLOUD_SUPABASE_URL);
+    expect(csp).not.toContain('posthog.com');
   });
 });
 

@@ -5,6 +5,7 @@ import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
 import { env } from '@/env';
+import { captureServer } from '@/lib/analytics/server';
 import { sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
@@ -89,6 +90,10 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   if (!accountId) return { error: 'no_account' };
 
   const supabase = await createClient();
+  const {
+    data: { user: caller },
+  } = await supabase.auth.getUser();
+
   const { data: invitations, error } = await supabase.rpc('invite_members', {
     p_account_id: accountId,
     p_emails: parsed.data.emails,
@@ -102,6 +107,14 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     );
     const knownError =
       error.message?.includes('seat_limit_reached') ? 'seat_limit_reached' : 'invite_failed';
+    if (knownError === 'seat_limit_reached' && caller) {
+      await captureServer({
+        event: 'feature_limit_reached',
+        properties: { limit_key: 'seats_max' },
+        distinctId: caller.id,
+        accountId,
+      });
+    }
     return { error: knownError };
   }
 
@@ -113,9 +126,14 @@ export const inviteMembers = withServerAction(async function inviteMembers(
 
   // Enviar emails con los tokens retornados directamente por el RPC (plaintext, una sola vez).
   if (count > 0) {
-    const {
-      data: { user: caller },
-    } = await supabase.auth.getUser();
+    if (caller) {
+      await captureServer({
+        event: 'invitation_sent',
+        properties: { role: parsed.data.role, invited_count: count },
+        distinctId: caller.id,
+        accountId,
+      });
+    }
     const inviterEmail = caller?.email ?? 'un miembro del equipo';
     const locale = await getLocale();
 

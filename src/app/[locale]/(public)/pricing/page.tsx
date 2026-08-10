@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Check } from 'lucide-react';
 
+import { PlanViewedTracker } from '@/components/analytics/plan-viewed-tracker';
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 
@@ -81,6 +82,7 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
 
   return (
     <>
+      <PlanViewedTracker source="pricing_page" />
       <section className="mx-auto w-full max-w-7xl px-8 pt-16 pb-24 lg:pt-24">
         {/* Header */}
         <div className="mx-auto mb-20 max-w-3xl text-center">
