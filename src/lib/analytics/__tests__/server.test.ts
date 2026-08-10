@@ -170,7 +170,7 @@ describe('captureServer', () => {
     });
 
     it('falls back to profiles.analytics_consent when no cookie is present (e.g. a webhook)', async () => {
-      cookieGetMock.mockReturnValue();
+      cookieGetMock.mockImplementation(() => {});
       maybeSingleMock.mockResolvedValue({ data: { analytics_consent: true } });
       const { captureServer } = await import('../server');
 
@@ -184,7 +184,7 @@ describe('captureServer', () => {
     });
 
     it('does not capture when no cookie is present and profiles.analytics_consent is not true', async () => {
-      cookieGetMock.mockReturnValue();
+      cookieGetMock.mockImplementation(() => {});
       maybeSingleMock.mockResolvedValue({ data: { analytics_consent: null } });
       const { captureServer } = await import('../server');
 
@@ -198,7 +198,7 @@ describe('captureServer', () => {
     });
 
     it('does not capture when no cookie is present and the profile row does not exist', async () => {
-      cookieGetMock.mockReturnValue();
+      cookieGetMock.mockImplementation(() => {});
       maybeSingleMock.mockResolvedValue({ data: null });
       const { captureServer } = await import('../server');
 
