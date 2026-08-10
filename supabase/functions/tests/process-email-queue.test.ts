@@ -7,6 +7,7 @@ const REQUIRED_ENV = {
   SUPABASE_DB_URL: 'postgres://test',
   RESEND_API_KEY: 'test-key',
   FROM_EMAIL: 'noreply@example.com',
+  CRON_SECRET: 'test-cron-secret',
 };
 
 function makeMessage(overrides: Partial<QueueMessage> = {}): QueueMessage {
@@ -81,16 +82,44 @@ function makeDeps(opts: {
   };
 }
 
-const dummyRequest = new Request('http://localhost/');
+const dummyRequest = new Request('http://localhost/', {
+  headers: { 'X-Cron-Secret': REQUIRED_ENV.CRON_SECRET },
+});
 
 Deno.test('returns 500 and never opens the queue when an env var is missing', async () => {
-  for (const missing of ['SUPABASE_DB_URL', 'RESEND_API_KEY', 'FROM_EMAIL'] as const) {
+  for (const missing of [
+    'SUPABASE_DB_URL',
+    'RESEND_API_KEY',
+    'FROM_EMAIL',
+    'CRON_SECRET',
+  ] as const) {
     const { deps, openQueueCalls } = makeDeps({ env: { [missing]: undefined } });
     const res = await handleRequest(dummyRequest, deps);
     assertEquals(res.status, 500);
     assertEquals(openQueueCalls(), 0);
   }
 });
+
+Deno.test(
+  'returns 401 and never opens the queue when the cron secret header is missing',
+  async () => {
+    const { deps, openQueueCalls } = makeDeps({});
+    const res = await handleRequest(new Request('http://localhost/'), deps);
+    assertEquals(res.status, 401);
+    assertEquals(openQueueCalls(), 0);
+  },
+);
+
+Deno.test(
+  'returns 401 and never opens the queue when the cron secret header is wrong',
+  async () => {
+    const { deps, openQueueCalls } = makeDeps({});
+    const req = new Request('http://localhost/', { headers: { 'X-Cron-Secret': 'wrong' } });
+    const res = await handleRequest(req, deps);
+    assertEquals(res.status, 401);
+    assertEquals(openQueueCalls(), 0);
+  },
+);
 
 Deno.test('returns processed:0 and never calls fetch on an empty queue', async () => {
   const { deps, fetches, isClosed } = makeDeps({ messages: [] });

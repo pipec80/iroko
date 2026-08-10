@@ -29,12 +29,20 @@ export interface Deps {
   fetch: typeof fetch;
 }
 
-export async function handleRequest(_req: Request, deps: Deps): Promise<Response> {
+export async function handleRequest(req: Request, deps: Deps): Promise<Response> {
   const dbUrl = deps.env('SUPABASE_DB_URL');
   const resendApiKey = deps.env('RESEND_API_KEY');
   const fromEmail = deps.env('FROM_EMAIL');
-  if (!dbUrl || !resendApiKey || !fromEmail) {
+  const cronSecret = deps.env('CRON_SECRET');
+  if (!dbUrl || !resendApiKey || !fromEmail || !cronSecret) {
     return new Response('missing required env vars', { status: 500 });
+  }
+
+  // Solo el cron interno (pg_net) puede invocar este worker — nunca un end
+  // user. verify_jwt está apagado (config.toml) porque las secret keys
+  // nuevas de Supabase no son JWT; el secreto compartido se valida acá.
+  if (req.headers.get('X-Cron-Secret') !== cronSecret) {
+    return new Response('unauthorized', { status: 401 });
   }
 
   const queue = deps.openQueue(dbUrl);

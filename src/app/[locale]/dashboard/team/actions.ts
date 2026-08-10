@@ -8,6 +8,7 @@ import { env } from '@/env';
 import { captureServer } from '@/lib/analytics/server';
 import { sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
+import { notify } from '@/lib/notifications';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { inviteSchema, removeMemberSchema } from '@/lib/validation/team';
@@ -113,6 +114,17 @@ export const inviteMembers = withServerAction(async function inviteMembers(
         properties: { limit_key: 'seats_max' },
         distinctId: caller.id,
         accountId,
+      });
+      const locale = await getLocale();
+      await notify(caller.id, {
+        type: 'warning',
+        title: 'Alcanzaste el límite de miembros de tu plan',
+        link: `/${locale}/dashboard/billing`,
+      }).catch((err: unknown) => {
+        logger.error(
+          { action: 'team.invite.notify', accountId },
+          err instanceof Error ? err.message : 'Unknown error',
+        );
       });
     }
     return { error: knownError };

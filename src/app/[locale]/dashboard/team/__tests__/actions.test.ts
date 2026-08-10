@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
   revalidatePath: vi.fn(),
   captureServer: vi.fn(),
+  notify: vi.fn(async () => {}),
 }));
 
 const { mockSendInvitationEmail, mockGetUser, mockAdminFrom } = vi.hoisted(() => ({
@@ -56,6 +57,10 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 vi.mock('@/lib/analytics/server', () => ({
   captureServer: mocks.captureServer,
+}));
+
+vi.mock('@/lib/notifications', () => ({
+  notify: mocks.notify,
 }));
 
 import { getTeamMembers, inviteMembers, removeMember } from '../actions';
@@ -174,6 +179,7 @@ describe('inviteMembers', () => {
     const result = await inviteMembers(fd);
     expect(result.error).toBe('invite_failed');
     expect(mocks.captureServer).not.toHaveBeenCalled();
+    expect(mocks.notify).not.toHaveBeenCalled();
   });
 
   it('should surface seat_limit_reached as a typed error and capture feature_limit_reached', async () => {
@@ -188,6 +194,20 @@ describe('inviteMembers', () => {
       distinctId: 'user-1',
       accountId: ACCOUNT_ID,
     });
+    expect(mocks.notify).toHaveBeenCalledWith('user-1', {
+      type: 'warning',
+      title: 'Alcanzaste el límite de miembros de tu plan',
+      link: '/en/dashboard/billing',
+    });
+  });
+
+  it('should still surface seat_limit_reached when notify() fails', async () => {
+    mockAuthenticatedWithAccount();
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: 'seat_limit_reached' } });
+    mocks.notify.mockRejectedValueOnce(new Error('insert failed'));
+    const fd = makeFormData({ emails: 'user@example.com', role: 'member' });
+    const result = await inviteMembers(fd);
+    expect(result.error).toBe('seat_limit_reached');
   });
 
   it('should return success with count and revalidate on happy path', async () => {

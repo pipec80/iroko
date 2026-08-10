@@ -1409,7 +1409,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      accept_invitation: { Args: { p_token: string }; Returns: string }
+      accept_invitation: {
+        Args: { p_token: string }
+        Returns: {
+          account_id: string
+          invited_by: string
+        }[]
+      }
       admin_list_accounts: {
         Args: {
           p_cursor_created_at?: string
