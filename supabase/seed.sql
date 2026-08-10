@@ -42,7 +42,9 @@ ON CONFLICT (id) DO UPDATE SET
 --
 -- email_worker_secret debe ser EL MISMO valor que el secret de la Edge
 -- Function local (supabase/functions/.env → CRON_SECRET); si se cambia uno,
--- hay que cambiar el otro.
+-- hay que cambiar el otro. El valor de acá abajo es un placeholder fijo a
+-- propósito (no un secreto generado al azar) — solo protege una llamada
+-- Docker-a-Docker en una base descartable, nunca sale de la máquina.
 -- ============================================================================
 
 DO $$
@@ -53,7 +55,7 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'email_worker_secret') THEN
     PERFORM vault.create_secret(
-      '21c26bcebabe848f2cdfd10971ed3a3469cd419d22210dc32f25a4a7f42e7f37',
+      'local-dev-only-not-a-real-secret-do-not-reuse',
       'email_worker_secret'
     );
   END IF;

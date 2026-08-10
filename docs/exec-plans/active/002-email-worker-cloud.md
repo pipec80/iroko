@@ -155,10 +155,70 @@ message directly in Cloud — processed, queue emptied, Resend confirms
 from `private.email_worker_last_invocation` or the two new functions
 (expected — `private` isn't in the exposed API schema list).
 
+### Remaining design decisions, closed out
+
+- **Credential model** ("direct Postgres, service-role client, or another
+  narrow credential"): unchanged from the pre-existing worker — direct
+  Postgres via `SUPABASE_DB_URL` (now over `jsr:@db/postgres` instead of
+  `npm:postgres`, same credential, different driver). Still the right
+  call: the worker only needs `pgmq` operations, which have no PostgREST/
+  RPC surface, so a Supabase client (anon/service-role key) would add
+  nothing — direct Postgres is the narrower, more honest dependency.
+- **Alerting threshold and owner**: deliberately NOT built. No cron or
+  background job in this codebase has active alerting today — not even
+  `process_webhook_deliveries`, the closest precedent, which also only
+  logs/tracks status. Building paging/Slack/email alerting for just this
+  one worker would be inconsistent, disproportionate scope (YAGNI).
+  `private.email_worker_health()` makes the real status queryable on
+  demand — that's the deliberate stopping point until this codebase has
+  an alerting story for crons in general, not a per-worker one.
+
+### Step 12 (controlled failure), for real — 2026-08-10
+
+The unit tests cover the retry/exhaustion logic deterministically, but
+that's not the same as seeing a real provider rejection flow through the
+live system. Enqueued a second Cloud test message with an intentionally
+invalid address (`not-a-valid-email`). Next cron tick: Resend rejected it
+(non-2xx), the worker did **not** delete it — `read_ct` incremented to 1,
+message still present, visibility timeout reset (real, live confirmation
+of "provider failure leaves the message retryable", not just the unit
+test). Archived it afterward (`pgmq.archive`) so it doesn't sit retrying
+forever in the real queue — full exhaustion (5 reads) wasn't exercised
+live since the exhaustion branch is pure `read_ct >= 5` logic already
+covered deterministically by the unit tests; forcing 5 real cron cycles
+just to re-prove arithmetic wasn't worth the wait.
+
+### Other gaps closed on second pass (2026-08-10, after "check everything again")
+
+- `supabase/seed.sql` had the actual local-dev Vault secret value
+  committed as a real-looking random hex string — technically satisfies
+  nothing being _sensitive_, but violates the acceptance criterion's
+  letter ("secrets are absent from Git") and could read as a real leaked
+  secret to anyone scanning the repo. Replaced with an unambiguous
+  placeholder (`local-dev-only-not-a-real-secret-do-not-reuse`), same
+  value mirrored in `supabase/functions/.env` (gitignored).
+- `supabase functions list --project-ref rgrxlygtmvavqzkjyywg` run
+  explicitly for the Cloud-confirmation acceptance criterion (not just
+  inferred from the deploy command's own success output): `ACTIVE`,
+  version 1, `verify_jwt: false`.
+- The audit matrix (`docs/audits/2026-08-02-full-platform-audit.md`,
+  AUD-002 to AUD-004) was never updated to Completed — the plan's own
+  acceptance criteria required it, missed on the first pass. Fixed.
+
+**Known gap, deliberately not force-verified:** the `seed.sql` placeholder
+swap above was NOT re-run through a full `pnpm supa:reset` — the machine
+was down to ~0.4GB free RAM at the time (unrelated processes, not this
+work) and forcing a 10+-container local stack up under that pressure
+risked real instability. Confidence it's fine regardless: it's a literal
+string substitution in a `vault.create_secret(...)` call already proven
+to apply and work end-to-end earlier in this same session — the two
+places that must match (`seed.sql` and `supabase/functions/.env`) were
+verified identical by direct read. Re-run `pnpm supa:reset` once RAM
+allows, to fully close this out.
+
 **Still open:** delete the OLD (pre-rotation) Resend API key — deferred
 until the Vercel side also confirms it's on the new key, which needs a
-redeploy (next merge to `main` triggers it automatically). Not done here:
-committing/pushing this work — see chat for that decision.
+redeploy (next merge to `main` triggers it automatically).
 
 ## Problem
 
