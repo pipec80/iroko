@@ -25,7 +25,7 @@ PostHog should not be added yet. One P0 item must be closed first:
 
 1. Deploy and correctly invoke the email queue worker in Cloud.
 
-> **Revalidated 2026-08-10:** the email queue worker (item 1, the last open P0) is closed — see AUD-002 to AUD-004 below. All P0 items from this audit are now resolved.
+> **Revalidated 2026-08-10:** the email queue worker (item 1, the last open P0) is closed — see AUD-002 to AUD-004 below. All P0 items from this audit are now resolved. PostHog itself has since shipped (PR #109, AUD-016/AUD-017, corrected in this same pass — those two rows had incorrectly stayed Open/Blocked for over a month after merging). Two new P1s surfaced while closing out Plan 002: AUD-022 and AUD-023, exposed secrets (`SENTRY_AUTH_TOKEN`, Google OAuth) never rotated.
 
 > **Revalidated 2026-08-04:** the Next.js version alignment (originally P0 item 2) is closed — see AUD-006 below. The Sentry browser tunnel correction (originally P0 item 2 in the previous revalidation, PR #91) is also closed — see AUD-005 below.
 
@@ -68,10 +68,12 @@ PostHog should not be added yet. One P0 item must be closed first:
 | AUD-013 | E2E impersonation suite is skipped pending an admin/MFA fixture              | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed |
 | AUD-014 | Browser matrix is primarily Chromium and lacks automated Axe coverage        | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed |
 | AUD-015 | README/runtime tooling versions and some env documentation are stale         | P1       | Resolved (2026-08-05)              | 005  | Completed |
-| AUD-016 | Vercel Analytics and Speed Insights mount independently of analytics consent | P1       | Confirmed                          | 006  | Open      |
-| AUD-017 | No PostHog package, provider, taxonomy or privacy implementation exists      | P2       | Confirmed                          | 006  | Blocked   |
+| AUD-016 | Vercel Analytics and Speed Insights mount independently of analytics consent | P1       | Resolved by PR #109 (2026-08-06)   | 006  | Completed |
+| AUD-017 | No PostHog package, provider, taxonomy or privacy implementation exists      | P2       | Resolved by PR #109 (2026-08-06)   | 006  | Completed |
 | AUD-020 | CSP blocked the local Supabase origin in production-mode builds (E2E)        | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed |
 | AUD-021 | `notFound()` in `dashboard/admin/*` returns HTTP 200, not 404 (streaming)    | P2       | Documented by PR #105 (2026-08-05) | 005  | Deferred  |
+| AUD-022 | `SENTRY_AUTH_TOKEN` exposed in a local chat transcript, never rotated        | P1       | Reported, not reverified this pass | —    | Open      |
+| AUD-023 | Google OAuth client secret exposed in the same transcript, never rotated     | P1       | Reported, not reverified this pass | —    | Open      |
 
 ## P0 evidence
 
@@ -180,6 +182,12 @@ Risk: low — the content-level boundary (no data leak) holds, which is the prop
 
 Deferred: fixing this requires either restructuring the route to resolve the admin check before any streaming begins, or accepting the framework limitation. Out of scope for the testing-maturity work that surfaced it; a future pass should re-evaluate once a concrete need (e.g. compliance scanning) makes it worth the restructuring cost.
 
+### AUD-022, AUD-023 — `SENTRY_AUTH_TOKEN` and Google OAuth client secret exposed (Open)
+
+Added 2026-08-10 while closing Plan 002, whose own scope (a Resend API key exposed in a local chat transcript, rotated and the old key deleted as part of that plan) surfaced these two as siblings, exposed in the same transcript around the same time and never rotated. Unlike the Resend key, neither of these was previously entered into this audit's finding matrix — they existed only as an informal note carried between sessions, with no record in the project's own tracked documentation. That gap is the actual finding here as much as the exposure itself: a security-relevant fact should not depend on an AI assistant's memory being the only place it's written down.
+
+**Not independently reverified in this pass** — recorded from the prior session's own account of the exposure, not re-confirmed against Sentry/Google Cloud Console today. Before rotating, confirm current exposure status and everywhere each credential is actually consumed (the Resend rotation found it in 4 separate places — `.env.local`, an Edge Function's own `.env`, a GitHub Actions secret, and Vercel Production+Preview separately — expect a similar spread here, most likely `SENTRY_AUTH_TOKEN` in CI/Vercel build env for source map upload, and the Google secret in Supabase Auth's OAuth provider config plus any local env file).
+
 ## Security assessment
 
 ### Strong controls confirmed
@@ -239,19 +247,22 @@ Hardening work — done (2026-08-05, AUD-013/014/020, Plan 005 workstream E):
 
 Hardening work — still open:
 
-- add a Cloud smoke check for Sentry tunnel, Supabase workers and provider callbacks;
+- **add a Cloud smoke check for Sentry tunnel, Supabase workers and provider callbacks.** AUD-002 to AUD-004 (the email worker) is the concrete proof this matters, not a hypothetical: its cron reported `succeeded` in `cron.job_run_details` for as long as it was broken, because that only proves Postgres enqueued the HTTP request, never that the Edge Function actually answered it — the worker silently delivered zero emails until this audit found it by manual inspection, not by any automated signal. Sentry's tunnel has already broken silently once before (AUD-005 — next-intl's locale proxy redirected the POST and dropped every event, again with nothing surfacing the failure on its own). Provider webhook callbacks (Stripe, MercadoPago) are the same shape of risk: if signature verification or the endpoint URL breaks, a payment or cancellation stops reflecting in the account with no visible error, just a customer finding out first. All three share the same failure mode — an async, fire-and-forget integration where CI success says nothing about live Cloud behavior — and the same fix: a periodic synthetic check that actually exercises the live path (send a probe, confirm the real outcome) instead of trusting a queue-enqueue or a green pipeline as a proxy for delivery;
 - ensure Vercel automation bypass is correctly configured for protected previews;
-- AUD-021 (`notFound()` returning 200 instead of 404 in `dashboard/admin/*`) — documented, deferred, not blocking.
+- AUD-021 (`notFound()` returning 200 instead of 404 in `dashboard/admin/*`) — documented, deferred, not blocking;
+- AUD-022, AUD-023 (`SENTRY_AUTH_TOKEN` and Google OAuth secret exposed, never rotated) — see above.
 
 ## Caching and runtime behavior (Resolved 2026-08-04, AUD-008)
 
 The Supabase middleware used to set `Cache-Control: private, no-store` on every response passing through its path, regardless of whether there was a session to protect — public marketing pages lost CDN/static-cache benefits for no reason. Fixed by scoping the header to `claims != null` (authenticated response) or an actual cookie refresh, matching the original intent. Covered by a new test case in `middleware.test.ts`.
 
-## PostHog readiness
+## PostHog readiness (AUD-016, AUD-017 — Resolved by PR #109, 2026-08-06)
 
-The project already has a consent cookie model with `analytics` and `marketing` categories. PostHog is not installed and no event taxonomy exists.
+This section describes the pre-implementation state as it was on 2026-08-02; kept for historical context. PostHog is now implemented — Plan 006, `docs/exec-plans/completed/006-posthog-integration.md` — with every requirement below satisfied. This section (and the AUD-016/AUD-017 rows in the finding matrix) went unupdated for over a month after that PR merged; nobody revisits an audit doc once its own plan closes unless something makes them. Treat that as a standing risk for every future plan closure, not just PostHog's: closing a plan in `exec-plans/` does not automatically update this document.
 
-Before implementation:
+Original pre-implementation note: the project already had a consent cookie model with `analytics` and `marketing` categories. PostHog was not installed and no event taxonomy existed.
+
+Requirements that were set before implementation (all satisfied by PR #109):
 
 - all P0 plans must be complete;
 - analytics consent must control every optional analytics integration, including existing Vercel Analytics where legally/technically appropriate;
@@ -286,3 +297,4 @@ Update this table after each remediation.
 | AUD-020     | #105 | local `main`                | New `buildCspHeader` cases in `proxy.test.ts`; `settings.spec.ts`'s previously-flaky test clean across repeated isolated runs after the fix                                                                                                                                           | Claude Code | 2026-08-05 | Completed |
 | AUD-021     | #105 | local `main`                | Confirmed via trace: rendered content is the real 404 (no data leak), HTTP status is 200 — documented inline, deferred (not blocking)                                                                                                                                                 | Claude Code | 2026-08-05 | Deferred  |
 | —           | #105 | linked Cloud                | Post-merge: `supabase migration list --linked` → 119/119 migrations in parity, no local-only/Cloud-only drift (PR touched no schema)                                                                                                                                                  | Claude Code | 2026-08-05 | Completed |
+| AUD-016–017 | #109 | Vercel prod/preview         | PostHog shipped consent-gated, no autocapture, no Session Replay, 19-event typed taxonomy; Vercel Analytics/Speed Insights now gated by the same consent. Row corrected 2026-08-10 — stayed Open/Blocked in the matrix for over a month after this PR actually merged                 | Claude Code | 2026-08-10 | Completed |
