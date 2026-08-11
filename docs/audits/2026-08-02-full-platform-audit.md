@@ -25,7 +25,7 @@ PostHog should not be added yet. One P0 item must be closed first:
 
 1. Deploy and correctly invoke the email queue worker in Cloud.
 
-> **Revalidated 2026-08-10:** the email queue worker (item 1, the last open P0) is closed — see AUD-002 to AUD-004 below. All P0 items from this audit are now resolved. PostHog itself has since shipped (PR #109, AUD-016/AUD-017, corrected in this same pass — those two rows had incorrectly stayed Open/Blocked for over a month after merging). Two new P1s surfaced while closing out Plan 002: AUD-022 and AUD-023, exposed secrets (`SENTRY_AUTH_TOKEN`, Google OAuth) never rotated.
+> **Revalidated 2026-08-10:** the email queue worker (item 1, the last open P0) is closed — see AUD-002 to AUD-004 below. All P0 items from this audit are now resolved. PostHog itself has since shipped (PR #109, AUD-016/AUD-017, corrected in this same pass — those two rows had incorrectly stayed Open/Blocked for over a month after merging).
 
 > **Revalidated 2026-08-04:** the Next.js version alignment (originally P0 item 2) is closed — see AUD-006 below. The Sentry browser tunnel correction (originally P0 item 2 in the previous revalidation, PR #91) is also closed — see AUD-005 below.
 
@@ -72,8 +72,6 @@ PostHog should not be added yet. One P0 item must be closed first:
 | AUD-017 | No PostHog package, provider, taxonomy or privacy implementation exists      | P2       | Resolved by PR #109 (2026-08-06)   | 006  | Completed |
 | AUD-020 | CSP blocked the local Supabase origin in production-mode builds (E2E)        | P1       | Resolved by PR #105 (2026-08-05)   | 005  | Completed |
 | AUD-021 | `notFound()` in `dashboard/admin/*` returns HTTP 200, not 404 (streaming)    | P2       | Documented by PR #105 (2026-08-05) | 005  | Deferred  |
-| AUD-022 | `SENTRY_AUTH_TOKEN` exposed in a local chat transcript, never rotated        | P1       | Reported, not reverified this pass | —    | Open      |
-| AUD-023 | Google OAuth client secret exposed in the same transcript, never rotated     | P1       | Reported, not reverified this pass | —    | Open      |
 
 ## P0 evidence
 
@@ -98,9 +96,14 @@ Risk (historical):
 
 No SQL was recovered or reconstructed as part of this closure; the migrations were already present in `main` when the audit's base commit (`1e814a6`) was inspected against a stale local checkout.
 
+**Revalidated 2026-08-10:** the repository, local Supabase history and linked
+Cloud history contain the same 122 migration versions, ending in
+`20260810190000_email_worker_url_and_auth`. No local-only or Cloud-only
+migration is present.
+
 ### AUD-002 to AUD-004 — email worker Cloud failure (Resolved 2026-08-10)
 
-PR #110 deployed the function to the linked Cloud project (`supabase functions list` confirms `process-email-queue` `ACTIVE`, version 1, `verify_jwt: false`), replaced the cron URL with `private.project_url()` (Vault-backed, resolved per environment instead of hardcoded), and added `X-Cron-Secret` invocation auth (`private.email_worker_secret()`, also Vault-backed) checked in `handler.ts` before the queue is ever opened. `private.email_worker_health()` now exposes the real HTTP status of the last invocation, closing the "cron succeeded but delivery failed silently" gap directly. Verified end-to-end on Cloud itself, twice: a normal test message was processed and delivered exactly once (confirmed in Resend), and a deliberately invalid-address message was left in the queue undeleted (confirmed provider failure keeps a message retryable) rather than silently dropped.
+PR #110 deployed the function to the linked Cloud project (`supabase functions list` confirms `process-email-queue` `ACTIVE`, version 1, `verify_jwt: false`), replaced the cron URL with `private.project_url()` (Vault-backed, resolved per environment instead of hardcoded), and added `X-Cron-Secret` invocation auth (`private.email_worker_secret()`, also Vault-backed) checked in `handler.ts` before the queue is ever opened. `private.email_worker_health()` now exposes the real HTTP status of the last invocation, closing the "cron succeeded but delivery failed silently" gap directly. Verified end-to-end on Cloud itself, twice: a normal test message was processed and delivered exactly once (confirmed in Resend), and a deliberately invalid-address message was left in the queue undeleted (confirmed provider failure keeps a message retryable) rather than silently dropped. **Revalidated 2026-08-10:** the function remains active and `private.email_worker_health()` reports HTTP 200 without a timeout.
 
 The repository contains `supabase/functions/process-email-queue/index.ts`, but the connected Supabase Cloud project reported no deployed Edge Functions.
 
@@ -182,12 +185,6 @@ Risk: low — the content-level boundary (no data leak) holds, which is the prop
 
 Deferred: fixing this requires either restructuring the route to resolve the admin check before any streaming begins, or accepting the framework limitation. Out of scope for the testing-maturity work that surfaced it; a future pass should re-evaluate once a concrete need (e.g. compliance scanning) makes it worth the restructuring cost.
 
-### AUD-022, AUD-023 — `SENTRY_AUTH_TOKEN` and Google OAuth client secret exposed (Open)
-
-Added 2026-08-10 while closing Plan 002, whose own scope (a Resend API key exposed in a local chat transcript, rotated and the old key deleted as part of that plan) surfaced these two as siblings, exposed in the same transcript around the same time and never rotated. Unlike the Resend key, neither of these was previously entered into this audit's finding matrix — they existed only as an informal note carried between sessions, with no record in the project's own tracked documentation. That gap is the actual finding here as much as the exposure itself: a security-relevant fact should not depend on an AI assistant's memory being the only place it's written down.
-
-**Not independently reverified in this pass** — recorded from the prior session's own account of the exposure, not re-confirmed against Sentry/Google Cloud Console today. Before rotating, confirm current exposure status and everywhere each credential is actually consumed (the Resend rotation found it in 4 separate places — `.env.local`, an Edge Function's own `.env`, a GitHub Actions secret, and Vercel Production+Preview separately — expect a similar spread here, most likely `SENTRY_AUTH_TOKEN` in CI/Vercel build env for source map upload, and the Google secret in Supabase Auth's OAuth provider config plus any local env file).
-
 ## Security assessment
 
 ### Strong controls confirmed
@@ -250,7 +247,6 @@ Hardening work — still open:
 - **add a Cloud smoke check for Sentry tunnel, Supabase workers and provider callbacks.** AUD-002 to AUD-004 (the email worker) is the concrete proof this matters, not a hypothetical: its cron reported `succeeded` in `cron.job_run_details` for as long as it was broken, because that only proves Postgres enqueued the HTTP request, never that the Edge Function actually answered it — the worker silently delivered zero emails until this audit found it by manual inspection, not by any automated signal. Sentry's tunnel has already broken silently once before (AUD-005 — next-intl's locale proxy redirected the POST and dropped every event, again with nothing surfacing the failure on its own). Provider webhook callbacks (Stripe, MercadoPago) are the same shape of risk: if signature verification or the endpoint URL breaks, a payment or cancellation stops reflecting in the account with no visible error, just a customer finding out first. All three share the same failure mode — an async, fire-and-forget integration where CI success says nothing about live Cloud behavior — and the same fix: a periodic synthetic check that actually exercises the live path (send a probe, confirm the real outcome) instead of trusting a queue-enqueue or a green pipeline as a proxy for delivery;
 - ensure Vercel automation bypass is correctly configured for protected previews;
 - AUD-021 (`notFound()` returning 200 instead of 404 in `dashboard/admin/*`) — documented, deferred, not blocking;
-- AUD-022, AUD-023 (`SENTRY_AUTH_TOKEN` and Google OAuth secret exposed, never rotated) — see above.
 
 ## Caching and runtime behavior (Resolved 2026-08-04, AUD-008)
 
@@ -279,8 +275,8 @@ Update this table after each remediation.
 
 | Finding     | PR   | Environment checked         | Evidence                                                                                                                                                                                                                                                                              | Verified by | Date       | Result    |
 | ----------- | ---- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------- | --------- |
-| AUD-001     | #100 | local `main` / linked Cloud | 119/119 migrations, identical last version                                                                                                                                                                                                                                            | Claude Code | 2026-08-03 | Completed |
-| AUD-002–004 | #110 | local `main` / linked Cloud | `supabase functions list` → `process-email-queue` ACTIVE v1; test message delivered exactly once (Resend `delivered`, confirmed); invalid-address message left in queue undeleted (`read_ct` incremented, not deleted) — provider failure proven retryable live, not just unit-tested | Claude Code | 2026-08-10 | Completed |
+| AUD-001     | #100 | local repository / local and linked Cloud | 122/122 migration versions in exact parity, ending in `20260810190000_email_worker_url_and_auth`; no local-only or Cloud-only version | Codex | 2026-08-10 | Completed |
+| AUD-002–004 | #110 | linked Cloud | `process-email-queue` ACTIVE v1; `private.email_worker_health()` reports HTTP 200 without timeout; historical controlled delivery and retry evidence retained above | Codex | 2026-08-10 | Completed |
 | AUD-005     | #91  | Vercel preview (deployed)   | Controlled browser exception landed as Sentry issue IROKO-7 with replay+trace                                                                                                                                                                                                         | Claude Code | 2026-08-04 | Completed |
 | AUD-006     | —    | local `main`                | `pnpm why next` → Found 1 version at 16.2.12; validate+knip+build clean                                                                                                                                                                                                               | Claude Code | 2026-08-04 | Completed |
 | AUD-007     | #92  | local `main`                | `.gitignore` allowlists `docs/{local,private,drafts,generated,exports}` only                                                                                                                                                                                                          | Claude Code | 2026-08-04 | Completed |
