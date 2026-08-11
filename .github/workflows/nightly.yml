@@ -159,10 +159,35 @@ jobs:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
+          # TEMP diagnostic (AUD-025 root-cause investigation, remove once
+          # resolved): a bare curl failure (DNS/TLS/connection-level, not an
+          # HTTP error status) previously crashed this script with an opaque
+          # top-level exit code before any ::error:: message printed. Capture
+          # curl's own exit code explicitly instead of letting `set -e` kill
+          # the step silently, and print the target host (non-secret — a
+          # Supabase project ref is not sensitive) to confirm the URL secret
+          # actually resolved to something.
+          echo "target host: $(echo "$SUPABASE_URL" | sed -E 's#^https?://##; s#/.*##')"
+          echo "SUPABASE_URL length: ${#SUPABASE_URL}"
+
+          set +e
           response=$(curl -s -w "\n%{http_code}" -X POST "$SUPABASE_URL/rest/v1/rpc/get_email_worker_health" \
             -H "apikey: $SUPABASE_SECRET_KEY" \
             -H "Authorization: Bearer $SUPABASE_SECRET_KEY" \
             -H "Content-Type: application/json")
+          curl_exit=$?
+          set -e
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "::error::curl itself failed with exit code $curl_exit (connection-level failure, not an HTTP error status)"
+            echo "--- verbose retry for diagnostics ---"
+            curl -v -X POST "$SUPABASE_URL/rest/v1/rpc/get_email_worker_health" \
+              -H "apikey: $SUPABASE_SECRET_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SECRET_KEY" \
+              -H "Content-Type: application/json" || true
+            exit 1
+          fi
+
           http_code=$(echo "$response" | tail -1)
           body=$(echo "$response" | sed '$d')
 
