@@ -153,6 +153,12 @@ jobs:
     name: Email Worker Health
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    # Sin esto, secrets.NEXT_PUBLIC_SUPABASE_URL/SUPABASE_SECRET_KEY resuelven
+    # a los defaults de nivel repo (Supabase LOCAL, 127.0.0.1:54321 — usados
+    # por jobs que levantan su propio stack) en vez de los valores reales de
+    # Cloud, que solo viven en el environment "production" (mismo patrón que
+    # el job `build` de ci.yml).
+    environment: production
     steps:
       - name: Check private.email_worker_health() via Cloud RPC
         env:
