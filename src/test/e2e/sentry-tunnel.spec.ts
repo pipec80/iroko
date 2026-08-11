@@ -65,9 +65,18 @@ test.describe('Sentry tunnel', () => {
     });
 
     // TEMP diagnostic (AUD-024 root-cause investigation, remove once resolved):
-    // the CI failure only reported the status code (404), not the response
-    // body or which layer produced it (Next.js's own 404 vs. Sentry's ingest
-    // relayed verbatim). Logging both before asserting.
+    // prior run showed a 404 with Next.js's own __next_error__ shell (not
+    // Sentry's JSON), meaning Next's router itself has no route for
+    // /sentry-tunnel — it's not a proxy redirect or a Sentry-side rejection.
+    // Checking a SIBLING rewrite (next.config.ts's own /ingest/static/* for
+    // PostHog) isolates whether this is Sentry-plugin-specific or every
+    // custom rewrite is broken in this deployed build.
+    const ingestProbe = await request.get('/ingest/static/array.js');
+    console.log('ingest rewrite diagnostic (control)', {
+      status: ingestProbe.status(),
+      contentType: ingestProbe.headers()['content-type'],
+    });
+
     console.log('sentry-tunnel diagnostic', {
       status: response.status(),
       contentType: response.headers()['content-type'],
