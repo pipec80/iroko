@@ -1585,6 +1585,15 @@ export type Database = {
           trial_end: string
         }[]
       }
+      get_email_worker_health: {
+        Args: never
+        Returns: {
+          error_msg: string
+          invoked_at: string
+          status_code: number
+          timed_out: boolean
+        }[]
+      }
       get_my_account_id: { Args: never; Returns: string }
       get_my_accounts: {
         Args: never

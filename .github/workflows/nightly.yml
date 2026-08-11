@@ -24,6 +24,10 @@
 #                un envelope real y confirmar que /sentry-tunnel sigue
 #                entregando eventos a Sentry en Cloud. Es un valor público
 #                (va embebido en cada bundle de cliente), no un secreto real.
+#   NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY → ya existen para otros
+#                pasos de CI; el job email-worker-health (AUD-025) los
+#                reutiliza para llamar a la RPC public.get_email_worker_health()
+#                (service_role only) — no se agrega ningún secret nuevo.
 #
 # Al fallar, GitHub envía notificación por email automáticamente.
 # El reporte HTML de Playwright queda disponible en Actions → Artifacts.
@@ -138,6 +142,100 @@ jobs:
           name: nightly-playwright-report
           path: playwright-report/
           retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # JOB 1b: Salud del worker de email en Cloud (AUD-025)
+  #
+  # private.email_worker_health() ya expone el status HTTP real de la última
+  # invocación (Plan 002) — este job lo automatiza en vez de depender de una
+  # revisión manual. private no está expuesto por PostgREST, así que se llama
+  # a través de un wrapper SECURITY DEFINER en public gateado a service_role
+  # (migración 20260811200000_email_worker_health_rpc.sql) — reutiliza el
+  # SUPABASE_SECRET_KEY que CI ya tiene, sin secrets nuevos.
+  #
+  # cron corre cada minuto, así que en cualquier momento invoked_at debería
+  # tener segundos de antigüedad — 300s de margen es generoso, no ajustado.
+  # ─────────────────────────────────────────────
+  email-worker-health:
+    name: Email Worker Health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Sin esto, secrets.NEXT_PUBLIC_SUPABASE_URL/SUPABASE_SECRET_KEY resuelven
+    # a los defaults de nivel repo (Supabase LOCAL, 127.0.0.1:54321 — usados
+    # por jobs que levantan su propio stack) en vez de los valores reales de
+    # Cloud, que solo viven en el environment "production" (mismo patrón que
+    # el job `build` de ci.yml).
+    environment: production
+    steps:
+      - name: Check private.email_worker_health() via Cloud RPC
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          # A bare curl connection-level failure (DNS/TLS, not an HTTP error
+          # status) crashes the script with an opaque top-level exit code
+          # under `set -e` before any ::error:: message prints — happened
+          # once already (secrets.NEXT_PUBLIC_SUPABASE_URL resolving to the
+          # local-dev placeholder without `environment: production` above).
+          # Capture curl's own exit code explicitly and print the target host
+          # (non-secret — a Supabase project ref, not a credential) so a
+          # future failure is diagnosable from the log alone.
+          echo "target host: $(echo "$SUPABASE_URL" | sed -E 's#^https?://##; s#/.*##')"
+          echo "SUPABASE_URL length: ${#SUPABASE_URL}"
+
+          set +e
+          response=$(curl -s -w "\n%{http_code}" -X POST "$SUPABASE_URL/rest/v1/rpc/get_email_worker_health" \
+            -H "apikey: $SUPABASE_SECRET_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SECRET_KEY" \
+            -H "Content-Type: application/json")
+          curl_exit=$?
+          set -e
+
+          if [ "$curl_exit" -ne 0 ]; then
+            echo "::error::curl itself failed with exit code $curl_exit (connection-level failure, not an HTTP error status)"
+            echo "--- verbose retry for diagnostics ---"
+            curl -v -X POST "$SUPABASE_URL/rest/v1/rpc/get_email_worker_health" \
+              -H "apikey: $SUPABASE_SECRET_KEY" \
+              -H "Authorization: Bearer $SUPABASE_SECRET_KEY" \
+              -H "Content-Type: application/json" || true
+            exit 1
+          fi
+
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | sed '$d')
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::RPC call failed with HTTP $http_code: $body"
+            exit 1
+          fi
+
+          status_code=$(echo "$body" | jq -r '.[0].status_code')
+          timed_out=$(echo "$body" | jq -r '.[0].timed_out')
+          invoked_at=$(echo "$body" | jq -r '.[0].invoked_at')
+          error_msg=$(echo "$body" | jq -r '.[0].error_msg')
+
+          if [ "$status_code" = "null" ] || [ -z "$status_code" ]; then
+            echo "::error::email_worker_health: status_code es null — la última invocación no resolvió o nunca se registró un request_id"
+            exit 1
+          fi
+          if [ "$timed_out" = "true" ]; then
+            echo "::error::email_worker_health: la última invocación tuvo timeout"
+            exit 1
+          fi
+          if [ "$status_code" -lt 200 ] || [ "$status_code" -ge 300 ]; then
+            echo "::error::email_worker_health: la última invocación respondió HTTP $status_code (error_msg=$error_msg)"
+            exit 1
+          fi
+
+          invoked_epoch=$(date -d "$invoked_at" +%s)
+          now_epoch=$(date -u +%s)
+          age=$((now_epoch - invoked_epoch))
+          if [ "$age" -gt 300 ]; then
+            echo "::error::email_worker_health: última invocación hace ${age}s (>300s) — el cron puede haberse detenido"
+            exit 1
+          fi
+
+          echo "✅ email_worker_health OK — HTTP $status_code, hace ${age}s"
 
   # ─────────────────────────────────────────────
   # JOB 2: Advisors de base de datos (lint + security)
