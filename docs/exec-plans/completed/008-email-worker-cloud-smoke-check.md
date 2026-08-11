@@ -86,8 +86,23 @@ service_role`.
 - `supabase test db` — 188/188 pgTAP tests pass post-migration.
 - Manual REST calls against the local instance confirm the `anon`/`service_role`
   gate.
-- A manual `workflow_dispatch` of `nightly.yml` on the branch, checked
-  against the linked Cloud project, before merge.
+- Migration pushed to the linked Cloud project (approved explicitly) and
+  confirmed in parity via `supabase migration list --linked`.
+- Manual `workflow_dispatch` of `nightly.yml` on the branch, twice:
+  1. First attempt failed with a real `curl` exit 7 (connection-level, not
+     an HTTP error) — root-caused, not patched around: `secrets.NEXT_PUBLIC_SUPABASE_URL`
+     resolves to the local-dev placeholder (`http://127.0.0.1:54321`) at the
+     repository-secret level; the real Cloud value only lives in the
+     `production` GitHub Environment. Fixed by adding `environment: production`
+     to the job (same construct `ci.yml`'s `build` job already uses).
+  2. Second attempt failed differently — the job never started at all (empty
+     steps, no logs). The `production` environment has a branch-protection
+     deployment rule restricting it to protected branches (effectively
+     `main`); a feature-branch `workflow_dispatch` cannot resolve it, by
+     GitHub's own design. **End-to-end Cloud confirmation for this specific
+     job is therefore deferred to the first run on `main` after merge** —
+     documented here rather than skipped silently or claimed without
+     evidence.
 
 ## Rollback
 

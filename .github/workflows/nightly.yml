@@ -165,14 +165,14 @@ jobs:
           SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
-          # TEMP diagnostic (AUD-025 root-cause investigation, remove once
-          # resolved): a bare curl failure (DNS/TLS/connection-level, not an
-          # HTTP error status) previously crashed this script with an opaque
-          # top-level exit code before any ::error:: message printed. Capture
-          # curl's own exit code explicitly instead of letting `set -e` kill
-          # the step silently, and print the target host (non-secret — a
-          # Supabase project ref is not sensitive) to confirm the URL secret
-          # actually resolved to something.
+          # A bare curl connection-level failure (DNS/TLS, not an HTTP error
+          # status) crashes the script with an opaque top-level exit code
+          # under `set -e` before any ::error:: message prints — happened
+          # once already (secrets.NEXT_PUBLIC_SUPABASE_URL resolving to the
+          # local-dev placeholder without `environment: production` above).
+          # Capture curl's own exit code explicitly and print the target host
+          # (non-secret — a Supabase project ref, not a credential) so a
+          # future failure is diagnosable from the log alone.
           echo "target host: $(echo "$SUPABASE_URL" | sed -E 's#^https?://##; s#/.*##')"
           echo "SUPABASE_URL length: ${#SUPABASE_URL}"
 
