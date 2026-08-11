@@ -9,6 +9,7 @@ This directory is the versioned source of truth for engineering audits, executio
 - [Definition of Done](quality/definition-of-done.md)
 - [Testing strategy](quality/testing-strategy.md)
 - [Local synchronization and Codex runbook](runbooks/local-sync-and-codex.md)
+- [Email queue worker runbook](runbooks/email-queue.md)
 - [Codex remediation orchestrator](prompts/codex-remediation-orchestrator.md)
 - [Codex task template](prompts/codex-task-template.md)
 
@@ -16,14 +17,19 @@ This directory is the versioned source of truth for engineering audits, executio
 
 Execute these plans in dependency order. P2 is blocked until all P0 work is completed and verified.
 
-| Order | Plan                                                                              | Priority | Status                                   |
-| ----- | --------------------------------------------------------------------------------- | -------- | ---------------------------------------- |
-| 1     | [Supabase migration drift](exec-plans/completed/001-supabase-migration-drift.md)  | P0       | Completed (2026-08-03, via #100)         |
-| 2     | [Email worker in Supabase Cloud](exec-plans/active/002-email-worker-cloud.md)     | P0       | Open                                     |
-| 3     | [Sentry browser observability](exec-plans/completed/003-sentry-observability.md)  | P0       | Completed (2026-08-04, via #91)          |
-| 4     | [Next.js version alignment](exec-plans/completed/004-nextjs-version-alignment.md) | P0       | Completed (2026-08-04)                   |
-| 5     | [Quality and operations hardening](exec-plans/completed/005-quality-hardening.md) | P1       | Completed (2026-08-05)                   |
-| 6     | [PostHog product analytics](exec-plans/active/006-posthog-integration.md)         | P2       | Deferred — separate process, not started |
+Note: this branch does not yet include the docs housekeeping/PostHog-plan
+closure landed on a sibling branch (AUD-024, `feat/sentry-tunnel-cloud-smoke-check`)
+— some rows below may still read as stale until both merge.
+
+| Order | Plan                                                                                          | Priority | Status                                   |
+| ----- | --------------------------------------------------------------------------------------------- | -------- | ---------------------------------------- |
+| 1     | [Supabase migration drift](exec-plans/completed/001-supabase-migration-drift.md)              | P0       | Completed (2026-08-03, via #100)         |
+| 2     | [Email worker in Supabase Cloud](exec-plans/active/002-email-worker-cloud.md)                 | P0       | Open                                     |
+| 3     | [Sentry browser observability](exec-plans/completed/003-sentry-observability.md)              | P0       | Completed (2026-08-04, via #91)          |
+| 4     | [Next.js version alignment](exec-plans/completed/004-nextjs-version-alignment.md)             | P0       | Completed (2026-08-04)                   |
+| 5     | [Quality and operations hardening](exec-plans/completed/005-quality-hardening.md)             | P1       | Completed (2026-08-05)                   |
+| 6     | [PostHog product analytics](exec-plans/active/006-posthog-integration.md)                     | P2       | Deferred — separate process, not started |
+| 8     | [Email worker Cloud health check](exec-plans/completed/008-email-worker-cloud-smoke-check.md) | P1       | Completed (2026-08-11)                   |
 
 ## Directory policy
 

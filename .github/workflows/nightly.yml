@@ -19,6 +19,10 @@
 #                Checkpoint (429 + challenge JS); sin este secret ni curl ni
 #                Playwright pasan. Generarlo en Vercel → proyecto → Settings →
 #                Deployment Protection → Protection Bypass for Automation.
+#   NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY → ya existen para otros
+#                pasos de CI; el job email-worker-health (AUD-025) los
+#                reutiliza para llamar a la RPC public.get_email_worker_health()
+#                (service_role only) — no se agrega ningún secret nuevo.
 #
 # Al fallar, GitHub envía notificación por email automáticamente.
 # El reporte HTML de Playwright queda disponible en Actions → Artifacts.
@@ -131,6 +135,69 @@ jobs:
           name: nightly-playwright-report
           path: playwright-report/
           retention-days: 14
+
+  # ─────────────────────────────────────────────
+  # JOB 1b: Salud del worker de email en Cloud (AUD-025)
+  #
+  # private.email_worker_health() ya expone el status HTTP real de la última
+  # invocación (Plan 002) — este job lo automatiza en vez de depender de una
+  # revisión manual. private no está expuesto por PostgREST, así que se llama
+  # a través de un wrapper SECURITY DEFINER en public gateado a service_role
+  # (migración 20260811200000_email_worker_health_rpc.sql) — reutiliza el
+  # SUPABASE_SECRET_KEY que CI ya tiene, sin secrets nuevos.
+  #
+  # cron corre cada minuto, así que en cualquier momento invoked_at debería
+  # tener segundos de antigüedad — 300s de margen es generoso, no ajustado.
+  # ─────────────────────────────────────────────
+  email-worker-health:
+    name: Email Worker Health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check private.email_worker_health() via Cloud RPC
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST "$SUPABASE_URL/rest/v1/rpc/get_email_worker_health" \
+            -H "apikey: $SUPABASE_SECRET_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SECRET_KEY" \
+            -H "Content-Type: application/json")
+          http_code=$(echo "$response" | tail -1)
+          body=$(echo "$response" | sed '$d')
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::RPC call failed with HTTP $http_code: $body"
+            exit 1
+          fi
+
+          status_code=$(echo "$body" | jq -r '.[0].status_code')
+          timed_out=$(echo "$body" | jq -r '.[0].timed_out')
+          invoked_at=$(echo "$body" | jq -r '.[0].invoked_at')
+          error_msg=$(echo "$body" | jq -r '.[0].error_msg')
+
+          if [ "$status_code" = "null" ] || [ -z "$status_code" ]; then
+            echo "::error::email_worker_health: status_code es null — la última invocación no resolvió o nunca se registró un request_id"
+            exit 1
+          fi
+          if [ "$timed_out" = "true" ]; then
+            echo "::error::email_worker_health: la última invocación tuvo timeout"
+            exit 1
+          fi
+          if [ "$status_code" -lt 200 ] || [ "$status_code" -ge 300 ]; then
+            echo "::error::email_worker_health: la última invocación respondió HTTP $status_code (error_msg=$error_msg)"
+            exit 1
+          fi
+
+          invoked_epoch=$(date -d "$invoked_at" +%s)
+          now_epoch=$(date -u +%s)
+          age=$((now_epoch - invoked_epoch))
+          if [ "$age" -gt 300 ]; then
+            echo "::error::email_worker_health: última invocación hace ${age}s (>300s) — el cron puede haberse detenido"
+            exit 1
+          fi
+
+          echo "✅ email_worker_health OK — HTTP $status_code, hace ${age}s"
 
   # ─────────────────────────────────────────────
   # JOB 2: Advisors de base de datos (lint + security)
