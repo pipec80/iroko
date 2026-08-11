@@ -64,6 +64,16 @@ test.describe('Sentry tunnel', () => {
       headers: { 'Content-Type': 'application/x-sentry-envelope' },
     });
 
+    // TEMP diagnostic (AUD-024 root-cause investigation, remove once resolved):
+    // the CI failure only reported the status code (404), not the response
+    // body or which layer produced it (Next.js's own 404 vs. Sentry's ingest
+    // relayed verbatim). Logging both before asserting.
+    console.log('sentry-tunnel diagnostic', {
+      status: response.status(),
+      contentType: response.headers()['content-type'],
+      body: (await response.text()).slice(0, 500),
+    });
+
     expect(response.status()).toBe(200);
   });
 });
