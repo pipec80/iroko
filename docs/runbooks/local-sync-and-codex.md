@@ -95,7 +95,7 @@ Read:
 Get-Content AGENTS.md   # local, no versionado (decidido en #97) — sáltalo si no existe en tu checkout
 Get-Content docs\index.md
 Get-Content docs\audits\2026-08-02-full-platform-audit.md
-Get-ChildItem docs\exec-plans\active
+Get-ChildItem docs\exec-plans\completed
 ```
 
 Review the Git diff against `main`:
@@ -153,18 +153,9 @@ Then give Codex a task based on:
 docs/prompts/codex-task-template.md
 ```
 
-Use one branch and one pull request per bounded problem.
-
-Recommended order:
-
-```text
-001 migration drift
-002 Cloud email worker
-003 Sentry observability
-004 Next.js alignment
-005 quality hardening workstreams
-006 PostHog
-```
+Use one branch and one pull request per bounded problem. The six original
+stabilization plans are completed records; do not reopen them for unrelated
+work. A new audit finding should receive its own bounded plan and branch.
 
 ## 8. Local validation before push
 
@@ -214,5 +205,4 @@ Stop Codex and request human review if it proposes:
 - `db push --linked` while drift remains;
 - deleting production data or indexes;
 - merging directly to `main`;
-- starting PostHog before P0 completion;
 - committing anything under `docs/local/` or `docs/private/`.

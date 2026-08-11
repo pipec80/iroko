@@ -19,6 +19,11 @@
 #                Checkpoint (429 + challenge JS); sin este secret ni curl ni
 #                Playwright pasan. Generarlo en Vercel → proyecto → Settings →
 #                Deployment Protection → Protection Bypass for Automation.
+#   NEXT_PUBLIC_SENTRY_DSN → usado solo por el smoke @smoke de
+#                src/test/e2e/sentry-tunnel.spec.ts (AUD-024) para construir
+#                un envelope real y confirmar que /sentry-tunnel sigue
+#                entregando eventos a Sentry en Cloud. Es un valor público
+#                (va embebido en cada bundle de cliente), no un secreto real.
 #   NEXT_PUBLIC_SUPABASE_URL / SUPABASE_SECRET_KEY → ya existen para otros
 #                pasos de CI; el job email-worker-health (AUD-025) los
 #                reutiliza para llamar a la RPC public.get_email_worker_health()
@@ -127,6 +132,8 @@ jobs:
           # playwright.config.ts lo convierte en extraHTTPHeaders para saltar
           # el Security Checkpoint de Vercel en cada request de los tests.
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+          # AUD-024: construye el envelope real del smoke check de /sentry-tunnel.
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
