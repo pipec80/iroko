@@ -11,6 +11,28 @@ import { expect, test } from '@playwright/test';
  * proxy itself, not whether the request ultimately reaches Sentry's ingest.
  */
 
+/**
+ * The tunnel rewrite `withSentryConfig` injects (@sentry/nextjs
+ * config/withSentryConfig/tunnel.ts) only matches requests carrying
+ * `?o=<orgId>&p=<projectId>[&r=<region>]` — the browser SDK appends these
+ * itself when it builds the tunnel URL from the DSN. It is NOT a generic
+ * relay keyed off the envelope body's own `dsn` field. Parsing the DSN here
+ * mirrors exactly what the SDK does, so the smoke check exercises the same
+ * match the rewrite requires.
+ */
+function parseDsnForTunnel(dsn: string): { orgId: string; projectId: string; region?: string } {
+  const dsnMatch = /^https?:\/\/[^@]+@([^/]+)\/(\d+)$/.exec(dsn);
+  const host = dsnMatch?.[1];
+  const projectId = dsnMatch?.[2];
+  if (!host || !projectId) throw new Error(`Unexpected NEXT_PUBLIC_SENTRY_DSN shape: ${dsn}`);
+
+  const hostMatch = /^o(\d+)\.ingest\.(?:([a-z]{2,3})\.)?sentry\.io$/.exec(host);
+  const orgId = hostMatch?.[1];
+  if (!orgId) throw new Error(`Unexpected Sentry DSN host shape: ${host}`);
+
+  return { orgId, projectId, region: hostMatch[2] };
+}
+
 test.describe('Sentry tunnel', () => {
   test('POST /sentry-tunnel is not locale-redirected by the proxy', async ({ request }) => {
     const response = await request.post('/sentry-tunnel', {
@@ -24,13 +46,13 @@ test.describe('Sentry tunnel', () => {
   // Cloud-only (AUD-024, docs/runbooks/sentry-tunnel-smoke.md): the test above
   // only proves the proxy stops redirecting — it never proves an event
   // survives the full round trip to Sentry's real ingest. That gap is exactly
-  // how AUD-005 stayed silent until a manual check found it. This test hand-
-  // builds a minimal, valid envelope (the tunnel route withSentryConfig
-  // injects is a pure relay: it reads `dsn` off the envelope's first line and
-  // forwards the body verbatim to Sentry, returning Sentry's own response) —
-  // a 200 here is Sentry's own confirmation, not an artifact of our code.
-  // Guarded to nightly/production only (PLAYWRIGHT_BASE_URL) so every PR run
-  // against local Supabase doesn't spend the Sentry free-tier error quota.
+  // how AUD-005 stayed silent until a manual check found it. This test sends
+  // a real envelope to the tunnel URL shaped exactly like the browser SDK
+  // shapes it (query params carrying org/project, matched by the rewrite
+  // withSentryConfig injects) — a 200 here is Sentry's own confirmation, not
+  // an artifact of our code. Guarded to nightly/production only
+  // (PLAYWRIGHT_BASE_URL) so every PR run against local Supabase doesn't
+  // spend the Sentry free-tier error quota.
   test('Cloud @smoke: a real envelope through /sentry-tunnel reaches Sentry', async ({
     request,
   }) => {
@@ -38,6 +60,9 @@ test.describe('Sentry tunnel', () => {
 
     const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
     if (!dsn) throw new Error('NEXT_PUBLIC_SENTRY_DSN is required for this Cloud smoke check');
+
+    const { orgId, projectId, region } = parseDsnForTunnel(dsn);
+    const tunnelUrl = `/sentry-tunnel?o=${orgId}&p=${projectId}${region ? `&r=${region}` : ''}`;
 
     const eventId = randomUUID().replace(/-/g, '');
     const event = {
@@ -59,28 +84,9 @@ test.describe('Sentry tunnel', () => {
       '\n',
     );
 
-    const response = await request.post('/sentry-tunnel', {
+    const response = await request.post(tunnelUrl, {
       data: envelope,
       headers: { 'Content-Type': 'application/x-sentry-envelope' },
-    });
-
-    // TEMP diagnostic (AUD-024 root-cause investigation, remove once resolved):
-    // prior run showed a 404 with Next.js's own __next_error__ shell (not
-    // Sentry's JSON), meaning Next's router itself has no route for
-    // /sentry-tunnel — it's not a proxy redirect or a Sentry-side rejection.
-    // Checking a SIBLING rewrite (next.config.ts's own /ingest/static/* for
-    // PostHog) isolates whether this is Sentry-plugin-specific or every
-    // custom rewrite is broken in this deployed build.
-    const ingestProbe = await request.get('/ingest/static/array.js');
-    console.log('ingest rewrite diagnostic (control)', {
-      status: ingestProbe.status(),
-      contentType: ingestProbe.headers()['content-type'],
-    });
-
-    console.log('sentry-tunnel diagnostic', {
-      status: response.status(),
-      contentType: response.headers()['content-type'],
-      body: (await response.text()).slice(0, 500),
     });
 
     expect(response.status()).toBe(200);
