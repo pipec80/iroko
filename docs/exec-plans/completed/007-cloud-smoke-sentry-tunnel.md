@@ -30,12 +30,9 @@ still silently drop every browser-side event with no automated signal.
 
 ## Design decisions
 
-- **Real envelope over a hand-waved probe.** The tunnel route
-  `withSentryConfig` injects is a pure relay — it reads the `dsn` from the
-  envelope's own first line and forwards the body verbatim to Sentry,
-  returning Sentry's response unmodified. Sending a real, minimal, valid
-  envelope and checking for `200` is a faithful confirmation that Sentry
-  itself accepted the event, not an artifact of our own code.
+- **Real envelope over a hand-waved probe.** Sending a real, minimal, valid
+  envelope and checking for Sentry's own `200` is a faithful confirmation
+  that Sentry itself accepted the event, not an artifact of our own code.
 - **No production code change.** An earlier design considered exposing
   `window.Sentry` globally to trigger `captureMessage()` from a browser
   context in Playwright. Discarded: it adds a line to
@@ -43,6 +40,28 @@ still silently drop every browser-side event with no automated signal.
   second verification layer (Sentry's REST API, with uncertain
   `SENTRY_AUTH_TOKEN` scope and search-index lag risk). Building the
   envelope directly from the test's own Node context needs neither.
+- **The tunnel URL must carry `?o=<orgId>&p=<projectId>[&r=<region>]`.**
+  The first implementation wrongly assumed the tunnel route
+  `withSentryConfig` injects is a generic relay that reads `dsn` from the
+  envelope's own first line. It is not: reading the exact installed
+  `@sentry/nextjs` version's source
+  (`config/withSentryConfig/tunnel.ts`, fetched from
+  `getsentry/sentry-javascript` at tag `10.67.0`) showed the injected
+  rewrite only matches requests carrying those query params — the browser
+  SDK appends them itself, derived from the DSN, when building the tunnel
+  URL. The first version's bare `POST /sentry-tunnel` matched no route at
+  all and got Next.js's own 404. This was caught and root-caused, not
+  worked around: reproduced the same 404 in a fully local
+  `pnpm build && pnpm start` (ruling out anything Vercel-specific), then
+  isolated it to the Sentry rewrite specifically by checking a sibling
+  rewrite in the same `next.config.ts` (PostHog's `/ingest/static/*`, added
+  by PR #109), which returned a healthy `200` both locally and in
+  production — proving the app's own `rewrites()` composition works and the
+  gap was specific to how the smoke check itself hit the Sentry tunnel.
+  Fixed by parsing the DSN in the test and building the URL exactly like
+  the SDK does. **No application code changed** — the bug was entirely in
+  the check's own request shape, confirmed by a real, successful `200` and
+  a real Sentry issue (`IROKO-B`) after the fix.
 - **Cloud/nightly-only.** Guarded by
   `test.skip(!process.env.PLAYWRIGHT_BASE_URL, ...)` (the same pattern
   `analytics.spec.ts`/`onboarding.spec.ts` already use, inverted) so it runs
@@ -84,9 +103,12 @@ still silently drop every browser-side event with no automated signal.
 - `pnpm typecheck && pnpm lint && pnpm format:check` clean.
 - `pnpm test:e2e` locally confirms the new test is skipped (no
   `PLAYWRIGHT_BASE_URL`).
-- Manual `nightly.yml` dispatch on the branch, followed by a Sentry lookup
-  confirming the `sentry-tunnel-cloud-smoke-check` fingerprint's `lastSeen`
-  matches the run.
+- Manual `nightly.yml` dispatch on the branch: first attempt (bare POST,
+  no query params) failed with a real `404` — root-caused as above, not
+  dismissed. After the fix, a second dispatch
+  (run `31514594343`) passed 17/17, and `search_issues` confirmed
+  `IROKO-B` ("Cloud smoke check — /sentry-tunnel round trip") landed in
+  Sentry with `firstSeen`/`lastSeen` matching the run.
 
 ## Rollback
 

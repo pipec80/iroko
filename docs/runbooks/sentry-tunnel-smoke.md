@@ -22,17 +22,40 @@ working after that. This check closes that gap.
 
 `src/test/e2e/sentry-tunnel.spec.ts` has a second test, tagged `@smoke`, that:
 
-1. Hand-builds a minimal, valid Sentry envelope (event id, a stable
-   `fingerprint`, and a `smoke_check` tag) using the public
-   `NEXT_PUBLIC_SENTRY_DSN`.
-2. POSTs it to `/sentry-tunnel` on the real deployed app.
-3. Asserts the response is `200`.
+1. Parses the public `NEXT_PUBLIC_SENTRY_DSN` to extract the org id, project
+   id and (optional) region.
+2. Hand-builds a minimal, valid Sentry envelope (event id, a stable
+   `fingerprint`, and a `smoke_check` tag).
+3. POSTs it to `/sentry-tunnel?o=<orgId>&p=<projectId>[&r=<region>]` on the
+   real deployed app — the exact URL shape the browser SDK itself builds.
+4. Asserts the response is `200`.
 
-The tunnel route `withSentryConfig` injects is a pure relay: it reads the
-`dsn` from the envelope's first line and forwards the body verbatim to
-Sentry's real ingest, returning Sentry's own response unmodified. A `200`
-here is Sentry's own confirmation the event was accepted — not something our
-own code fabricates.
+**The tunnel rewrite is not a generic relay keyed off the envelope body.**
+`withSentryConfig` (`@sentry/nextjs`, `config/withSentryConfig/tunnel.ts`)
+injects a Next.js rewrite that only matches requests carrying
+`?o=<orgId>&p=<projectId>[&r=<region>]` as query parameters — the browser
+SDK appends these itself when it builds the tunnel URL from the DSN. A bare
+`POST /sentry-tunnel` with no query params matches no route at all and gets
+Next.js's own 404 (`__next_error__` shell), which is exactly what an earlier
+version of this check hit before that mechanism was understood (see the
+"First version got this wrong" note below). Once the query params are
+present and correct, Next.js's rewrite forwards the body to Sentry's real
+ingest and returns Sentry's own response — a `200` here is Sentry's own
+confirmation the event was accepted, not something our own code fabricates.
+
+### First version got this wrong (2026-08-11)
+
+The first implementation of this check assumed the tunnel route reads `dsn`
+from the envelope body and relays based on that alone. It sent a bare POST
+with no query string, got a real `404` against production, and — before
+concluding the tunnel was broken — the investigation reproduced the same
+404 in a fully local build (`pnpm build && pnpm start`), confirmed a sibling
+rewrite in the same `next.config.ts` (PostHog's `/ingest/static/*`) worked
+fine (ruling out a general rewrites-broken-in-this-build theory), and then
+read the exact installed `@sentry/nextjs` version's source
+(`config/withSentryConfig/tunnel.ts`) to find the real matching rule. There
+was no production regression — the check's own request was shaped wrong.
+Fixed by parsing the DSN and building the URL the same way the SDK does.
 
 The test is guarded to run **only** against a deployed target
 (`test.skip(!process.env.PLAYWRIGHT_BASE_URL, ...)`), so it runs exclusively
@@ -60,14 +83,19 @@ required.
 
 From `nightly.yml`'s `smoke` job logs:
 
-- **Pass** (`200`): the tunnel is exclude from the proxy matcher and Sentry's
-  ingest accepted the event — the full path from browser SDK to Sentry is
-  intact.
-- **404/307**: the proxy is intercepting/redirecting `/sentry-tunnel` again
-  — the exact AUD-005 regression. Check `src/proxy.ts`'s matcher first.
-- **Any other non-200** (401/403/429): Sentry rejected the envelope —
-  check `NEXT_PUBLIC_SENTRY_DSN` validity, org/project status, or rate
-  limiting before assuming a code regression.
+- **Pass** (`200`): the tunnel rewrite is matching and Sentry's ingest
+  accepted the event — the full path from browser SDK to Sentry is intact.
+- **404 with Next.js's own `__next_error__` shell** (check the response
+  body, not just the status): either the proxy is intercepting/redirecting
+  `/sentry-tunnel` again (the AUD-005 regression — check `src/proxy.ts`'s
+  matcher first), or the tunnel rewrite itself isn't matching (check that
+  `next.config.ts` still configures `tunnelRoute: '/sentry-tunnel'` and that
+  the test's query params still match what the installed `@sentry/nextjs`
+  version's rewrite expects — that shape is not a stable public contract,
+  it has changed across SDK versions before).
+- **Any other non-200** (401/403/429): Sentry rejected the envelope after a
+  successful rewrite match — check `NEXT_PUBLIC_SENTRY_DSN` validity,
+  org/project status, or rate limiting before assuming a code regression.
 
 To confirm delivery independently, search Sentry for the issue with
 fingerprint `sentry-tunnel-cloud-smoke-check` and check its `lastSeen`
