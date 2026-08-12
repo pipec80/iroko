@@ -39,11 +39,14 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   let workspaceName = '';
   if (accountId) {
-    const { data: account } = await supabase
+    const { data: account, error: accountError } = await supabase
       .from('accounts')
       .select('name')
       .eq('id', accountId)
       .maybeSingle();
+    if (accountError) {
+      logger.error({ action: 'get_account_name', accountId }, accountError.message);
+    }
     workspaceName = account?.name ?? '';
   }
 
