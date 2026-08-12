@@ -172,6 +172,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                 <SheetDescription className="sr-only">
                   Menú lateral para navegación en dispositivos móviles.
                 </SheetDescription>
+                {/* TODO(Task 8): pass activeAccountId once AppTopbarClient receives it — see app-sidebar-client.tsx Props */}
                 <AppSidebarClient orgs={orgs} />
               </SheetContent>
             </Sheet>

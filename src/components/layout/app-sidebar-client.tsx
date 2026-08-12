@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
-import { switchAccount } from '@/app/[locale]/dashboard/actions';
 import { Link, usePathname } from '@/i18n/routing';
 import type { Database } from '@/types/database';
 import { appConfig } from '@/config/app.config';
@@ -23,6 +22,8 @@ import { storageUrl } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 
 import { CreateTeamDialog } from './create-team-dialog';
+import { getOrgTone, orgInitials } from './org-utils';
+import { OrgSwitchButton } from './org-switch-button';
 
 type MembershipRole = Database['public']['Enums']['membership_role'];
 type AccountType = Database['public']['Enums']['account_type'];
@@ -36,26 +37,6 @@ export type OrgAccount = {
   logo_url: string;
   plan?: string;
 };
-
-const ORG_TONES = ['var(--color-poppy)', 'var(--color-cobalt)', 'var(--color-ink)'];
-
-function getOrgTone(index: number): string {
-  return ORG_TONES[index % ORG_TONES.length] ?? 'var(--color-poppy)';
-}
-
-function orgInitials(name: string): string {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? '')
-    .join('');
-}
-
-/** `<form action>` requires `void | Promise<void>` — discard switchAccount's return. */
-async function handleSwitchAccount(formData: FormData): Promise<void> {
-  await switchAccount(formData);
-}
 
 type Props = { orgs: OrgAccount[]; activeAccountId?: string | null };
 
@@ -211,58 +192,12 @@ export function AppSidebarClient({ orgs, activeAccountId = null }: Props) {
               if (e.key === 'Escape') setIsOpen(false);
             }}>
             {orgs.map((org, i) => (
-              <form key={org.account_id} action={handleSwitchAccount} className="contents">
-                <input type="hidden" name="accountId" value={org.account_id} />
-                <button
-                  type="submit"
-                  role="option"
-                  aria-selected={org.account_id === selectedOrg?.account_id}
-                  className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5"
-                  style={{
-                    border: 0,
-                    background:
-                      org.account_id === selectedOrg?.account_id ?
-                        'var(--surface-3)'
-                      : 'transparent',
-                  }}>
-                  {storageUrl(org.logo_url) ?
-                    <div className="relative size-[22px] shrink-0 overflow-hidden rounded-sm">
-                      <Image
-                        src={storageUrl(org.logo_url) as string}
-                        alt={org.name}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                      />
-                    </div>
-                  : <div
-                      className="inline-flex shrink-0 items-center justify-center"
-                      style={{
-                        width: 22,
-                        height: 22,
-                        borderRadius: 4,
-                        background: getOrgTone(i),
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: 10,
-                      }}>
-                      {orgInitials(org.name)}
-                    </div>
-                  }
-                  <span
-                    className="flex-1 text-left text-[13px] font-medium"
-                    style={{ color: 'var(--text-primary)' }}>
-                    {org.name}
-                  </span>
-                  {org.plan && (
-                    <span
-                      className="font-mono text-[10px] uppercase"
-                      style={{ color: 'var(--text-tertiary)', letterSpacing: '0.1em' }}>
-                      {org.plan}
-                    </span>
-                  )}
-                </button>
-              </form>
+              <OrgSwitchButton
+                key={org.account_id}
+                org={org}
+                index={i}
+                isSelected={org.account_id === selectedOrg?.account_id}
+              />
             ))}
             <div className="my-1.5 h-px" style={{ background: 'var(--border)' }} />
             <CreateTeamDialog onOpenChange={setIsOpen} />

@@ -59,7 +59,9 @@
     "create_team_error_name_required": "Le nom est obligatoire.",
     "create_team_error_name_too_long": "Le nom est trop long.",
     "create_team_error_limit": "Vous avez atteint la limite d'organisations de votre forfait.",
-    "create_team_error_generic": "Impossible de créer l'organisation. Veuillez réessayer."
+    "create_team_error_generic": "Impossible de créer l'organisation. Veuillez réessayer.",
+    "switch_org_error_generic": "Impossible de changer d'organisation. Veuillez réessayer.",
+    "switch_org_error_not_member": "Vous n'êtes plus membre de cette organisation."
   },
   "Dashboard": {
     "page_title": "Accueil",

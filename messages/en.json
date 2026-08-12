@@ -59,7 +59,9 @@
     "create_team_error_name_required": "Name is required.",
     "create_team_error_name_too_long": "Name is too long.",
     "create_team_error_limit": "You reached your plan's organization limit.",
-    "create_team_error_generic": "Could not create the organization. Please try again."
+    "create_team_error_generic": "Could not create the organization. Please try again.",
+    "switch_org_error_generic": "Could not switch organizations. Please try again.",
+    "switch_org_error_not_member": "You're no longer a member of that organization."
   },
   "Dashboard": {
     "page_title": "Home",
