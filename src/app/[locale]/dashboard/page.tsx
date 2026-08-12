@@ -5,6 +5,7 @@ import { Bot, CreditCard, FolderOpen, Users } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { listByAccount } from '@/lib/projects';
 import { logger } from '@/lib/logger';
+import { getActiveAccountId } from '@/lib/active-account';
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
 
@@ -25,9 +26,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   const t = await getTranslations('Dashboard');
 
   const supabase = await createClient();
-  const [{ data: claimsData }, { data: accounts }] = await Promise.all([
+  const [{ data: claimsData }, accountId] = await Promise.all([
     supabase.auth.getClaims(),
-    supabase.rpc('get_my_accounts'),
+    getActiveAccountId(),
   ]);
 
   const displayName =
@@ -36,9 +37,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     (claimsData?.claims.email as string | undefined) ||
     '';
 
-  const account = accounts?.[0];
-  const workspaceName = account?.name ?? '';
-  const accountId = account?.account_id ?? null;
+  let workspaceName = '';
+  if (accountId) {
+    const { data: account } = await supabase
+      .from('accounts')
+      .select('name')
+      .eq('id', accountId)
+      .maybeSingle();
+    workspaceName = account?.name ?? '';
+  }
 
   const projects =
     accountId ?
