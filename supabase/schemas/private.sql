@@ -64,6 +64,43 @@ $$;
 ALTER FUNCTION "private"."get_user_role"("p_account_id" "uuid", "p_user_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "private"."generate_unique_slug"("p_base_slug" "text")
+RETURNS text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_slug text;
+  v_attempt int := 0;
+BEGIN
+  v_slug := p_base_slug;
+
+  -- Retry up to 5 times with a short random suffix if the slug is taken.
+  WHILE EXISTS (SELECT 1 FROM public.accounts WHERE slug = v_slug) LOOP
+    v_attempt := v_attempt + 1;
+    IF v_attempt > 5 THEN
+      -- Final fallback: fully qualify with a random UUID.
+      v_slug := p_base_slug || '-' || replace(gen_random_uuid()::text, '-', '');
+      EXIT;
+    END IF;
+    v_slug := p_base_slug || '-' || substring(replace(gen_random_uuid()::text, '-', '') FROM 1 FOR 6);
+  END LOOP;
+
+  RETURN v_slug;
+END;
+$$;
+
+ALTER FUNCTION "private"."generate_unique_slug"("p_base_slug" "text") OWNER TO "postgres";
+
+REVOKE ALL ON FUNCTION private.generate_unique_slug(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION private.generate_unique_slug(text) TO postgres;
+
+COMMENT ON FUNCTION private.generate_unique_slug(text) IS
+  'Generates a unique slug by checking for collisions and appending random suffixes. '
+  'Shared by handle_new_profile (Personal accounts) and create_team (Team accounts).';
+
+
 CREATE OR REPLACE FUNCTION "private"."handle_new_profile"() RETURNS "trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
@@ -72,23 +109,11 @@ DECLARE
   v_account_id uuid;
   v_base_slug text;
   v_slug text;
-  v_attempt int := 0;
 BEGIN
   RAISE LOG 'handle_new_profile: creating personal account for user_id=%', NEW.id;
 
   v_base_slug := private.slugify(COALESCE(NEW.display_name, NEW.id::text));
-  v_slug := v_base_slug;
-
-  -- Retry up to 5 times with a short uid suffix if the slug is taken.
-  WHILE EXISTS (SELECT 1 FROM public.accounts WHERE slug = v_slug) LOOP
-    v_attempt := v_attempt + 1;
-    IF v_attempt > 5 THEN
-      -- Final fallback: fully qualify with the user UUID.
-      v_slug := v_base_slug || '-' || replace(NEW.id::text, '-', '');
-      EXIT;
-    END IF;
-    v_slug := v_base_slug || '-' || substring(replace(NEW.id::text, '-', '') FROM 1 FOR 6 + v_attempt);
-  END LOOP;
+  v_slug := private.generate_unique_slug(v_base_slug);
 
   INSERT INTO public.accounts (id, type, name, slug, created_by)
   VALUES (

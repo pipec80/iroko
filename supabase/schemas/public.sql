@@ -1033,7 +1033,6 @@ DECLARE
   v_team_count  integer;
   v_base_slug   text;
   v_slug        text;
-  v_attempt     int := 0;
   v_account_id  uuid;
 BEGIN
   IF v_uid IS NULL THEN
@@ -1056,15 +1055,7 @@ BEGIN
   END IF;
 
   v_base_slug := private.slugify(p_name);
-  v_slug := v_base_slug;
-  WHILE EXISTS (SELECT 1 FROM public.accounts WHERE slug = v_slug) LOOP
-    v_attempt := v_attempt + 1;
-    IF v_attempt > 5 THEN
-      v_slug := v_base_slug || '-' || replace(gen_random_uuid()::text, '-', '');
-      EXIT;
-    END IF;
-    v_slug := v_base_slug || '-' || substring(replace(gen_random_uuid()::text, '-', '') FROM 1 FOR 6);
-  END LOOP;
+  v_slug := private.generate_unique_slug(v_base_slug);
 
   INSERT INTO public.accounts (type, name, slug, created_by)
   VALUES ('team', p_name, v_slug, v_uid)
