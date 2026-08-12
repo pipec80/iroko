@@ -283,6 +283,7 @@ BEGIN
     INTO v_account_id, v_role
     FROM public.accounts_memberships m
     WHERE m.user_id = v_user_id
+    -- Secondary sort by account_id DESC ensures deterministic results when timestamps are identical (e.g. in same-transaction pgTAP tests)
     ORDER BY m.created_at DESC, m.account_id DESC
     LIMIT 1;
   END IF;
@@ -1615,6 +1616,9 @@ ALTER TABLE ONLY "public"."profiles"
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_active_account_id_fkey" FOREIGN KEY ("active_account_id")
     REFERENCES "public"."accounts"("id") ON DELETE SET NULL;
+
+
+CREATE INDEX "idx_profiles_active_account_id" ON "public"."profiles" USING "btree" ("active_account_id");
 
 
 ALTER TABLE ONLY "public"."projects"
