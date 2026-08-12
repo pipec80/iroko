@@ -1501,6 +1501,7 @@ export type Database = {
           key: string
         }[]
       }
+      create_team: { Args: { p_name: string }; Returns: string }
       create_webhook_endpoint: {
         Args: {
           p_account_id: string
@@ -1799,6 +1800,7 @@ export type Database = {
         Args: { p_account_id: string; p_path?: string }
         Returns: undefined
       }
+      switch_account: { Args: { p_account_id: string }; Returns: undefined }
       update_my_profile: {
         Args: {
           p_avatar_url?: string

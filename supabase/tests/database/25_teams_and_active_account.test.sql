@@ -2,7 +2,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(9);
+SELECT plan(16);
 
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
   confirmation_token, email_confirmed_at, recovery_token, aud, role)
@@ -92,6 +92,59 @@ SELECT ok(
 -- 5) columna nueva: nullable, FK a accounts, on delete set null
 SELECT has_column('public', 'profiles', 'active_account_id', 'profiles.active_account_id existe');
 SELECT col_is_fk('public', 'profiles', 'active_account_id', 'active_account_id es FK');
+
+-- ── switch_account ──────────────────────────────────────────────────────
+-- usuario A es miembro de su personal Y del team sembrado arriba
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000002001','role','authenticated')::text, true);
+SET LOCAL role authenticated;
+SELECT lives_ok(
+  $$SELECT public.switch_account('00000000-0000-0000-0000-000000002100')$$,
+  'miembro puede cambiar a una cuenta de la que es owner');
+RESET role;
+
+SELECT is(
+  (SELECT active_account_id FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000002001'),
+  '00000000-0000-0000-0000-000000002100'::uuid,
+  'switch_account persiste la preferencia');
+
+-- usuario B NO es miembro del team A1
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000002002','role','authenticated')::text, true);
+SET LOCAL role authenticated;
+SELECT throws_like(
+  $$SELECT public.switch_account('00000000-0000-0000-0000-000000002100')$$,
+  '%not_a_member%', 'no-miembro no puede cambiar a esa cuenta');
+RESET role;
+
+-- ── create_team ──────────────────────────────────────────────────────────
+SELECT set_config('request.jwt.claims',
+  json_build_object('sub','00000000-0000-0000-0000-000000002002','role','authenticated')::text, true);
+SET LOCAL role authenticated;
+
+SELECT isnt(
+  (SELECT public.create_team('Equipo Nuevo B')), NULL,
+  'create_team devuelve un uuid');
+
+SELECT throws_like(
+  $$SELECT public.create_team('')$$,
+  '%invalid_name%', 'nombre vacío es rechazado');
+
+RESET role;
+
+-- Verificar que la cuenta fue creada correctamente (verificación sin restricción RLS)
+SELECT is(
+  (SELECT type FROM public.accounts a
+   JOIN public.accounts_memberships m ON m.account_id = a.id
+   WHERE m.user_id = '00000000-0000-0000-0000-000000002002' AND m.role = 'owner'
+     AND a.name = 'Equipo Nuevo B'),
+  'team'::public.account_type,
+  'la cuenta creada es type=team');
+
+SELECT is(
+  (SELECT active_account_id FROM public.profiles WHERE id = '00000000-0000-0000-0000-000000002002'),
+  (SELECT id FROM public.accounts WHERE name = 'Equipo Nuevo B'),
+  'create_team deja el team nuevo como cuenta activa');
 
 SELECT * FROM finish();
 ROLLBACK;
