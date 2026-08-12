@@ -268,13 +268,24 @@ DECLARE
   v_claims     jsonb := event -> 'claims';
   v_app_meta   jsonb := COALESCE(v_claims -> 'app_metadata', '{}'::jsonb);
 BEGIN
-  -- Pick the user's default membership (most recently created).
+  -- Bloque 1: preferir la preferencia persistida del usuario (switch_account),
+  -- solo si sigue siendo una membership válida (no la dejó, no se borró).
   SELECT m.account_id, m.role::text
   INTO v_account_id, v_role
-  FROM public.accounts_memberships m
-  WHERE m.user_id = v_user_id
-  ORDER BY m.created_at DESC
-  LIMIT 1;
+  FROM public.profiles p
+  JOIN public.accounts_memberships m
+    ON m.account_id = p.active_account_id AND m.user_id = p.id
+  WHERE p.id = v_user_id;
+
+  -- Fallback: comportamiento original (membership más reciente).
+  IF v_account_id IS NULL THEN
+    SELECT m.account_id, m.role::text
+    INTO v_account_id, v_role
+    FROM public.accounts_memberships m
+    WHERE m.user_id = v_user_id
+    ORDER BY m.created_at DESC, m.account_id DESC
+    LIMIT 1;
+  END IF;
 
   IF v_account_id IS NOT NULL THEN
     v_app_meta := v_app_meta
@@ -1123,6 +1134,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "company" "text",
     "pending_deletion" boolean DEFAULT false NOT NULL,
     "analytics_consent" boolean,
+    "active_account_id" "uuid",
     CONSTRAINT "profiles_bio_check" CHECK (("char_length"("bio") <= 500)),
     CONSTRAINT "profiles_company_check" CHECK (("char_length"("company") <= 100)),
     CONSTRAINT "profiles_website_url_check" CHECK (("char_length"("website_url") <= 255))
@@ -1599,6 +1611,10 @@ ALTER TABLE ONLY "public"."invitations"
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_active_account_id_fkey" FOREIGN KEY ("active_account_id")
+    REFERENCES "public"."accounts"("id") ON DELETE SET NULL;
 
 
 ALTER TABLE ONLY "public"."projects"

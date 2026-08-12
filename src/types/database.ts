@@ -1050,6 +1050,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_account_id: string | null
           analytics_consent: boolean | null
           avatar_url: string | null
           bio: string | null
@@ -1071,6 +1072,7 @@ export type Database = {
           website_url: string | null
         }
         Insert: {
+          active_account_id?: string | null
           analytics_consent?: boolean | null
           avatar_url?: string | null
           bio?: string | null
@@ -1092,6 +1094,7 @@ export type Database = {
           website_url?: string | null
         }
         Update: {
+          active_account_id?: string | null
           analytics_consent?: boolean | null
           avatar_url?: string | null
           bio?: string | null
@@ -1112,7 +1115,15 @@ export type Database = {
           updated_at?: string | null
           website_url?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_account_id_fkey"
+            columns: ["active_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
@@ -1802,6 +1813,7 @@ export type Database = {
           p_website_url?: string
         }
         Returns: {
+          active_account_id: string | null
           analytics_consent: boolean | null
           avatar_url: string | null
           bio: string | null
