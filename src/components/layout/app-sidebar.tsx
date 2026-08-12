@@ -1,10 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
+import { getActiveAccountId } from '@/lib/active-account';
 
 import { AppSidebarClient, type OrgAccount } from './app-sidebar-client';
 
 export async function AppSidebar() {
   const supabase = await createClient();
-  const { data: accounts } = await supabase.rpc('get_my_accounts');
+  const [{ data: accounts }, activeAccountId] = await Promise.all([
+    supabase.rpc('get_my_accounts'),
+    getActiveAccountId(),
+  ]);
 
   const orgs: OrgAccount[] = (accounts ?? []).map((a) => ({
     account_id: a.account_id,
@@ -15,5 +19,5 @@ export async function AppSidebar() {
     logo_url: a.logo_url,
   }));
 
-  return <AppSidebarClient orgs={orgs} />;
+  return <AppSidebarClient orgs={orgs} activeAccountId={activeAccountId} />;
 }

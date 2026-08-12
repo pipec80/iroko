@@ -49,7 +49,17 @@
     "nav_account": "My account",
     "new_org": "New organization",
     "no_org": "No organization",
-    "org_switcher_label": "Switch organization"
+    "org_switcher_label": "Switch organization",
+    "create_team_title": "New organization",
+    "create_team_description": "Create a new workspace for your team.",
+    "create_team_name_label": "Name",
+    "create_team_cancel": "Cancel",
+    "create_team_submit": "Create",
+    "create_team_submitting": "Creating...",
+    "create_team_error_name_required": "Name is required.",
+    "create_team_error_name_too_long": "Name is too long.",
+    "create_team_error_limit": "You reached your plan's organization limit.",
+    "create_team_error_generic": "Could not create the organization. Please try again."
   },
   "Dashboard": {
     "page_title": "Home",

@@ -49,7 +49,17 @@
     "nav_account": "Mon compte",
     "new_org": "Nouvelle organisation",
     "no_org": "Sans organisation",
-    "org_switcher_label": "Changer d'organisation"
+    "org_switcher_label": "Changer d'organisation",
+    "create_team_title": "Nouvelle organisation",
+    "create_team_description": "Créez un nouvel espace de travail pour votre équipe.",
+    "create_team_name_label": "Nom",
+    "create_team_cancel": "Annuler",
+    "create_team_submit": "Créer",
+    "create_team_submitting": "Création...",
+    "create_team_error_name_required": "Le nom est obligatoire.",
+    "create_team_error_name_too_long": "Le nom est trop long.",
+    "create_team_error_limit": "Vous avez atteint la limite d'organisations de votre forfait.",
+    "create_team_error_generic": "Impossible de créer l'organisation. Veuillez réessayer."
   },
   "Dashboard": {
     "page_title": "Accueil",

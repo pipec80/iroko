@@ -7,6 +7,11 @@ vi.mock('@/i18n/routing', () => ({
   usePathname: () => '/dashboard',
 }));
 
+vi.mock('@/app/[locale]/dashboard/actions', () => ({
+  switchAccount: vi.fn(),
+  createTeam: vi.fn(),
+}));
+
 import { AppSidebarClient, type OrgAccount } from '../app-sidebar-client';
 import es from '../../../../messages/es.json';
 
