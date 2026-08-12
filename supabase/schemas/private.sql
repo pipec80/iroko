@@ -64,41 +64,45 @@ $$;
 ALTER FUNCTION "private"."get_user_role"("p_account_id" "uuid", "p_user_id" "uuid") OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "private"."generate_unique_slug"("p_base_slug" "text")
+CREATE OR REPLACE FUNCTION "private"."generate_unique_slug"("p_base_slug" "text", "p_seed" "uuid" DEFAULT NULL)
 RETURNS text
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
-  v_slug text;
+  v_slug    text := p_base_slug;
   v_attempt int := 0;
 BEGIN
-  v_slug := p_base_slug;
-
-  -- Retry up to 5 times with a short random suffix if the slug is taken.
   WHILE EXISTS (SELECT 1 FROM public.accounts WHERE slug = v_slug) LOOP
     v_attempt := v_attempt + 1;
     IF v_attempt > 5 THEN
-      -- Final fallback: fully qualify with a random UUID.
-      v_slug := p_base_slug || '-' || replace(gen_random_uuid()::text, '-', '');
+      v_slug := p_base_slug || '-' ||
+        replace(COALESCE(p_seed, gen_random_uuid())::text, '-', '');
       EXIT;
     END IF;
-    v_slug := p_base_slug || '-' || substring(replace(gen_random_uuid()::text, '-', '') FROM 1 FOR 6);
+    IF p_seed IS NOT NULL THEN
+      -- handle_new_profile's original behavior: deterministic, growing width per attempt
+      v_slug := p_base_slug || '-' || substring(replace(p_seed::text, '-', '') FROM 1 FOR 6 + v_attempt);
+    ELSE
+      -- create_team's original behavior: fresh random suffix, fixed width, per attempt
+      v_slug := p_base_slug || '-' || substring(replace(gen_random_uuid()::text, '-', '') FROM 1 FOR 6);
+    END IF;
   END LOOP;
-
   RETURN v_slug;
 END;
 $$;
 
-ALTER FUNCTION "private"."generate_unique_slug"("p_base_slug" "text") OWNER TO "postgres";
+ALTER FUNCTION "private"."generate_unique_slug"("p_base_slug" "text", "p_seed" "uuid") OWNER TO "postgres";
 
-REVOKE ALL ON FUNCTION private.generate_unique_slug(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION private.generate_unique_slug(text) TO postgres;
+REVOKE ALL ON FUNCTION private.generate_unique_slug(text, uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION private.generate_unique_slug(text, uuid) TO postgres;
 
-COMMENT ON FUNCTION private.generate_unique_slug(text) IS
-  'Generates a unique slug by checking for collisions and appending random suffixes. '
-  'Shared by handle_new_profile (Personal accounts) and create_team (Team accounts).';
+COMMENT ON FUNCTION private.generate_unique_slug(text, uuid) IS
+  'Generates a unique slug by checking for collisions and appending suffixes. '
+  'When p_seed is provided: uses deterministic approach with growing suffix width (handle_new_profile). '
+  'When p_seed is NULL: uses random UUIDs with fixed suffix width (create_team). '
+  'Preserves byte-for-byte behavior of both original implementations.';
 
 
 CREATE OR REPLACE FUNCTION "private"."handle_new_profile"() RETURNS "trigger"
@@ -113,7 +117,7 @@ BEGIN
   RAISE LOG 'handle_new_profile: creating personal account for user_id=%', NEW.id;
 
   v_base_slug := private.slugify(COALESCE(NEW.display_name, NEW.id::text));
-  v_slug := private.generate_unique_slug(v_base_slug);
+  v_slug := private.generate_unique_slug(v_base_slug, NEW.id);
 
   INSERT INTO public.accounts (id, type, name, slug, created_by)
   VALUES (
