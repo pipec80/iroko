@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Folder, Users, GitBranch } from 'lucide-react';
-import { createClient } from '@/lib/supabase/server';
+import { getActiveAccountId } from '@/lib/active-account';
 import { listByAccount } from '@/lib/projects';
 import { logger } from '@/lib/logger';
 import { Link } from '@/i18n/routing';
@@ -38,10 +38,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
 
   const t = await getTranslations('Projects');
 
-  const supabase = await createClient();
-
-  // Direct SELECT on accounts_memberships is revoked for authenticated — use RPC.
-  const { data: accountId } = await supabase.rpc('get_my_account_id');
+  const accountId = await getActiveAccountId();
 
   let projects: Project[] = [];
   if (accountId) {
