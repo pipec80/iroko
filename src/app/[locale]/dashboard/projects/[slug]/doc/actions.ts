@@ -6,6 +6,7 @@ import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveAccountId } from '@/lib/active-account';
 import { create } from '@/lib/project-documents';
 
 const createDocumentSchema = z.object({
@@ -35,8 +36,8 @@ export const createDocument = withServerAction(async function createDocument(
   const userId = claimsData?.claims.sub;
   if (!userId) return { error: 'invalid_session' };
 
-  // Derive accountId server-side via SECURITY DEFINER RPC — never trust client input.
-  const { data: accountId } = await supabase.rpc('get_my_account_id');
+  // Derive accountId server-side from the active-account JWT claim — never trust client input.
+  const accountId = await getActiveAccountId();
   if (!accountId) return { error: 'account_not_found' };
 
   try {

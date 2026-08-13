@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 
-import { createClient } from '@/lib/supabase/server';
+import { getActiveAccountId } from '@/lib/active-account';
 import { getBySlug } from '@/lib/projects';
 import { getById } from '@/lib/project-documents';
 import { logger } from '@/lib/logger';
@@ -31,8 +31,7 @@ export default async function DocEditorPage({ params }: DocEditorPageProps) {
   const { locale, slug, docId } = await params;
   setRequestLocale(locale);
 
-  const supabase = await createClient();
-  const { data: accountId } = await supabase.rpc('get_my_account_id');
+  const accountId = await getActiveAccountId();
   if (!accountId) notFound();
 
   const project = await getBySlug(accountId, slug).catch((err: unknown) => {

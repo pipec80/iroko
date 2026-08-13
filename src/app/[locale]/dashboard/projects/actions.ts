@@ -6,6 +6,7 @@ import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
+import { getActiveAccountId } from '@/lib/active-account';
 import { create } from '@/lib/projects';
 import { createProjectSchema, TONE_TO_COLOR } from '@/lib/validation/projects';
 
@@ -19,9 +20,7 @@ async function getAccountContext(): Promise<AccountContext | null> {
   const userId = claimsData?.claims.sub;
   if (!userId) return null;
 
-  // Direct SELECT on accounts_memberships is revoked for authenticated — use
-  // the get_my_account_id() SECURITY DEFINER RPC instead.
-  const { data: accountId } = await supabase.rpc('get_my_account_id');
+  const accountId = await getActiveAccountId();
   if (!accountId) return null;
 
   return { accountId, userId };
