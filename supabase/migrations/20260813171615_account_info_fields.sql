@@ -45,6 +45,13 @@ $$;
 
 COMMENT ON FUNCTION public.get_my_accounts() IS 'Returns accounts the current user belongs to. SECURITY DEFINER: reads accounts_memberships (direct SELECT revoked). Uses auth.uid() internally.';
 
+-- DROP FUNCTION se lleva los grants existentes — reaplicar lo mismo que ya
+-- tenía antes (04_function_security.test.sql exige que anon NO la ejecute).
+ALTER FUNCTION public.get_my_accounts() OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.get_my_accounts() FROM PUBLIC;
+GRANT ALL ON FUNCTION public.get_my_accounts() TO authenticated;
+GRANT ALL ON FUNCTION public.get_my_accounts() TO service_role;
+
 CREATE OR REPLACE FUNCTION public.update_account_info(
   p_account_id uuid,
   p_name text,
