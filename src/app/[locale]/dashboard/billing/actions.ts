@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { getActiveAccountId } from '@/lib/active-account';
+import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
 import { captureServer } from '@/lib/analytics/server';
 import { getPaymentProvider } from '@/lib/billing/registry';
 import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
@@ -84,6 +84,9 @@ export const startCheckout = withServerAction(async function startCheckout(input
 
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
+
+  const role = await getActiveAccountRole();
+  if (role !== 'owner' && role !== 'admin') return { data: null, error: 'not_authorized' };
 
   const provider = getPaymentProvider();
   const { url } = await provider.createCheckout({
