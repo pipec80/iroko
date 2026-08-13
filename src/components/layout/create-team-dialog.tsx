@@ -21,13 +21,27 @@ const ERROR_KEYS: Record<string, string> = {
   create_failed: 'create_team_error_generic',
 };
 
-export function CreateTeamDialog({ onOpenChange }: { onOpenChange?: (open: boolean) => void }) {
+interface CreateTeamDialogProps {
+  onOpenChange?: (open: boolean) => void;
+  /** Cuando se pasa, el diálogo queda controlado por el padre (ej. atajo de teclado global). */
+  open?: boolean;
+  /** Oculta el botón trigger visible — para instancias controladas externamente. */
+  hideTrigger?: boolean;
+}
+
+export function CreateTeamDialog({
+  onOpenChange,
+  open: openProp,
+  hideTrigger,
+}: CreateTeamDialogProps) {
   const t = useTranslations('Navigation');
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const isControlled = openProp !== undefined;
+  const open = isControlled ? openProp : openState;
   const formRef = useRef<HTMLFormElement>(null);
 
   function handleOpenChange(next: boolean) {
-    setOpen(next);
+    if (!isControlled) setOpenState(next);
     onOpenChange?.(next);
   }
 
@@ -38,27 +52,29 @@ export function CreateTeamDialog({ onOpenChange }: { onOpenChange?: (open: boole
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5"
-          style={{ border: 0, background: 'transparent' }}>
-          <div
-            className="inline-flex shrink-0 items-center justify-center"
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 4,
-              background: 'var(--surface-3)',
-              color: 'var(--text-secondary)',
-            }}>
-            <Plus size={14} strokeWidth={1.5} />
-          </div>
-          <span className="text-[13px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-            {t('new_org')}
-          </span>
-        </button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5"
+            style={{ border: 0, background: 'transparent' }}>
+            <div
+              className="inline-flex shrink-0 items-center justify-center"
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 4,
+                background: 'var(--surface-3)',
+                color: 'var(--text-secondary)',
+              }}>
+              <Plus size={14} strokeWidth={1.5} />
+            </div>
+            <span className="text-[13px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+              {t('new_org')}
+            </span>
+          </button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t('create_team_title')}</DialogTitle>
