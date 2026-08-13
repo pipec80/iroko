@@ -71,6 +71,9 @@ GRANT SELECT, INSERT ON public.notifications TO authenticated;
 REVOKE SELECT, INSERT, UPDATE, DELETE ON public.notifications FROM anon;
 -- Bloquear UPDATE directo desde authenticated: solo la RPC SECURITY DEFINER puede actualizar
 REVOKE UPDATE ON public.notifications FROM authenticated;
+-- service_role inserta directo vía notify() (bypassa la política restrictiva de arriba,
+-- que solo aplica a authenticated) — sin default privileges post-hardening, hace falta explícito.
+GRANT INSERT ON public.notifications TO service_role;
 
 -- ============================================================================
 -- Función trigger: emite evento Realtime al canal privado del usuario
