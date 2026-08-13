@@ -297,10 +297,12 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
                 </DropdownMenuItem>
               </Link>
 
-              <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
-                <Settings style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('preferences')}</span>
-              </DropdownMenuItem>
+              <Link href="/dashboard/account?tab=profile">
+                <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+                  <Settings style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('preferences')}</span>
+                </DropdownMenuItem>
+              </Link>
 
               <DropdownMenuItem
                 style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}
