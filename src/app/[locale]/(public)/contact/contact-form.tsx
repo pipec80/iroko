@@ -6,6 +6,13 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { submitContactForm } from './actions';
 
 const ERROR_KEYS: Record<string, string> = {
@@ -69,33 +76,17 @@ export function ContactForm() {
         <Label className="text-foreground block text-sm font-semibold" htmlFor="company_size">
           {t('form_size_label')}
         </Label>
-        <div className="relative">
-          <select
-            className="border-border bg-background text-foreground focus:ring-primary h-11 w-full cursor-pointer appearance-none rounded-md border px-4 py-2 text-sm scheme-light shadow-sm transition-all focus:ring-1 focus:outline-none dark:scheme-dark"
-            id="company_size"
-            name="company_size"
-            defaultValue="">
-            <option disabled value="">
-              {t('form_size_placeholder')}
-            </option>
-            <option value="solo">{t('form_size_solo')}</option>
-            <option value="2-5">{t('form_size_2_5')}</option>
-            <option value="6-20">{t('form_size_6_20')}</option>
-            <option value="20+">{t('form_size_20_plus')}</option>
-          </select>
-          <div className="text-muted-foreground pointer-events-none absolute inset-y-0 right-0 flex items-center px-4">
-            <svg
-              viewBox="0 0 16 16"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              aria-hidden="true">
-              <path d="M4 6l4 4 4-4" />
-            </svg>
-          </div>
-        </div>
+        <Select name="company_size">
+          <SelectTrigger id="company_size" className="h-11 w-full">
+            <SelectValue placeholder={t('form_size_placeholder')} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="solo">{t('form_size_solo')}</SelectItem>
+            <SelectItem value="2-5">{t('form_size_2_5')}</SelectItem>
+            <SelectItem value="6-20">{t('form_size_6_20')}</SelectItem>
+            <SelectItem value="20+">{t('form_size_20_plus')}</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-1.5">
