@@ -6,3 +6,10 @@ export async function getActiveAccountId(): Promise<string | null> {
   const { data } = await supabase.auth.getClaims();
   return (data?.claims?.app_metadata?.account_id as string | undefined) ?? null;
 }
+
+/** Rol del usuario en la cuenta activa desde app_metadata del JWT; null si no hay sesión o claim. */
+export async function getActiveAccountRole(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  return (data?.claims?.app_metadata?.role as string | undefined) ?? null;
+}

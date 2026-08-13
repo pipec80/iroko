@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getActiveAccountId: vi.fn(),
+  getActiveAccountRole: vi.fn(),
   createCheckout: vi.fn(),
   cancelSubscription: vi.fn(),
   getPaymentProvider: vi.fn(),
@@ -13,7 +14,10 @@ const mocks = vi.hoisted(() => ({
   captureServer: vi.fn(),
 }));
 
-vi.mock('@/lib/active-account', () => ({ getActiveAccountId: mocks.getActiveAccountId }));
+vi.mock('@/lib/active-account', () => ({
+  getActiveAccountId: mocks.getActiveAccountId,
+  getActiveAccountRole: mocks.getActiveAccountRole,
+}));
 vi.mock('@/lib/billing/registry', () => ({ getPaymentProvider: mocks.getPaymentProvider }));
 vi.mock('@/lib/billing/webhook-handler', () => ({ handleProviderWebhook: mocks.handle }));
 vi.mock('@/lib/billing/signing', () => ({
@@ -50,6 +54,7 @@ describe('billing actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('a1');
+    mocks.getActiveAccountRole.mockResolvedValue('owner');
     mocks.getPaymentProvider.mockReturnValue({
       name: 'mock',
       createCheckout: mocks.createCheckout,
@@ -82,6 +87,29 @@ describe('billing actions', () => {
   it('startCheckout rejects an invalid interval', async () => {
     const res = await startCheckout({ planSlug: 'pro', interval: 'weekly' as 'month' });
     expect(res.error).toBe('validation_error');
+    expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it('startCheckout succeeds when the caller is admin', async () => {
+    mocks.getActiveAccountRole.mockResolvedValue('admin');
+    mocks.createCheckout.mockResolvedValue({
+      url: 'http://localhost:3000/es/billing/mock-checkout?data=x',
+    });
+    const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
+    expect(res.data?.url).toContain('/billing/mock-checkout');
+  });
+
+  it('startCheckout returns not_authorized when the caller is a member', async () => {
+    mocks.getActiveAccountRole.mockResolvedValue('member');
+    const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
+    expect(res.error).toBe('not_authorized');
+    expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it('startCheckout returns not_authorized when the caller is a viewer', async () => {
+    mocks.getActiveAccountRole.mockResolvedValue('viewer');
+    const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
+    expect(res.error).toBe('not_authorized');
     expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 
