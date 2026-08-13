@@ -39,15 +39,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
 
   let workspaceName = '';
   if (accountId) {
-    const { data: account, error: accountError } = await supabase
-      .from('accounts')
-      .select('name')
-      .eq('id', accountId)
-      .maybeSingle();
-    if (accountError) {
-      logger.error({ action: 'get_account_name', accountId }, accountError.message);
+    const { data: accounts, error: accountsError } = await supabase.rpc('get_my_accounts');
+    if (accountsError) {
+      logger.error({ action: 'get_account_name', accountId }, accountsError.message);
     }
-    workspaceName = account?.name ?? '';
+    workspaceName = accounts?.find((a) => a.account_id === accountId)?.name ?? '';
   }
 
   const projects =
