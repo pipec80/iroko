@@ -60,14 +60,22 @@ test.describe('Active account — switch and create', () => {
   /**
    * Regression coverage for a Critical finding: some Projects-module server
    * call sites derived accountId from get_my_account_id() (most-recently-
-   * created membership) instead of the active-account JWT claim. A user who
-   * switched away from their most-recent membership got a 404 clicking into
-   * a project that was correctly listed on the (already-migrated) Projects
-   * list page. This test proves the cross-cutting property that bug broke:
-   * after switching active account, creating a project and opening its
-   * detail page must resolve — not 404 — for the newly-active team.
+   * created accounts_memberships row) instead of the active-account JWT
+   * claim. Those two sources normally agree — create_team() sets the new
+   * team as BOTH the active account AND the newest membership in the same
+   * transaction — so a naive "create team, use it" test can't reproduce the
+   * bug: it passes identically against the old and new code.
+   *
+   * The real divergence needs switch_account(), which only updates
+   * profiles.active_account_id and never touches accounts_memberships. So:
+   * create a project on Personal, create a Team (now active + newest
+   * membership), then switch back to Personal (now: active account =
+   * Personal, but newest membership = the Team). Pre-fix, opening the
+   * Personal project here would call get_my_account_id() → the Team's id →
+   * getBySlug(teamId, personalSlug) → null → 404, even though the project
+   * is correctly listed under the (already-migrated) Projects list page.
    */
-  test('user creates a project in a newly-switched team, then opens it without a 404', async ({
+  test("user's Personal project still resolves after creating and leaving a new team", async ({
     authenticatedPage: page,
   }) => {
     const teamName = `Equipo E2E ${Date.now()}`;
@@ -76,8 +84,26 @@ test.describe('Active account — switch and create', () => {
 
     await page.goto('/es/dashboard');
     await page.waitForURL(/\/es\/dashboard$/);
+    await expect(switcherTrigger).toContainText('Personal');
 
-    // Create a second team — create_team makes it the active account and redirects here.
+    // 1. Create a project while Personal is active (same flow as projects.spec.ts).
+    await page.goto('/es/dashboard/projects');
+    await page.waitForURL(/\/es\/dashboard\/projects/);
+    await page
+      .getByRole('button', { name: /nuevo proyecto/i })
+      .first()
+      .click();
+    await expect(page.getByRole('dialog')).toBeVisible();
+    await page.locator('input[name="name"]').fill(projectName);
+    await page.getByRole('button', { name: /crear proyecto/i }).click();
+    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(projectName)).toBeVisible({ timeout: 15_000 });
+
+    // 2. Create a second team. create_team redirects to /dashboard with the
+    // new team as active account — it's also the newest membership now, so
+    // the two sources still agree at this point.
+    await page.goto('/es/dashboard');
+    await page.waitForURL(/\/es\/dashboard$/);
     await switcherTrigger.click();
     await expect(page.getByRole('listbox')).toBeVisible();
     await page.getByRole('button', { name: /nueva organización/i }).click();
@@ -89,24 +115,22 @@ test.describe('Active account — switch and create', () => {
     await page.waitForURL(/\/es\/dashboard$/);
     await expect(switcherTrigger).toContainText(teamName);
 
-    // Create a project in the newly-active team (same flow as projects.spec.ts).
+    // 3. Switch back to Personal via the switcher — active account moves back
+    // to Personal, but the Team's membership row (just created) remains the
+    // newest one. This is the divergence the bug depended on.
+    await switcherTrigger.click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await page.getByRole('option', { name: /personal/i }).click();
+    await page.waitForURL(/\/es\/dashboard$/);
+    await expect(switcherTrigger).toContainText('Personal');
+
+    // 4. The assertion that would have caught the bug: with the divergence
+    // in place, the Personal project from step 1 must still resolve.
     await page.goto('/es/dashboard/projects');
     await page.waitForURL(/\/es\/dashboard\/projects/);
-
-    await page
-      .getByRole('button', { name: /nuevo proyecto/i })
-      .first()
-      .click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await page.locator('input[name="name"]').fill(projectName);
-    await page.getByRole('button', { name: /crear proyecto/i }).click();
-    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15_000 });
-
     const projectCard = page.getByText(projectName);
     await expect(projectCard).toBeVisible({ timeout: 15_000 });
 
-    // The assertion that would have caught the bug: opening the project's
-    // detail page from the newly-active team must resolve, not 404.
     await projectCard.click();
     await page.waitForURL(/\/es\/dashboard\/projects\/.+/);
     await expect(page.getByRole('heading', { name: projectName })).toBeVisible({
