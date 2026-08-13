@@ -547,6 +547,7 @@ export type Database = {
       accounts: {
         Row: {
           billing_email: string | null
+          country: string | null
           created_at: string | null
           created_by: string | null
           deleted_at: string | null
@@ -557,9 +558,11 @@ export type Database = {
           slug: string
           type: Database["public"]["Enums"]["account_type"]
           updated_at: string | null
+          website: string | null
         }
         Insert: {
           billing_email?: string | null
+          country?: string | null
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
@@ -570,9 +573,11 @@ export type Database = {
           slug: string
           type?: Database["public"]["Enums"]["account_type"]
           updated_at?: string | null
+          website?: string | null
         }
         Update: {
           billing_email?: string | null
+          country?: string | null
           created_at?: string | null
           created_by?: string | null
           deleted_at?: string | null
@@ -583,6 +588,7 @@ export type Database = {
           slug?: string
           type?: Database["public"]["Enums"]["account_type"]
           updated_at?: string | null
+          website?: string | null
         }
         Relationships: [
           {
@@ -1611,11 +1617,13 @@ export type Database = {
         Args: never
         Returns: {
           account_id: string
+          country: string
           logo_url: string
           name: string
           role: Database["public"]["Enums"]["membership_role"]
           slug: string
           type: Database["public"]["Enums"]["account_type"]
+          website: string
         }[]
       }
       get_plan_provider_id: {
@@ -1801,6 +1809,16 @@ export type Database = {
         Returns: undefined
       }
       switch_account: { Args: { p_account_id: string }; Returns: undefined }
+      update_account_info: {
+        Args: {
+          p_account_id: string
+          p_country?: string
+          p_name: string
+          p_slug: string
+          p_website?: string
+        }
+        Returns: undefined
+      }
       update_my_profile: {
         Args: {
           p_avatar_url?: string
