@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
-  rpc: vi.fn(),
+  getActiveAccountId: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
   revalidatePath: vi.fn(),
@@ -12,9 +12,10 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
     auth: { getClaims: mocks.getClaims },
-    rpc: mocks.rpc,
   }),
 }));
+
+vi.mock('@/lib/active-account', () => ({ getActiveAccountId: mocks.getActiveAccountId }));
 
 vi.mock('@/lib/project-documents', () => ({
   create: mocks.create,
@@ -59,7 +60,7 @@ const validDoc = { name: 'Especificación', projectId: PROJECT_ID };
 
 function mockAuthenticatedWithAccount() {
   mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-uuid-1' } } });
-  mocks.rpc.mockResolvedValue({ data: 'acct-uuid-1', error: null });
+  mocks.getActiveAccountId.mockResolvedValue('acct-uuid-1');
 }
 
 // ─── createDocument ──────────────────────────────────────────────────────────
@@ -88,8 +89,8 @@ describe('createDocument', () => {
     expect(result.error).toBe('invalid_session');
   });
 
-  it('returns account error when get_my_account_id resolves empty', async () => {
-    mocks.rpc.mockResolvedValue({ data: null, error: null });
+  it('returns account error when getActiveAccountId resolves empty', async () => {
+    mocks.getActiveAccountId.mockResolvedValue(null);
     const result = await createDocument(makeFormData(validDoc));
     expect(result.error).toBe('account_not_found');
   });

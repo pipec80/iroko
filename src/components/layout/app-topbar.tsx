@@ -2,6 +2,7 @@ import { getLocale } from 'next-intl/server';
 
 import { createClient } from '@/lib/supabase/server';
 import { storageUrl } from '@/lib/storage';
+import { getActiveAccountId } from '@/lib/active-account';
 
 import { AppTopbarClient, type TopbarUser } from './app-topbar-client';
 import type { OrgAccount } from './app-sidebar-client';
@@ -49,7 +50,10 @@ export async function AppTopbar() {
     };
   }
 
-  const { data: accounts } = await supabase.rpc('get_my_accounts');
+  const [{ data: accounts }, activeAccountId] = await Promise.all([
+    supabase.rpc('get_my_accounts'),
+    getActiveAccountId(),
+  ]);
   const orgs: OrgAccount[] = (accounts ?? []).map((a) => ({
     account_id: a.account_id,
     name: a.name,
@@ -59,5 +63,7 @@ export async function AppTopbar() {
     logo_url: a.logo_url,
   }));
 
-  return <AppTopbarClient user={user} locale={locale} orgs={orgs} />;
+  return (
+    <AppTopbarClient user={user} locale={locale} orgs={orgs} activeAccountId={activeAccountId} />
+  );
 }

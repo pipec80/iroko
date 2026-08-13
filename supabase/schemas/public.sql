@@ -268,13 +268,25 @@ DECLARE
   v_claims     jsonb := event -> 'claims';
   v_app_meta   jsonb := COALESCE(v_claims -> 'app_metadata', '{}'::jsonb);
 BEGIN
-  -- Pick the user's default membership (most recently created).
+  -- Bloque 1: preferir la preferencia persistida del usuario (switch_account),
+  -- solo si sigue siendo una membership válida (no la dejó, no se borró).
   SELECT m.account_id, m.role::text
   INTO v_account_id, v_role
-  FROM public.accounts_memberships m
-  WHERE m.user_id = v_user_id
-  ORDER BY m.created_at DESC
-  LIMIT 1;
+  FROM public.profiles p
+  JOIN public.accounts_memberships m
+    ON m.account_id = p.active_account_id AND m.user_id = p.id
+  WHERE p.id = v_user_id;
+
+  -- Fallback: comportamiento original (membership más reciente).
+  IF v_account_id IS NULL THEN
+    SELECT m.account_id, m.role::text
+    INTO v_account_id, v_role
+    FROM public.accounts_memberships m
+    WHERE m.user_id = v_user_id
+    -- Secondary sort by account_id DESC ensures deterministic results when timestamps are identical (e.g. in same-transaction pgTAP tests)
+    ORDER BY m.created_at DESC, m.account_id DESC
+    LIMIT 1;
+  END IF;
 
   IF v_account_id IS NOT NULL THEN
     v_app_meta := v_app_meta
@@ -982,6 +994,92 @@ ALTER FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid
 COMMENT ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id" "uuid") IS 'Removes a member from an account. Only owner/admin can remove. Owner cannot be removed. Admin cannot remove another admin. Cannot remove yourself (use leave team flow).';
 
 
+CREATE OR REPLACE FUNCTION "public"."switch_account"("p_account_id" "uuid")
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  IF NOT private.user_is_member(p_account_id, (SELECT auth.uid())) THEN
+    RAISE EXCEPTION 'not_a_member';
+  END IF;
+
+  UPDATE public.profiles
+  SET active_account_id = p_account_id
+  WHERE id = (SELECT auth.uid());
+END;
+$$;
+
+ALTER FUNCTION "public"."switch_account"("p_account_id" "uuid") OWNER TO "postgres";
+
+GRANT EXECUTE ON FUNCTION public.switch_account(uuid) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.switch_account(uuid) FROM PUBLIC, anon;
+
+COMMENT ON FUNCTION public.switch_account(uuid) IS
+  'Sets the caller''s active_account_id after validating membership. The JWT '
+  'hook picks this up on the next token refresh — callers must call '
+  'supabase.auth.refreshSession() afterward (Bloque 1).';
+
+
+CREATE OR REPLACE FUNCTION "public"."create_team"("p_name" "text")
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_uid         uuid := (SELECT auth.uid());
+  v_team_count  integer;
+  v_base_slug   text;
+  v_slug        text;
+  v_account_id  uuid;
+BEGIN
+  IF v_uid IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+
+  IF btrim(p_name) = '' OR char_length(p_name) > 100 THEN
+    RAISE EXCEPTION 'invalid_name';
+  END IF;
+
+  -- La Personal account tiene id = user id (invariante de handle_new_profile);
+  -- el límite de Teams se mide contra el plan de esa cuenta.
+  SELECT count(*) INTO v_team_count
+  FROM public.accounts_memberships m
+  JOIN public.accounts a ON a.id = m.account_id
+  WHERE m.user_id = v_uid AND m.role = 'owner' AND a.type = 'team' AND a.deleted_at IS NULL;
+
+  IF NOT private.within_plan_limit(v_uid, 'teams_max', v_team_count, 1) THEN
+    RAISE EXCEPTION 'team_limit_reached';
+  END IF;
+
+  v_base_slug := private.slugify(p_name);
+  v_slug := private.generate_unique_slug(v_base_slug);
+
+  INSERT INTO public.accounts (type, name, slug, created_by)
+  VALUES ('team', p_name, v_slug, v_uid)
+  RETURNING id INTO v_account_id;
+
+  INSERT INTO public.accounts_memberships (account_id, user_id, role)
+  VALUES (v_account_id, v_uid, 'owner');
+
+  UPDATE public.profiles SET active_account_id = v_account_id WHERE id = v_uid;
+
+  RETURN v_account_id;
+END;
+$$;
+
+ALTER FUNCTION "public"."create_team"("p_name" "text") OWNER TO "postgres";
+
+GRANT EXECUTE ON FUNCTION public.create_team(text) TO authenticated;
+REVOKE EXECUTE ON FUNCTION public.create_team(text) FROM PUBLIC, anon;
+
+COMMENT ON FUNCTION public.create_team(text) IS
+  'Creates a Team account (caller = owner), gated by the teams_max entitlement '
+  'evaluated against the caller''s Personal account plan. Sets the new team as '
+  'active — callers must call supabase.auth.refreshSession() afterward (Bloque 1).';
+
 
 CREATE OR REPLACE FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
@@ -1123,6 +1221,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "company" "text",
     "pending_deletion" boolean DEFAULT false NOT NULL,
     "analytics_consent" boolean,
+    "active_account_id" "uuid",
     CONSTRAINT "profiles_bio_check" CHECK (("char_length"("bio") <= 500)),
     CONSTRAINT "profiles_company_check" CHECK (("char_length"("company") <= 100)),
     CONSTRAINT "profiles_website_url_check" CHECK (("char_length"("website_url") <= 255))
@@ -1599,6 +1698,13 @@ ALTER TABLE ONLY "public"."invitations"
 ALTER TABLE ONLY "public"."profiles"
     ADD CONSTRAINT "profiles_id_fkey" FOREIGN KEY ("id") REFERENCES "auth"."users"("id") ON DELETE CASCADE;
 
+
+ALTER TABLE ONLY "public"."profiles"
+    ADD CONSTRAINT "profiles_active_account_id_fkey" FOREIGN KEY ("active_account_id")
+    REFERENCES "public"."accounts"("id") ON DELETE SET NULL;
+
+
+CREATE INDEX "idx_profiles_active_account_id" ON "public"."profiles" USING "btree" ("active_account_id");
 
 
 ALTER TABLE ONLY "public"."projects"

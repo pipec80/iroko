@@ -49,7 +49,19 @@
     "nav_account": "Mi cuenta",
     "new_org": "Nueva organización",
     "no_org": "Sin organización",
-    "org_switcher_label": "Cambiar de organización"
+    "org_switcher_label": "Cambiar de organización",
+    "create_team_title": "Nueva organización",
+    "create_team_description": "Crea un espacio de trabajo nuevo para tu equipo.",
+    "create_team_name_label": "Nombre",
+    "create_team_cancel": "Cancelar",
+    "create_team_submit": "Crear",
+    "create_team_submitting": "Creando...",
+    "create_team_error_name_required": "El nombre es obligatorio.",
+    "create_team_error_name_too_long": "El nombre es demasiado largo.",
+    "create_team_error_limit": "Alcanzaste el límite de organizaciones de tu plan.",
+    "create_team_error_generic": "No se pudo crear la organización. Inténtalo de nuevo.",
+    "switch_org_error_generic": "No se pudo cambiar de organización. Inténtalo de nuevo.",
+    "switch_org_error_not_member": "Ya no formas parte de esa organización."
   },
   "Dashboard": {
     "page_title": "Inicio",

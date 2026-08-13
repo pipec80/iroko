@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Folder, FileText } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
+import { getActiveAccountId } from '@/lib/active-account';
 import { getBySlug } from '@/lib/projects';
 import { listByProject } from '@/lib/project-documents';
 import { logger } from '@/lib/logger';
@@ -29,7 +30,7 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   const t = await getTranslations('Projects');
   const supabase = await createClient();
-  const { data: accountId } = await supabase.rpc('get_my_account_id');
+  const accountId = await getActiveAccountId();
   if (!accountId) notFound();
 
   const [project, timezone] = await Promise.all([

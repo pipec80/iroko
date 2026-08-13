@@ -97,6 +97,7 @@ docs/**/*.pdf
 /docs/plans/
 /docs/superpowers/
 /docs/estado-fases.md
+/.superpowers/
 
 # scratch / herramientas locales (no pertenecen al repo)
 /scratch/

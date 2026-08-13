@@ -66,6 +66,7 @@ type Props = {
   user: TopbarUser;
   locale: string;
   orgs: OrgAccount[];
+  activeAccountId: string | null;
 };
 
 // Matches NAV_ITEMS labels in sidebar exactly — values are Navigation namespace keys.
@@ -114,7 +115,7 @@ function userInitials(displayName: string): string {
     .join('');
 }
 
-export function AppTopbarClient({ user, locale, orgs }: Props) {
+export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('UserMenu');
@@ -122,8 +123,8 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
   const tNav = useTranslations('Navigation');
   const { theme, setTheme } = useTheme();
   const pageTitle = getPageTitle(pathname, tAdmin, tNav);
-  const firstOrg = orgs[0];
-  const orgLabel = firstOrg?.name.toUpperCase() ?? 'IROKO';
+  const activeOrg = orgs.find((o) => o.account_id === activeAccountId) ?? orgs[0];
+  const orgLabel = activeOrg?.name.toUpperCase() ?? 'IROKO';
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -172,7 +173,7 @@ export function AppTopbarClient({ user, locale, orgs }: Props) {
                 <SheetDescription className="sr-only">
                   Menú lateral para navegación en dispositivos móviles.
                 </SheetDescription>
-                <AppSidebarClient orgs={orgs} />
+                <AppSidebarClient orgs={orgs} activeAccountId={activeAccountId} />
               </SheetContent>
             </Sheet>
           </div>
