@@ -275,30 +275,37 @@ content_path = "./supabase/templates/invite.html"
 [auth.email.notification.password_changed]
 enabled = true
 subject = "Tu contrasena fue cambiada"
+content_path = "./templates/password_changed.html"
 
 [auth.email.notification.email_changed]
 enabled = true
 subject = "Tu email fue cambiado"
+content_path = "./templates/email_changed.html"
 
 [auth.email.notification.phone_changed]
 enabled = true
 subject = "Tu telefono fue cambiado"
+content_path = "./templates/phone_changed.html"
 
 [auth.email.notification.mfa_factor_enrolled]
 enabled = true
 subject = "Un nuevo factor MFA fue agregado"
+content_path = "./templates/mfa_factor_enrolled.html"
 
 [auth.email.notification.mfa_factor_unenrolled]
 enabled = true
 subject = "Un factor MFA fue removido"
+content_path = "./templates/mfa_factor_unenrolled.html"
 
 [auth.email.notification.identity_linked]
 enabled = true
 subject = "Una identidad fue vinculada a tu cuenta"
+content_path = "./templates/identity_linked.html"
 
 [auth.email.notification.identity_unlinked]
 enabled = true
 subject = "Una identidad fue desvinculada de tu cuenta"
+content_path = "./templates/identity_unlinked.html"
 
 # ----------------------------------------------------------------------------
 # SMS / Phone Auth
