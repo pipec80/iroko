@@ -716,11 +716,11 @@ $$;
 ALTER FUNCTION "public"."get_my_account_id"() OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."get_my_accounts"() RETURNS TABLE("account_id" "uuid", "name" "text", "slug" "text", "type" "public"."account_type", "logo_url" "text", "role" "public"."membership_role")
+CREATE OR REPLACE FUNCTION "public"."get_my_accounts"() RETURNS TABLE("account_id" "uuid", "name" "text", "slug" "text", "type" "public"."account_type", "logo_url" "text", "role" "public"."membership_role", "website" "text", "country" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-  SELECT a.id, a.name, a.slug, a.type, a.logo_url, m.role
+  SELECT a.id, a.name, a.slug, a.type, a.logo_url, m.role, a.website, a.country
   FROM public.accounts a
   JOIN public.accounts_memberships m ON m.account_id = a.id
   WHERE m.user_id = (SELECT auth.uid())
@@ -771,6 +771,44 @@ $$;
 ALTER FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") OWNER TO "postgres";
 
 COMMENT ON FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") IS 'Renombra la cuenta. Owner/admin únicamente vía private.assert_account_admin (F3-C4).';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."update_account_info"("p_account_id" "uuid", "p_name" "text", "p_slug" "text", "p_website" "text" DEFAULT NULL::"text", "p_country" "text" DEFAULT NULL::"text") RETURNS void
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  PERFORM private.assert_account_admin(p_account_id);
+
+  IF btrim(p_name) = '' OR char_length(p_name) > 100 THEN
+    RAISE EXCEPTION 'invalid_name';
+  END IF;
+
+  IF p_slug !~ '^[a-z0-9]+(-[a-z0-9]+)*$' OR char_length(p_slug) > 60 THEN
+    RAISE EXCEPTION 'invalid_slug';
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM public.accounts WHERE slug = p_slug AND id != p_account_id
+  ) THEN
+    RAISE EXCEPTION 'slug_taken';
+  END IF;
+
+  UPDATE public.accounts
+  SET name = p_name,
+      slug = p_slug,
+      website = NULLIF(btrim(p_website), ''),
+      country = NULLIF(btrim(p_country), ''),
+      updated_at = now()
+  WHERE id = p_account_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."update_account_info"("p_account_id" "uuid", "p_name" "text", "p_slug" "text", "p_website" "text", "p_country" "text") OWNER TO "postgres";
+
+COMMENT ON FUNCTION "public"."update_account_info"("p_account_id" "uuid", "p_name" "text", "p_slug" "text", "p_website" "text", "p_country" "text") IS 'Actualiza name/slug/website/country de la cuenta. Owner/admin únicamente vía private.assert_account_admin. Website/country vacíos se guardan como NULL.';
 
 
 
@@ -1332,7 +1370,9 @@ CREATE TABLE IF NOT EXISTS "public"."accounts" (
     "created_by" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
-    "deleted_at" timestamp with time zone
+    "deleted_at" timestamp with time zone,
+    "website" "text",
+    "country" "text"
 );
 
 
@@ -1491,6 +1531,11 @@ ALTER TABLE ONLY "public"."accounts"
 
 ALTER TABLE ONLY "public"."accounts"
     ADD CONSTRAINT "accounts_slug_key" UNIQUE ("slug");
+
+
+
+ALTER TABLE ONLY "public"."accounts"
+    ADD CONSTRAINT "accounts_slug_format" CHECK (("slug" ~ '^[a-z0-9]+(-[a-z0-9]+)*$'::"text"));
 
 
 
@@ -1973,6 +2018,11 @@ GRANT ALL ON FUNCTION "public"."remove_member"("p_account_id" "uuid", "p_user_id
 
 REVOKE ALL ON FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."rename_account"("p_account_id" "uuid", "p_name" "text") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "public"."update_account_info"("p_account_id" "uuid", "p_name" "text", "p_slug" "text", "p_website" "text", "p_country" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."update_account_info"("p_account_id" "uuid", "p_name" "text", "p_slug" "text", "p_website" "text", "p_country" "text") TO "authenticated";
 
 
 

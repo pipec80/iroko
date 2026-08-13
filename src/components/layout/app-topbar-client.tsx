@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
@@ -51,6 +51,7 @@ const LOCALE_LABELS: Record<(typeof routing.locales)[number], string> = {
 };
 import { useShortcut } from '@/hooks/use-shortcut';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { CreateTeamDialog } from './create-team-dialog';
 import { ShortcutsDialog } from './shortcuts-dialog';
 import type { OrgAccount } from './app-sidebar-client';
 import { AppSidebarClient } from './app-sidebar-client';
@@ -128,6 +129,7 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [createTeamOpen, setCreateTeamOpen] = useState(false);
 
   useShortcut(
     'k',
@@ -139,6 +141,13 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
   );
 
   useShortcut('/', () => setShortcutsOpen(true), { ctrlOrMeta: true });
+
+  useShortcut('e', () => setCreateTeamOpen(true), { ctrlOrMeta: true, shift: true });
+
+  useShortcut('p', () => router.push({ pathname: '/dashboard/projects', query: { new: '1' } }), {
+    ctrlOrMeta: true,
+    shift: true,
+  });
 
   function handleChangeLocale(next: string) {
     if (next === locale) return;
@@ -288,10 +297,12 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
                 </DropdownMenuItem>
               </Link>
 
-              <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
-                <Settings style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('preferences')}</span>
-              </DropdownMenuItem>
+              <Link href="/dashboard/account?tab=profile">
+                <DropdownMenuItem style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}>
+                  <Settings style={{ width: 15, height: 15, strokeWidth: 1.25 }} />
+                  <span style={{ flex: 1, fontSize: 13, fontWeight: 500 }}>{t('preferences')}</span>
+                </DropdownMenuItem>
+              </Link>
 
               <DropdownMenuItem
                 style={{ borderRadius: 4, padding: '7px 10px', gap: 10 }}
@@ -410,6 +421,7 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
       </header>
 
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      <CreateTeamDialog open={createTeamOpen} onOpenChange={setCreateTeamOpen} hideTrigger />
     </>
   );
 }

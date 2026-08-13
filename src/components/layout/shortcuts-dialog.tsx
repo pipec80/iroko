@@ -40,6 +40,8 @@ export function ShortcutsDialog({ open, onOpenChange }: Props) {
   const shortcuts = [
     { keys: ['⌘', 'K'], description: t('shortcut_search') },
     { keys: ['⌘', '/'], description: t('shortcut_shortcuts') },
+    { keys: ['⌘', '⇧', 'E'], description: t('shortcut_create_team') },
+    { keys: ['⌘', '⇧', 'P'], description: t('shortcut_create_project') },
     { keys: ['Esc'], description: t('shortcut_close') },
   ];
 

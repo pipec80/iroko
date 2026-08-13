@@ -7,6 +7,13 @@ import { publishAnnouncement } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ANNOUNCEMENT_TYPES } from '@/lib/validation/admin';
 
@@ -28,7 +35,7 @@ export function AnnouncementForm() {
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setSuccess(false);
@@ -55,17 +62,20 @@ export function AnnouncementForm() {
     <form onSubmit={handleSubmit} noValidate className="card flex max-w-xl flex-col gap-4 p-6">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="announcement-type">{t('announcements_type_label')}</Label>
-        <select
-          id="announcement-type"
+        <Select
           value={type}
-          onChange={(e) => setType(e.target.value as (typeof ANNOUNCEMENT_TYPES)[number])}
-          className="border-border-strong h-9 w-full rounded-md border bg-transparent px-2.5 py-1 text-base scheme-light outline-none md:text-sm dark:scheme-dark">
-          {ANNOUNCEMENT_TYPES.map((value) => (
-            <option key={value} value={value}>
-              {t(`announcements_type_${value}` as never)}
-            </option>
-          ))}
-        </select>
+          onValueChange={(value) => setType(value as (typeof ANNOUNCEMENT_TYPES)[number])}>
+          <SelectTrigger id="announcement-type">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ANNOUNCEMENT_TYPES.map((value) => (
+              <SelectItem key={value} value={value}>
+                {t(`announcements_type_${value}` as never)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="announcement-title">{t('announcements_title_label')}</Label>

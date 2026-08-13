@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { FileText, Zap, Bot, Plus } from 'lucide-react';
 
@@ -14,6 +15,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { createProject } from '@/app/[locale]/dashboard/projects/actions';
+import { useRouter } from '@/i18n/routing';
 import { PROJECT_TONES, TONE_TO_COLOR } from '@/lib/validation/projects';
 import type { ProjectTone } from '@/lib/validation/projects';
 import { appConfig } from '@/config/app.config';
@@ -42,10 +44,20 @@ interface NewProjectDialogProps {
 
 export function NewProjectDialog({ variant }: NewProjectDialogProps) {
   const t = useTranslations('Projects');
-  const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  // Atajo global (⌘⇧P) navega acá con ?new=1 para abrir el diálogo directo.
+  // Solo la instancia del header lo escucha — evita que la card duplicada
+  // (variant="card", misma página) también intente abrirse.
+  const [open, setOpen] = useState(() => variant !== 'card' && searchParams.get('new') === '1');
   const [tone, setTone] = useState<ProjectTone>('iron');
   const [projectType, setProjectType] = useState<ProjectType>('docs');
   const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (variant === 'card' || searchParams.get('new') !== '1') return;
+    router.replace('/dashboard/projects');
+  }, [variant, searchParams, router]);
 
   const projectTypes: {
     value: ProjectType;
