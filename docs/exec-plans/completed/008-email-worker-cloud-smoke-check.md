@@ -104,6 +104,37 @@ service_role`.
      documented here rather than skipped silently or claimed without
      evidence.
 
+## Deferred validation — closed 2026-08-14 (Plan 009)
+
+The deferred run happened and **failed**, then stayed red for three nights
+(2026-08-12 → 2026-08-14) before anyone looked. Root cause, and a correction to
+this plan's own diagnosis above:
+
+- The note in step 1 claimed the real Cloud value _"only lives in the
+  `production` GitHub Environment"_. That was an assumption, never verified.
+  The secrets **did exist** in that Environment — created 2026-06-09T23:26, 35
+  minutes after the repo-level ones — but they held the **local** values,
+  copied wholesale from `.env.local`. Adding `environment: production` moved
+  the lookup to a scope whose contents were equally wrong, so the symptom
+  never changed. The real Cloud value lived nowhere.
+- Fixed by correcting the Environment's contents, not the workflow:
+  `NEXT_PUBLIC_SUPABASE_URL` (was `http://127.0.0.1:54321` — the log's
+  `length: 22` gave it away), `SUPABASE_SECRET_KEY`,
+  `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, and `RESEND_API_KEY`, which still
+  held the key **revoked on 2026-08-10**.
+- The claim that `environment: production` is _"the same construct `ci.yml`'s
+  `build` job already uses"_ is only true on `main`: `ci.yml:577` resolves the
+  environment conditionally (`github.ref == 'refs/heads/main'`). Consequence
+  worth recording — every `main` build was compiling against local Supabase
+  and a revoked Resend key.
+- Verified 2026-08-14: `gh workflow run nightly.yml --ref main` → 3/3 jobs
+  green, `target host: rgrxlygtmvavqzkjyywg.supabase.co`, `length: 40`,
+  `✅ email_worker_health OK — HTTP 200, hace 16s`.
+
+Lesson recorded in Plan 009: a secret's **existence** was checked, its
+**content** never was. A deferred validation with no owner is an open failure,
+not a closed plan.
+
 ## Rollback
 
 - Revert the migration (drop the function) and the `nightly.yml` job.

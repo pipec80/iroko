@@ -3,7 +3,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(9);
+SELECT plan(13);
 
 SELECT ok(
   to_regclass('pgmq.q_email_queue') IS NOT NULL,
@@ -104,6 +104,37 @@ SET LOCAL role anon;
 SELECT throws_like(
   $$SELECT public.broadcast_alert_email('x', 'y')$$,
   '%permission denied%', 'anon no puede invocar broadcast_alert_email');
+RESET role;
+
+-- ── Plan 009: señales de entrega en email_worker_health() ──────────────────
+-- El status HTTP de la invocación no detecta "el worker responde 2xx pero el
+-- proveedor rechaza todo". Estas assertions cubren las tres señales nuevas.
+--
+-- La función filtra por WHERE id = true sobre la tabla singleton, así que sin
+-- una invocación registrada no devuelve NINGUNA fila. Se siembra acá (el
+-- ROLLBACK del test la revierte) para poder evaluar las columnas.
+INSERT INTO private.email_worker_last_invocation (id, request_id, invoked_at)
+VALUES (true, NULL, now())
+ON CONFLICT (id) DO UPDATE SET request_id = NULL, invoked_at = now();
+
+SELECT is(
+  (SELECT queue_length FROM private.email_worker_health()),
+  (SELECT count(*) FROM pgmq.q_email_queue),
+  'email_worker_health expone la profundidad real de la cola');
+
+SELECT ok(
+  (SELECT oldest_msg_age_sec FROM private.email_worker_health()) IS NOT NULL,
+  'email_worker_health reporta la antigüedad del mensaje más viejo con la cola cargada');
+
+SELECT is(
+  (SELECT dead_lettered_recent FROM private.email_worker_health()),
+  (SELECT count(*) FROM pgmq.a_email_queue WHERE archived_at > now() - interval '24 hours'),
+  'email_worker_health cuenta los mensajes descartados tras agotar reintentos (24h)');
+
+SET LOCAL role anon;
+SELECT throws_like(
+  $$SELECT * FROM public.get_email_worker_health()$$,
+  '%permission denied%', 'anon no puede consultar get_email_worker_health');
 RESET role;
 
 SELECT * FROM finish();
