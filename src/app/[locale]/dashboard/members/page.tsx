@@ -4,7 +4,8 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { getTeamMembers } from '../team/actions';
 import { InviteDialog } from '@/components/dashboard/team/invite-dialog';
 import { MembersTable } from '@/components/dashboard/members/members-table';
-import { getActiveAccountId } from '@/lib/active-account';
+import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
+import { canManageMembers } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
 import { getUserTimezone } from '@/lib/user-timezone';
 
@@ -24,10 +25,11 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
 
   const t = await getTranslations('Team');
   const supabase = await createClient();
-  const [{ data: members }, timezone, accountId, userData] = await Promise.all([
+  const [{ data: members }, timezone, accountId, role, userData] = await Promise.all([
     getTeamMembers(),
     getUserTimezone(supabase),
     getActiveAccountId(),
+    getActiveAccountRole(),
     supabase.auth.getUser(),
   ]);
 
@@ -47,7 +49,7 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
             {t('members_subtitle', { active: activeCount, pending: pendingCount })}
           </p>
         </div>
-        <InviteDialog />
+        {canManageMembers(role) && <InviteDialog />}
       </header>
 
       {/* Table with toolbar */}
@@ -56,6 +58,7 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
         timezone={timezone}
         accountId={accountId}
         currentUserId={userData.data.user?.id ?? null}
+        currentUserRole={role}
       />
     </div>
   );

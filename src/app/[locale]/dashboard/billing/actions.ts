@@ -9,6 +9,7 @@ import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
 import type { NormalizedEvent } from '@/lib/billing/types';
 import { handleProviderWebhook } from '@/lib/billing/webhook-handler';
 import { logger } from '@/lib/logger';
+import { canManageBilling } from '@/lib/permissions';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { env } from '@/env';
@@ -86,7 +87,7 @@ export const startCheckout = withServerAction(async function startCheckout(input
   if (!accountId) return { data: null, error: 'no_account' };
 
   const role = await getActiveAccountRole();
-  if (role !== 'owner' && role !== 'admin') return { data: null, error: 'not_authorized' };
+  if (!canManageBilling(role)) return { data: null, error: 'not_authorized' };
 
   const provider = getPaymentProvider();
   const { url } = await provider.createCheckout({

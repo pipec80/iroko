@@ -928,7 +928,9 @@
     "invoice_status_open": "Pendente",
     "invoice_status_paid": "Paga",
     "invoice_status_void": "Anulada",
-    "invoice_status_uncollectible": "Incobrável"
+    "invoice_status_uncollectible": "Incobrável",
+    "checkout_error": "Não foi possível iniciar o pagamento. Tente novamente.",
+    "readonly_notice": "Somente o proprietário ou um administrador pode gerenciar o plano e a cobrança."
   },
   "Projects": {
     "page_eyebrow": "Floresta",

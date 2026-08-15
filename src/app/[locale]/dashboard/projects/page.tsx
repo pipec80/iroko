@@ -1,8 +1,9 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Folder, Users, GitBranch } from 'lucide-react';
-import { getActiveAccountId } from '@/lib/active-account';
+import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
 import { listByAccount } from '@/lib/projects';
 import { logger } from '@/lib/logger';
+import { canEditContent } from '@/lib/permissions';
 import { Link } from '@/i18n/routing';
 import { NewProjectDialog } from '@/components/dashboard/projects/new-project-dialog';
 
@@ -38,7 +39,8 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
 
   const t = await getTranslations('Projects');
 
-  const accountId = await getActiveAccountId();
+  const [accountId, role] = await Promise.all([getActiveAccountId(), getActiveAccountRole()]);
+  const canCreate = canEditContent(role);
 
   let projects: Project[] = [];
   if (accountId) {
@@ -66,7 +68,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
             {t('page_lead', { brand: appConfig.brand })}
           </p>
         </div>
-        <NewProjectDialog />
+        {canCreate && <NewProjectDialog />}
       </header>
 
       {/* Grid */}
@@ -75,7 +77,7 @@ export default async function ProjectsPage({ params }: { params: Promise<{ local
           <ProjectCard key={project.id} project={project} locale={locale} />
         ))}
 
-        <NewProjectDialog variant="card" />
+        {canCreate && <NewProjectDialog variant="card" />}
       </div>
     </div>
   );

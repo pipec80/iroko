@@ -16,6 +16,7 @@ import {
 import type { TeamMember } from '@/app/[locale]/dashboard/team/actions';
 import { removeMember } from '@/app/[locale]/dashboard/team/actions';
 import { usePresence } from '@/hooks/use-presence';
+import { canManageMembers, type MembershipRole } from '@/lib/permissions';
 import { storageUrl } from '@/lib/storage';
 
 function memberTone(role: string, index: number): string {
@@ -44,9 +45,13 @@ function getMemberName(member: TeamMember): string {
   return member.display_name ?? member.email;
 }
 
-type RowActionsProps = { member: TeamMember; displayName: string };
+type RowActionsProps = {
+  member: TeamMember;
+  displayName: string;
+  currentUserRole: MembershipRole | null;
+};
 
-function RowActions({ member, displayName }: RowActionsProps) {
+function RowActions({ member, displayName, currentUserRole }: RowActionsProps) {
   const t = useTranslations('Team');
   const [open, setOpen] = useState(false);
 
@@ -61,7 +66,10 @@ function RowActions({ member, displayName }: RowActionsProps) {
     {},
   );
 
-  if (!member.user_id || member.role === 'owner') {
+  // El gate previo solo miraba el rol de la FILA (nunca remover a un owner),
+  // nunca el de quien mira: un viewer veía el botón de eliminar sobre
+  // cualquier admin/member, aunque el RPC lo iba a rechazar igual.
+  if (!member.user_id || member.role === 'owner' || !canManageMembers(currentUserRole)) {
     return <span className="btn-icon" style={{ width: 44, height: 44 }} />;
   }
 
@@ -126,9 +134,16 @@ type Props = {
   timezone?: string;
   accountId: string | null;
   currentUserId: string | null;
+  currentUserRole: MembershipRole | null;
 };
 
-export function MembersTable({ members, timezone = 'UTC', accountId, currentUserId }: Props) {
+export function MembersTable({
+  members,
+  timezone = 'UTC',
+  accountId,
+  currentUserId,
+  currentUserRole,
+}: Props) {
   const t = useTranslations('Team');
   const locale = useLocale();
   const { onlineUserIds } = usePresence(accountId ?? '', currentUserId ?? '');
@@ -174,6 +189,7 @@ export function MembersTable({ members, timezone = 'UTC', accountId, currentUser
           <option value="owner">{t('role_owner')}</option>
           <option value="admin">{t('role_admin')}</option>
           <option value="member">{t('role_member')}</option>
+          <option value="viewer">{t('role_viewer')}</option>
         </select>
         <select
           value={statusFilter}
@@ -306,7 +322,11 @@ export function MembersTable({ members, timezone = 'UTC', accountId, currentUser
                     : '—'}
                   </span>
 
-                  <RowActions member={member} displayName={displayName} />
+                  <RowActions
+                    member={member}
+                    displayName={displayName}
+                    currentUserRole={currentUserRole}
+                  />
                 </div>
               );
             })
