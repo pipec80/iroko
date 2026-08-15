@@ -42,6 +42,32 @@ function getResend(): Resend {
 }
 
 /**
+ * Techo de espera por envío. Los transaccionales se mandan inline dentro de una
+ * Server Action (ver dashboard/team/actions.ts), así que un proveedor que
+ * cuelga —en vez de fallar rápido— bloquearía la respuesta hasta el timeout de
+ * la plataforma y el usuario vería un error de red genérico en lugar del
+ * reporte de entregas fallidas. Fallar acá lo convierte en un fallo contado.
+ */
+const SEND_TIMEOUT_MS = 8_000;
+
+async function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`${label} timed out after ${SEND_TIMEOUT_MS}ms`)),
+          SEND_TIMEOUT_MS,
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
  * Entrega el email al catcher local (Mailpit) en vez de a Resend.
  *
  * Mailpit acepta ingesta por HTTP además de SMTP, así que el transporte local
@@ -68,6 +94,7 @@ async function sendViaMailpit(
       Subject: subject,
       HTML: html,
     }),
+    signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
   });
 
   if (!response.ok) {
@@ -97,12 +124,10 @@ export async function sendEmail(
     return;
   }
 
-  const { error } = await getResend().emails.send({
-    from: env.FROM_EMAIL,
-    to,
-    subject,
-    react,
-  });
+  const { error } = await withTimeout(
+    getResend().emails.send({ from: env.FROM_EMAIL, to, subject, react }),
+    'Resend',
+  );
 
   if (error) {
     logger.error({ to, action: 'send_email', subject }, error.message);

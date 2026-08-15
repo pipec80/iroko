@@ -50,7 +50,8 @@ SET active_account_id = COALESCE(
     LIMIT 1),
   (SELECT m.account_id
      FROM public.accounts_memberships m
-    WHERE m.user_id = p.id
+     JOIN public.accounts a2 ON a2.id = m.account_id
+    WHERE m.user_id = p.id AND a2.deleted_at IS NULL
     ORDER BY m.created_at ASC
     LIMIT 1)
 )

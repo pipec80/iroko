@@ -153,15 +153,6 @@ export const inviteMembers = withServerAction(async function inviteMembers(
 
   revalidatePath('/[locale]/dashboard/members', 'page');
 
-  if (caller) {
-    await captureServer({
-      event: 'invitation_sent',
-      properties: { role: parsed.data.role, invited_count: count },
-      distinctId: caller.id,
-      accountId,
-    });
-  }
-
   const inviterEmail = caller?.email ?? 'un miembro del equipo';
   const locale = await getLocale();
 
@@ -169,8 +160,12 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   // respuesta salió, así que un fallo de entrega no puede llegar a la UI y
   // moría en un .catch() que solo logueaba. Una invitación que no se entrega
   // deja al invitado fuera del equipo — el usuario tiene que enterarse.
-  // Enviar tokens en texto plano acá es la única oportunidad: el RPC solo
-  // guarda el hash y los devuelve una vez.
+  //
+  // Nada que pueda lanzar debe correr entre el RPC y este punto: los tokens en
+  // texto plano existen una sola vez (el RPC solo guarda el hash), y las
+  // invitaciones ya están creadas. Si algo aborta acá, quedan en 'pending' con
+  // su token perdido para siempre y el reintento choca con 'already_invited'
+  // sin haber entregado nunca nada. Por eso la telemetría va después.
   const results = await Promise.allSettled(
     (invitations ?? []).map((inv) =>
       sendInvitationEmail(inv.email, {
@@ -183,14 +178,33 @@ export const inviteMembers = withServerAction(async function inviteMembers(
 
   const failed = results.filter((result) => result.status === 'rejected').length;
 
-  if (failed > 0) {
-    for (const result of results) {
-      if (result.status === 'rejected') {
-        logger.error(
-          { action: 'invitation_email', accountId },
-          result.reason instanceof Error ? result.reason.message : 'Unknown error',
-        );
-      }
+  for (const [index, result] of results.entries()) {
+    if (result.status === 'rejected') {
+      logger.error(
+        // El email del destinatario es necesario para saber CUÁL invitación no
+        // salió cuando en el mismo lote hay éxitos y fallos mezclados.
+        { action: 'invitation_email', accountId, email: invitations?.[index]?.email },
+        result.reason instanceof Error ? result.reason.message : 'Unknown error',
+      );
+    }
+  }
+
+  if (caller) {
+    // captureServer resuelve el consentimiento con una query a profiles que NO
+    // está dentro de su try/catch (analytics/server.ts): si falla, la excepción
+    // sube hasta withServerAction. Nunca debe poder tumbar un envío ya hecho.
+    try {
+      await captureServer({
+        event: 'invitation_sent',
+        properties: { role: parsed.data.role, invited_count: count },
+        distinctId: caller.id,
+        accountId,
+      });
+    } catch (err: unknown) {
+      logger.error(
+        { action: 'team.invite.capture', accountId },
+        err instanceof Error ? err.message : 'captureServer failed',
+      );
     }
   }
 

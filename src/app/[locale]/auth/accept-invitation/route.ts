@@ -7,6 +7,26 @@ import { logger } from '@/lib/logger';
 import { notify } from '@/lib/notifications';
 import type { Database } from '@/types/database';
 
+/**
+ * Redirige a `url` conservando las cookies que el cliente Supabase haya escrito
+ * sobre `carrier`.
+ *
+ * getUser() refresca el access token por su cuenta cuando está vencido, y con
+ * enable_refresh_token_rotation (supabase/config.toml) ese refresh invalida el
+ * token anterior en el servidor. Devolver un NextResponse nuevo descartaría las
+ * cookies nuevas y dejaría al navegador con un refresh token ya muerto: la
+ * sesión se rompería en las demás pestañas, sin ninguna pista de que la causa
+ * fue abrir un link de invitación vencido. El caso no es raro — las
+ * invitaciones se abren días después, con el access token siempre expirado.
+ */
+function redirectPreservingSession(carrier: NextResponse, url: string): NextResponse {
+  const redirect = NextResponse.redirect(url);
+  for (const cookie of carrier.cookies.getAll()) {
+    redirect.cookies.set(cookie);
+  }
+  return redirect;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ locale: string }> },
@@ -47,14 +67,17 @@ export async function GET(
   // Si no está autenticado, redirigir al login preservando la URL de aceptación.
   if (!user) {
     const next = encodeURIComponent(`/${locale}/auth/accept-invitation?token=${token}`);
-    return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?next=${next}`);
+    return redirectPreservingSession(response, `${env.SITE_URL}/${locale}/login?next=${next}`);
   }
 
   const { data, error } = await supabase.rpc('accept_invitation', { p_token: token }).single();
 
   if (error) {
     logger.warn({ userId: user.id, action: 'accept_invitation', code: error.code }, error.message);
-    return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?error=invitation_invalid`);
+    return redirectPreservingSession(
+      response,
+      `${env.SITE_URL}/${locale}/login?error=invitation_invalid`,
+    );
   }
 
   // El RPC dejó el team como cuenta activa en profiles, pero el JWT actual

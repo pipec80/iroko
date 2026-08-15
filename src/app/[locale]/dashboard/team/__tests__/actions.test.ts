@@ -358,6 +358,27 @@ describe('removeMember', () => {
       expect(result.failed).toBe(1);
     });
 
+    it('should not lose an already-sent invitation when telemetry fails', async () => {
+      // Arrange — captureServer resuelve el consentimiento con una query que no
+      // está dentro de su propio try/catch, así que puede lanzar.
+      mockAuthenticatedWithAccount();
+      mocks.rpc.mockResolvedValue({
+        data: [{ email: 'alice@example.com', token: 'tok-a' }],
+        error: null,
+      });
+      mocks.captureServer.mockRejectedValueOnce(new Error('consent lookup failed'));
+      const fd = makeFormData({ emails: 'alice@example.com', role: 'member' });
+
+      // Act
+      const result = await inviteMembers(fd);
+
+      // Assert — el token en texto plano solo existe en esta llamada: si la
+      // action abortara acá, la invitación quedaría 'pending' sin entregarse
+      // nunca y el reintento chocaría con already_invited.
+      expect(mockSendInvitationEmail).toHaveBeenCalledTimes(1);
+      expect(result.success).toBe(true);
+    });
+
     it('should report duplicates when only some emails were new', async () => {
       // Arrange — se piden 2, el RPC solo devuelve 1 (la otra ya estaba pendiente).
       mockAuthenticatedWithAccount();
