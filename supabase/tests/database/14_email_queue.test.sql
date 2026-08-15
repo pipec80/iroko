@@ -3,7 +3,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(13);
+SELECT plan(15);
 
 SELECT ok(
   to_regclass('pgmq.q_email_queue') IS NOT NULL,
@@ -117,19 +117,44 @@ INSERT INTO private.email_worker_last_invocation (id, request_id, invoked_at)
 VALUES (true, NULL, now())
 ON CONFLICT (id) DO UPDATE SET request_id = NULL, invoked_at = now();
 
+-- Las assertions comparan contra valores CONOCIDOS, no contra la misma
+-- expresión SQL que usa la implementación: un test que hace
+-- `is(dead_lettered_recent, (SELECT count(*) ... WHERE archived_at > ...))`
+-- pasa aunque el filtro esté invertido, porque ambos lados dan 0 con la tabla
+-- de archive vacía.
+DELETE FROM pgmq.a_email_queue;
+
 SELECT is(
   (SELECT queue_length FROM private.email_worker_health()),
-  (SELECT count(*) FROM pgmq.q_email_queue),
-  'email_worker_health expone la profundidad real de la cola');
+  (SELECT count(*) FROM public.accounts_memberships WHERE role = 'owner'),
+  'queue_length refleja los mensajes que el broadcast dejó encolados');
 
 SELECT ok(
   (SELECT oldest_msg_age_sec FROM private.email_worker_health()) IS NOT NULL,
-  'email_worker_health reporta la antigüedad del mensaje más viejo con la cola cargada');
+  'oldest_msg_age_sec deja de ser NULL cuando la cola tiene mensajes');
 
 SELECT is(
   (SELECT dead_lettered_recent FROM private.email_worker_health()),
-  (SELECT count(*) FROM pgmq.a_email_queue WHERE archived_at > now() - interval '24 hours'),
-  'email_worker_health cuenta los mensajes descartados tras agotar reintentos (24h)');
+  0::bigint,
+  'sin descartes, dead_lettered_recent es 0');
+
+-- Descartar un mensaje es exactamente lo que hace el worker al agotar los
+-- reintentos (handler.ts:56-58): archive, no delete.
+SELECT pgmq.archive('email_queue', (SELECT min(msg_id) FROM pgmq.q_email_queue));
+
+SELECT is(
+  (SELECT dead_lettered_recent FROM private.email_worker_health()),
+  1::bigint,
+  'un mensaje descartado se cuenta — es la señal que delata entregas fallidas');
+
+-- La ventana de 24h existe para alinearse con la cadencia del nightly: un
+-- descarte viejo no debe mantener el check en rojo para siempre.
+UPDATE pgmq.a_email_queue SET archived_at = now() - interval '25 hours';
+
+SELECT is(
+  (SELECT dead_lettered_recent FROM private.email_worker_health()),
+  0::bigint,
+  'un descarte de hace más de 24h queda fuera de la ventana');
 
 SET LOCAL role anon;
 SELECT throws_like(
