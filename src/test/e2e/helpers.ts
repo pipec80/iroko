@@ -239,6 +239,15 @@ export async function verifyTotpFactor(
   }
 }
 
+/** Logs in through the real login form and waits for the dashboard redirect. */
+export async function loginViaUi(page: Page, email: string, password: string): Promise<void> {
+  await page.goto('/es/login');
+  await page.locator('input[name="email"][type="email"]').fill(email);
+  await page.locator('input[name="password"]').fill(password);
+  await page.getByRole('button', { name: /iniciar sesión/i }).click();
+  await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+}
+
 /** Creates a pre-confirmed user via Supabase Admin API. Returns the user UUID. */
 export async function createConfirmedUser(
   request: APIRequestContext,

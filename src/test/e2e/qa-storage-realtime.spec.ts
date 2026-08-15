@@ -5,6 +5,7 @@ import {
   deleteUserById,
   execSqlAsPostgres,
   fetchInvitationLinkTo,
+  loginViaUi,
   querySqlAsPostgres,
 } from './helpers';
 
@@ -87,11 +88,7 @@ test.describe('QA — notifications realtime', () => {
     const inviteePage = await inviteeContext.newPage();
 
     try {
-      await inviteePage.goto('/es/login');
-      await inviteePage.locator('input[name="email"][type="email"]').fill(inviteeEmail);
-      await inviteePage.locator('input[name="password"]').fill(password);
-      await inviteePage.getByRole('button', { name: /iniciar sesión/i }).click();
-      await inviteePage.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+      await loginViaUi(inviteePage, inviteeEmail, password);
 
       // accept_invitation dispara notify(inviterId, ...) en el servidor — la
       // página de A no se recarga. useNotifications guarda el push en estado
@@ -148,35 +145,38 @@ test.describe('QA — presence', () => {
     // la cuenta activa del teammate a este team porque, tras el signup, esta
     // membresía es la más reciente de las dos que tiene (su personal + esta) —
     // por eso el INSERT va ANTES del login, no después.
+    //
+    // La creación del usuario vive dentro de este try/finally (y no antes)
+    // para que cualquier falla posterior — incluidas las assertions de
+    // presence — siempre limpie el usuario sembrado, sin dejarlo huérfano en
+    // la DB local.
     const mateId = await createConfirmedUser(request, teammateEmail, password, serviceKey);
-    execSqlAsPostgres(
-      `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${mateId}'`,
-    );
-    execSqlAsPostgres(
-      `INSERT INTO public.accounts_memberships (account_id, user_id, role) ` +
-        `VALUES ('${accountId}', '${mateId}', 'member')`,
-    );
-
-    // La tabla se resuelve server-side una sola vez (RSC): sin este reload, el
-    // owner seguiría viendo la lista de miembros de antes de sembrar al
-    // teammate por SQL.
-    await page.goto('/es/dashboard/members');
-    await page.waitForURL(/\/es\/dashboard\/members/);
-
-    const teammateRowOnOwnerPage = page.getByTestId(`member-row-${teammateEmail}`);
-    await expect(teammateRowOnOwnerPage).toBeVisible();
-    // Antes de que el teammate se conecte, su fila no tiene el punto "En línea".
-    await expect(teammateRowOnOwnerPage.getByLabel('En línea')).not.toBeVisible();
-
-    const teammateContext = await browser.newContext();
-    const teammatePage = await teammateContext.newPage();
+    let teammateContext: Awaited<ReturnType<typeof browser.newContext>> | undefined;
 
     try {
-      await teammatePage.goto('/es/login');
-      await teammatePage.locator('input[name="email"][type="email"]').fill(teammateEmail);
-      await teammatePage.locator('input[name="password"]').fill(password);
-      await teammatePage.getByRole('button', { name: /iniciar sesión/i }).click();
-      await teammatePage.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+      execSqlAsPostgres(
+        `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${mateId}'`,
+      );
+      execSqlAsPostgres(
+        `INSERT INTO public.accounts_memberships (account_id, user_id, role) ` +
+          `VALUES ('${accountId}', '${mateId}', 'member')`,
+      );
+
+      // La tabla se resuelve server-side una sola vez (RSC): sin este reload,
+      // el owner seguiría viendo la lista de miembros de antes de sembrar al
+      // teammate por SQL.
+      await page.goto('/es/dashboard/members');
+      await page.waitForURL(/\/es\/dashboard\/members/);
+
+      const teammateRowOnOwnerPage = page.getByTestId(`member-row-${teammateEmail}`);
+      await expect(teammateRowOnOwnerPage).toBeVisible();
+      // Antes de que el teammate se conecte, su fila no tiene el punto "En línea".
+      await expect(teammateRowOnOwnerPage.getByLabel('En línea')).not.toBeVisible();
+
+      teammateContext = await browser.newContext();
+      const teammatePage = await teammateContext.newPage();
+
+      await loginViaUi(teammatePage, teammateEmail, password);
       await teammatePage.goto('/es/dashboard/members');
       await teammatePage.waitForURL(/\/es\/dashboard\/members/);
 
@@ -200,7 +200,7 @@ test.describe('QA — presence', () => {
         timeout: 15_000,
       });
     } finally {
-      await teammateContext.close();
+      await teammateContext?.close();
       await deleteUserById(request, mateId, serviceKey);
     }
   });
