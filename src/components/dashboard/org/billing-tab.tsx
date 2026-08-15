@@ -13,6 +13,8 @@ import {
   type PlanRow,
 } from '@/app/[locale]/dashboard/billing/actions';
 import { PlanViewedTracker } from '@/components/analytics/plan-viewed-tracker';
+import { logClient } from '@/lib/logger-client';
+import { canManageBilling, type MembershipRole } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 type Interval = 'month' | 'year';
@@ -35,10 +37,11 @@ const INVOICE_STATUS_KEYS: Record<string, string> = {
   uncollectible: 'invoice_status_uncollectible',
 };
 
-export function BillingTab() {
+export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRole | null }) {
   const t = useTranslations('Billing');
   const locale = useLocale();
   const [interval, setInterval] = useState<Interval>('month');
+  const canManage = canManageBilling(currentUserRole);
 
   const { data, isPending, error } = useQuery({
     queryKey: ['billing', 'data'],
@@ -58,6 +61,15 @@ export function BillingTab() {
     },
     onSuccess: (result) => {
       window.location.href = result.url;
+    },
+    // Sin esto un not_authorized (el backend ya valida owner/admin) quedaba
+    // solo en checkout.error, que nada en este componente renderizaba — el
+    // fallo desaparecía en silencio.
+    onError: (err: unknown) => {
+      logClient.error(
+        { action: 'billing.checkout' },
+        err instanceof Error ? err.message : 'checkout failed',
+      );
     },
   });
 
@@ -86,6 +98,22 @@ export function BillingTab() {
   return (
     <div className="space-y-8">
       <PlanViewedTracker source="billing_page" />
+      {!canManage && (
+        <p
+          role="status"
+          className="rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)' }}>
+          {t('readonly_notice')}
+        </p>
+      )}
+      {checkout.isError && (
+        <p
+          role="alert"
+          className="rounded-lg px-3 py-2 text-[13px] font-medium"
+          style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
+          {t('checkout_error')}
+        </p>
+      )}
       <section>
         <div className="mb-4 flex items-center justify-between">
           <span className="eyebrow">{t('current_plan')}</span>
@@ -122,6 +150,7 @@ export function BillingTab() {
               price={formatPrice(plan)}
               onSubscribe={() => checkout.mutate({ slug: plan.slug, interval })}
               isSubscribing={checkout.isPending}
+              canManage={canManage}
             />
           ))}
         </div>
@@ -140,12 +169,14 @@ function PlanCard({
   price,
   onSubscribe,
   isSubscribing,
+  canManage,
 }: {
   plan: PlanRow;
   isCurrent: boolean;
   price: string;
   onSubscribe: () => void;
   isSubscribing: boolean;
+  canManage: boolean;
 }) {
   const t = useTranslations('Billing');
   const isFree = plan.slug === 'free';
@@ -174,7 +205,7 @@ function PlanCard({
       )}
       <button
         type="button"
-        disabled={isCurrent || isFree || isSubscribing}
+        disabled={isCurrent || isFree || isSubscribing || !canManage}
         onClick={onSubscribe}
         data-testid={`subscribe-${plan.slug}`}
         className={cn('w-full justify-center', isCurrent || isFree ? 'btn-outline' : 'btn-iron')}>

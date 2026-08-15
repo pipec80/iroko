@@ -928,7 +928,9 @@
     "invoice_status_open": "Pendiente",
     "invoice_status_paid": "Pagada",
     "invoice_status_void": "Anulada",
-    "invoice_status_uncollectible": "Incobrable"
+    "invoice_status_uncollectible": "Incobrable",
+    "checkout_error": "No se pudo iniciar el pago. Intentá de nuevo.",
+    "readonly_notice": "Solo el owner o un admin puede gestionar el plan y la facturación."
   },
   "Projects": {
     "page_eyebrow": "Bosque",
