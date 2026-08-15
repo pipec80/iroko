@@ -1496,6 +1496,14 @@ export type Database = {
         Args: { p_body: string; p_subject: string }
         Returns: number
       }
+      change_member_role: {
+        Args: {
+          p_account_id: string
+          p_role: Database["public"]["Enums"]["membership_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       check_request: { Args: never; Returns: undefined }
       complete_onboarding: { Args: never; Returns: undefined }
       consume_recovery_code: { Args: { p_code: string }; Returns: boolean }
@@ -1674,6 +1682,7 @@ export type Database = {
         Args: { p_account_id: string; p_flag_name: string }
         Returns: boolean
       }
+      leave_team: { Args: { p_account_id: string }; Returns: undefined }
       list_account_invoices: {
         Args: {
           p_account_id: string
@@ -1806,12 +1815,20 @@ export type Database = {
       }
       request_account_deletion: { Args: never; Returns: undefined }
       revoke_api_key: { Args: { p_key_id: string }; Returns: undefined }
+      revoke_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
+      }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
       set_account_logo: {
         Args: { p_account_id: string; p_path?: string }
         Returns: undefined
       }
       switch_account: { Args: { p_account_id: string }; Returns: undefined }
+      transfer_ownership: {
+        Args: { p_account_id: string; p_new_owner: string }
+        Returns: undefined
+      }
       update_account_info: {
         Args: {
           p_account_id: string
