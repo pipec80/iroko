@@ -340,6 +340,12 @@ jobs:
       # en los templates de email. Sin esto la URL en el email es relativa y los
       # tests de confirmación no pueden extraerla.
       SITE_URL: http://localhost:3000
+      # Enruta los emails de la APLICACIÓN al Mailpit del stack local en vez de
+      # a Resend (src/lib/email/index.tsx). Sin esto, invitation.spec.ts intenta
+      # entregar a Resend con una key placeholder y luego espera en vano un
+      # email que nunca llega a la bandeja. Distinto de los emails de Auth
+      # (signup/recovery), que ya llegan a Mailpit vía SMTP de GoTrue.
+      MAILPIT_URL: http://127.0.0.1:54324
     if: |
       !startsWith(github.head_ref, 'dependabot/') &&
       (github.event_name == 'pull_request' ||
