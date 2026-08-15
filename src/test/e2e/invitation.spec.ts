@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures/auth';
 import {
   createConfirmedUser,
+  createTeamViaUi,
   deleteUserById,
   execSqlAsPostgres,
   fetchInvitationLinkTo,
@@ -45,19 +46,7 @@ test.describe('Invitación — ciclo completo', () => {
     const switcherName = /cambiar de organización/i;
 
     // ── Arrange: el owner crea un Team y queda parado dentro de él ──────────
-    const ownerSwitcher = page.getByRole('button', { name: switcherName });
-    await page.goto('/es/dashboard');
-    await page.waitForURL(/\/es\/dashboard$/);
-    await ownerSwitcher.click();
-    await expect(page.getByRole('listbox')).toBeVisible();
-    await page.getByRole('button', { name: /nueva organización/i }).click();
-
-    const createDialog = page.getByRole('dialog');
-    await expect(createDialog).toBeVisible();
-    await createDialog.getByLabel(/nombre/i).fill(teamName);
-    await createDialog.getByRole('button', { name: /^crear$/i }).click();
-    await page.waitForURL(/\/es\/dashboard$/);
-    await expect(ownerSwitcher).toContainText(teamName);
+    await createTeamViaUi(page, teamName);
 
     // ── Act 1: invitar ─────────────────────────────────────────────────────
     await page.goto('/es/dashboard/members');

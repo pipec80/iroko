@@ -825,11 +825,22 @@ CREATE OR REPLACE FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_e
     AS $$
 DECLARE
   v_caller_role public.membership_role;
+  v_account_type public.account_type;
   v_email       text;
   v_norm_email  text;
   v_raw_token   text;
   v_token_hash  text;
 BEGIN
+  -- Plan 009: las cuentas personales son 1:1 con su usuario (el trigger
+  -- enforce_single_owner_per_account ya lo asumía); colaborar define a un team.
+  SELECT type INTO v_account_type
+  FROM public.accounts
+  WHERE id = p_account_id AND deleted_at IS NULL;
+
+  IF v_account_type IS DISTINCT FROM 'team' THEN
+    RAISE EXCEPTION 'not_a_team';
+  END IF;
+
   SELECT role INTO v_caller_role
   FROM public.accounts_memberships
   WHERE account_id = p_account_id AND user_id = (SELECT auth.uid());
@@ -874,7 +885,7 @@ $$;
 ALTER FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Crea invitaciones y retorna (email, token) pares. El token en texto plano se retorna UNA SOLA VEZ para enviarse por email. Solo el hash se almacena en BD. Rechaza si members actuales + invitados excede seats_max del plan (F3-3H-1).';
+COMMENT ON FUNCTION "public"."invite_members"("p_account_id" "uuid", "p_emails" "text"[], "p_role" "public"."membership_role") IS 'Crea invitaciones y retorna (email, token) pares. El token en texto plano se retorna UNA SOLA VEZ para enviarse por email. Solo el hash se almacena en BD. Rechaza cuentas que no sean type=team (Plan 009: Personal es 1:1) y rechaza si members actuales + invitados excede seats_max del plan (F3-3H-1).';
 
 
 
@@ -1833,19 +1844,19 @@ ALTER TABLE "public"."accounts" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."accounts_memberships" ENABLE ROW LEVEL SECURITY;
 
 
-CREATE POLICY "admins_can_create_documents" ON "public"."documents" FOR INSERT TO "authenticated" WITH CHECK ((( SELECT "private"."get_user_role"("documents"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role"])));
+CREATE POLICY "editors_can_create_documents" ON "public"."documents" FOR INSERT TO "authenticated" WITH CHECK ((( SELECT "private"."get_user_role"("documents"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role", 'member'::"public"."membership_role"])));
 
 
 
-CREATE POLICY "admins_can_create_projects" ON "public"."projects" FOR INSERT TO "authenticated" WITH CHECK ((( SELECT "private"."get_user_role"("projects"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role"])));
+CREATE POLICY "editors_can_create_projects" ON "public"."projects" FOR INSERT TO "authenticated" WITH CHECK ((( SELECT "private"."get_user_role"("projects"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role", 'member'::"public"."membership_role"])));
 
 
 
-CREATE POLICY "admins_can_update_documents" ON "public"."documents" FOR UPDATE TO "authenticated" USING ((( SELECT "private"."get_user_role"("documents"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role"]))) WITH CHECK ((( SELECT "private"."get_user_role"("documents"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role"])));
+CREATE POLICY "editors_can_update_documents" ON "public"."documents" FOR UPDATE TO "authenticated" USING ((( SELECT "private"."get_user_role"("documents"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role", 'member'::"public"."membership_role"]))) WITH CHECK ((( SELECT "private"."get_user_role"("documents"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role", 'member'::"public"."membership_role"])));
 
 
 
-CREATE POLICY "admins_can_update_projects" ON "public"."projects" FOR UPDATE TO "authenticated" USING ((( SELECT "private"."get_user_role"("projects"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role"]))) WITH CHECK ((( SELECT "private"."get_user_role"("projects"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role"])));
+CREATE POLICY "editors_can_update_projects" ON "public"."projects" FOR UPDATE TO "authenticated" USING ((( SELECT "private"."get_user_role"("projects"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role", 'member'::"public"."membership_role"]))) WITH CHECK ((( SELECT "private"."get_user_role"("projects"."account_id", ( SELECT "auth"."uid"() AS "uid")) AS "get_user_role") = ANY (ARRAY['owner'::"public"."membership_role", 'admin'::"public"."membership_role", 'member'::"public"."membership_role"])));
 
 
 

@@ -72,7 +72,11 @@ export const appConfig: AppConfig = {
     analytics: true,
     onboarding: true,
     verticals: {
-      robot: true,
+      // Apagado en V1 (Plan 009): sus policies dejan escribir a cualquier
+      // membresía, incluido viewer, así que contradice la matriz RBAC. Es un
+      // vertical de demostración — se conserva activable en vez de rediseñar
+      // sus permisos, para que no retrase el core del boilerplate.
+      robot: false,
     },
   },
   theme: {
