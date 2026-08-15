@@ -1,7 +1,6 @@
 'use server';
 
 import { getLocale } from 'next-intl/server';
-import { after } from 'next/server';
 import { revalidatePath } from 'next/cache';
 
 import { env } from '@/env';
@@ -29,7 +28,15 @@ export type TeamMember = {
   joined_at: string;
 };
 
-type ActionResult = { error?: string; success?: boolean; count?: number };
+type ActionResult = {
+  error?: string;
+  success?: boolean;
+  count?: number;
+  /** Emails que ya tenían una invitación pendiente: no se reenvió nada. */
+  duplicates?: number;
+  /** Invitaciones creadas cuyo email no se pudo entregar. */
+  failed?: number;
+};
 
 // --------------------------------------------------------------------------
 // Helpers
@@ -131,44 +138,63 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   }
 
   const count = (invitations ?? []).length;
+  // invite_members se traga el unique_violation cuando ya existe una invitación
+  // pendiente para ese email, así que devuelve menos filas de las pedidas.
+  const duplicates = parsed.data.emails.length - count;
+
+  // Nada nuevo que enviar: sin esto la UI cerraba el diálogo con un mensaje de
+  // éxito idéntico al de un envío real.
+  if (count === 0) {
+    logger.info({ action: 'team.invite.duplicates', duplicates }, 'No new invitations created');
+    return { error: 'already_invited' };
+  }
 
   logger.info({ action: 'team.invite.success', count, role: parsed.data.role }, 'Members invited');
 
-  revalidatePath('/[locale]/dashboard/team', 'page');
+  revalidatePath('/[locale]/dashboard/members', 'page');
 
-  // Enviar emails con los tokens retornados directamente por el RPC (plaintext, una sola vez).
-  if (count > 0) {
-    if (caller) {
-      await captureServer({
-        event: 'invitation_sent',
-        properties: { role: parsed.data.role, invited_count: count },
-        distinctId: caller.id,
-        accountId,
-      });
-    }
-    const inviterEmail = caller?.email ?? 'un miembro del equipo';
-    const locale = await getLocale();
-
-    after(async () => {
-      await Promise.allSettled(
-        (invitations ?? []).map((inv) => {
-          const inviteUrl = `${env.SITE_URL}/${locale}/auth/accept-invitation?token=${inv.token}`;
-          return sendInvitationEmail(inv.email, {
-            inviterEmail,
-            teamRole: parsed.data.role,
-            inviteUrl,
-          }).catch((err: unknown) => {
-            logger.error(
-              { action: 'invitation_email', email: inv.email },
-              err instanceof Error ? err.message : 'Unknown error',
-            );
-          });
-        }),
-      );
+  if (caller) {
+    await captureServer({
+      event: 'invitation_sent',
+      properties: { role: parsed.data.role, invited_count: count },
+      distinctId: caller.id,
+      accountId,
     });
   }
 
-  return { success: true, count };
+  const inviterEmail = caller?.email ?? 'un miembro del equipo';
+  const locale = await getLocale();
+
+  // El envío va inline, no dentro de after(): after() corre DESPUÉS de que la
+  // respuesta salió, así que un fallo de entrega no puede llegar a la UI y
+  // moría en un .catch() que solo logueaba. Una invitación que no se entrega
+  // deja al invitado fuera del equipo — el usuario tiene que enterarse.
+  // Enviar tokens en texto plano acá es la única oportunidad: el RPC solo
+  // guarda el hash y los devuelve una vez.
+  const results = await Promise.allSettled(
+    (invitations ?? []).map((inv) =>
+      sendInvitationEmail(inv.email, {
+        inviterEmail,
+        teamRole: parsed.data.role,
+        inviteUrl: `${env.SITE_URL}/${locale}/auth/accept-invitation?token=${inv.token}`,
+      }),
+    ),
+  );
+
+  const failed = results.filter((result) => result.status === 'rejected').length;
+
+  if (failed > 0) {
+    for (const result of results) {
+      if (result.status === 'rejected') {
+        logger.error(
+          { action: 'invitation_email', accountId },
+          result.reason instanceof Error ? result.reason.message : 'Unknown error',
+        );
+      }
+    }
+  }
+
+  return { success: true, count, duplicates, failed };
 });
 
 /**
@@ -206,6 +232,6 @@ export const removeMember = withServerAction(async function removeMember(
     'Member removed',
   );
 
-  revalidatePath('/[locale]/dashboard/team', 'page');
+  revalidatePath('/[locale]/dashboard/members', 'page');
   return { success: true };
 });

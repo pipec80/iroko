@@ -347,7 +347,10 @@
     "error_invalid_email_format": "Um ou mais e-mails têm um formato inválido.",
     "error_email_too_long": "Um dos e-mails é muito longo.",
     "error_max_10_emails": "Você pode convidar até 10 e-mails por vez.",
-    "error_generic": "Ocorreu um erro. Tente novamente."
+    "error_generic": "Ocorreu um erro. Tente novamente.",
+    "error_already_invited": "Essas pessoas já têm um convite pendente. Nenhum convite novo foi enviado.",
+    "warning_delivery_failed": "{count, plural, one {Não foi possível entregar # convite} other {Não foi possível entregar # convites}}. O convite foi criado, mas o e-mail não saiu — verifique a configuração de e-mail.",
+    "warning_duplicates": "{count, plural, one {# endereço já tinha convite pendente e foi ignorado} other {# endereços já tinham convite pendente e foram ignorados}}."
   },
   "ActivityLog": {
     "title": "Atividade",
