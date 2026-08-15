@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 
-import type { APIRequestContext } from '@playwright/test';
+import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
 export const MAILPIT_BASE = 'http://127.0.0.1:54324';
 export const SUPABASE_URL = 'http://127.0.0.1:54321';
@@ -53,6 +53,37 @@ export function querySqlAsPostgres(sql: string): string {
 
 export function uniqueEmail(prefix = 'e2e'): string {
   return `${prefix}+${Date.now()}@saasboilerplate.local`;
+}
+
+/**
+ * Crea una organización desde el switcher del sidebar y deja al usuario dentro
+ * de ella (create_team la marca como cuenta activa y la app redirige).
+ *
+ * Necesario en cualquier spec que invite gente: invite_members exige
+ * `type='team'`, porque las cuentas personales son 1:1 con su usuario.
+ *
+ * Selectores verificados contra los componentes reales:
+ * - El trigger tiene `aria-label="Cambiar de organización"` fijo, así que su
+ *   nombre accesible no cambia con la organización seleccionada.
+ * - "Nueva organización" solo se monta con el dropdown abierto
+ *   (`{isOpen && ...}` en app-sidebar-client.tsx).
+ */
+export async function createTeamViaUi(page: Page, teamName: string): Promise<void> {
+  const switcher = page.getByRole('button', { name: /cambiar de organización/i });
+
+  await page.goto('/es/dashboard');
+  await page.waitForURL(/\/es\/dashboard$/);
+  await switcher.click();
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await page.getByRole('button', { name: /nueva organización/i }).click();
+
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.getByLabel(/nombre/i).fill(teamName);
+  await dialog.getByRole('button', { name: /^crear$/i }).click();
+
+  await page.waitForURL(/\/es\/dashboard$/);
+  await expect(switcher).toContainText(teamName);
 }
 
 /**

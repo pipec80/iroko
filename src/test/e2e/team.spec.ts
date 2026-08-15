@@ -1,7 +1,7 @@
 import { type Page, test as base, expect } from '@playwright/test';
 
 import { test as authTest } from './fixtures/auth';
-import { execSqlAsPostgres, SUPABASE_URL } from './helpers';
+import { createTeamViaUi, execSqlAsPostgres, SUPABASE_URL } from './helpers';
 
 /**
  * Team management E2E tests.
@@ -132,6 +132,10 @@ authTest.describe('Team — invite member', () => {
     'invite dialog: valid email → invited email appears as pending in the member list',
     async ({ authenticatedPage: page }) => {
       const invitedEmail = `e2e+invited+${Date.now()}@saasboilerplate.local`;
+
+      // Invitar exige una cuenta de equipo: las personales son 1:1 con su
+      // usuario y invite_members las rechaza con not_a_team (Plan 009).
+      await createTeamViaUi(page, `Equipo Invite ${Date.now()}`);
 
       await page.goto('/es/dashboard/members');
       await page.waitForURL(/\/es\/dashboard\/members/);
