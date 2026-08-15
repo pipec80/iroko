@@ -102,6 +102,7 @@ export function ProfileTab({ profile, email, role }: Props) {
         <CardContent>
           <form
             action={avatarAction}
+            data-testid="avatar-form"
             className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
             <div className="bg-muted relative size-20 overflow-hidden rounded-full ring-2 ring-white">
               {avatarPreview ?

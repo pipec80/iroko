@@ -213,6 +213,7 @@ export function MembersTable({ members, timezone = 'UTC', accountId, currentUser
               return (
                 <div
                   key={member.user_id ?? `pending-${idx}`}
+                  data-testid={`member-row-${member.email}`}
                   className="members-row py-[14px]"
                   style={{ borderTop: idx === 0 ? 'none' : '1px solid var(--border)' }}>
                   {/* Avatar */}
