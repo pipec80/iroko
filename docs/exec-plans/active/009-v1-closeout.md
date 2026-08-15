@@ -124,16 +124,17 @@ el core del boilerplate.
 
 ## Tabla priorizada
 
-| #   | PR                           | Prioridad | Depende de | Esfuerzo | Por qué ahí                                                                                       |
-| --- | ---------------------------- | :-------: | :--------: | :------: | ------------------------------------------------------------------------------------------------- |
-| 1   | `fix/ci-email-worker-secret` |  **P0**   |     —      |  5 min   | CI en rojo hace 3 días por un secret faltante. Bloquea confiar en cualquier señal verde           |
-| 2   | `fix/invitation-correctness` |  **P0**   |     —      |    M     | Salto de cuenta no determinista + link roto + el email de invitación no llega y falla en silencio |
-| 3   | `feat/rbac-matrix-db`        |  **P1**   |     —      |    M     | Es el contrato que todo lo demás obedece. Nada de UI tiene sentido antes                          |
-| 4   | `feat/membership-lifecycle`  |  **P1**   |     3      |    M     | `remove_member` ya remite a un `leave_team` que no existe                                         |
-| 5   | `feat/ui-role-aware`         |  **P1**   |     3      |    M     | La UI no puede reflejar una matriz que aún no existe                                              |
-| 6   | `test/rbac-e2e`              |  **P2**   |   3,4,5    |    M     | El gate que prueba que 3-5 quedaron bien                                                          |
-| 7   | `test/qa-storage-realtime`   |  **P2**   |     —      |    S     | Avatar, notifications y presence: implementados, nunca probados E2E                               |
-| 8   | `chore/release-hygiene`      |  **P2**   |     —      |    S     | Lo último: nada de esto bloquea a lo demás                                                        |
+| #   | PR                             | Prioridad | Depende de | Esfuerzo | Por qué ahí                                                                                                                                                                               |
+| --- | ------------------------------ | :-------: | :--------: | :------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `fix/ci-email-worker-secret`   |  **P0**   |     —      |  5 min   | CI en rojo hace 3 días por un secret faltante. Bloquea confiar en cualquier señal verde                                                                                                   |
+| 2   | `fix/invitation-correctness`   |  **P0**   |     —      |    M     | Salto de cuenta no determinista + link roto + el email de invitación no llega y falla en silencio                                                                                         |
+| 3   | `feat/rbac-matrix-db`          |  **P1**   |     —      |    M     | Es el contrato que todo lo demás obedece. Nada de UI tiene sentido antes                                                                                                                  |
+| 4   | `feat/membership-lifecycle`    |  **P1**   |     3      |    M     | `remove_member` ya remite a un `leave_team` que no existe                                                                                                                                 |
+| 5   | `feat/ui-role-aware`           |  **P1**   |     3      |    M     | La UI no puede reflejar una matriz que aún no existe                                                                                                                                      |
+| 4b  | `feat/membership-lifecycle-ui` |  **P1**   |     4      |    S     | Backend de 4 sin ningún consumidor: hoy nadie puede usar estas RPCs desde la app. Gap real, no decorativo — abierto en #125, la UI se escribió en #124 antes de que estas RPCs existieran |
+| 6   | `test/rbac-e2e`                |  **P2**   |  3,4,4b,5  |    M     | El gate que prueba que 3-5 quedaron bien                                                                                                                                                  |
+| 7   | `test/qa-storage-realtime`     |  **P2**   |     —      |    S     | Avatar, notifications y presence: implementados, nunca probados E2E                                                                                                                       |
+| 8   | `chore/release-hygiene`        |  **P2**   |     —      |    S     | Lo último: nada de esto bloquea a lo demás                                                                                                                                                |
 
 PRs 7 y 8 no dependen de nadie: se pueden intercalar si hace falta soltar carga.
 
@@ -387,6 +388,46 @@ leave team instead."_ y `leave_team` no existe. No existen tampoco
 - `transfer_ownership` no deja jamás una cuenta sin owner, ni siquiera a mitad de
   transacción.
 - El texto de error de `remove_member` ya no miente: `leave_team` existe.
+
+**Estado (2026-08-15): backend mergeable en PR #125, cero consumidores.**
+Ninguna de las 4 RPCs se llama desde ningún componente — no es un matiz, es
+que hoy nadie puede usarlas desde la app. Nace de un accidente de orden: PR 5
+(`feat/ui-role-aware`, #124) se escribió y se abrió **antes** de que estas RPCs
+existieran, así que no las incluyó. Ver PR 4b abajo.
+
+---
+
+## PR 4b — `feat/membership-lifecycle-ui`
+
+**Problema.** Las 4 RPCs del PR 4 (`leave_team`, `change_member_role`,
+`transfer_ownership`, `revoke_invitation`) no tienen ningún punto de entrada en
+la UI. Gap real de producto, no housekeeping — por eso no va en el PR 8
+(`release-hygiene`), que es limpieza sin superficie de UX nueva. Cada RPC ya
+define sus rechazos como strings matcheables
+(`last_owner_must_transfer`, `cannot_change_own_role`, `use_transfer_ownership`,
+`invitation_not_pending`, más los ya conocidos `Only owner or admin can ...`);
+la UI debe mapear cada uno a un mensaje, no a un genérico.
+
+**Ejecución.**
+
+1. **Cambiar rol** — selector de rol en `members-table.tsx` (o en el diálogo de
+   `RowActions`), gateado por `canManageMembers` del helper de PR 5 y por las
+   mismas reglas que el RPC ya aplica (admin no ofrece "Admin" como destino, ni
+   lo ofrece sobre otro admin).
+2. **Transferir ownership** — acción separada, solo visible para el owner,
+   con confirmación explícita (mueve al owner actual a admin).
+3. **Salir del team** — visible para cualquier no-personal activo; si el que
+   sale es el único owner, mostrar el mensaje de `last_owner_must_transfer`
+   con un CTA a transferir primero, no un error genérico.
+4. **Revocar invitación** — acción sobre las filas `status: pending` de
+   `members-table.tsx`, que hoy solo se listan sin ninguna acción disponible.
+
+**Acceptance criteria.**
+
+- Las 4 RPCs tienen un punto de entrada real en la UI, no solo en la DB.
+- Cada código de rechazo del PR 4 tiene su mensaje propio, no cae en
+  `error_generic`.
+- E2E de al menos un camino feliz por RPC (puede compartirse con el PR 6).
 
 ---
 
