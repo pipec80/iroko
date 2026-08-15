@@ -17,6 +17,14 @@ export const env = createEnv({
     SENTRY_AUTH_TOKEN: z.string().min(1).optional(),
     RESEND_API_KEY: z.string().min(1),
     FROM_EMAIL: z.string().email(),
+    // Catcher de email local (Mailpit, incluido en el stack de Supabase CLI).
+    // Cuando está definida, TODOS los emails de la app van ahí en vez de a
+    // Resend — así se pueden ver y testear sin proveedor real ni dominio
+    // verificado. Se gatea con esta variable y no con NODE_ENV a propósito:
+    // la suite E2E corre `next build && next start`, es decir en modo
+    // producción, contra el stack local (mismo motivo documentado en
+    // src/proxy.ts para el CSP). Vacía o ausente en producción.
+    MAILPIT_URL: z.string().url().optional(),
     BILLING_DEFAULT_PROVIDER: z.string().default('mock'),
     MOCK_BILLING_SECRET: z.string().min(1),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
@@ -52,6 +60,7 @@ export const env = createEnv({
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     FROM_EMAIL: process.env.FROM_EMAIL,
+    MAILPIT_URL: process.env.MAILPIT_URL,
     BILLING_DEFAULT_PROVIDER: process.env.BILLING_DEFAULT_PROVIDER ?? 'mock',
     MOCK_BILLING_SECRET: process.env.MOCK_BILLING_SECRET,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,

@@ -347,7 +347,10 @@
     "error_invalid_email_format": "Une ou plusieurs adresses e-mail ont un format invalide.",
     "error_email_too_long": "L'une des adresses e-mail est trop longue.",
     "error_max_10_emails": "Vous pouvez inviter jusqu'à 10 e-mails à la fois.",
-    "error_generic": "Une erreur est survenue. Veuillez réessayer."
+    "error_generic": "Une erreur est survenue. Veuillez réessayer.",
+    "error_already_invited": "Ces personnes ont déjà une invitation en attente. Aucune nouvelle invitation n'a été envoyée.",
+    "warning_delivery_failed": "{count, plural, one {# invitation n'a pas pu être remise} other {# invitations n'ont pas pu être remises}}. L'invitation a bien été créée, mais l'e-mail n'est pas parti — vérifiez la configuration de messagerie.",
+    "warning_duplicates": "{count, plural, one {# adresse avait déjà une invitation en attente et a été ignorée} other {# adresses avaient déjà une invitation en attente et ont été ignorées}}."
   },
   "ActivityLog": {
     "title": "Activité",

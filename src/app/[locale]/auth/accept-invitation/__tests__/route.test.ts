@@ -1,16 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const { getUser, single, captureServer, notify } = vi.hoisted(() => ({
+const { getUser, refreshSession, single, captureServer, notify } = vi.hoisted(() => ({
   getUser: vi.fn(),
+  refreshSession: vi.fn(),
   single: vi.fn(),
   captureServer: vi.fn(async () => {}),
   notify: vi.fn(async () => {}),
 }));
 
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(async () => ({
-    auth: { getUser },
+// La ruta usa createServerClient directamente (no @/lib/supabase/server) para
+// poder escribir las cookies de sesión sobre la respuesta del redirect.
+vi.mock('@supabase/ssr', () => ({
+  createServerClient: vi.fn(() => ({
+    auth: { getUser, refreshSession },
     rpc: vi.fn(() => ({ single })),
   })),
 }));
@@ -20,7 +23,13 @@ vi.mock('@/lib/notifications', () => ({ notify }));
 vi.mock('@/lib/logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
-vi.mock('@/env', () => ({ env: { SITE_URL: 'http://localhost:3000' } }));
+vi.mock('@/env', () => ({
+  env: {
+    SITE_URL: 'http://localhost:3000',
+    NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321',
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test',
+  },
+}));
 
 import { GET } from '../route';
 
@@ -34,12 +43,19 @@ function makeRequest(token?: string): NextRequest {
 
 const params = Promise.resolve({ locale: 'es' });
 
+/** Usuario autenticado + invitación aceptada correctamente. */
+function arrangeAcceptedInvitation(invitedBy: string | null = 'inviter-1') {
+  getUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'a@test.com' } } });
+  single.mockResolvedValue({ data: { account_id: 'acc-1', invited_by: invitedBy }, error: null });
+  refreshSession.mockResolvedValue({ error: null });
+}
+
 describe('GET /[locale]/auth/accept-invitation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('redirects to login with invalid_invitation when no token is given', async () => {
+  it('should redirect to login with invalid_invitation when no token is given', async () => {
     const response = await GET(makeRequest(), { params });
 
     const location = new URL(response.headers.get('location') ?? '');
@@ -47,7 +63,7 @@ describe('GET /[locale]/auth/accept-invitation', () => {
     expect(location.searchParams.get('error')).toBe('invalid_invitation');
   });
 
-  it('redirects to login with next= when not authenticated', async () => {
+  it('should redirect to login with next= when not authenticated', async () => {
     getUser.mockResolvedValue({ data: { user: null } });
 
     const response = await GET(makeRequest('tok_123'), { params });
@@ -57,7 +73,7 @@ describe('GET /[locale]/auth/accept-invitation', () => {
     expect(location.searchParams.get('next')).toBe('/es/auth/accept-invitation?token=tok_123');
   });
 
-  it('redirects to login with invitation_invalid when the RPC errors', async () => {
+  it('should redirect to login with invitation_invalid when the RPC errors', async () => {
     getUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'a@test.com' } } });
     single.mockResolvedValue({ data: null, error: { code: '42501', message: 'not found' } });
 
@@ -66,14 +82,11 @@ describe('GET /[locale]/auth/accept-invitation', () => {
     const location = new URL(response.headers.get('location') ?? '');
     expect(location.searchParams.get('error')).toBe('invitation_invalid');
     expect(notify).not.toHaveBeenCalled();
+    expect(refreshSession).not.toHaveBeenCalled();
   });
 
-  it('captures invitation_accepted and notifies the inviter, then redirects to dashboard', async () => {
-    getUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'a@test.com' } } });
-    single.mockResolvedValue({
-      data: { account_id: 'acc-1', invited_by: 'inviter-1' },
-      error: null,
-    });
+  it('should capture invitation_accepted and notify the inviter, then redirect to dashboard', async () => {
+    arrangeAcceptedInvitation();
 
     const response = await GET(makeRequest('tok_123'), { params });
 
@@ -85,29 +98,41 @@ describe('GET /[locale]/auth/accept-invitation', () => {
     expect(notify).toHaveBeenCalledWith('inviter-1', {
       type: 'success',
       title: 'a@test.com aceptó tu invitación',
-      link: '/es/dashboard/team',
+      // La página real de miembros es /dashboard/members; /dashboard/team fue
+      // eliminada como ruta duplicada y el link quedaba en 404.
+      link: '/es/dashboard/members',
     });
     expect(new URL(response.headers.get('location') ?? '').pathname).toBe('/es/dashboard');
   });
 
-  it('does not notify when the invitation has no inviter on record', async () => {
-    getUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'a@test.com' } } });
-    single.mockResolvedValue({
-      data: { account_id: 'acc-1', invited_by: null },
-      error: null,
-    });
+  it('should refresh the session so the JWT picks up the team as active account', async () => {
+    arrangeAcceptedInvitation();
+
+    await GET(makeRequest('tok_123'), { params });
+
+    expect(refreshSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('should still redirect to dashboard when the session refresh fails', async () => {
+    arrangeAcceptedInvitation();
+    refreshSession.mockResolvedValue({ error: { code: 'network', message: 'refresh failed' } });
+
+    const response = await GET(makeRequest('tok_123'), { params });
+
+    expect(new URL(response.headers.get('location') ?? '').pathname).toBe('/es/dashboard');
+    expect(notify).toHaveBeenCalled();
+  });
+
+  it('should not notify when the invitation has no inviter on record', async () => {
+    arrangeAcceptedInvitation(null);
 
     await GET(makeRequest('tok_123'), { params });
 
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('still redirects to dashboard when notify() fails', async () => {
-    getUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'a@test.com' } } });
-    single.mockResolvedValue({
-      data: { account_id: 'acc-1', invited_by: 'inviter-1' },
-      error: null,
-    });
+  it('should still redirect to dashboard when notify() fails', async () => {
+    arrangeAcceptedInvitation();
     notify.mockRejectedValueOnce(new Error('insert failed'));
 
     const response = await GET(makeRequest('tok_123'), { params });

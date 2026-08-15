@@ -347,7 +347,10 @@
     "error_invalid_email_format": "Uno o más correos electrónicos no tienen un formato válido.",
     "error_email_too_long": "Uno de los correos electrónicos es demasiado largo.",
     "error_max_10_emails": "Podés invitar hasta 10 correos electrónicos por vez.",
-    "error_generic": "Ocurrió un error. Intentá de nuevo."
+    "error_generic": "Ocurrió un error. Intentá de nuevo.",
+    "error_already_invited": "Esas personas ya tienen una invitación pendiente. No se envió ninguna nueva.",
+    "warning_delivery_failed": "{count, plural, one {No se pudo entregar # invitación} other {No se pudieron entregar # invitaciones}}. La invitación quedó creada, pero el correo no salió: revisá la configuración de email.",
+    "warning_duplicates": "{count, plural, one {# dirección ya tenía invitación pendiente y se omitió} other {# direcciones ya tenían invitación pendiente y se omitieron}}."
   },
   "ActivityLog": {
     "title": "Actividad",

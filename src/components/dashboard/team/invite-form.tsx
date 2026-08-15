@@ -24,6 +24,7 @@ const ERROR_KEYS: Record<string, string> = {
   max_10_emails: 'error_max_10_emails',
   no_account: 'error_generic',
   invite_failed: 'error_generic',
+  already_invited: 'error_already_invited',
 };
 
 export function InviteForm({
@@ -40,9 +41,21 @@ export function InviteForm({
   const formRef = useRef<HTMLFormElement>(null);
 
   const [state, action, isPending] = useActionState(
-    async (_prev: { error?: string; success?: boolean; count?: number }, formData: FormData) => {
+    async (
+      _prev: {
+        error?: string;
+        success?: boolean;
+        count?: number;
+        duplicates?: number;
+        failed?: number;
+      },
+      formData: FormData,
+    ) => {
       const result = await inviteMembers(formData);
-      if (result.success) {
+      // Con entregas fallidas el diálogo queda abierto: cerrarlo mostraría el
+      // mismo resultado que un envío correcto y el usuario nunca se enteraría
+      // de que el invitado no recibió nada.
+      if (result.success && !result.failed) {
         formRef.current?.reset();
         setRole('member');
         onSuccess?.();
@@ -111,6 +124,22 @@ export function InviteForm({
               </Link>
             </>
           : t((ERROR_KEYS[state.error] ?? 'error_generic') as never)}
+        </p>
+      )}
+
+      {/* La invitación se creó pero el email no salió: sin este aviso el
+          usuario cree que el invitado ya la recibió. */}
+      {state.success && (state.failed ?? 0) > 0 && (
+        <p role="alert" className="bg-error/10 text-error rounded-lg px-3 py-2 text-xs font-medium">
+          {t('warning_delivery_failed', { count: state.failed ?? 0 })}
+        </p>
+      )}
+
+      {/* Informativo: hubo envíos correctos, pero algunas direcciones ya
+          tenían invitación pendiente y se omitieron. */}
+      {state.success && (state.duplicates ?? 0) > 0 && (
+        <p className="bg-surface-container text-on-surface-variant rounded-lg px-3 py-2 text-xs">
+          {t('warning_duplicates', { count: state.duplicates ?? 0 })}
         </p>
       )}
 

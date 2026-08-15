@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const { mockSend } = vi.hoisted(() => {
   const mockSend = vi.fn();
@@ -33,6 +33,12 @@ vi.mock('@/lib/email/templates/invitation', () => ({
 
 vi.mock('@/lib/email/templates/notification', () => ({
   NotificationEmail: vi.fn().mockReturnValue(null),
+}));
+
+// El transporte local renderiza el template a HTML antes de mandarlo; acá solo
+// interesa a dónde se entrega, no el markup.
+vi.mock('@react-email/components', () => ({
+  render: vi.fn(async () => '<html>rendered</html>'),
 }));
 
 describe('sendEmail', () => {
@@ -131,6 +137,78 @@ describe('sendEmail', () => {
           }),
         }),
       }),
+    );
+  });
+});
+
+/**
+ * Sin catcher local ningún email de la app es visible en desarrollo: Resend es
+ * una API HTTP y Mailpit solo intercepta el SMTP de Supabase Auth. Por eso las
+ * invitaciones nunca aparecían en la bandeja local.
+ */
+describe('sendEmail — transporte local', () => {
+  const fakeElement = { type: 'div', props: {}, key: null } as unknown as React.ReactElement;
+
+  beforeEach(() => {
+    vi.resetModules();
+    mockSend.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('should deliver to Mailpit over HTTP when MAILPIT_URL is set', async () => {
+    // Arrange
+    vi.doMock('@/env', () => ({
+      env: {
+        RESEND_API_KEY: 're_test_key',
+        FROM_EMAIL: 'noreply@test.com',
+        SITE_URL: 'http://localhost:3000',
+        MAILPIT_URL: 'http://127.0.0.1:54324',
+      },
+    }));
+    const fetchSpy = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal('fetch', fetchSpy);
+    const { sendEmail } = await import('@/lib/email');
+
+    // Act
+    await sendEmail('user@example.com', 'Asunto', fakeElement);
+
+    // Assert
+    expect(fetchSpy).toHaveBeenCalledWith(
+      'http://127.0.0.1:54324/api/v1/send',
+      expect.objectContaining({ method: 'POST' }),
+    );
+    const requestInit = fetchSpy.mock.calls[0]?.[1] as { body: string };
+    const body = JSON.parse(requestInit.body);
+    expect(body).toMatchObject({
+      From: { Email: 'noreply@test.com' },
+      To: [{ Email: 'user@example.com' }],
+      Subject: 'Asunto',
+    });
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it('should throw when Mailpit rejects the message', async () => {
+    // Arrange
+    vi.doMock('@/env', () => ({
+      env: {
+        RESEND_API_KEY: 're_test_key',
+        FROM_EMAIL: 'noreply@test.com',
+        SITE_URL: 'http://localhost:3000',
+        MAILPIT_URL: 'http://127.0.0.1:54324',
+      },
+    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 500, text: async () => 'boom' }),
+    );
+    const { sendEmail } = await import('@/lib/email');
+
+    // Act + Assert — un fallo de entrega no puede pasar por éxito.
+    await expect(sendEmail('user@example.com', 'Asunto', fakeElement)).rejects.toThrow(
+      /Mailpit rejected/,
     );
   });
 });

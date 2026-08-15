@@ -91,6 +91,45 @@ export async function fetchLatestMessageTo(
   throw new Error(`No email delivered to ${recipient} within ${maxWaitMs}ms`);
 }
 
+/**
+ * Polls Mailpit for the team invitation sent to `recipient` and returns its
+ * accept URL.
+ *
+ * Separate from {@link fetchLatestMessageTo}, which looks for Supabase Auth's
+ * confirmation links (/auth/confirm, /verify). Invitations are sent by the app
+ * itself, not by Auth, and only reach Mailpit when MAILPIT_URL is set — see
+ * src/lib/email/index.tsx.
+ */
+export async function fetchInvitationLinkTo(
+  request: APIRequestContext,
+  recipient: string,
+  maxWaitMs = 15_000,
+): Promise<string> {
+  const deadline = Date.now() + maxWaitMs;
+  while (Date.now() < deadline) {
+    const res = await request.get(`${MAILPIT_BASE}/api/v1/search?query=to:${recipient}`);
+    if (res.ok()) {
+      const data: { messages?: Array<{ ID: string }> } = await res.json();
+      const msg = data.messages?.[0];
+      if (msg) {
+        const detail = await request.get(`${MAILPIT_BASE}/api/v1/message/${msg.ID}`);
+        const body: { Text?: string; HTML?: string } = await detail.json();
+        const content = `${body.HTML ?? ''}\n${body.Text ?? ''}`.replace(/&amp;/g, '&');
+        const link = content
+          .match(/https?:\/\/[^\s"<>()]+/g)
+          ?.find((url) => url.includes('/auth/accept-invitation?token='));
+        if (link) return link;
+        throw new Error(`Email delivered to ${recipient} but it carries no invitation link`);
+      }
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error(
+    `No invitation email delivered to ${recipient} within ${maxWaitMs}ms — ` +
+      `is MAILPIT_URL set so the app delivers to Mailpit instead of Resend?`,
+  );
+}
+
 /** Resolves an access token for an already-confirmed user via the password grant. */
 export async function passwordGrant(
   request: APIRequestContext,
