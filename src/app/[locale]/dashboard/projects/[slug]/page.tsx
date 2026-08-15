@@ -3,10 +3,11 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Folder, FileText } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
-import { getActiveAccountId } from '@/lib/active-account';
+import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
 import { getBySlug } from '@/lib/projects';
 import { listByProject } from '@/lib/project-documents';
 import { logger } from '@/lib/logger';
+import { canEditContent } from '@/lib/permissions';
 import { getUserTimezone } from '@/lib/user-timezone';
 import { Link } from '@/i18n/routing';
 import { NewDocumentDialog } from '@/components/dashboard/projects/new-document-dialog';
@@ -30,8 +31,9 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
 
   const t = await getTranslations('Projects');
   const supabase = await createClient();
-  const accountId = await getActiveAccountId();
+  const [accountId, role] = await Promise.all([getActiveAccountId(), getActiveAccountRole()]);
   if (!accountId) notFound();
+  const canCreate = canEditContent(role);
 
   const [project, timezone] = await Promise.all([
     getBySlug(accountId, slug).catch((err: unknown) => {
@@ -75,17 +77,19 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
             )}
           </div>
         </div>
-        <NewDocumentDialog projectId={project.id} projectSlug={slug} />
+        {canCreate && <NewDocumentDialog projectId={project.id} projectSlug={slug} />}
       </header>
 
       {/* Documents grid */}
       {documents.length === 0 ?
-        <EmptyState projectId={project.id} projectSlug={slug} t={t} />
+        <EmptyState projectId={project.id} projectSlug={slug} t={t} canCreate={canCreate} />
       : <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
           {documents.map((doc) => (
             <DocumentCard key={doc.id} doc={doc} slug={slug} locale={locale} timezone={timezone} />
           ))}
-          <NewDocumentDialog projectId={project.id} projectSlug={slug} variant="card" />
+          {canCreate && (
+            <NewDocumentDialog projectId={project.id} projectSlug={slug} variant="card" />
+          )}
         </div>
       }
     </div>
@@ -141,10 +145,12 @@ function EmptyState({
   projectId,
   projectSlug,
   t,
+  canCreate,
 }: {
   projectId: string;
   projectSlug: string;
   t: Awaited<ReturnType<typeof getTranslations<'Projects'>>>;
+  canCreate: boolean;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-4 py-24 text-center">
@@ -157,7 +163,9 @@ function EmptyState({
         <p className="text-foreground text-[15px] font-semibold">{t('detail_empty_title')}</p>
         <p className="text-muted-foreground mt-1 text-[13px]">{t('detail_empty_desc')}</p>
       </div>
-      <NewDocumentDialog projectId={projectId} projectSlug={projectSlug} variant="card" />
+      {canCreate && (
+        <NewDocumentDialog projectId={projectId} projectSlug={projectSlug} variant="card" />
+      )}
     </div>
   );
 }

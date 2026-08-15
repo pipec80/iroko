@@ -930,7 +930,9 @@
     "invoice_status_open": "En attente",
     "invoice_status_paid": "Payée",
     "invoice_status_void": "Annulée",
-    "invoice_status_uncollectible": "Irrécouvrable"
+    "invoice_status_uncollectible": "Irrécouvrable",
+    "checkout_error": "Impossible de démarrer le paiement. Veuillez réessayer.",
+    "readonly_notice": "Seul le propriétaire ou un administrateur peut gérer le forfait et la facturation."
   },
   "Projects": {
     "page_eyebrow": "Forêt",

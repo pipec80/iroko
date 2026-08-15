@@ -9,7 +9,10 @@ export function StepPlan({ onNext }: { onNext: () => void }) {
   const t = useTranslations('Onboarding');
   return (
     <div className="space-y-4">
-      <BillingTab />
+      {/* El paso 0 del wizard (StepOrg) crea o renombra el team del usuario, así
+          que en este paso el rol es siempre owner — no hay ninguna otra forma
+          de llegar acá. */}
+      <BillingTab currentUserRole="owner" />
       <Button type="button" onClick={onNext}>
         {t('next')}
       </Button>
