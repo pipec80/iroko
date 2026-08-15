@@ -347,7 +347,10 @@
     "error_invalid_email_format": "One or more email addresses have an invalid format.",
     "error_email_too_long": "One of the email addresses is too long.",
     "error_max_10_emails": "You can invite up to 10 emails at a time.",
-    "error_generic": "Something went wrong. Please try again."
+    "error_generic": "Something went wrong. Please try again.",
+    "error_already_invited": "Those people already have a pending invitation. Nothing new was sent.",
+    "warning_delivery_failed": "{count, plural, one {# invitation could not be delivered} other {# invitations could not be delivered}}. The invitation was created, but the email never went out — check your email configuration.",
+    "warning_duplicates": "{count, plural, one {# address already had a pending invitation and was skipped} other {# addresses already had a pending invitation and were skipped}}."
   },
   "ActivityLog": {
     "title": "Activity",

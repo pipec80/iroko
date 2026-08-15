@@ -108,6 +108,13 @@ BEGIN
   SET status = 'accepted', updated_at = now()
   WHERE id = v_invitation.id;
 
+  -- Plan 009: entrar al team al que te invitaron es el resultado esperado del
+  -- flujo. Antes dependía del fallback del hook JWT, así que ocurría o no
+  -- según si el usuario había hecho switch_account() alguna vez.
+  UPDATE public.profiles
+  SET active_account_id = v_invitation.account_id
+  WHERE id = v_user_id;
+
   RETURN QUERY SELECT v_invitation.account_id, v_invitation.invited_by;
 END;
 $$;
@@ -116,7 +123,7 @@ $$;
 ALTER FUNCTION "public"."accept_invitation"("p_token" "text") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."accept_invitation"("p_token" "text") IS 'Accepts an invitation by token and creates the membership. Returns the inviter''s user id (nullable) so the caller can notify them. SECURITY DEFINER: mutates invitations+memberships (direct write revoked). Uses auth.uid().';
+COMMENT ON FUNCTION "public"."accept_invitation"("p_token" "text") IS 'Accepts an invitation by token, creates the membership and switches the caller''s active account to that team. Returns the inviter''s user id (nullable) so the caller can notify them. Callers must call supabase.auth.refreshSession() afterward for the JWT to pick up the new active account. SECURITY DEFINER: mutates invitations+memberships (direct write revoked). Uses auth.uid().';
 
 
 

@@ -223,7 +223,9 @@ describe('inviteMembers', () => {
     const result = await inviteMembers(fd);
     expect(result.success).toBe(true);
     expect(result.count).toBe(2);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team', 'page');
+    // La lista de miembros vive en /dashboard/members; /dashboard/team fue
+    // eliminada como ruta duplicada, así que revalidarla no refrescaba nada.
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/members', 'page');
     expect(mocks.captureServer).toHaveBeenCalledWith({
       event: 'invitation_sent',
       properties: { role: 'member', invited_count: 2 },
@@ -309,6 +311,90 @@ describe('removeMember', () => {
     const fd = makeFormData({ userId: '550e8400-e29b-41d4-a716-446655440000' });
     const result = await removeMember(fd);
     expect(result.success).toBe(true);
-    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/team', 'page');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/[locale]/dashboard/members', 'page');
+  });
+
+  describe('inviteMembers — resultados que antes se veían como éxito', () => {
+    it('should report already_invited when every email had a pending invitation', async () => {
+      // Arrange — invite_members se traga el unique_violation y devuelve 0 filas.
+      mockAuthenticatedWithAccount();
+      mocks.rpc.mockResolvedValue({ data: [], error: null });
+      const fd = makeFormData({ emails: 'alice@example.com', role: 'member' });
+
+      // Act
+      const result = await inviteMembers(fd);
+
+      // Assert — antes esto devolvía { success: true, count: 0 } y la UI
+      // cerraba el diálogo como si hubiera enviado algo.
+      expect(result.error).toBe('already_invited');
+      expect(result.success).toBeUndefined();
+      expect(mockSendInvitationEmail).not.toHaveBeenCalled();
+    });
+
+    it('should report how many emails failed to be delivered', async () => {
+      // Arrange
+      mockAuthenticatedWithAccount();
+      mocks.rpc.mockResolvedValue({
+        data: [
+          { email: 'alice@example.com', token: 'tok-a' },
+          { email: 'bob@example.com', token: 'tok-b' },
+        ],
+        error: null,
+      });
+      // Cuerpo vacío en vez de mockResolvedValueOnce(undefined):
+      // unicorn/no-useless-undefined marca ese argumento como error.
+      mockSendInvitationEmail
+        .mockImplementationOnce(async () => {})
+        .mockRejectedValueOnce(new Error('provider rejected the recipient'));
+      const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
+
+      // Act
+      const result = await inviteMembers(fd);
+
+      // Assert — la invitación existe, pero el email no salió: el usuario
+      // tiene que enterarse en vez de que muera en un .catch().
+      expect(result.success).toBe(true);
+      expect(result.count).toBe(2);
+      expect(result.failed).toBe(1);
+    });
+
+    it('should not lose an already-sent invitation when telemetry fails', async () => {
+      // Arrange — captureServer resuelve el consentimiento con una query que no
+      // está dentro de su propio try/catch, así que puede lanzar.
+      mockAuthenticatedWithAccount();
+      mocks.rpc.mockResolvedValue({
+        data: [{ email: 'alice@example.com', token: 'tok-a' }],
+        error: null,
+      });
+      mocks.captureServer.mockRejectedValueOnce(new Error('consent lookup failed'));
+      const fd = makeFormData({ emails: 'alice@example.com', role: 'member' });
+
+      // Act
+      const result = await inviteMembers(fd);
+
+      // Assert — el token en texto plano solo existe en esta llamada: si la
+      // action abortara acá, la invitación quedaría 'pending' sin entregarse
+      // nunca y el reintento chocaría con already_invited.
+      expect(mockSendInvitationEmail).toHaveBeenCalledTimes(1);
+      expect(result.success).toBe(true);
+    });
+
+    it('should report duplicates when only some emails were new', async () => {
+      // Arrange — se piden 2, el RPC solo devuelve 1 (la otra ya estaba pendiente).
+      mockAuthenticatedWithAccount();
+      mocks.rpc.mockResolvedValue({
+        data: [{ email: 'alice@example.com', token: 'tok-a' }],
+        error: null,
+      });
+      const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
+
+      // Act
+      const result = await inviteMembers(fd);
+
+      // Assert
+      expect(result.count).toBe(1);
+      expect(result.duplicates).toBe(1);
+      expect(result.failed).toBe(0);
+    });
   });
 });
