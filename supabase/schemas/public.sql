@@ -2795,3 +2795,41 @@ COMMENT ON INDEX public.idx_webhook_deliveries_open IS
   'Índice parcial (solo status pending/failed) para que el worker de reintentos no escanee entregas ya cerradas.';
 COMMENT ON INDEX public.idx_webhook_endpoints_account IS
   'Soporte de "listar endpoints de una cuenta" ordenado por fecha.';
+
+
+-- ────────────────────────────────────────────────────────────────────────────
+-- Health check del email worker (AUD-025 / Plan 009)
+--
+-- Wrapper SECURITY DEFINER sobre private.email_worker_health(): `private` no
+-- está en la lista de schemas expuestos por PostgREST (config.toml:
+-- [api] schemas = ["public"]), así que el job nightly no puede llamarla
+-- directo. Mismo patrón que admin_list_accounts / get_platform_audit_logs.
+--
+-- Vivía solo en la migración 20260811200000 y nunca se espejó acá — drift
+-- corregido junto con 20260814213000_email_worker_health_delivery_signals.sql.
+-- ────────────────────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION public.get_email_worker_health()
+RETURNS TABLE(
+  invoked_at           timestamptz,
+  status_code          integer,
+  error_msg            text,
+  timed_out            boolean,
+  queue_length         bigint,
+  oldest_msg_age_sec   integer,
+  dead_lettered_recent bigint
+)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT * FROM private.email_worker_health();
+$$;
+
+-- Solo service_role — es detalle operativo interno, no algo que
+-- anon/authenticated deban poder consultar.
+REVOKE ALL ON FUNCTION public.get_email_worker_health() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_email_worker_health() TO service_role;
+
+COMMENT ON FUNCTION public.get_email_worker_health() IS
+  'Wrapper de solo lectura sobre private.email_worker_health() para el smoke check nightly de Cloud (AUD-025). service_role only.';

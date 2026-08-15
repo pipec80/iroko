@@ -1606,8 +1606,11 @@ export type Database = {
       get_email_worker_health: {
         Args: never
         Returns: {
+          dead_lettered_recent: number
           error_msg: string
           invoked_at: string
+          oldest_msg_age_sec: number
+          queue_length: number
           status_code: number
           timed_out: boolean
         }[]
