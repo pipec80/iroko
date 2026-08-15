@@ -676,3 +676,91 @@ REVOKE ALL ON FUNCTION private.assert_impersonation_target_valid(uuid) FROM PUBL
 GRANT EXECUTE ON FUNCTION private.assert_impersonation_target_valid(uuid) TO authenticated;
 
 
+-- ────────────────────────────────────────────────────────────────────────────
+-- Email worker (Plan 002 + Plan 009)
+--
+-- Estas cuatro entidades vivían solo en las migraciones
+-- (20260810190000_email_worker_url_and_auth.sql,
+-- 20260811200000_email_worker_health_rpc.sql) y nunca se espejaron acá.
+-- Drift detectado y corregido al preparar
+-- 20260814213000_email_worker_health_delivery_signals.sql.
+-- ────────────────────────────────────────────────────────────────────────────
+
+CREATE OR REPLACE FUNCTION private.project_url()
+RETURNS text
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $$
+  SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'project_url';
+$$;
+
+REVOKE ALL ON FUNCTION private.project_url() FROM PUBLIC;
+
+COMMENT ON FUNCTION private.project_url() IS
+  'URL base del proyecto (local o Cloud), leída desde Vault — nunca hardcodeada en una migración porque difiere por entorno. Sembrada en supabase/seed.sql (local) o a mano en Cloud (SQL Editor, ver docs/exec-plans/completed/002-email-worker-cloud.md).';
+
+
+CREATE OR REPLACE FUNCTION private.email_worker_secret()
+RETURNS text
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $$
+  SELECT decrypted_secret FROM vault.decrypted_secrets WHERE name = 'email_worker_secret';
+$$;
+
+REVOKE ALL ON FUNCTION private.email_worker_secret() FROM PUBLIC;
+
+COMMENT ON FUNCTION private.email_worker_secret() IS
+  'Secreto compartido que autentica al cron ante process-email-queue (header X-Cron-Secret). Mismo valor debe estar seteado como secret de la Edge Function vía `supabase secrets set`. Sembrado en supabase/seed.sql (local) o a mano en Cloud.';
+
+
+-- Fila única (patrón singleton): pgmq ya reintenta por mensaje, lo único que
+-- falta vigilar es si el worker en sí responde.
+CREATE TABLE IF NOT EXISTS private.email_worker_last_invocation (
+  id         boolean PRIMARY KEY DEFAULT true,
+  request_id bigint,
+  invoked_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT email_worker_last_invocation_single_row CHECK (id)
+);
+
+
+-- Plan 009: además del status HTTP de la invocación, expone señales de entrega
+-- real. El worker responde 200 aunque el proveedor de email rechace todo
+-- (handler.ts:80-84), así que el status por sí solo no detecta ese caso.
+CREATE OR REPLACE FUNCTION private.email_worker_health()
+RETURNS TABLE(
+  invoked_at           timestamptz,
+  status_code          integer,
+  error_msg            text,
+  timed_out            boolean,
+  queue_length         bigint,
+  oldest_msg_age_sec   integer,
+  dead_lettered_recent bigint
+)
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $$
+  SELECT
+    i.invoked_at,
+    r.status_code,
+    r.error_msg,
+    r.timed_out,
+    (SELECT count(*) FROM pgmq.q_email_queue),
+    (SELECT extract(epoch FROM (now() - min(q.enqueued_at)))::integer
+       FROM pgmq.q_email_queue q),
+    (SELECT count(*) FROM pgmq.a_email_queue a
+      WHERE a.archived_at > now() - interval '24 hours')
+  FROM private.email_worker_last_invocation i
+  LEFT JOIN net._http_response r ON r.id = i.request_id
+  WHERE i.id = true;
+$$;
+
+REVOKE ALL ON FUNCTION private.email_worker_health() FROM PUBLIC;
+
+COMMENT ON FUNCTION private.email_worker_health() IS
+  'Estado de la última invocación real del worker (status HTTP, no solo si pg_net encoló el request) más señales de entrega: profundidad de la cola, antigüedad del mensaje más viejo, y mensajes dead-lettered en las últimas 24h. NULL en status_code/error_msg/timed_out = la respuesta de pg_net aún no llegó (normal justo después de invocar) o nunca se guardó un request_id. dead_lettered_recent > 0 significa que el worker corre pero el proveedor de email está rechazando: el status HTTP por sí solo no lo detecta.';
+
+

@@ -213,6 +213,9 @@ jobs:
           timed_out=$(echo "$body" | jq -r '.[0].timed_out')
           invoked_at=$(echo "$body" | jq -r '.[0].invoked_at')
           error_msg=$(echo "$body" | jq -r '.[0].error_msg')
+          queue_length=$(echo "$body" | jq -r '.[0].queue_length')
+          oldest_age=$(echo "$body" | jq -r '.[0].oldest_msg_age_sec')
+          dead_lettered=$(echo "$body" | jq -r '.[0].dead_lettered_recent')
 
           if [ "$status_code" = "null" ] || [ -z "$status_code" ]; then
             echo "::error::email_worker_health: status_code es null — la última invocación no resolvió o nunca se registró un request_id"
@@ -235,7 +238,28 @@ jobs:
             exit 1
           fi
 
-          echo "✅ email_worker_health OK — HTTP $status_code, hace ${age}s"
+          # Señales de ENTREGA (Plan 009). Un status HTTP 2xx solo dice que la
+          # edge function respondió: devuelve 200 con {"processed":0} aunque el
+          # proveedor rechace todos los envíos. Sin estos dos checks el job
+          # queda verde mientras no se entrega ni un email.
+
+          # Mensajes dead-lettered: el worker SOLO archiva tras agotar los 5
+          # reintentos (handler.ts:56-58); los envíos exitosos se borran. Por
+          # eso cualquier fila reciente en el archive es una entrega fallida.
+          if [ "$dead_lettered" != "null" ] && [ "$dead_lettered" -gt 0 ]; then
+            echo "::error::email_worker_health: $dead_lettered email(s) descartados tras agotar reintentos en las últimas 24h — el worker responde 2xx pero las entregas fallan. Revisar credenciales y dominio verificado del proveedor."
+            exit 1
+          fi
+
+          # Cola atascada: el cron corre cada minuto y un mensaje agota sus
+          # reintentos en ~5 min (5 × visibility timeout de 60s), así que nada
+          # debería superar ese umbral con margen.
+          if [ "$oldest_age" != "null" ] && [ "$oldest_age" -gt 360 ]; then
+            echo "::error::email_worker_health: el mensaje más viejo lleva ${oldest_age}s en cola (>360s) — el worker no la está drenando"
+            exit 1
+          fi
+
+          echo "✅ email_worker_health OK — HTTP $status_code, hace ${age}s, cola=$queue_length, dead-lettered 24h=$dead_lettered"
 
   # ─────────────────────────────────────────────
   # JOB 2: Advisors de base de datos (lint + security)
