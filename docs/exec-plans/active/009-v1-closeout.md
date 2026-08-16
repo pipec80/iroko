@@ -2,7 +2,10 @@
 
 - Priority: P0
 - Status: Active (abierto 2026-08-14)
-- Baseline: `main` @ `33a55f2` — Supabase Cloud en paridad (128/128 migraciones aplicadas)
+- Baseline: `main` @ `fec4baa` — PRs 1, 2, 3, 4, 5, 7 mergeados; Supabase Cloud en
+  paridad (134/134 migraciones aplicadas, sin advisors nuevos de deuda —
+  solo el +4 esperado de `authenticated_security_definer_function_executable`
+  por las RPCs de lifecycle del PR 4)
 - Scope: cerrar el producto que ya existe. **No se agregan capabilities nuevas de
   Supabase.** Auth, Database, RLS, Storage, Realtime, Edge Functions, Queues,
   Vault, billing, webhooks, API keys y audit ya están construidos y demostrados;
@@ -124,19 +127,22 @@ el core del boilerplate.
 
 ## Tabla priorizada
 
-| #   | PR                             | Prioridad | Depende de | Esfuerzo | Por qué ahí                                                                                                                                                                               |
-| --- | ------------------------------ | :-------: | :--------: | :------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | `fix/ci-email-worker-secret`   |  **P0**   |     —      |  5 min   | CI en rojo hace 3 días por un secret faltante. Bloquea confiar en cualquier señal verde                                                                                                   |
-| 2   | `fix/invitation-correctness`   |  **P0**   |     —      |    M     | Salto de cuenta no determinista + link roto + el email de invitación no llega y falla en silencio                                                                                         |
-| 3   | `feat/rbac-matrix-db`          |  **P1**   |     —      |    M     | Es el contrato que todo lo demás obedece. Nada de UI tiene sentido antes                                                                                                                  |
-| 4   | `feat/membership-lifecycle`    |  **P1**   |     3      |    M     | `remove_member` ya remite a un `leave_team` que no existe                                                                                                                                 |
-| 5   | `feat/ui-role-aware`           |  **P1**   |     3      |    M     | La UI no puede reflejar una matriz que aún no existe                                                                                                                                      |
-| 4b  | `feat/membership-lifecycle-ui` |  **P1**   |     4      |    S     | Backend de 4 sin ningún consumidor: hoy nadie puede usar estas RPCs desde la app. Gap real, no decorativo — abierto en #125, la UI se escribió en #124 antes de que estas RPCs existieran |
-| 6   | `test/rbac-e2e`                |  **P2**   |  3,4,4b,5  |    M     | El gate que prueba que 3-5 quedaron bien                                                                                                                                                  |
-| 7   | `test/qa-storage-realtime`     |  **P2**   |     —      |    S     | Avatar, notifications y presence: implementados, nunca probados E2E                                                                                                                       |
-| 8   | `chore/release-hygiene`        |  **P2**   |     —      |    S     | Lo último: nada de esto bloquea a lo demás                                                                                                                                                |
+| #    | PR                             | Prioridad | Depende de | Esfuerzo | Por qué ahí                                                                                                                                                                               |
+| ---- | ------------------------------ | :-------: | :--------: | :------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `fix/ci-email-worker-secret`   |  **P0**   |     —      |  5 min   | CI en rojo hace 3 días por un secret faltante. Bloquea confiar en cualquier señal verde                                                                                                   |
+| 2    | `fix/invitation-correctness`   |  **P0**   |     —      |    M     | Salto de cuenta no determinista + link roto + el email de invitación no llega y falla en silencio                                                                                         |
+| 3    | `feat/rbac-matrix-db`          |  **P1**   |     —      |    M     | Es el contrato que todo lo demás obedece. Nada de UI tiene sentido antes                                                                                                                  |
+| 4    | `feat/membership-lifecycle`    |  **P1**   |     3      |    M     | `remove_member` ya remite a un `leave_team` que no existe                                                                                                                                 |
+| 5    | `feat/ui-role-aware`           |  **P1**   |     3      |    M     | La UI no puede reflejar una matriz que aún no existe                                                                                                                                      |
+| 4b   | `feat/membership-lifecycle-ui` |  **P1**   |     4      |    S     | Backend de 4 sin ningún consumidor: hoy nadie puede usar estas RPCs desde la app. Gap real, no decorativo — abierto en #125, la UI se escribió en #124 antes de que estas RPCs existieran |
+| 6    | `test/rbac-e2e`                |  **P2**   |  3,4,4b,5  |    M     | El gate que prueba que 3-5 quedaron bien                                                                                                                                                  |
+| 7 ✅ | `test/qa-storage-realtime`     |  **P2**   |     —      |    S     | Avatar, notifications y presence: implementados, nunca probados E2E — mergeado #126                                                                                                       |
+| 8    | `chore/release-hygiene`        |  **P2**   |     —      |    S     | Lo último: nada de esto bloquea a lo demás                                                                                                                                                |
 
 PRs 7 y 8 no dependen de nadie: se pueden intercalar si hace falta soltar carga.
+
+**Mergeados:** 1 (#121), 2 (#122), 3 (#123), 4 (#124), 5 (#125), 7 (#126).
+**Pendientes:** 4b, 6, 8.
 
 ---
 
