@@ -33,12 +33,24 @@ test.describe('QA — avatar', () => {
     await page.waitForURL(/\/es\/dashboard\/account/);
 
     const avatarForm = page.getByTestId('avatar-form');
-    await avatarForm.locator('input[name="avatar"]').setInputFiles({
-      name: 'avatar.png',
-      mimeType: 'image/png',
-      buffer: TINY_PNG,
-    });
-    await avatarForm.locator('button[type="submit"]').click();
+    const submitButton = avatarForm.locator('button[type="submit"]');
+
+    // setInputFiles dispara el evento `change` nativo apenas termina de subir
+    // el buffer al navegador — si corre antes de que React hidrate el listener
+    // onChange del input (frecuente en un runner de CI compartido, casi nunca
+    // en local), el evento se pierde y el botón queda disabled para siempre.
+    // Se reintenta la acción completa, no solo la espera, hasta que el submit
+    // se habilite: confirma que React sí procesó el archivo.
+    await expect(async () => {
+      await avatarForm.locator('input[name="avatar"]').setInputFiles({
+        name: 'avatar.png',
+        mimeType: 'image/png',
+        buffer: TINY_PNG,
+      });
+      await expect(submitButton).toBeEnabled({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
+
+    await submitButton.click();
 
     await expect(page.getByText('Foto actualizada.')).toBeVisible({ timeout: 15_000 });
 
