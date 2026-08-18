@@ -196,4 +196,28 @@ describe('proxy', () => {
     expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
     expect(response.headers.get('X-Frame-Options')).toBe('DENY');
   });
+
+  // AUD-0XX: applySecurityHeaders used to overwrite Cache-Control unconditionally
+  // on all 3 exit paths, and the final response is built from intlResponse (not
+  // supabaseResponse), so updateSession's own conditional header never survived
+  // either way — anonymous marketing pages never regained CDN caching.
+  it('does NOT force Cache-Control: private on an anonymous page (no session to protect)', async () => {
+    getClaimsMock.mockResolvedValue({ data: null });
+    const request = makeRequest('/es/pricing');
+    mockIntlPassThrough(request);
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('Cache-Control')).not.toBe('private, no-store');
+  });
+
+  it('propagates Cache-Control: private from updateSession onto the final intlResponse when authenticated', async () => {
+    getClaimsMock.mockResolvedValue({ data: { claims: { sub: 'user-uuid-1' } } });
+    const request = makeRequest('/es/dashboard');
+    mockIntlPassThrough(request);
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  });
 });

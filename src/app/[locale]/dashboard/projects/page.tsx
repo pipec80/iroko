@@ -1,5 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Folder, Users, GitBranch } from 'lucide-react';
+import { Folder } from 'lucide-react';
 import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
 import { listByAccount } from '@/lib/projects';
 import { logger } from '@/lib/logger';
@@ -118,13 +118,6 @@ function ProjectCard({ project, locale }: { project: Project; locale: string }) 
 
         {/* Footer */}
         <div className="border-border flex items-center gap-3 border-t pt-3">
-          <span className="text-muted-foreground flex items-center gap-1 font-mono text-[11px]">
-            <Users size={11} strokeWidth={1.5} />4
-          </span>
-          <span className="text-muted-foreground flex items-center gap-1 font-mono text-[11px]">
-            <GitBranch size={11} strokeWidth={1.5} />
-            main
-          </span>
           <span className="text-muted-foreground ml-auto font-mono text-[11px]">
             {project.updated_at ?
               new Date(project.updated_at).toLocaleDateString(locale, {

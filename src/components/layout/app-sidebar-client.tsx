@@ -239,12 +239,7 @@ export function AppSidebarClient({ orgs, activeAccountId = null }: Props) {
             <span
               className="font-mono text-[11px] font-semibold"
               style={{ color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-              iroko · v1.0
-            </span>
-            <span
-              className="font-mono text-[9px] font-bold uppercase"
-              style={{ color: 'var(--color-iron)', letterSpacing: '0.1em' }}>
-              ● stable
+              {appConfig.brand.toLowerCase()} · v{appConfig.version}
             </span>
           </div>
         </div>

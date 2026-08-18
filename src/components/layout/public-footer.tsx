@@ -55,7 +55,7 @@ export async function PublicFooter() {
               {t('brand_description')}
             </p>
             <p className="font-mono text-xs" style={{ color: 'rgba(245,236,218,0.3)' }}>
-              © 2026 {appConfig.brand} · v1.0
+              © 2026 {appConfig.brand} · v{appConfig.version}
             </p>
           </div>
 
