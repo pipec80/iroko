@@ -169,6 +169,19 @@ BEGIN
     RETURN;
   END;
 
+  -- Local/CI Supabase stacks route through Kong even without Cloudflare in
+  -- front, and Kong sets X-Forwarded-For to the connecting Docker-network
+  -- peer — private/loopback ranges can never reach here from real internet
+  -- traffic, so exempting them preserves the original "local dev is exempt"
+  -- intent without weakening production enforcement.
+  IF v_ip <<= '10.0.0.0/8'::inet
+     OR v_ip <<= '172.16.0.0/12'::inet
+     OR v_ip <<= '192.168.0.0/16'::inet
+     OR v_ip <<= '127.0.0.0/8'::inet
+     OR v_ip = '::1'::inet THEN
+    RETURN;
+  END IF;
+
   v_window := date_trunc('minute', now());
 
   BEGIN
@@ -193,7 +206,8 @@ BEGIN
         'hint',    'Maximum 100 write requests per 5 minutes per IP')::text,
       detail = json_build_object(
         'status',      429,
-        'status_text', 'Too Many Requests')::text;
+        'status_text', 'Too Many Requests',
+        'headers',     json_build_array())::text;
   END IF;
 END;
 $$;

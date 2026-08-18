@@ -250,6 +250,31 @@ export async function loginViaUi(page: Page, email: string, password: string): P
 
 type ApiResult = { ok: boolean; status: number; body: unknown };
 
+const RATE_LIMIT_STATUS = 429;
+const RATE_LIMIT_MAX_ATTEMPTS = 3;
+const RATE_LIMIT_BASE_DELAY_MS = 1000;
+
+/**
+ * Retries `perform` on HTTP 429 with exponential backoff (1s, 2s). The E2E
+ * suite runs every spec's write traffic through one shared local Supabase in
+ * a single CI job — this is defense against the full suite's cumulative
+ * volume brushing against `check_request()`'s real 100 req/5min limit, not a
+ * substitute for it being correct (see the 20260818120000 migration for the
+ * actual bug that limit had).
+ */
+async function withRateLimitRetry(perform: () => Promise<ApiResult>): Promise<ApiResult> {
+  let result = await perform();
+  for (
+    let attempt = 1;
+    result.status === RATE_LIMIT_STATUS && attempt < RATE_LIMIT_MAX_ATTEMPTS;
+    attempt++
+  ) {
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_BASE_DELAY_MS * 2 ** (attempt - 1)));
+    result = await perform();
+  }
+  return result;
+}
+
 /**
  * Calls a Postgres RPC via PostgREST as the given user — the same enforcement
  * path the app itself uses (RLS + SECURITY DEFINER checks), no service_role
@@ -263,15 +288,17 @@ export async function callRpc(
   accessToken: string,
   apikey: string,
 ): Promise<ApiResult> {
-  const res = await request.post(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
-    headers: {
-      apikey,
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    data: args,
+  return withRateLimitRetry(async () => {
+    const res = await request.post(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      headers: {
+        apikey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      data: args,
+    });
+    return { ok: res.ok(), status: res.status(), body: await res.json().catch(() => null) };
   });
-  return { ok: res.ok(), status: res.status(), body: await res.json().catch(() => null) };
 }
 
 /**
@@ -289,17 +316,19 @@ export async function restRequest(
   apikey: string,
   data?: Record<string, unknown>,
 ): Promise<ApiResult> {
-  const res = await request.fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method,
-    headers: {
-      apikey,
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-      Prefer: 'return=representation',
-    },
-    data,
+  return withRateLimitRetry(async () => {
+    const res = await request.fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      method,
+      headers: {
+        apikey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      data,
+    });
+    return { ok: res.ok(), status: res.status(), body: await res.json().catch(() => null) };
   });
-  return { ok: res.ok(), status: res.status(), body: await res.json().catch(() => null) };
 }
 
 /** Rows returned by a restRequest() result — 0 means RLS silently blocked it. */
