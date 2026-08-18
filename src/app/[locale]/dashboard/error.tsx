@@ -1,6 +1,7 @@
 'use client';
 
 import * as Sentry from '@sentry/nextjs';
+import { AlertTriangle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
@@ -20,7 +21,7 @@ export default function DashboardError({
   return (
     <div className="flex min-h-[50vh] flex-col items-center justify-center gap-6 p-8">
       <div className="bg-error/10 flex size-16 items-center justify-center rounded-2xl">
-        <span className="material-symbols-outlined text-error text-3xl">warning</span>
+        <AlertTriangle className="text-error size-7" strokeWidth={1.75} />
       </div>
       <div className="space-y-2 text-center">
         <h2 className="text-on-surface font-headline text-xl font-bold">{t('dashboard_title')}</h2>

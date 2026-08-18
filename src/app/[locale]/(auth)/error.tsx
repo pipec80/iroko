@@ -1,6 +1,7 @@
 'use client';
 
 import * as Sentry from '@sentry/nextjs';
+import { KeyRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect } from 'react';
 
@@ -22,7 +23,7 @@ export default function AuthError({
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8">
       <div className="bg-error/10 flex size-16 items-center justify-center rounded-2xl">
-        <span className="material-symbols-outlined text-error text-3xl">lock_reset</span>
+        <KeyRound className="text-error size-7" strokeWidth={1.75} />
       </div>
       <div className="space-y-2 text-center">
         <h2 className="text-on-surface font-headline text-xl font-bold">{t('auth_title')}</h2>

@@ -1,4 +1,5 @@
 import { routing } from '@/i18n/routing-config';
+import packageJson from '../../package.json';
 
 /** Single source of truth for locale types — derived from routing.ts. */
 export type AppLocale = (typeof routing.locales)[number];
@@ -14,6 +15,8 @@ export type AppConfig = {
   brand: string;
   /** One-line product description for metadata and OG tags. */
   description: string;
+  /** Package version, read from package.json — never hardcode this elsewhere. */
+  version: string;
   /** Primary support email address. */
   supportEmail: string;
   /** Default i18n locale. */
@@ -60,6 +63,7 @@ export const appConfig: AppConfig = {
   brand: 'Iroko',
   description:
     'The SaaS boilerplate that maximises Supabase and runs on the free tier. Auth, billing, teams and deploy — ready on day one.',
+  version: packageJson.version,
   supportEmail: 'pipec800@gmail.com',
   defaultLocale: routing.defaultLocale,
   locales: routing.locales,

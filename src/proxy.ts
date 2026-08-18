@@ -125,7 +125,6 @@ function applySecurityHeaders(response: { headers: Headers }, cspHeader: string)
   });
 
   response.headers.set('Content-Security-Policy', cspHeader);
-  response.headers.set('Cache-Control', 'private, no-store');
   response.headers.set('Report-To', reportToValue);
   response.headers.set('Reporting-Endpoints', `csp-endpoint="${SENTRY_REPORT_URI}"`);
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
@@ -152,6 +151,14 @@ export async function proxy(request: NextRequest) {
   }
 
   const intlResponse = intlMiddleware(request);
+
+  // updateSession solo setea Cache-Control cuando hay sesión que proteger
+  // (claims != null o se refrescó la cookie) — dejar páginas anónimas
+  // cacheables normalmente. La respuesta final es intlResponse, no
+  // supabaseResponse, así que esa decisión debe propagarse explícitamente
+  // igual que las cookies más abajo, o se pierde en silencio.
+  const cacheControl = supabaseResponse.headers.get('Cache-Control');
+  if (cacheControl) intlResponse.headers.set('Cache-Control', cacheControl);
 
   if (intlResponse.status >= 300 && intlResponse.status < 400) {
     applySecurityHeaders(intlResponse, cspHeader);
