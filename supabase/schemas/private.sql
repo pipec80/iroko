@@ -729,6 +729,13 @@ CREATE TABLE IF NOT EXISTS private.email_worker_last_invocation (
 -- Plan 009: además del status HTTP de la invocación, expone señales de entrega
 -- real. El worker responde 200 aunque el proveedor de email rechace todo
 -- (handler.ts:80-84), así que el status por sí solo no detecta ese caso.
+-- LANGUAGE plpgsql + EXECUTE (no `LANGUAGE sql` directo): pgmq.q_email_queue /
+-- pgmq.a_email_queue no existen como objetos declarativos — los crea
+-- pgmq.create('email_queue') en runtime (migración
+-- 20260711000000_pgmq_email_queue.sql). Una función SQL falla la validación
+-- compile-time (check_function_bodies) porque esas tablas no existen todavía
+-- al momento de CREATE FUNCTION; SQL dinámico la esquiva sin cambiar el
+-- comportamiento.
 CREATE OR REPLACE FUNCTION private.email_worker_health()
 RETURNS TABLE(
   invoked_at           timestamptz,
@@ -739,23 +746,37 @@ RETURNS TABLE(
   oldest_msg_age_sec   integer,
   dead_lettered_recent bigint
 )
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SET search_path = ''
 AS $$
+DECLARE
+  v_queue_length         bigint;
+  v_oldest_msg_age_sec   integer;
+  v_dead_lettered_recent bigint;
+BEGIN
+  EXECUTE
+    'SELECT count(*), extract(epoch FROM (now() - min(enqueued_at)))::integer '
+    || 'FROM pgmq.q_email_queue'
+  INTO v_queue_length, v_oldest_msg_age_sec;
+
+  EXECUTE 'SELECT count(*) FROM pgmq.a_email_queue WHERE archived_at > $1'
+  INTO v_dead_lettered_recent
+  USING now() - interval '24 hours';
+
+  RETURN QUERY
   SELECT
     i.invoked_at,
     r.status_code,
     r.error_msg,
     r.timed_out,
-    (SELECT count(*) FROM pgmq.q_email_queue),
-    (SELECT extract(epoch FROM (now() - min(q.enqueued_at)))::integer
-       FROM pgmq.q_email_queue q),
-    (SELECT count(*) FROM pgmq.a_email_queue a
-      WHERE a.archived_at > now() - interval '24 hours')
+    v_queue_length,
+    v_oldest_msg_age_sec,
+    v_dead_lettered_recent
   FROM private.email_worker_last_invocation i
   LEFT JOIN net._http_response r ON r.id = i.request_id
   WHERE i.id = true;
+END;
 $$;
 
 REVOKE ALL ON FUNCTION private.email_worker_health() FROM PUBLIC;
