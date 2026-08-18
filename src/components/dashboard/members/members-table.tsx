@@ -191,8 +191,11 @@ function ActiveRowActions({
   const [role, setRole] = useState(member.role);
 
   const [roleState, roleAction, rolePending] = useActionState(
-    async (_prev: { error?: string; success?: boolean }, formData: FormData) =>
-      changeMemberRole(formData),
+    async (_prev: { error?: string; success?: boolean }, formData: FormData) => {
+      const result = await changeMemberRole(formData);
+      if (result.success) setOpen(false);
+      return result;
+    },
     {},
   );
   const [transferState, transferAction, transferPending] = useActionState(
