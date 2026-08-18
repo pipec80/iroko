@@ -14,10 +14,52 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { TeamMember } from '@/app/[locale]/dashboard/team/actions';
-import { removeMember } from '@/app/[locale]/dashboard/team/actions';
+import {
+  changeMemberRole,
+  removeMember,
+  revokeInvitation,
+  transferOwnership,
+} from '@/app/[locale]/dashboard/team/actions';
 import { usePresence } from '@/hooks/use-presence';
 import { canManageMembers, type MembershipRole } from '@/lib/permissions';
 import { storageUrl } from '@/lib/storage';
+import { INVITABLE_ROLES } from '@/lib/validation/team';
+
+type LifecycleErrorKey =
+  | 'error_last_owner_must_transfer'
+  | 'error_cannot_change_own_role'
+  | 'error_use_transfer_ownership'
+  | 'error_invitation_not_pending'
+  | 'error_not_authorized'
+  | 'error_account_not_found'
+  | 'error_not_a_team'
+  | 'error_not_a_member'
+  | 'error_already_owner'
+  | 'error_target_not_a_member'
+  | 'error_invitation_not_found'
+  | 'error_invalid_input';
+
+/** Mapea el `error` de una lifecycle action a su clave i18n — nunca cae en error_generic. */
+function lifecycleErrorKey(error: string): LifecycleErrorKey {
+  const key = `error_${error}`;
+  const known: readonly LifecycleErrorKey[] = [
+    'error_last_owner_must_transfer',
+    'error_cannot_change_own_role',
+    'error_use_transfer_ownership',
+    'error_invitation_not_pending',
+    'error_not_authorized',
+    'error_account_not_found',
+    'error_not_a_team',
+    'error_not_a_member',
+    'error_already_owner',
+    'error_target_not_a_member',
+    'error_invitation_not_found',
+    'error_invalid_input',
+  ];
+  return (known as readonly string[]).includes(key) ?
+      (key as LifecycleErrorKey)
+    : 'error_not_authorized';
+}
 
 function memberTone(role: string, index: number): string {
   if (role === 'owner') return 'var(--color-poppy)';
@@ -45,17 +87,128 @@ function getMemberName(member: TeamMember): string {
   return member.display_name ?? member.email;
 }
 
-type RowActionsProps = {
+const EMPTY_ACTIONS_SLOT = <span className="btn-icon" style={{ width: 44, height: 44 }} />;
+
+function ErrorMessage({ error }: { error?: string }) {
+  const t = useTranslations('Team');
+  if (!error) return null;
+  return (
+    <p
+      role="alert"
+      className="rounded-lg px-3 py-2 text-xs font-medium"
+      style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
+      {t(lifecycleErrorKey(error))}
+    </p>
+  );
+}
+
+type PendingRowActionsProps = {
   member: TeamMember;
-  displayName: string;
   currentUserRole: MembershipRole | null;
 };
 
-function RowActions({ member, displayName, currentUserRole }: RowActionsProps) {
+/** Fila de invitación pendiente: la única acción disponible es revocarla. */
+function PendingRowActions({ member, currentUserRole }: PendingRowActionsProps) {
   const t = useTranslations('Team');
   const [open, setOpen] = useState(false);
 
   const [state, action, isPending] = useActionState(
+    async (_prev: { error?: string; success?: boolean }) => {
+      const fd = new FormData();
+      fd.set('invitationId', member.invitation_id ?? '');
+      const result = await revokeInvitation(fd);
+      if (result.success) setOpen(false);
+      return result;
+    },
+    {},
+  );
+
+  if (!member.invitation_id || !canManageMembers(currentUserRole)) return EMPTY_ACTIONS_SLOT;
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="btn-icon"
+        aria-label={t('revoke_invitation_action')}
+        style={{ width: 44, height: 44 }}>
+        <MoreHorizontal
+          style={{ width: 15, height: 15, color: 'var(--text-tertiary)', strokeWidth: 1.5 }}
+        />
+      </button>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('revoke_invitation_title')}</DialogTitle>
+            <DialogDescription>
+              {t('revoke_invitation_description', { email: member.email })}
+            </DialogDescription>
+          </DialogHeader>
+          <ErrorMessage error={state.error} />
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="border-border text-foreground rounded-lg border px-4 py-2 text-sm font-medium transition-colors">
+              {t('cancel')}
+            </button>
+            <form action={action}>
+              <button
+                type="submit"
+                disabled={isPending}
+                className="bg-primary rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                style={{ border: 0 }}>
+                {isPending ? t('revoke_invitation_revoking') : t('revoke_invitation_confirm')}
+              </button>
+            </form>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+type ActiveRowActionsProps = {
+  member: TeamMember;
+  displayName: string;
+  currentUserRole: MembershipRole | null;
+  currentUserId: string | null;
+};
+
+type ManageMode = 'manage' | 'confirm_transfer' | 'confirm_remove';
+
+/** Gestión de un miembro activo: cambiar rol, transferir propiedad, eliminar. */
+function ActiveRowActions({
+  member,
+  displayName,
+  currentUserRole,
+  currentUserId,
+}: ActiveRowActionsProps) {
+  const t = useTranslations('Team');
+  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<ManageMode>('manage');
+  const [role, setRole] = useState(member.role);
+
+  const [roleState, roleAction, rolePending] = useActionState(
+    async (_prev: { error?: string; success?: boolean }, formData: FormData) => {
+      const result = await changeMemberRole(formData);
+      if (result.success) setOpen(false);
+      return result;
+    },
+    {},
+  );
+  const [transferState, transferAction, transferPending] = useActionState(
+    async (_prev: { error?: string; success?: boolean }) => {
+      const fd = new FormData();
+      fd.set('newOwnerUserId', member.user_id ?? '');
+      const result = await transferOwnership(fd);
+      if (result.success) setOpen(false);
+      return result;
+    },
+    {},
+  );
+  const [removeState, removeAction, removePending] = useActionState(
     async (_prev: { error?: string; success?: boolean }) => {
       const fd = new FormData();
       fd.set('userId', member.user_id ?? '');
@@ -66,11 +219,33 @@ function RowActions({ member, displayName, currentUserRole }: RowActionsProps) {
     {},
   );
 
-  // El gate previo solo miraba el rol de la FILA (nunca remover a un owner),
-  // nunca el de quien mira: un viewer veía el botón de eliminar sobre
-  // cualquier admin/member, aunque el RPC lo iba a rechazar igual.
-  if (!member.user_id || member.role === 'owner' || !canManageMembers(currentUserRole)) {
-    return <span className="btn-icon" style={{ width: 44, height: 44 }} />;
+  // El gate previo solo miraba el rol de la FILA (nunca actuar sobre un owner),
+  // nunca el de quien mira ni si la fila ES quien mira: un viewer veía el botón
+  // sobre cualquier admin/member, y un admin veía acciones sobre sí mismo o
+  // sobre otro admin, aunque el RPC las iba a rechazar igual
+  // (cannot_change_own_role / "Only the owner can manage admin roles").
+  const isSelf = member.user_id === currentUserId;
+  const adminBlockedByAdmin = currentUserRole === 'admin' && member.role === 'admin';
+  if (
+    !member.user_id ||
+    isSelf ||
+    member.role === 'owner' ||
+    adminBlockedByAdmin ||
+    !canManageMembers(currentUserRole)
+  ) {
+    return EMPTY_ACTIONS_SLOT;
+  }
+
+  const canTransfer = currentUserRole === 'owner';
+  const assignableRoles =
+    currentUserRole === 'owner' ? INVITABLE_ROLES : INVITABLE_ROLES.filter((r) => r !== 'admin');
+
+  function closeDialog(isOpen: boolean) {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setMode('manage');
+      setRole(member.role);
+    }
   }
 
   return (
@@ -85,40 +260,149 @@ function RowActions({ member, displayName, currentUserRole }: RowActionsProps) {
         />
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t('remove_title')}</DialogTitle>
-            <DialogDescription>{t('remove_description', { name: displayName })}</DialogDescription>
-          </DialogHeader>
-          {state.error && (
-            <p
-              role="alert"
-              className="rounded-lg px-3 py-2 text-xs font-medium"
-              style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
-              {t('error_generic')}
-            </p>
-          )}
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="border-border text-foreground rounded-lg border px-4 py-2 text-sm font-medium transition-colors">
-              {t('cancel')}
-            </button>
-            <form action={action}>
-              <button
-                type="submit"
-                disabled={isPending}
-                className="bg-primary rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
-                style={{ border: 0 }}>
-                {isPending ? t('removing') : t('confirm_remove')}
-              </button>
+      <Dialog open={open} onOpenChange={closeDialog}>
+        {mode === 'manage' && (
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{t('manage_member')}</DialogTitle>
+              <DialogDescription>{displayName}</DialogDescription>
+            </DialogHeader>
+
+            <form action={roleAction} className="flex flex-col gap-2">
+              <input type="hidden" name="userId" value={member.user_id} />
+              <label
+                htmlFor={`role-${member.user_id}`}
+                className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
+                {t('change_role_title', { name: displayName })}
+              </label>
+              <div className="flex gap-2">
+                <select
+                  id={`role-${member.user_id}`}
+                  name="role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="toolbar-control flex-1 px-3">
+                  {assignableRoles.map((r) => (
+                    <option key={r} value={r}>
+                      {t(`role_${r}` as 'role_admin' | 'role_member' | 'role_viewer')}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="submit"
+                  disabled={rolePending}
+                  className="bg-primary rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                  style={{ border: 0 }}>
+                  {rolePending ? t('change_role_saving') : t('change_role_confirm')}
+                </button>
+              </div>
+              <ErrorMessage error={roleState.error} />
             </form>
-          </DialogFooter>
-        </DialogContent>
+
+            <div
+              className="flex flex-col gap-2 border-t pt-4"
+              style={{ borderColor: 'var(--border)' }}>
+              {canTransfer && (
+                <button
+                  type="button"
+                  onClick={() => setMode('confirm_transfer')}
+                  className="border-border text-foreground rounded-lg border px-4 py-2 text-left text-sm font-medium transition-colors">
+                  {t('transfer_ownership_action')}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setMode('confirm_remove')}
+                className="rounded-lg border px-4 py-2 text-left text-sm font-medium transition-colors"
+                style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
+                {t('remove_member')}
+              </button>
+            </div>
+          </DialogContent>
+        )}
+
+        {mode === 'confirm_transfer' && (
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{t('transfer_ownership_title', { name: displayName })}</DialogTitle>
+              <DialogDescription>
+                {t('transfer_ownership_description', { name: displayName })}
+              </DialogDescription>
+            </DialogHeader>
+            <ErrorMessage error={transferState.error} />
+            <DialogFooter>
+              <button
+                type="button"
+                onClick={() => setMode('manage')}
+                className="border-border text-foreground rounded-lg border px-4 py-2 text-sm font-medium transition-colors">
+                {t('cancel')}
+              </button>
+              <form action={transferAction}>
+                <button
+                  type="submit"
+                  disabled={transferPending}
+                  className="rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                  style={{ border: 0, background: 'var(--color-poppy)' }}>
+                  {transferPending ?
+                    t('transfer_ownership_transferring')
+                  : t('transfer_ownership_confirm')}
+                </button>
+              </form>
+            </DialogFooter>
+          </DialogContent>
+        )}
+
+        {mode === 'confirm_remove' && (
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>{t('remove_title')}</DialogTitle>
+              <DialogDescription>
+                {t('remove_description', { name: displayName })}
+              </DialogDescription>
+            </DialogHeader>
+            <ErrorMessage error={removeState.error} />
+            <DialogFooter>
+              <button
+                type="button"
+                onClick={() => setMode('manage')}
+                className="border-border text-foreground rounded-lg border px-4 py-2 text-sm font-medium transition-colors">
+                {t('cancel')}
+              </button>
+              <form action={removeAction}>
+                <button
+                  type="submit"
+                  disabled={removePending}
+                  className="bg-primary rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                  style={{ border: 0 }}>
+                  {removePending ? t('removing') : t('confirm_remove')}
+                </button>
+              </form>
+            </DialogFooter>
+          </DialogContent>
+        )}
       </Dialog>
     </>
+  );
+}
+
+type RowActionsProps = {
+  member: TeamMember;
+  displayName: string;
+  currentUserRole: MembershipRole | null;
+  currentUserId: string | null;
+};
+
+function RowActions({ member, displayName, currentUserRole, currentUserId }: RowActionsProps) {
+  if (member.status === 'pending') {
+    return <PendingRowActions member={member} currentUserRole={currentUserRole} />;
+  }
+  return (
+    <ActiveRowActions
+      member={member}
+      displayName={displayName}
+      currentUserRole={currentUserRole}
+      currentUserId={currentUserId}
+    />
   );
 }
 
@@ -327,6 +611,7 @@ export function MembersTable({
                     member={member}
                     displayName={displayName}
                     currentUserRole={currentUserRole}
+                    currentUserId={currentUserId}
                   />
                 </div>
               );

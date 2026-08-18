@@ -923,7 +923,7 @@ COMMENT ON FUNCTION "public"."list_my_sessions"() IS 'Returns the caller''s acti
 
 
 
-CREATE OR REPLACE FUNCTION "public"."list_team_members"("p_account_id" "uuid") RETURNS TABLE("user_id" "uuid", "email" "text", "display_name" "text", "given_name" "text", "family_name" "text", "avatar_url" "text", "role" "text", "status" "text", "joined_at" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."list_team_members"("p_account_id" "uuid") RETURNS TABLE("user_id" "uuid", "email" "text", "display_name" "text", "given_name" "text", "family_name" "text", "avatar_url" "text", "role" "text", "status" "text", "joined_at" timestamp with time zone, "invitation_id" "uuid")
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
@@ -948,7 +948,8 @@ BEGIN
     sub.avatar_url,
     sub.role,
     sub.status,
-    sub.joined_at
+    sub.joined_at,
+    sub.invitation_id
   FROM (
     -- Active members
     SELECT
@@ -960,7 +961,8 @@ BEGIN
       p.avatar_url,
       m.role::text AS role,
       'active'::text AS status,
-      m.created_at AS joined_at
+      m.created_at AS joined_at,
+      NULL::uuid AS invitation_id
     FROM public.accounts_memberships m
     JOIN public.profiles p ON p.id = m.user_id
     JOIN auth.users u ON u.id = m.user_id
@@ -978,7 +980,8 @@ BEGIN
       NULL::text AS avatar_url,
       i.role::text AS role,
       'pending'::text AS status,
-      i.created_at AS joined_at
+      i.created_at AS joined_at,
+      i.id AS invitation_id
     FROM public.invitations i
     WHERE i.account_id = p_account_id
       AND i.status = 'pending'
@@ -992,7 +995,7 @@ $$;
 ALTER FUNCTION "public"."list_team_members"("p_account_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."list_team_members"("p_account_id" "uuid") IS 'Lists all active members and pending invitations for an account. SECURITY DEFINER: reads memberships + profiles + auth.users + invitations. Validates caller membership. Used by the team management page.';
+COMMENT ON FUNCTION "public"."list_team_members"("p_account_id" "uuid") IS 'Lists all active members and pending invitations for an account. invitation_id is non-null only for pending rows. SECURITY DEFINER: reads memberships + profiles + auth.users + invitations. Validates caller membership. Used by the team management page.';
 
 
 

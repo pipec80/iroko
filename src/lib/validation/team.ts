@@ -31,5 +31,27 @@ export const removeMemberSchema = z.object({
   userId: z.string().uuid('invalid_user_id'),
 });
 
+/**
+ * Roles asignables vía change_member_role — mismo set que INVITABLE_ROLES,
+ * el RPC rechaza 'owner' con use_transfer_ownership (ver transferOwnershipSchema).
+ */
+export const changeRoleSchema = z.object({
+  userId: z.string().uuid('invalid_user_id'),
+  role: z.enum(INVITABLE_ROLES),
+});
+
+/** Schema para transferir el ownership de la cuenta activa a otro miembro. */
+export const transferOwnershipSchema = z.object({
+  newOwnerUserId: z.string().uuid('invalid_user_id'),
+});
+
+/** Schema para revocar una invitación pending. */
+export const revokeInvitationSchema = z.object({
+  invitationId: z.string().uuid('invalid_invitation_id'),
+});
+
 export type InviteInput = z.infer<typeof inviteSchema>;
 export type RemoveMemberInput = z.infer<typeof removeMemberSchema>;
+export type ChangeRoleInput = z.infer<typeof changeRoleSchema>;
+export type TransferOwnershipInput = z.infer<typeof transferOwnershipSchema>;
+export type RevokeInvitationInput = z.infer<typeof revokeInvitationSchema>;
