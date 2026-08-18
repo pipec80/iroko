@@ -54,9 +54,24 @@ default_pool_size = 20
 max_client_conn = 100
 
 # [db.migrations]
-# schema_paths = ["./schemas/public.sql", "./schemas/billing.sql", "./schemas/audit.sql", "./schemas/private.sql"]
-# Declarative schemas — currently disabled due to CLI bug on Windows (v2.101.0).
-# Files in supabase/schemas/ reflect the current DB state as reference.
+# `supabase db diff` (motor legacy `migra`) sigue roto en Windows: falla con
+# LegacyDeclarativeShadowDbError por orden alfabético de carga de
+# supabase/schemas/*.sql (bug confirmado y cerrado "not planned" por los
+# maintainers: supabase/cli#4314). No usarlo — seguir con migración a mano +
+# espejo en supabase/schemas/ (ver CLAUDE.md).
+#
+# Alternativa probada 2026-08-18 con CLI 2.110.0: el motor experimental
+# `pg-delta` SÍ resuelve el orden de dependencias automáticamente (no es un
+# problema de config, arma el grafo real) — llegó a aplicar los 960
+# statements sin el bug de orden. El único blocker real que encontró
+# (private.email_worker_health() referenciaba pgmq.q_email_queue/a_email_queue,
+# tablas creadas en runtime por pgmq.create(), no declarativas) ya se arregló
+# en supabase/migrations/20260818140000_email_worker_health_dynamic_sql.sql —
+# reverificado, aplica limpio. Sigue siendo alpha (Supabase: "coverage no
+# completa") y el `sync` generó GRANTs de más (MAINTAIN/TRUNCATE a anon en
+# tablas que hoy están hardened a propósito) — no aplicar su output a ciegas.
+# Para probarlo: [experimental.pgdelta] enabled = true, luego
+# `supabase db schema declarative generate --local --overwrite --experimental`.
 
 [db.seed]
 enabled = true
