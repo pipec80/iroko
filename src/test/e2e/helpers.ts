@@ -248,6 +248,94 @@ export async function loginViaUi(page: Page, email: string, password: string): P
   await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
 }
 
+type ApiResult = { ok: boolean; status: number; body: unknown };
+
+const RATE_LIMIT_STATUS = 429;
+const RATE_LIMIT_MAX_ATTEMPTS = 3;
+const RATE_LIMIT_BASE_DELAY_MS = 1000;
+
+/**
+ * Retries `perform` on HTTP 429 with exponential backoff (1s, 2s). The E2E
+ * suite runs every spec's write traffic through one shared local Supabase in
+ * a single CI job — this is defense against the full suite's cumulative
+ * volume brushing against `check_request()`'s real 100 req/5min limit, not a
+ * substitute for it being correct (see the 20260818120000 migration for the
+ * actual bug that limit had).
+ */
+async function withRateLimitRetry(perform: () => Promise<ApiResult>): Promise<ApiResult> {
+  let result = await perform();
+  for (
+    let attempt = 1;
+    result.status === RATE_LIMIT_STATUS && attempt < RATE_LIMIT_MAX_ATTEMPTS;
+    attempt++
+  ) {
+    await new Promise((r) => setTimeout(r, RATE_LIMIT_BASE_DELAY_MS * 2 ** (attempt - 1)));
+    result = await perform();
+  }
+  return result;
+}
+
+/**
+ * Calls a Postgres RPC via PostgREST as the given user — the same enforcement
+ * path the app itself uses (RLS + SECURITY DEFINER checks), no service_role
+ * bypass. Used to verify RBAC directly against the database instead of
+ * reconstructing a full UI flow per role.
+ */
+export async function callRpc(
+  request: APIRequestContext,
+  fn: string,
+  args: Record<string, unknown>,
+  accessToken: string,
+  apikey: string,
+): Promise<ApiResult> {
+  return withRateLimitRetry(async () => {
+    const res = await request.post(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      headers: {
+        apikey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      data: args,
+    });
+    return { ok: res.ok(), status: res.status(), body: await res.json().catch(() => null) };
+  });
+}
+
+/**
+ * Direct PostgREST request against a table, as the given user — exercises RLS
+ * directly. Always asks for `return=representation`: an UPDATE/DELETE that
+ * RLS's USING clause silently excludes still responds 200/204 with 0 rows
+ * affected, never an HTTP error — the row COUNT is the real signal of
+ * "blocked by RLS", not the status code. Use rowCount() on the result.
+ */
+export async function restRequest(
+  request: APIRequestContext,
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  path: string,
+  accessToken: string,
+  apikey: string,
+  data?: Record<string, unknown>,
+): Promise<ApiResult> {
+  return withRateLimitRetry(async () => {
+    const res = await request.fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+      method,
+      headers: {
+        apikey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        Prefer: 'return=representation',
+      },
+      data,
+    });
+    return { ok: res.ok(), status: res.status(), body: await res.json().catch(() => null) };
+  });
+}
+
+/** Rows returned by a restRequest() result — 0 means RLS silently blocked it. */
+export function rowCount(result: ApiResult): number {
+  return Array.isArray(result.body) ? result.body.length : 0;
+}
+
 /** Creates a pre-confirmed user via Supabase Admin API. Returns the user UUID. */
 export async function createConfirmedUser(
   request: APIRequestContext,
