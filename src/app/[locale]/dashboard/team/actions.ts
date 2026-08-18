@@ -2,6 +2,7 @@
 
 import { getLocale } from 'next-intl/server';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 import { env } from '@/env';
 import { captureServer } from '@/lib/analytics/server';
@@ -10,7 +11,13 @@ import { logger } from '@/lib/logger';
 import { notify } from '@/lib/notifications';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
-import { inviteSchema, removeMemberSchema } from '@/lib/validation/team';
+import {
+  changeRoleSchema,
+  inviteSchema,
+  removeMemberSchema,
+  revokeInvitationSchema,
+  transferOwnershipSchema,
+} from '@/lib/validation/team';
 
 // --------------------------------------------------------------------------
 // Types
@@ -26,6 +33,8 @@ export type TeamMember = {
   role: string;
   status: 'active' | 'pending';
   joined_at: string;
+  /** Non-null only for status: 'pending' — necesario para revokeInvitation. */
+  invitation_id: string | null;
 };
 
 type ActionResult = {
@@ -244,6 +253,185 @@ export const removeMember = withServerAction(async function removeMember(
   logger.info(
     { action: 'team.remove.success', targetUserId: parsed.data.userId },
     'Member removed',
+  );
+
+  revalidatePath('/[locale]/dashboard/members', 'page');
+  return { success: true };
+});
+
+/**
+ * Las 4 RPCs de lifecycle (leave_team, change_member_role, transfer_ownership,
+ * revoke_invitation) rechazan con RAISE EXCEPTION 'codigo_snake_case' para los
+ * casos que la UI debe mostrar con su propio mensaje, y con una frase en
+ * inglés ("Only owner or admin can ...") para los rechazos de rol genéricos
+ * que comparten un solo mensaje ('not_authorized'). Ver comentarios de cada
+ * RPC en supabase/migrations/20260815120000_membership_lifecycle.sql.
+ */
+const KNOWN_LIFECYCLE_CODES = new Set([
+  'account_not_found',
+  'not_a_team',
+  'not_a_member',
+  'last_owner_must_transfer',
+  'cannot_change_own_role',
+  'use_transfer_ownership',
+  'already_owner',
+  'target_not_a_member',
+  'invitation_not_found',
+  'invitation_not_pending',
+]);
+
+function mapLifecycleError(message: string | undefined): string {
+  if (message && KNOWN_LIFECYCLE_CODES.has(message)) return message;
+  return 'not_authorized';
+}
+
+/**
+ * The caller leaves the active (team) account. Redirects to /dashboard on
+ * success — leave_team moves active_account_id back to the caller's Personal
+ * account server-side, so the session must be refreshed like switchAccount.
+ */
+export const leaveTeam = withServerAction(async function leaveTeam(): Promise<{
+  error?: string;
+}> {
+  const accountId = await getAccountId();
+  if (!accountId) return { error: 'no_account' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('leave_team', { p_account_id: accountId });
+
+  if (error) {
+    logger.warn(
+      { action: 'team.leave', code: error.code, message: error.message },
+      'leave_team failed',
+    );
+    return { error: mapLifecycleError(error.message) };
+  }
+
+  logger.info({ action: 'team.leave.success', accountId }, 'Left team');
+
+  await supabase.auth.refreshSession();
+  const locale = await getLocale();
+  redirect(`/${locale}/dashboard`);
+});
+
+/**
+ * Change a member's role. Rejects assigning 'owner' (use transferOwnership)
+ * and the caller changing their own role — both enforced by the RPC.
+ */
+export const changeMemberRole = withServerAction(async function changeMemberRole(
+  formData: FormData,
+): Promise<ActionResult> {
+  const raw = {
+    userId: formData.get('userId') as string,
+    role: formData.get('role') as string,
+  };
+
+  const parsed = changeRoleSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { error: 'invalid_input' };
+  }
+
+  const accountId = await getAccountId();
+  if (!accountId) return { error: 'no_account' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('change_member_role', {
+    p_account_id: accountId,
+    p_user_id: parsed.data.userId,
+    p_role: parsed.data.role,
+  });
+
+  if (error) {
+    logger.warn(
+      { action: 'team.change_role', code: error.code, message: error.message },
+      'change_member_role failed',
+    );
+    return { error: mapLifecycleError(error.message) };
+  }
+
+  logger.info(
+    {
+      action: 'team.change_role.success',
+      targetUserId: parsed.data.userId,
+      role: parsed.data.role,
+    },
+    'Member role changed',
+  );
+
+  revalidatePath('/[locale]/dashboard/members', 'page');
+  return { success: true };
+});
+
+/**
+ * Transfer ownership of the active team account to another member.
+ * Only callable by the current owner — the RPC promotes the new owner before
+ * demoting the caller, so the account is never left without one.
+ */
+export const transferOwnership = withServerAction(async function transferOwnership(
+  formData: FormData,
+): Promise<ActionResult> {
+  const raw = { newOwnerUserId: formData.get('newOwnerUserId') as string };
+
+  const parsed = transferOwnershipSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { error: 'invalid_input' };
+  }
+
+  const accountId = await getAccountId();
+  if (!accountId) return { error: 'no_account' };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('transfer_ownership', {
+    p_account_id: accountId,
+    p_new_owner: parsed.data.newOwnerUserId,
+  });
+
+  if (error) {
+    logger.warn(
+      { action: 'team.transfer_ownership', code: error.code, message: error.message },
+      'transfer_ownership failed',
+    );
+    return { error: mapLifecycleError(error.message) };
+  }
+
+  logger.info(
+    { action: 'team.transfer_ownership.success', newOwnerUserId: parsed.data.newOwnerUserId },
+    'Ownership transferred',
+  );
+
+  revalidatePath('/[locale]/dashboard/members', 'page');
+  return { success: true };
+});
+
+/**
+ * Revoke a pending invitation — it stops being acceptable.
+ */
+export const revokeInvitation = withServerAction(async function revokeInvitation(
+  formData: FormData,
+): Promise<ActionResult> {
+  const raw = { invitationId: formData.get('invitationId') as string };
+
+  const parsed = revokeInvitationSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { error: 'invalid_input' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('revoke_invitation', {
+    p_invitation_id: parsed.data.invitationId,
+  });
+
+  if (error) {
+    logger.warn(
+      { action: 'team.revoke_invitation', code: error.code, message: error.message },
+      'revoke_invitation failed',
+    );
+    return { error: mapLifecycleError(error.message) };
+  }
+
+  logger.info(
+    { action: 'team.revoke_invitation.success', invitationId: parsed.data.invitationId },
+    'Invitation revoked',
   );
 
   revalidatePath('/[locale]/dashboard/members', 'page');

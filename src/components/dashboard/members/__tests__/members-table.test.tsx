@@ -7,7 +7,12 @@ const mocks = vi.hoisted(() => ({ onlineUserIds: new Set(['user-1']) }));
 vi.mock('@/hooks/use-presence', () => ({
   usePresence: () => ({ onlineUserIds: mocks.onlineUserIds }),
 }));
-vi.mock('@/app/[locale]/dashboard/team/actions', () => ({ removeMember: vi.fn() }));
+vi.mock('@/app/[locale]/dashboard/team/actions', () => ({
+  removeMember: vi.fn(),
+  changeMemberRole: vi.fn(),
+  transferOwnership: vi.fn(),
+  revokeInvitation: vi.fn(),
+}));
 
 import { MembersTable } from '../members-table';
 import es from '../../../../../messages/es.json';
@@ -22,6 +27,7 @@ const MEMBER_ONLINE = {
   display_name: null,
   avatar_url: null,
   joined_at: '2026-01-01T00:00:00Z',
+  invitation_id: null,
 };
 
 const MEMBER_OFFLINE = { ...MEMBER_ONLINE, user_id: 'user-2', given_name: 'Bea' };
@@ -76,5 +82,67 @@ describe('MembersTable — role-awareness de RowActions', () => {
       />,
     );
     expect(screen.queryByRole('button', { name: /acciones para/i })).not.toBeNull();
+  });
+
+  it('should hide the manage button for an admin over another admin', () => {
+    // change_member_role y remove_member rechazan a un admin actuando sobre
+    // otro admin ("Only the owner can manage admin roles") — solo el owner
+    // gestiona admins.
+    renderWithIntl(
+      <MembersTable
+        members={[ADMIN_MEMBER]}
+        accountId="acc-1"
+        currentUserId="user-1"
+        currentUserRole="admin"
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /acciones para/i })).toBeNull();
+  });
+
+  it('should hide the manage button on the current user own row', () => {
+    // change_member_role rechaza cannot_change_own_role y remove_member
+    // rechaza autoeliminación — "salir del equipo" es un flujo separado.
+    renderWithIntl(
+      <MembersTable
+        members={[MEMBER_ONLINE]}
+        accountId="acc-1"
+        currentUserId={MEMBER_ONLINE.user_id}
+        currentUserRole="admin"
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /acciones para/i })).toBeNull();
+  });
+});
+
+describe('MembersTable — invitaciones pendientes', () => {
+  const PENDING_INVITE = {
+    ...MEMBER_ONLINE,
+    user_id: null,
+    status: 'pending' as const,
+    invitation_id: 'inv-1',
+  };
+
+  it('should show the revoke button for a pending invitation when canManageMembers', () => {
+    renderWithIntl(
+      <MembersTable
+        members={[PENDING_INVITE]}
+        accountId="acc-1"
+        currentUserId="user-1"
+        currentUserRole="admin"
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /revocar invitación/i })).not.toBeNull();
+  });
+
+  it('should hide the revoke button for a pending invitation when the viewer cannot manage members', () => {
+    renderWithIntl(
+      <MembersTable
+        members={[PENDING_INVITE]}
+        accountId="acc-1"
+        currentUserId="user-1"
+        currentUserRole="member"
+      />,
+    );
+    expect(screen.queryByRole('button', { name: /revocar invitación/i })).toBeNull();
   });
 });

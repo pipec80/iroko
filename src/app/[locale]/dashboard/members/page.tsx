@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { getTeamMembers } from '../team/actions';
-import { InviteDialog } from '@/components/dashboard/team/invite-dialog';
+import { LeaveTeamButton } from '@/components/dashboard/members/leave-team-button';
 import { MembersTable } from '@/components/dashboard/members/members-table';
+import { InviteDialog } from '@/components/dashboard/team/invite-dialog';
 import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
 import { canManageMembers } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
@@ -35,6 +36,10 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
 
   const activeCount = members.filter((m) => m.status === 'active').length;
   const pendingCount = members.filter((m) => m.status === 'pending').length;
+  // Las cuentas Personal son 1:1 (id = user_id): "salir" no aplica, no hay a
+  // dónde ir dentro de esa misma cuenta — leave_team lo rechazaría igual con
+  // not_a_team, esto evita ofrecer el botón para que la DB lo rechace.
+  const isTeamAccount = accountId != null && accountId !== userData.data.user?.id;
 
   return (
     <div className="flex flex-col gap-6">
@@ -49,7 +54,10 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
             {t('members_subtitle', { active: activeCount, pending: pendingCount })}
           </p>
         </div>
-        {canManageMembers(role) && <InviteDialog />}
+        <div className="flex items-center gap-2">
+          {isTeamAccount && <LeaveTeamButton />}
+          {canManageMembers(role) && <InviteDialog />}
+        </div>
       </header>
 
       {/* Table with toolbar */}
