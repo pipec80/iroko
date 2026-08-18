@@ -174,8 +174,11 @@ teamMgmtTest.describe('Team — remove member', () => {
       // (aria-label is the Spanish translation of "member_actions: Acciones para {name}")
       await page.getByRole('button', { name: /^acciones para/i }).click();
 
-      // Confirm removal in the dialog
+      // The dialog opens in "manage member" mode first (change role / transfer
+      // ownership / remove) — "Eliminar miembro" moves it to the remove
+      // confirmation step, where the real "Eliminar" button lives.
       await expect(page.getByRole('dialog')).toBeVisible();
+      await page.getByRole('button', { name: /^eliminar miembro$/i }).click();
       await page.getByRole('button', { name: /^eliminar$/i }).click();
 
       // Visible result: dialog gone and the member's email no longer in the list
