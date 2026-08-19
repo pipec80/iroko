@@ -1,0 +1,13 @@
+
+@import url('../colors_and_type.css');
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--background); color: var(--text-primary); font-family: var(--font-sans); }
+body { padding: 24px; min-height: 100vh; }
+.pad { padding: 4px; }
+.row { display: flex; align-items: center; gap: 12px; }
+.col { display: flex; flex-direction: column; }
+.label { font: var(--type-label-lg); letter-spacing: var(--type-label-lg-letterspacing); text-transform: uppercase; color: var(--text-tertiary); white-space: nowrap; }
+.label-sm { font: var(--type-label-sm); letter-spacing: var(--type-label-sm-letterspacing); text-transform: uppercase; color: var(--text-tertiary); white-space: nowrap; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.display { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.035em; line-height: 1.05; }
+.wordmark { font-family: var(--font-display); font-weight: 800; text-transform: uppercase; letter-spacing: 0.005em; line-height: 1; }

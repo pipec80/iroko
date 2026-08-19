@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Precios - Axiom Ledger</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-lowest": "#ffffff",
+                      "on-tertiary-container": "#6e4227",
+                      "on-tertiary-fixed": "#321200",
+                      "on-primary": "#ffffff",
+                      "surface-bright": "#fdf9f2",
+                      "secondary-fixed": "#bdebed",
+                      "surface-dim": "#dddad3",
+                      "surface-container-high": "#ece8e1",
+                      "secondary-fixed-dim": "#a2cfd1",
+                      "primary-fixed-dim": "#9acfd8",
+                      "on-surface-variant": "#40484a",
+                      "on-secondary-fixed-variant": "#214d4f",
+                      "surface-tint": "#31666d",
+                      "on-tertiary-fixed-variant": "#673c21",
+                      "surface-variant": "#e6e2db",
+                      "outline-variant": "#bfc8c9",
+                      "on-tertiary": "#ffffff",
+                      "primary-container": "#92c7cf",
+                      "on-error-container": "#93000a",
+                      "inverse-on-surface": "#f4f0e9",
+                      "surface-container": "#f2ede6",
+                      "surface": "#fdf9f2",
+                      "surface-container-low": "#f7f3ec",
+                      "primary-fixed": "#b6ecf4",
+                      "on-surface": "#1c1c17",
+                      "on-primary-fixed-variant": "#134e55",
+                      "primary": "#31666d",
+                      "on-primary-fixed": "#001f23",
+                      "background": "#fdf9f2",
+                      "surface-container-highest": "#e6e2db",
+                      "secondary": "#3a6567",
+                      "tertiary": "#825336",
+                      "on-secondary-container": "#406b6d",
+                      "error": "#ba1a1a",
+                      "inverse-surface": "#31302c",
+                      "error-container": "#ffdad6",
+                      "on-error": "#ffffff",
+                      "secondary-container": "#bdebed",
+                      "outline": "#70797a",
+                      "tertiary-fixed": "#ffdbc9",
+                      "tertiary-container": "#eeb18e",
+                      "tertiary-fixed-dim": "#f7b996",
+                      "on-secondary": "#ffffff",
+                      "on-background": "#1c1c17",
+                      "inverse-primary": "#9acfd8",
+                      "on-secondary-fixed": "#002021",
+                      "on-primary-container": "#1c545b"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "mono": [
+                              "IBM Plex Mono"
+                      ]
+              },
+              "fontSize": {}
+      },
+          },
+        }
+      </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'IBM Plex Mono', monospace; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+      </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col antialiased">
+<!-- TopNavBar (Shared Component) -->
+<nav class="fixed top-0 w-full z-50 bg-[#FBF9F1]/70 dark:bg-slate-900/70 backdrop-blur-xl transition-all duration-300">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-bold tracking-tighter text-[#31666d] dark:text-[#92C7CF] font-['Plus_Jakarta_Sans']">
+                Axiom Ledger
+            </div>
+<div class="hidden md:flex gap-8">
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] font-['Plus_Jakarta_Sans'] font-medium tracking-tight hover:opacity-80 transition-opacity" href="#">Product</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] font-['Plus_Jakarta_Sans'] font-medium tracking-tight hover:opacity-80 transition-opacity" href="#">Solutions</a>
+<a class="text-[#31666d] dark:text-[#92C7CF] font-bold border-b-2 border-[#31666d] font-['Plus_Jakarta_Sans'] tracking-tight hover:opacity-80 transition-opacity" href="#">Pricing</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] font-['Plus_Jakarta_Sans'] font-medium tracking-tight hover:opacity-80 transition-opacity" href="#">Contact</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="font-['Plus_Jakarta_Sans'] font-medium tracking-tight text-primary hover:opacity-80 transition-opacity">Login</button>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-grow pt-32 pb-24 px-8 max-w-7xl mx-auto w-full">
+<!-- Header -->
+<header class="text-center mb-16 max-w-3xl mx-auto">
+<h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-primary font-headline mb-4">Planes simples y transparentes</h1>
+<p class="text-on-surface-variant font-body text-xl">Encuentra el plan perfecto para las necesidades de tu negocio. Sin costos ocultos.</p>
+</header>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+<!-- Free -->
+<div class="bg-surface-container-lowest rounded-2xl p-8 border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-colors">
+<h4 class="text-xl font-bold text-on-surface mb-2">Free</h4>
+<p class="text-on-surface-variant text-sm mb-6 h-10">Para probar la plataforma y pequeños proyectos.</p>
+<p class="font-mono text-4xl text-on-surface mb-6">$0<span class="text-base text-on-surface-variant font-body font-medium">/mes</span></p>
+<button class="w-full py-3 px-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-semibold hover:bg-surface-container-high transition-colors mb-8">Comenzar Gratis</button>
+<ul class="space-y-4 flex-grow">
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> Hasta 100 SKUs</li>
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> 1 Usuario</li>
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> Soporte comunitario</li>
+</ul>
+</div>
+<!-- Básico -->
+<div class="bg-surface-container-lowest rounded-2xl p-8 border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-colors">
+<h4 class="text-xl font-bold text-on-surface mb-2">Básico</h4>
+<p class="text-on-surface-variant text-sm mb-6 h-10">Ideal para negocios en crecimiento y startups.</p>
+<p class="font-mono text-4xl text-on-surface mb-6">$49<span class="text-base text-on-surface-variant font-body font-medium">/mes</span></p>
+<button class="w-full py-3 px-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-semibold hover:bg-surface-container-high transition-colors mb-8">Comenzar Básico</button>
+<ul class="space-y-4 flex-grow">
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> Hasta 1,000 SKUs</li>
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> 2 Usuarios</li>
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> Soporte por email</li>
+</ul>
+</div>
+<!-- Pro (Recommended) -->
+<div class="bg-primary rounded-2xl p-8 border border-primary relative flex flex-col shadow-xl transform md:-translate-y-4">
+<div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary-container text-on-primary-container text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-full shadow-sm">Más Popular</div>
+<h4 class="text-xl font-bold text-on-primary mb-2">Pro</h4>
+<p class="text-primary-fixed-dim text-sm mb-6 h-10">Para empresas consolidadas con múltiples operaciones.</p>
+<p class="font-mono text-4xl text-on-primary mb-6">$149<span class="text-base text-primary-fixed-dim font-body font-medium">/mes</span></p>
+<button class="w-full py-3 px-4 rounded-xl bg-on-primary text-primary font-bold hover:bg-surface transition-colors mb-8 shadow-sm">Comenzar Pro</button>
+<ul class="space-y-4 flex-grow">
+<li class="flex items-start gap-3 text-sm text-on-primary"><span class="material-symbols-outlined text-primary-fixed text-[20px] shrink-0">check_circle</span> Hasta 10,000 SKUs</li>
+<li class="flex items-start gap-3 text-sm text-on-primary"><span class="material-symbols-outlined text-primary-fixed text-[20px] shrink-0">check_circle</span> 15 Usuarios</li>
+<li class="flex items-start gap-3 text-sm text-on-primary"><span class="material-symbols-outlined text-primary-fixed text-[20px] shrink-0">check_circle</span> Multitienda</li>
+<li class="flex items-start gap-3 text-sm text-on-primary"><span class="material-symbols-outlined text-primary-fixed text-[20px] shrink-0">check_circle</span> Soporte prioritario 24/7</li>
+</ul>
+</div>
+<!-- Enterprise -->
+<div class="bg-surface-container-lowest rounded-2xl p-8 border border-outline-variant/20 flex flex-col hover:border-primary/30 transition-colors">
+<h4 class="text-xl font-bold text-on-surface mb-2">Enterprise</h4>
+<p class="text-on-surface-variant text-sm mb-6 h-10">Soluciones a medida para grandes corporaciones.</p>
+<p class="font-mono text-3xl text-on-surface mb-6 py-1">Personalizado</p>
+<button class="w-full py-3 px-4 rounded-xl bg-surface-container border border-outline-variant/20 text-on-surface font-semibold hover:bg-surface-container-high transition-colors mb-8">Contactar Ventas</button>
+<ul class="space-y-4 flex-grow">
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> SKUs Ilimitados</li>
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> Usuarios Ilimitados</li>
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> API Access</li>
+<li class="flex items-start gap-3 text-sm text-on-surface-variant"><span class="material-symbols-outlined text-primary text-[20px] shrink-0">check_circle</span> Account Manager Dedicado</li>
+</ul>
+</div>
+</div>
+<!-- CTA Section -->
+<section class="mt-24 text-center bg-surface-container-low rounded-3xl p-12 md:p-16 border border-outline-variant/10">
+<h2 class="text-3xl font-bold font-headline text-on-surface mb-4">¿Listo para transformar tu gestión?</h2>
+<p class="text-on-surface-variant text-lg mb-8 max-w-2xl mx-auto">Únete a cientos de empresas que ya optimizan sus operaciones con Axiom Ledger. Comienza gratis hoy mismo.</p>
+<div class="flex flex-col sm:flex-row gap-4 justify-center">
+<button class="py-3 px-8 rounded-xl bg-primary text-on-primary font-semibold hover:bg-primary/90 transition-colors shadow-md">Crear cuenta gratis</button>
+<button class="py-3 px-8 rounded-xl bg-surface-container-highest text-on-surface font-semibold hover:bg-surface-variant transition-colors border border-outline-variant/20">Hablar con un experto</button>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-12 px-8 bg-[#F7F3EC] dark:bg-slate-800 transition-colors duration-300 mt-auto">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-7xl mx-auto font-['Plus_Jakarta_Sans'] text-sm">
+<div class="md:col-span-1">
+<span class="font-bold text-[#31666d]">Axiom Ledger</span>
+<p class="mt-2 text-slate-500 dark:text-slate-400">© 2024 Axiom Ledger. Built with Next.js 15 &amp; Tailwind 4.</p>
+</div>
+<div class="md:col-span-3 flex flex-wrap gap-x-8 gap-y-4 md:justify-end">
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Sitemap</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Terms of Service</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">LinkedIn</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Twitter</a>
+</div>
+</div>
+</footer>
+</body></html>

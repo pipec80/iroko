@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Profile Settings - Identity &amp; Session Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#825336",
+                        "primary-fixed-dim": "#9acfd8",
+                        "surface-container": "#f2ede6",
+                        "on-primary-fixed-variant": "#134e55",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#6e4227",
+                        "tertiary-container": "#eeb18e",
+                        "on-secondary-fixed-variant": "#214d4f",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#002021",
+                        "surface": "#fdf9f2",
+                        "surface-bright": "#fdf9f2",
+                        "surface-tint": "#31666d",
+                        "outline-variant": "#bfc8c9",
+                        "surface-dim": "#dddad3",
+                        "surface-container-highest": "#e6e2db",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#bdebed",
+                        "surface-container-high": "#ece8e1",
+                        "tertiary-fixed": "#ffdbc9",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#31302c",
+                        "on-primary-fixed": "#001f23",
+                        "secondary": "#3a6567",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#673c21",
+                        "tertiary-fixed-dim": "#f7b996",
+                        "on-tertiary-fixed": "#321200",
+                        "secondary-fixed-dim": "#a2cfd1",
+                        "on-surface": "#1c1c17",
+                        "on-surface-variant": "#40484a",
+                        "inverse-on-surface": "#f4f0e9",
+                        "on-primary-container": "#1c545b",
+                        "on-secondary-container": "#406b6d",
+                        "outline": "#70797a",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#b6ecf4",
+                        "surface-container-low": "#f7f3ec",
+                        "surface-variant": "#e6e2db",
+                        "on-error": "#ffffff",
+                        "primary-container": "#92c7cf",
+                        "primary": "#31666d",
+                        "secondary-container": "#bdebed",
+                        "inverse-primary": "#9acfd8",
+                        "on-background": "#1c1c17",
+                        "error-container": "#ffdad6",
+                        "background": "#fdf9f2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Plus Jakarta Sans", "sans-serif"],
+                        "label": ["Plus Jakarta Sans", "sans-serif"],
+                        "mono": ["IBM Plex Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'IBM Plex Mono', monospace; }
+        .ambient-shadow { box-shadow: 0 4px 24px rgba(28, 28, 23, 0.05); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex selection:bg-primary selection:text-on-primary">
+<!-- SideNavBar (Shared Component) -->
+<aside class="hidden md:flex flex-col h-screen w-64 py-6 px-4 gap-2 bg-surface-container-low border-r-0 z-10 sticky top-0">
+<!-- Header -->
+<div class="flex items-center gap-3 px-3 mb-8">
+<img alt="Company Logo" class="rounded-lg w-10 h-10 object-cover" data-alt="Minimalist geometric logo icon with teal primary color on light warm background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-wJtkz9Dqi8bjFN4XFOGAdDXDQ9PUYtLPrTl1Ydsk03zJ9hhoLTVIsJJvDzvTUBO7xAS_aKX7oP14MgsaKyjAcHxTF_BDLWqk4W31g2PooX63nQGts-VBJENT61B5uliBwOVSwzHaFT1mjGpgKebwnXrTyshhy_1WAHSbsaAznBsZS0RxabuR1F5RaHF60OAaSEjoT9qhJBEVO6rDDWFnzQ1eJ9xQr48kEwHGFgIOwITMF9svv8fdcWdOzd3sWi_PgNr-OSdZiVZ7"/>
+<div>
+<h1 class="font-bold text-primary font-headline tracking-tight text-sm uppercase" style="letter-spacing: 0.05em;">Corporate HQ</h1>
+<p class="text-xs text-on-surface-variant">Global Operations</p>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md smooth-transition duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="analytics">analytics</span>
+<span class="text-sm font-medium">Operations</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md smooth-transition duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+<span class="text-sm font-medium">Inventory</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md smooth-transition duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="receipt_long">receipt_long</span>
+<span class="text-sm font-medium">Billing</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-[#e6e2db] dark:bg-stone-800 text-[#31666d] dark:text-[#92c7cf] rounded-md font-bold smooth-transition duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings" data-weight="fill" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<!-- Footer Tabs -->
+<div class="mt-auto flex flex-col gap-1 pt-4">
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md smooth-transition duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="contact_support">contact_support</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md smooth-transition duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="logout">logout</span>
+<span class="text-sm font-medium">Log Out</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto bg-surface relative">
+<!-- Mobile Top Nav Bar (Alternative for smaller screens) -->
+<header class="md:hidden flex justify-between items-center w-full px-6 h-16 bg-[#f7f3ec] z-20 sticky top-0">
+<div class="text-xl font-bold tracking-tight text-[#31666d] font-headline">Corporate HQ</div>
+<button class="text-[#31666d]">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<div class="max-w-5xl mx-auto px-6 py-12 md:py-16">
+<!-- Page Header -->
+<div class="mb-12">
+<h2 class="text-3xl md:text-4xl font-bold font-headline text-on-surface tracking-tight mb-2">Identity &amp; Security</h2>
+<p class="text-on-surface-variant text-base">Manage your connected accounts, active sessions, and security preferences.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column (Wider) -->
+<div class="lg:col-span-2 flex flex-col gap-8">
+<!-- Linked Accounts Section -->
+<section class="bg-surface-container-highest rounded-xl p-6 ambient-shadow">
+<div class="mb-6 flex justify-between items-center">
+<h3 class="text-lg font-bold font-headline text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="link">link</span>
+                                Linked Accounts
+                            </h3>
+</div>
+<div class="flex flex-col gap-4">
+<!-- Google Account -->
+<div class="bg-surface-container-lowest rounded-lg p-4 flex items-center justify-between border border-outline-variant/20 hover:border-outline-variant/40 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="mail">mail</span>
+</div>
+<div>
+<p class="font-bold text-sm text-on-surface">Google</p>
+<p class="text-xs text-on-surface-variant font-mono">user.name@corporatehq.com</p>
+</div>
+</div>
+<button class="text-sm font-medium text-on-surface-variant hover:text-error transition-colors px-3 py-1.5 rounded-md border border-outline-variant/15 hover:border-error/30 hover:bg-error-container/20">
+                                    Unlink
+                                </button>
+</div>
+<!-- Github Account -->
+<div class="bg-surface-container-lowest rounded-lg p-4 flex items-center justify-between border border-outline-variant/20 hover:border-outline-variant/40 transition-colors">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="code">code</span>
+</div>
+<div>
+<p class="font-bold text-sm text-on-surface">Github</p>
+<p class="text-xs text-on-surface-variant font-mono">@username_dev</p>
+</div>
+</div>
+<button class="text-sm font-medium text-on-surface-variant hover:text-error transition-colors px-3 py-1.5 rounded-md border border-outline-variant/15 hover:border-error/30 hover:bg-error-container/20">
+                                    Unlink
+                                </button>
+</div>
+<!-- Add Provider -->
+<button class="mt-2 text-sm font-semibold text-primary hover:text-primary-container flex items-center gap-2 self-start py-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+                                Connect another provider
+                            </button>
+</div>
+</section>
+<!-- Active Devices Section -->
+<section class="bg-surface-container-highest rounded-xl p-6 ambient-shadow">
+<div class="mb-6 flex justify-between items-center">
+<h3 class="text-lg font-bold font-headline text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="devices">devices</span>
+                                Active Devices
+                            </h3>
+</div>
+<div class="flex flex-col gap-1">
+<!-- Current Session -->
+<div class="group relative bg-surface-container-lowest p-4 rounded-t-lg border-b border-surface-container-low hover:bg-surface-bright transition-colors">
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<span class="material-symbols-outlined text-primary" data-icon="desktop_windows">desktop_windows</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<p class="font-bold text-sm text-on-surface flex items-center gap-2">
+                                                Chrome on Windows
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary uppercase tracking-wider">Active Now</span>
+</p>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-2">
+<div>
+<p class="text-[10px] uppercase text-on-surface-variant/70 tracking-widest font-semibold mb-0.5">IP Address</p>
+<p class="text-xs font-mono text-on-surface-variant">192.168.1.105</p>
+</div>
+<div>
+<p class="text-[10px] uppercase text-on-surface-variant/70 tracking-widest font-semibold mb-0.5">Location</p>
+<p class="text-xs text-on-surface-variant">New York, USA</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Mobile Session -->
+<div class="group relative bg-surface-container-lowest p-4 border-b border-surface-container-low hover:bg-surface-bright transition-colors">
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="smartphone">smartphone</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<p class="font-bold text-sm text-on-surface">iOS App - iPhone 13</p>
+<button class="text-xs font-medium text-error hover:underline opacity-0 group-hover:opacity-100 transition-opacity">Revoke</button>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-2">
+<div>
+<p class="text-[10px] uppercase text-on-surface-variant/70 tracking-widest font-semibold mb-0.5">Last Seen</p>
+<p class="text-xs font-mono text-on-surface-variant">2 hours ago</p>
+</div>
+<div>
+<p class="text-[10px] uppercase text-on-surface-variant/70 tracking-widest font-semibold mb-0.5">Location</p>
+<p class="text-xs text-on-surface-variant">Boston, USA</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Older Session -->
+<div class="group relative bg-surface-container-lowest p-4 rounded-b-lg hover:bg-surface-bright transition-colors">
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="laptop_mac">laptop_mac</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<p class="font-bold text-sm text-on-surface">Safari on macOS</p>
+<button class="text-xs font-medium text-error hover:underline opacity-0 group-hover:opacity-100 transition-opacity">Revoke</button>
+</div>
+<div class="grid grid-cols-2 gap-4 mt-2">
+<div>
+<p class="text-[10px] uppercase text-on-surface-variant/70 tracking-widest font-semibold mb-0.5">Last Seen</p>
+<p class="text-xs font-mono text-on-surface-variant">Oct 12, 2023 - 14:32</p>
+</div>
+<div>
+<p class="text-[10px] uppercase text-on-surface-variant/70 tracking-widest font-semibold mb-0.5">Location</p>
+<p class="text-xs text-on-surface-variant">London, UK</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column (Sidebar-ish) -->
+<div class="flex flex-col gap-8">
+<!-- Security Posture Card -->
+<div class="bg-surface-container-high rounded-xl p-6 relative overflow-hidden">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-xl"></div>
+<h4 class="text-sm font-bold uppercase tracking-wider text-on-surface mb-4">Security Status</h4>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl" data-icon="verified_user">verified_user</span>
+</div>
+<div>
+<p class="text-lg font-bold text-on-surface">Strong</p>
+<p class="text-xs text-on-surface-variant">2FA is enabled</p>
+</div>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">Password Age</span>
+<span class="font-mono text-on-surface">45 days</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">Recovery Email</span>
+<span class="text-on-surface flex items-center"><span class="material-symbols-outlined text-[16px] text-primary mr-1" data-icon="check_circle">check_circle</span> Set</span>
+</div>
+</div>
+</div>
+<!-- Danger Zone -->
+<section class="mt-auto">
+<div class="bg-inverse-surface rounded-xl p-6 relative">
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+<div>
+<h3 class="text-base font-bold text-inverse-on-surface">Danger Zone</h3>
+<p class="text-xs text-outline mt-1 leading-relaxed">
+                                        If you suspect your account has been compromised, you can immediately terminate all active sessions across all devices.
+                                    </p>
+</div>
+</div>
+<button class="w-full mt-2 bg-error/10 hover:bg-error/20 text-error font-semibold text-sm py-2.5 px-4 rounded-md border border-error/20 transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="exit_to_app">exit_to_app</span>
+                                Sign out of all devices
+                            </button>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</body></html>

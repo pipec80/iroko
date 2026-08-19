@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>UI Pattern Lab</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-low": "#f7f3ec",
+                        "on-primary-fixed": "#001f23",
+                        "on-surface": "#1c1c17",
+                        "inverse-on-surface": "#f4f0e9",
+                        "surface-container-highest": "#e6e2db",
+                        "on-primary": "#ffffff",
+                        "inverse-surface": "#31302c",
+                        "outline": "#70797a",
+                        "on-secondary-container": "#406b6d",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#eeb18e",
+                        "on-primary-container": "#1c545b",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#40484a",
+                        "tertiary": "#825336",
+                        "primary-container": "#92c7cf",
+                        "surface-container": "#f2ede6",
+                        "on-primary-fixed-variant": "#134e55",
+                        "on-tertiary-fixed": "#321200",
+                        "surface-bright": "#fdf9f2",
+                        "surface-container-high": "#ece8e1",
+                        "on-error": "#ffffff",
+                        "background": "#fdf9f2",
+                        "secondary-container": "#bdebed",
+                        "outline-variant": "#bfc8c9",
+                        "on-tertiary-container": "#6e4227",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#dddad3",
+                        "primary-fixed": "#b6ecf4",
+                        "secondary-fixed": "#bdebed",
+                        "on-background": "#1c1c17",
+                        "surface": "#fdf9f2",
+                        "on-tertiary-fixed-variant": "#673c21",
+                        "tertiary-fixed-dim": "#f7b996",
+                        "tertiary-fixed": "#ffdbc9",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "inverse-primary": "#9acfd8",
+                        "primary-fixed-dim": "#9acfd8",
+                        "on-secondary-fixed": "#002021",
+                        "secondary-fixed-dim": "#a2cfd1",
+                        "on-secondary-fixed-variant": "#214d4f",
+                        "surface-variant": "#e6e2db",
+                        "primary": "#31666d",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#31666d",
+                        "secondary": "#3a6567"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"],
+                        "mono": ["IBM Plex Mono"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .editorial-spacing { letter-spacing: 0.05em; }
+        .ambient-shadow { box-shadow: 0 10px 30px -10px rgba(28, 28, 23, 0.06); }
+        .ghost-border { border: 1px solid rgba(191, 200, 201, 0.15); }
+        .glassmorphism { background: rgba(230, 226, 219, 0.7); backdrop-filter: blur(12px); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar (Suppressed for this specific pattern lab view to maximize canvas, as it's a specific route /admin/design-system but conceptually a focused reference page) -->
+<main class="flex-1 max-w-7xl mx-auto w-full p-8 lg:p-12">
+<header class="mb-16">
+<h1 class="text-4xl md:text-5xl font-headline font-extrabold text-primary tracking-tight mb-4">UI Pattern Lab</h1>
+<p class="text-lg text-on-surface-variant max-w-2xl">The Precision Curator reference guide. Clean, solid, and unapologetically professional.</p>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+<!-- 1. Typography Scale -->
+<section class="space-y-6">
+<div class="border-b border-surface-container-high pb-2">
+<h2 class="font-mono text-sm uppercase text-on-surface-variant editorial-spacing">Typography Scale</h2>
+</div>
+<div class="bg-surface-container-low rounded-xl p-8 ambient-shadow space-y-8">
+<div>
+<span class="block font-mono text-xs text-on-surface-variant mb-2">Display-LG (Headline)</span>
+<h1 class="text-5xl font-headline font-extrabold text-on-surface tracking-tight leading-tight">Your revenue is up 12%</h1>
+</div>
+<div>
+<span class="block font-mono text-xs text-on-surface-variant mb-2">Display-MD</span>
+<h2 class="text-3xl font-headline font-bold text-on-surface">Store Performance</h2>
+</div>
+<div>
+<span class="block font-mono text-xs text-on-surface-variant mb-2">Body (Plus Jakarta Sans)</span>
+<p class="text-base text-on-surface-variant">The quick brown fox jumps over the lazy dog. This typography de-escalates the complexity of financial data.</p>
+</div>
+<div>
+<span class="block font-mono text-xs text-on-surface-variant mb-2">Technical Label (IBM Plex Mono)</span>
+<p class="font-mono text-sm uppercase tracking-[0.05em] text-on-surface font-medium">SKU-94827-BL</p>
+</div>
+<div>
+<span class="block font-mono text-xs text-on-surface-variant mb-2">Numerical Value (IBM Plex Mono)</span>
+<p class="font-mono text-2xl text-primary font-semibold">$1,245,890.00</p>
+</div>
+</div>
+</section>
+<!-- 2. Buttons -->
+<section class="space-y-6">
+<div class="border-b border-surface-container-high pb-2">
+<h2 class="font-mono text-sm uppercase text-on-surface-variant editorial-spacing">Buttons &amp; Interactions</h2>
+</div>
+<div class="bg-surface-container-low rounded-xl p-8 ambient-shadow grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-3">
+<span class="block font-mono text-xs text-on-surface-variant">Primary Button</span>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-semibold py-2.5 px-6 rounded-md hover:opacity-90 transition-opacity w-full">
+                            Complete Order
+                        </button>
+</div>
+<div class="space-y-3">
+<span class="block font-mono text-xs text-on-surface-variant">Secondary (Ghost)</span>
+<button class="bg-transparent border border-outline-variant/30 text-primary font-headline font-medium py-2.5 px-6 rounded-md hover:bg-surface-container-highest transition-colors w-full">
+                            Cancel Action
+                        </button>
+</div>
+<div class="space-y-3">
+<span class="block font-mono text-xs text-on-surface-variant">Tertiary Action</span>
+<button class="bg-transparent text-primary font-headline font-medium py-2.5 px-6 hover:underline transition-all w-full text-left md:text-center">
+                            View Details
+                        </button>
+</div>
+<div class="space-y-3">
+<span class="block font-mono text-xs text-on-surface-variant">Loading State</span>
+<button class="bg-surface-container-highest text-on-surface-variant font-headline font-medium py-2.5 px-6 rounded-md cursor-not-allowed flex items-center justify-center gap-2 w-full">
+<span class="material-symbols-outlined animate-spin text-[20px]">sync</span>
+                            Processing
+                        </button>
+</div>
+</div>
+</section>
+<!-- 3. Form Inputs -->
+<section class="space-y-6 lg:col-span-2">
+<div class="border-b border-surface-container-high pb-2">
+<h2 class="font-mono text-sm uppercase text-on-surface-variant editorial-spacing">Form Inputs</h2>
+</div>
+<div class="bg-surface-container-low rounded-xl p-8 ambient-shadow grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-2">
+<label class="block font-mono text-xs text-on-surface-variant">Normal Input</label>
+<input class="w-full bg-surface-container-lowest border-outline-variant/20 rounded-md py-2.5 px-4 text-on-surface placeholder-on-surface-variant/50 focus:border-primary focus:ring-4 focus:ring-primary-fixed focus:outline-none transition-all" placeholder="Enter store name..." type="text"/>
+</div>
+<div class="space-y-2">
+<label class="block font-mono text-xs text-on-surface-variant">Focus State (Simulated)</label>
+<input class="w-full bg-surface-container-lowest border-primary rounded-md py-2.5 px-4 text-on-surface ring-4 ring-primary-fixed outline-none transition-all" type="text" value="Retail Hub North"/>
+</div>
+<div class="space-y-2">
+<label class="block font-mono text-xs text-error">Error State</label>
+<input class="w-full bg-surface-container-lowest border-error rounded-md py-2.5 px-4 text-error ring-1 ring-error outline-none transition-all" type="text" value="Invalid SKU format"/>
+<span class="text-xs text-error mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">error</span>
+                            Must contain numbers and letters
+                        </span>
+</div>
+<div class="space-y-2">
+<label class="block font-mono text-xs text-on-surface-variant/50">Disabled Input</label>
+<input class="w-full bg-surface-container-high border-transparent rounded-md py-2.5 px-4 text-on-surface-variant/50 cursor-not-allowed" disabled="" type="text" value="Read only value"/>
+</div>
+</div>
+</section>
+<!-- 4. Alerts -->
+<section class="space-y-6 lg:col-span-2">
+<div class="border-b border-surface-container-high pb-2">
+<h2 class="font-mono text-sm uppercase text-on-surface-variant editorial-spacing">Contextual Alerts</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Info -->
+<div class="bg-surface-container-lowest border-l-4 border-primary rounded-r-lg p-4 ambient-shadow flex gap-4">
+<span class="material-symbols-outlined text-primary mt-0.5">info</span>
+<div>
+<span class="block font-mono text-xs text-primary mb-1">Information</span>
+<p class="text-sm text-on-surface font-medium">New analytics features are now available in the dashboard.</p>
+</div>
+</div>
+<!-- Success (Using secondary/teal tones instead of generic green for brand alignment) -->
+<div class="bg-surface-container-lowest border-l-4 border-[#3a6567] rounded-r-lg p-4 ambient-shadow flex gap-4">
+<span class="material-symbols-outlined text-[#3a6567] mt-0.5">check_circle</span>
+<div>
+<span class="block font-mono text-xs text-[#3a6567] mb-1">Success</span>
+<p class="text-sm text-on-surface font-medium">Data sync completed successfully.</p>
+</div>
+</div>
+<!-- Warning (Using tertiary/orange tones) -->
+<div class="bg-surface-container-lowest border-l-4 border-tertiary rounded-r-lg p-4 ambient-shadow flex gap-4">
+<span class="material-symbols-outlined text-tertiary mt-0.5">warning</span>
+<div>
+<span class="block font-mono text-xs text-tertiary mb-1">Warning</span>
+<p class="text-sm text-on-surface font-medium">API rate limit approaching (85% used).</p>
+</div>
+</div>
+<!-- Error -->
+<div class="bg-surface-container-lowest border-l-4 border-error rounded-r-lg p-4 ambient-shadow flex gap-4">
+<span class="material-symbols-outlined text-error mt-0.5">dangerous</span>
+<div>
+<span class="block font-mono text-xs text-error mb-1">Critical Error</span>
+<p class="text-sm text-on-surface font-medium">Failed to establish connection to database cluster.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. Skeletons -->
+<section class="space-y-6 lg:col-span-2">
+<div class="border-b border-surface-container-high pb-2">
+<h2 class="font-mono text-sm uppercase text-on-surface-variant editorial-spacing">Loading Skeletons</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- KPI Skeleton -->
+<div class="bg-surface-container-highest rounded-xl p-6 space-y-4">
+<span class="block font-mono text-xs text-on-surface-variant mb-4">Bento KPI Skeleton</span>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-low animate-pulse"></div>
+<div class="h-4 w-24 bg-surface-container-low rounded animate-pulse"></div>
+</div>
+<div class="h-8 w-3/4 bg-surface-container-low rounded animate-pulse mt-4"></div>
+<div class="flex gap-2 mt-4">
+<div class="h-3 w-16 bg-surface-container-low rounded animate-pulse"></div>
+<div class="h-3 w-20 bg-surface-container-low rounded animate-pulse"></div>
+</div>
+</div>
+<!-- Table Skeleton -->
+<div class="bg-surface-container-lowest rounded-xl p-6 ambient-shadow space-y-4">
+<span class="block font-mono text-xs text-on-surface-variant mb-4">Data Grid Skeleton</span>
+<!-- Header -->
+<div class="flex gap-4 pb-4 border-b border-surface-container-high">
+<div class="h-3 w-1/4 bg-surface-container-high rounded animate-pulse"></div>
+<div class="h-3 w-1/4 bg-surface-container-high rounded animate-pulse"></div>
+<div class="h-3 w-1/4 bg-surface-container-high rounded animate-pulse"></div>
+</div>
+<!-- Rows -->
+<div class="space-y-4 pt-2">
+<div class="flex gap-4">
+<div class="h-4 w-1/4 bg-surface-container-high rounded animate-pulse"></div>
+<div class="h-4 w-1/4 bg-surface-container-high rounded animate-pulse"></div>
+<div class="h-4 w-1/4 bg-surface-container-high rounded animate-pulse"></div>
+</div>
+<div class="flex gap-4">
+<div class="h-4 w-1/4 bg-surface-container-low rounded animate-pulse"></div>
+<div class="h-4 w-1/4 bg-surface-container-low rounded animate-pulse"></div>
+<div class="h-4 w-1/4 bg-surface-container-low rounded animate-pulse"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

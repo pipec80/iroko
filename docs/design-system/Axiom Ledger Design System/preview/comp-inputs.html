@@ -1,0 +1,18 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><title>Inputs</title>
+<link rel="stylesheet" href="_card.css">
+</head><body>
+<div class="pad" style="display: flex; flex-direction: column; gap: 14px; max-width: 540px;">
+  <div class="label">Inputs · field · search · OTP</div>
+  <div>
+    <label style="display:block;font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Nombre del proyecto</label>
+    <input value="ace-jewelry" style="height:40px;width:100%;padding:0 14px;background:var(--surface-elevated);border:1px solid var(--border-strong);border-radius:6px;font-family:var(--font-sans);font-size:14px;outline:none;color:var(--text-primary);">
+  </div>
+  <div style="position:relative;">
+    <i data-lucide="search" style="stroke-width:1.5;width:16px;height:16px;color:var(--text-tertiary);position:absolute;left:14px;top:50%;transform:translateY(-50%);"></i>
+    <input placeholder="Buscar miembros, proyectos…" style="height:38px;width:100%;padding:0 14px 0 38px;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;font-family:var(--font-sans);font-size:13px;outline:none;">
+  </div>
+  <input value="000 000" maxlength="7" style="height:52px;width:100%;padding:0 14px;background:var(--surface-elevated);border:1px solid var(--border-strong);border-radius:6px;font-family:var(--font-mono);font-size:22px;letter-spacing:0.3em;text-align:center;outline:none;color:var(--text-primary);">
+</div>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script>lucide.createIcons();</script></body></html>

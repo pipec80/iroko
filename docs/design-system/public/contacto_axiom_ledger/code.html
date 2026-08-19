@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Contacta con nosotros - Axiom Ledger</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-container": "#6e4227",
+                        "on-tertiary-fixed": "#321200",
+                        "on-primary": "#ffffff",
+                        "surface-bright": "#fdf9f2",
+                        "secondary-fixed": "#bdebed",
+                        "surface-dim": "#dddad3",
+                        "surface-container-high": "#ece8e1",
+                        "secondary-fixed-dim": "#a2cfd1",
+                        "primary-fixed-dim": "#9acfd8",
+                        "on-surface-variant": "#40484a",
+                        "on-secondary-fixed-variant": "#214d4f",
+                        "surface-tint": "#31666d",
+                        "on-tertiary-fixed-variant": "#673c21",
+                        "surface-variant": "#e6e2db",
+                        "outline-variant": "#bfc8c9",
+                        "on-tertiary": "#ffffff",
+                        "primary-container": "#92c7cf",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#f4f0e9",
+                        "surface-container": "#f2ede6",
+                        "surface": "#fdf9f2",
+                        "surface-container-low": "#f7f3ec",
+                        "primary-fixed": "#b6ecf4",
+                        "on-surface": "#1c1c17",
+                        "on-primary-fixed-variant": "#134e55",
+                        "primary": "#31666d",
+                        "on-primary-fixed": "#001f23",
+                        "background": "#fdf9f2",
+                        "surface-container-highest": "#e6e2db",
+                        "secondary": "#3a6567",
+                        "tertiary": "#825336",
+                        "on-secondary-container": "#406b6d",
+                        "error": "#ba1a1a",
+                        "inverse-surface": "#31302c",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#bdebed",
+                        "outline": "#70797a",
+                        "tertiary-fixed": "#ffdbc9",
+                        "tertiary-container": "#eeb18e",
+                        "tertiary-fixed-dim": "#f7b996",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#1c1c17",
+                        "inverse-primary": "#9acfd8",
+                        "on-secondary-fixed": "#002021",
+                        "on-primary-container": "#1c545b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"],
+                        "mono": ["IBM Plex Mono"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fdf9f2; /* Default surface */
+        }
+        .font-mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        /* Custom styles for Material Symbols to ensure proper rendering based on JSON config if needed */
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-[#FBF9F1]/70 dark:bg-slate-900/70 backdrop-blur-xl no-border bg-surface/70 flat no-shadows">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto">
+<div class="text-xl font-bold tracking-tighter text-[#31666d] dark:text-[#92C7CF]">
+                Axiom Ledger
+            </div>
+<!-- Desktop Navigation -->
+<div class="hidden md:flex space-x-8 items-center font-['Plus_Jakarta_Sans'] font-medium tracking-tight">
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Product</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Solutions</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Pricing</a>
+<a class="text-[#31666d] dark:text-[#92C7CF] font-bold border-b-2 border-[#31666d] hover:opacity-80 transition-opacity" href="#">Contact</a>
+</div>
+<div class="hidden md:flex items-center">
+<button class="font-['Plus_Jakarta_Sans'] font-medium tracking-tight text-[#31666d] dark:text-[#92C7CF] hover:opacity-80 transition-opacity">
+                    Login
+                </button>
+</div>
+<!-- Mobile Menu Button (Icon only, functional implementation omitted per rules) -->
+<div class="md:hidden flex items-center">
+<button class="text-[#31666d] p-2">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-grow pt-24 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+<!-- Header Section -->
+<div class="mb-12 md:mb-16 mt-8">
+<h1 class="text-4xl md:text-5xl font-extrabold text-primary tracking-tight mb-4 max-w-2xl font-headline">
+                Contacta con nuestro equipo de expertos
+            </h1>
+<p class="text-lg text-on-surface-variant max-w-xl font-body">
+                Estamos aquí para ayudarle a optimizar sus análisis financieros. Rellene el formulario y nos pondremos en contacto en breve.
+            </p>
+</div>
+<!-- Split Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
+<!-- Left Side: Form (Surface Container Highest for Bento style) -->
+<div class="lg:col-span-7">
+<div class="bg-surface-container-highest rounded-xl p-6 sm:p-8 relative overflow-hidden">
+<!-- Glassmorphism subtle overlay effect -->
+<div class="absolute inset-0 bg-surface-variant/30 backdrop-blur-sm z-0"></div>
+<form class="relative z-10 space-y-6">
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<!-- Name -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-on-surface uppercase tracking-wider font-headline" for="name">Nombre completo</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-md px-4 py-3 text-on-surface placeholder-outline focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all shadow-sm" id="name" name="name" placeholder="Ej. Jane Doe" type="text"/>
+</div>
+<!-- Business Email -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-on-surface uppercase tracking-wider font-headline" for="email">Email corporativo</label>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-md px-4 py-3 text-on-surface placeholder-outline focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all shadow-sm" id="email" name="email" placeholder="jane@empresa.com" type="email"/>
+</div>
+</div>
+<!-- Company Size (Dropdown) -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-on-surface uppercase tracking-wider font-headline" for="company_size">Tamaño de la empresa</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-md px-4 py-3 text-on-surface appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all shadow-sm cursor-pointer font-body" id="company_size" name="company_size">
+<option disabled="" selected="" value="">Seleccione una opción</option>
+<option value="1-50">1 - 50 empleados</option>
+<option value="51-200">51 - 200 empleados</option>
+<option value="201-500">201 - 500 empleados</option>
+<option value="500+">Más de 500 empleados</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-on-surface-variant">
+<span class="material-symbols-outlined text-xl">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Message -->
+<div class="space-y-2">
+<label class="block text-sm font-semibold text-on-surface uppercase tracking-wider font-headline" for="message">Mensaje</label>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-md px-4 py-3 text-on-surface placeholder-outline focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all shadow-sm resize-none" id="message" name="message" placeholder="¿En qué podemos ayudarle?" rows="4"></textarea>
+</div>
+<!-- Submit Button -->
+<div class="pt-2">
+<button class="w-full sm:w-auto bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold py-3 px-8 rounded-md hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface" type="submit">
+                                Enviar mensaje
+                            </button>
+</div>
+</form>
+</div>
+</div>
+<!-- Right Side: Contact Details (Surface Container Low for structural background) -->
+<div class="lg:col-span-5 flex flex-col justify-start space-y-8">
+<div class="bg-surface-container-low rounded-xl p-8 h-full">
+<h2 class="text-xl font-bold text-primary mb-6 font-headline">Información de Contacto</h2>
+<div class="space-y-8">
+<!-- Address -->
+<div class="flex items-start space-x-4">
+<div class="bg-surface-container-highest p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-primary">location_on</span>
+</div>
+<div>
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-wider font-headline mb-1">Sede Central</h3>
+<p class="text-on-surface-variant font-body">
+                                    Paseo de la Castellana, 42<br/>
+                                    28046 Madrid, España
+                                </p>
+</div>
+</div>
+<!-- Sales Email -->
+<div class="flex items-start space-x-4">
+<div class="bg-surface-container-highest p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-primary">mail</span>
+</div>
+<div>
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-wider font-headline mb-1">Ventas</h3>
+<a class="text-primary hover:text-primary-container font-mono transition-colors" href="mailto:sales@axiomledger.com">
+                                    sales@axiomledger.com
+                                </a>
+</div>
+</div>
+<!-- Support Phone -->
+<div class="flex items-start space-x-4">
+<div class="bg-surface-container-highest p-3 rounded-full flex-shrink-0">
+<span class="material-symbols-outlined text-primary">support_agent</span>
+</div>
+<div>
+<h3 class="text-sm font-bold text-on-surface uppercase tracking-wider font-headline mb-1">Soporte Técnico</h3>
+<p class="text-primary font-mono">
+                                    +34 900 123 456
+                                </p>
+<p class="text-xs text-on-surface-variant mt-1 font-body">Lun-Vie, 9:00 - 18:00 CET</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 bg-[#F7F3EC] dark:bg-slate-800 tonal-shift flat no-shadows mt-auto">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-7xl mx-auto font-['Plus_Jakarta_Sans'] text-sm">
+<div class="col-span-1 md:col-span-2">
+<span class="font-bold text-[#31666d]">Axiom Ledger</span>
+<p class="text-slate-500 dark:text-slate-400 mt-2">© 2024 Axiom Ledger. Built with Next.js 15 &amp; Tailwind 4.</p>
+</div>
+<div class="col-span-1 flex flex-col space-y-2">
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Sitemap</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Terms of Service</a>
+</div>
+<div class="col-span-1 flex flex-col space-y-2">
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">LinkedIn</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Twitter</a>
+</div>
+</div>
+</footer>
+</body></html>

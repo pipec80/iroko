@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Iroko · Paleta + Tipografía</title>
+<meta name="viewport" content="width=1320">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700;800&display=swap">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;background:#13110d;color:#f5ecda;font-family:'Geist',sans-serif;-webkit-font-smoothing:antialiased}
+  body{
+    background-image:
+      radial-gradient(ellipse at 18% 0%, rgba(201,122,61,0.08), transparent 55%),
+      radial-gradient(ellipse at 88% 100%, rgba(60,79,115,0.10), transparent 60%);
+    background-attachment:fixed;
+  }
+  .page{max-width:1320px;margin:0 auto;padding:56px 40px 96px}
+
+  .folio{display:grid;grid-template-columns:1fr auto;gap:48px;align-items:flex-end;margin-bottom:48px;padding-bottom:28px;border-bottom:1px solid rgba(245,236,218,0.16)}
+  .folio h1{margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:56px;line-height:1;letter-spacing:-0.02em;color:#f5ecda}
+  .folio h1 .amp{color:#c97a3d;font-style:normal;font-weight:400;margin:0 6px}
+  .folio .meta{font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:rgba(245,236,218,0.45);text-align:right;line-height:1.8}
+  .brief{max-width:760px;margin:20px 0 0;font-size:15px;line-height:1.65;color:rgba(245,236,218,0.7)}
+  .brief em{color:#e0a26c;font-style:normal}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:32px}
+
+  .palette{position:relative;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+
+  /* Headers per option */
+  .p-head{padding:18px 22px;display:flex;flex-direction:column;gap:6px;border-bottom:1px solid rgba(245,236,218,0.12)}
+  .p-num{font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;opacity:0.55}
+  .p-name{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:26px;font-weight:500;line-height:1;letter-spacing:-0.01em}
+  .p-thesis{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.04em;color:rgba(245,236,218,0.55);font-weight:500}
+
+  /* Swatch row */
+  .swatches{display:grid;grid-template-columns:repeat(5,1fr)}
+  .swatch{aspect-ratio:1;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:'Geist Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.04em;line-height:1.2}
+  .swatch span{display:block}
+  .swatch .name{font-size:8px;opacity:0.7;text-transform:uppercase;letter-spacing:0.1em}
+  .swatch .hex{font-size:9px;font-weight:600;margin-top:2px}
+
+  /* Applied mock area */
+  .applied{padding:28px 22px 22px;flex:1;display:flex;flex-direction:column;gap:22px}
+
+  .wm-row{display:flex;align-items:center;gap:14px}
+  .wm{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:46px;line-height:1;letter-spacing:-0.012em}
+  .wm .acc{}
+  .mark-sm svg{display:block}
+
+  /* KPI tile mock */
+  .kpi{border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+  .kpi .label{font-family:'Geist Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;opacity:0.55}
+  .kpi .val{font-family:'Geist Mono',monospace;font-size:30px;font-weight:600;letter-spacing:-0.04em;line-height:1}
+  .kpi .row{display:flex;align-items:center;gap:8px}
+  .kpi .chip{font-family:'Geist Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .kpi .vs{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.5}
+
+  /* Button row */
+  .btns{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{font-family:'Inter Tight',sans-serif;font-weight:600;font-size:13px;padding:10px 18px;border-radius:8px;border:0;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .btn-outline{background:transparent;font-weight:600;font-size:13px;padding:9px 18px;border-radius:8px;font-family:'Inter Tight',sans-serif;cursor:pointer}
+
+  /* Type sample */
+  .type-sample{padding:18px 0 0;border-top:1px solid rgba(245,236,218,0.1)}
+  .type-display{font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:32px;line-height:1.05;letter-spacing:-0.018em;margin:0 0 8px}
+  .type-body{font-family:'Inter Tight',sans-serif;font-size:13px;line-height:1.55;margin:0;opacity:0.78}
+
+  .pairing{display:flex;gap:14px;font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.55;flex-wrap:wrap;padding-top:14px;border-top:1px dashed rgba(245,236,218,0.16)}
+  .pairing strong{font-weight:600;opacity:1;color:#e0a26c}
+
+  /* ============== OPTION 1: TIERRA + HIERRO ============== */
+  .opt-1{background:#1a1410;color:#f5ecda}
+  .opt-1 .p-head{background:#1f1812}
+  .opt-1 .btn-primary{background:#b8513a;color:#fff}
+  .opt-1 .btn-outline{border:1px solid rgba(245,236,218,0.25);color:#f5ecda}
+  .opt-1 .kpi{background:#231a13}
+  .opt-1 .kpi .val{color:#f5ecda}
+  .opt-1 .kpi .chip{background:rgba(217,164,65,0.16);color:#d9a441}
+  .opt-1 .wm .acc{color:#b8513a}
+  .opt-1 .type-display{color:#f5ecda}
+
+  /* ============== OPTION 2: BOSQUE + COBRE ============== */
+  .opt-2{background:#0f1612;color:#ece4cd}
+  .opt-2 .p-head{background:#131c17}
+  .opt-2 .btn-primary{background:#c97a3d;color:#0f1612}
+  .opt-2 .btn-outline{border:1px solid rgba(236,228,205,0.25);color:#ece4cd}
+  .opt-2 .kpi{background:#16201a}
+  .opt-2 .kpi .val{color:#ece4cd}
+  .opt-2 .kpi .chip{background:rgba(154,189,138,0.18);color:#9abd8a}
+  .opt-2 .wm .acc{color:#9abd8a}
+  .opt-2 .type-display{color:#ece4cd}
+
+  /* ============== OPTION 3: COBALTO + COBRE ============== */
+  .opt-3{background:#0a1228;color:#ede4ce}
+  .opt-3 .p-head{background:#0e1832}
+  .opt-3 .btn-primary{background:#c97a3d;color:#0a1228}
+  .opt-3 .btn-outline{border:1px solid rgba(237,228,206,0.25);color:#ede4ce}
+  .opt-3 .kpi{background:#10193a}
+  .opt-3 .kpi .val{color:#ede4ce}
+  .opt-3 .kpi .chip{background:rgba(201,122,61,0.20);color:#e0a26c}
+  .opt-3 .wm .acc{color:#c97a3d}
+  .opt-3 .type-display{color:#ede4ce}
+
+  .footnote{margin-top:48px;display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;padding:22px 26px;background:#1c1813;border:1px solid rgba(245,236,218,0.12);border-radius:4px}
+  .footnote .gly{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:30px;color:#c97a3d}
+  .footnote p{margin:0;font-size:14px;line-height:1.55;color:rgba(245,236,218,0.75)}
+  .footnote p strong{color:#f5ecda}
+  .footnote .pill{font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:#13110d;background:#c97a3d;padding:9px 16px;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="folio">
+    <div>
+      <h1>Iroko<span class="amp">·</span> tres paletas</h1>
+      <p class="brief">
+        Las tres son <em>warm dark + cream</em>, las tres aceptan modo claro y oscuro, las tres
+        son afrofuturistas — pero cada una habita un imaginario distinto: hierro ceremonial,
+        bosque vivo, o noche cobalto. La tipografía es la misma en las tres
+        (<em>Cormorant + Inter Tight + Geist Mono</em>); cambian solo los colores aplicados.
+      </p>
+    </div>
+    <div class="meta">
+      Paso · 02 / 03<br>
+      Paleta + Tipografía<br>
+      Iroko · 2026
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ░░ OPTION 1 — TIERRA + HIERRO ░░ -->
+    <article class="palette opt-1">
+      <header class="p-head">
+        <span class="p-num">01 · TIERRA + HIERRO</span>
+        <span class="p-name">Pigmento ritual</span>
+        <span class="p-thesis">óxido de hierro · oro · noche-tierra</span>
+      </header>
+
+      <div class="swatches">
+        <div class="swatch" style="background:#13110d;color:#f5ecda"><span class="name">night</span><span class="hex">#13110D</span></div>
+        <div class="swatch" style="background:#231a13;color:#f5ecda"><span class="name">earth</span><span class="hex">#231A13</span></div>
+        <div class="swatch" style="background:#b8513a;color:#fff"><span class="name">iron clay</span><span class="hex">#B8513A</span></div>
+        <div class="swatch" style="background:#d9a441;color:#231a13"><span class="name">gold leaf</span><span class="hex">#D9A441</span></div>
+        <div class="swatch" style="background:#f5ecda;color:#231a13"><span class="name">bone</span><span class="hex">#F5ECDA</span></div>
+      </div>
+
+      <div class="applied">
+        <div class="wm-row">
+          <span class="mark-sm">
+            <svg viewBox="0 0 40 40" width="40" height="40"><line x1="20" y1="34" x2="20" y2="14" stroke="#f5ecda" stroke-width="2"/><circle cx="20" cy="9" r="4" fill="#b8513a"/><line x1="20" y1="22" x2="11" y2="16" stroke="#f5ecda" stroke-width="1.4"/><line x1="20" y1="22" x2="29" y2="16" stroke="#f5ecda" stroke-width="1.4"/></svg>
+          </span>
+          <span class="wm">Ir<span class="acc">ok</span>o</span>
+        </div>
+
+        <div class="kpi">
+          <span class="label">Proyectos activos</span>
+          <span class="val">12</span>
+          <span class="row"><span class="chip">+3</span><span class="vs">vs mes anterior</span></span>
+        </div>
+
+        <div class="btns">
+          <button class="btn btn-primary">Crear proyecto</button>
+          <button class="btn btn-outline">Ver docs</button>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-display">El tronco que sostiene tus productos.</p>
+          <p class="type-body">Iroko es la base de cada micro-SaaS que construyes — auth, billing, organización, dashboard. Conecta a Supabase, rebrandea, despliega.</p>
+          <div class="pairing"><strong>Display</strong> Cormorant italic · <strong>UI</strong> Inter Tight · <strong>Mono</strong> Geist Mono</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ░░ OPTION 2 — BOSQUE + COBRE ░░ -->
+    <article class="palette opt-2">
+      <header class="p-head">
+        <span class="p-num">02 · BOSQUE + COBRE</span>
+        <span class="p-name">El árbol vivo</span>
+        <span class="p-thesis">hoja · sangre del árbol · noche-bosque</span>
+      </header>
+
+      <div class="swatches">
+        <div class="swatch" style="background:#0f1612;color:#ece4cd"><span class="name">forest</span><span class="hex">#0F1612</span></div>
+        <div class="swatch" style="background:#16201a;color:#ece4cd"><span class="name">moss</span><span class="hex">#16201A</span></div>
+        <div class="swatch" style="background:#9abd8a;color:#0f1612"><span class="name">leaf</span><span class="hex">#9ABD8A</span></div>
+        <div class="swatch" style="background:#c97a3d;color:#0f1612"><span class="name">copper sap</span><span class="hex">#C97A3D</span></div>
+        <div class="swatch" style="background:#f3eee0;color:#0f1612"><span class="name">parchment</span><span class="hex">#F3EEE0</span></div>
+      </div>
+
+      <div class="applied">
+        <div class="wm-row">
+          <span class="mark-sm">
+            <svg viewBox="0 0 40 40" width="40" height="40"><line x1="20" y1="34" x2="20" y2="14" stroke="#ece4cd" stroke-width="2"/><circle cx="20" cy="9" r="4" fill="#9abd8a"/><line x1="20" y1="22" x2="11" y2="16" stroke="#ece4cd" stroke-width="1.4"/><line x1="20" y1="22" x2="29" y2="16" stroke="#ece4cd" stroke-width="1.4"/></svg>
+          </span>
+          <span class="wm">Ir<span class="acc">ok</span>o</span>
+        </div>
+
+        <div class="kpi">
+          <span class="label">Proyectos activos</span>
+          <span class="val">12</span>
+          <span class="row"><span class="chip">+3</span><span class="vs">vs mes anterior</span></span>
+        </div>
+
+        <div class="btns">
+          <button class="btn btn-primary">Crear proyecto</button>
+          <button class="btn btn-outline">Ver docs</button>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-display">El tronco que sostiene tus productos.</p>
+          <p class="type-body">Iroko es la base de cada micro-SaaS que construyes — auth, billing, organización, dashboard. Conecta a Supabase, rebrandea, despliega.</p>
+          <div class="pairing"><strong>Display</strong> Cormorant italic · <strong>UI</strong> Inter Tight · <strong>Mono</strong> Geist Mono</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ░░ OPTION 3 — COBALTO + COBRE ░░ -->
+    <article class="palette opt-3">
+      <header class="p-head">
+        <span class="p-num">03 · COBALTO + COBRE</span>
+        <span class="p-name">Noche cyberpunk</span>
+        <span class="p-thesis">índigo Tuareg · cobre incandescente · oro</span>
+      </header>
+
+      <div class="swatches">
+        <div class="swatch" style="background:#0a1228;color:#ede4ce"><span class="name">cobalt night</span><span class="hex">#0A1228</span></div>
+        <div class="swatch" style="background:#10193a;color:#ede4ce"><span class="name">indigo</span><span class="hex">#10193A</span></div>
+        <div class="swatch" style="background:#c97a3d;color:#0a1228"><span class="name">copper</span><span class="hex">#C97A3D</span></div>
+        <div class="swatch" style="background:#d9a441;color:#0a1228"><span class="name">gold</span><span class="hex">#D9A441</span></div>
+        <div class="swatch" style="background:#ede4ce;color:#0a1228"><span class="name">ivory</span><span class="hex">#EDE4CE</span></div>
+      </div>
+
+      <div class="applied">
+        <div class="wm-row">
+          <span class="mark-sm">
+            <svg viewBox="0 0 40 40" width="40" height="40"><line x1="20" y1="34" x2="20" y2="14" stroke="#ede4ce" stroke-width="2"/><circle cx="20" cy="9" r="4" fill="#c97a3d"/><line x1="20" y1="22" x2="11" y2="16" stroke="#ede4ce" stroke-width="1.4"/><line x1="20" y1="22" x2="29" y2="16" stroke="#ede4ce" stroke-width="1.4"/></svg>
+          </span>
+          <span class="wm">Ir<span class="acc">ok</span>o</span>
+        </div>
+
+        <div class="kpi">
+          <span class="label">Proyectos activos</span>
+          <span class="val">12</span>
+          <span class="row"><span class="chip">+3</span><span class="vs">vs mes anterior</span></span>
+        </div>
+
+        <div class="btns">
+          <button class="btn btn-primary">Crear proyecto</button>
+          <button class="btn btn-outline">Ver docs</button>
+        </div>
+
+        <div class="type-sample">
+          <p class="type-display">El tronco que sostiene tus productos.</p>
+          <p class="type-body">Iroko es la base de cada micro-SaaS que construyes — auth, billing, organización, dashboard. Conecta a Supabase, rebrandea, despliega.</p>
+          <div class="pairing"><strong>Display</strong> Cormorant italic · <strong>UI</strong> Inter Tight · <strong>Mono</strong> Geist Mono</div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="footnote">
+    <span class="gly">∼</span>
+    <p>
+      <strong>Cómo decidir:</strong> ¿qué imaginario quieres que respire la marca cuando alguien
+      entre al sitio? <em>Pigmento ritual</em> es lo más ceremonial. <em>Bosque vivo</em> es lo
+      más literal (Iroko = árbol, hojas verdes). <em>Cobalto</em> es lo más tech / afrofuturista
+      al estilo Wakanda. Las tres aceptan modo claro y oscuro sin perder identidad.
+    </p>
+    <span class="pill">paso 2 · 3</span>
+  </div>
+
+</div>
+</body>
+</html>

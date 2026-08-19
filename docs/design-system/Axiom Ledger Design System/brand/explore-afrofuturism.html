@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Brand · Afrofuturism · Naming</title>
+<meta name="viewport" content="width=1320">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  :root{
+    --ink:#f5ecda;
+    --ink-soft:rgba(245,236,218,0.66);
+    --ink-faint:rgba(245,236,218,0.35);
+    --ink-line:rgba(245,236,218,0.16);
+    --night:#13110d;
+    --night-2:#1c1813;
+    --night-3:#252017;
+    --copper:#c97a3d;
+    --copper-soft:#e0a26c;
+    --clay:#a8482d;
+    --gold:#d9a441;
+    --bone:#ece2cb;
+    --indigo:#3c4f73;
+  }
+  html,body{margin:0;background:var(--night);color:var(--ink);font-family:'Geist',sans-serif;-webkit-font-smoothing:antialiased}
+  body{
+    background-image:
+      radial-gradient(ellipse at 18% 0%, rgba(201,122,61,0.10), transparent 55%),
+      radial-gradient(ellipse at 88% 100%, rgba(60,79,115,0.12), transparent 60%);
+    background-attachment:fixed;
+  }
+  .page{max-width:1320px;margin:0 auto;padding:64px 48px 96px}
+
+  /* Folio header */
+  .folio{display:grid;grid-template-columns:1fr auto;gap:48px;align-items:flex-end;margin-bottom:64px;padding-bottom:32px;border-bottom:1px solid var(--ink-line)}
+  .folio h1{margin:0;font-family:'Cormorant Garamond',serif;font-style:italic;font-weight:500;font-size:64px;line-height:1;letter-spacing:-0.02em;color:var(--ink)}
+  .folio h1 .amp{color:var(--copper);font-style:normal;font-weight:400;margin:0 6px}
+  .folio .meta{font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-faint);text-align:right;line-height:1.8}
+  .brief{max-width:680px;margin:24px 0 0;font-size:16px;line-height:1.65;color:var(--ink-soft)}
+  .brief em{color:var(--copper-soft);font-style:normal}
+
+  .lex{display:flex;flex-wrap:wrap;gap:6px;margin-top:24px}
+  .lex span{font-family:'Geist Mono',monospace;font-size:10px;font-weight:500;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-faint);padding:5px 10px;border:1px solid var(--ink-line);border-radius:999px}
+
+  /* Cards */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:48px}
+  .card{position:relative;background:var(--night-2);border:1px solid var(--ink-line);border-radius:4px;overflow:hidden;display:flex;flex-direction:column}
+  .card::before{content:'';position:absolute;inset:0;background-image:linear-gradient(to right,var(--ink-line) 1px,transparent 1px),linear-gradient(to bottom,var(--ink-line) 1px,transparent 1px);background-size:32px 32px;opacity:0.18;pointer-events:none}
+
+  .card-head{position:relative;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--ink-line)}
+  .num{font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.24em;text-transform:uppercase;color:var(--ink-faint)}
+  .origin{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:14px;color:var(--copper-soft)}
+
+  .stage{position:relative;padding:48px 28px 28px;display:flex;flex-direction:column;align-items:center;gap:28px;text-align:center;min-height:300px;justify-content:center}
+  .mark{display:flex;align-items:center;justify-content:center}
+  .wordmark{font-family:'Cormorant Garamond',serif;font-weight:500;letter-spacing:-0.01em;font-size:52px;line-height:1;color:var(--ink)}
+  .wordmark .acc{color:var(--copper)}
+  .word-tag{font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-faint)}
+
+  .body{position:relative;padding:24px 22px 22px;display:flex;flex-direction:column;gap:18px;flex:1;border-top:1px solid var(--ink-line);background:var(--night-3)}
+  .pitch{margin:0;font-size:14px;line-height:1.6;color:var(--ink-soft)}
+  .pitch strong{color:var(--ink);font-weight:600}
+  .pitch em{font-style:italic;color:var(--copper-soft)}
+
+  .signals{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:9px;border-top:1px dashed var(--ink-line);padding-top:14px}
+  .signals li{font-size:12.5px;color:var(--ink-soft);display:flex;gap:10px;align-items:flex-start;line-height:1.5}
+  .signals li::before{content:'·';color:var(--copper);font-weight:700;font-size:18px;line-height:1;margin-top:2px;flex:none}
+
+  .preview-strip{display:flex;align-items:center;gap:14px;padding:14px 22px;background:#0a0907;border-top:1px solid var(--ink-line)}
+  .preview-strip .lbl{font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:var(--ink-faint);flex:none}
+  .nav-mock{flex:1;display:flex;align-items:center;justify-content:space-between;gap:14px}
+  .nav-brand{display:flex;align-items:center;gap:10px;font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);font-weight:500;letter-spacing:-0.005em}
+  .nav-links{display:flex;gap:14px;font-family:'Geist Mono',monospace;font-size:10px;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink-faint)}
+  .nav-links span{cursor:default}
+
+  /* Footnote */
+  .footnote{margin-top:56px;display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:center;padding:24px 28px;background:var(--night-2);border:1px solid var(--ink-line);border-radius:4px}
+  .footnote .folio-num{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:32px;color:var(--copper)}
+  .footnote p{margin:0;font-size:14px;line-height:1.55;color:var(--ink-soft)}
+  .footnote p strong{color:var(--ink)}
+  .footnote .pill{font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:var(--night);background:var(--copper);padding:9px 16px;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="folio">
+    <div>
+      <h1>Tres nombres<span class="amp">·</span> tres mitologías</h1>
+      <p class="brief">
+        Cada opción ancla en una cosmología distinta — Dogon, Yoruba, Akan — y propone una marca que
+        pueda <em>habitar</em> un dashboard moderno sin perder su carga ritual. Los símbolos están
+        dibujados con geometría sagrada: compás, eje, repetición.
+      </p>
+      <div class="lex">
+        <span>afrofuturismo</span>
+        <span>tecnología ritual</span>
+        <span>geometría sagrada</span>
+        <span>árboles míticos</span>
+        <span>ingeniería chamánica</span>
+      </div>
+    </div>
+    <div class="meta">
+      Paso · 01 / 03<br>
+      Naming + Marca<br>
+      pipec · 2026
+    </div>
+  </header>
+
+  <div class="grid">
+
+    <!-- ░░░░░░░░░░░░ NOMMO ░░░░░░░░░░░░ -->
+    <article class="card">
+      <header class="card-head">
+        <span class="num">01 · DOGON</span>
+        <span class="origin">creadores gemelos</span>
+      </header>
+
+      <div class="stage">
+        <div class="mark">
+          <svg viewBox="0 0 140 140" width="140" height="140" xmlns="http://www.w3.org/2000/svg">
+            <!-- construction lines -->
+            <g stroke="rgba(245,236,218,0.12)" stroke-width="0.5" fill="none">
+              <line x1="70" y1="0" x2="70" y2="140"/>
+              <line x1="0" y1="70" x2="140" y2="70"/>
+              <circle cx="70" cy="70" r="60"/>
+            </g>
+            <!-- twin spheres / nommo duality -->
+            <circle cx="50" cy="70" r="34" fill="none" stroke="#c97a3d" stroke-width="2"/>
+            <circle cx="90" cy="70" r="34" fill="none" stroke="#c97a3d" stroke-width="2"/>
+            <!-- vertical axis (water descent) -->
+            <line x1="70" y1="22" x2="70" y2="118" stroke="#f5ecda" stroke-width="1.5"/>
+            <!-- ripple beads (telemetría / pulso) -->
+            <circle cx="70" cy="36" r="2" fill="#d9a441"/>
+            <circle cx="70" cy="70" r="3" fill="#d9a441"/>
+            <circle cx="70" cy="104" r="2" fill="#d9a441"/>
+          </svg>
+        </div>
+        <div>
+          <div class="wordmark">No<span class="acc">mm</span>o</div>
+          <div class="word-tag" style="margin-top:10px">ancestro · plataforma · principio</div>
+        </div>
+      </div>
+
+      <div class="body">
+        <p class="pitch">
+          <strong>Nommo</strong> — en la mitología Dogon, los seres gemelos descendidos del cielo
+          que <em>trajeron el orden, el habla y el agua</em>. Dos esferas, un eje vertical:
+          dualidad cliente/servidor, frontend/backend, humano/máquina. Perfecto para un template
+          que se duplica en cada micro-SaaS.
+        </p>
+        <ul class="signals">
+          <li>5 letras · 2 sílabas · pronunciable en cualquier idioma</li>
+          <li>Símbolo = geometría sagrada limpia, escalable como favicon</li>
+          <li>Mitología del <em>habla y el origen</em> — encaja con plataforma / API</li>
+          <li>Disponibilidad razonable de dominio · <code>.studio · .io · .systems</code></li>
+        </ul>
+      </div>
+
+      <div class="preview-strip">
+        <span class="lbl">Nav</span>
+        <div class="nav-mock">
+          <span class="nav-brand">
+            <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="9" cy="12" r="6" stroke="#c97a3d" stroke-width="1.5" fill="none"/><circle cx="15" cy="12" r="6" stroke="#c97a3d" stroke-width="1.5" fill="none"/><line x1="12" y1="3" x2="12" y2="21" stroke="#f5ecda" stroke-width="1"/></svg>
+            Nommo
+          </span>
+          <div class="nav-links"><span>Origen</span><span>Docs</span><span>Login</span></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ░░░░░░░░░░░░ IROKO ░░░░░░░░░░░░ -->
+    <article class="card">
+      <header class="card-head">
+        <span class="num">02 · YORUBA</span>
+        <span class="origin">árbol sagrado</span>
+      </header>
+
+      <div class="stage">
+        <div class="mark">
+          <svg viewBox="0 0 140 140" width="140" height="140" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="rgba(245,236,218,0.12)" stroke-width="0.5" fill="none">
+              <line x1="70" y1="0" x2="70" y2="140"/>
+              <line x1="0" y1="70" x2="140" y2="70"/>
+              <rect x="20" y="20" width="100" height="100"/>
+            </g>
+            <!-- trunk -->
+            <line x1="70" y1="118" x2="70" y2="58" stroke="#f5ecda" stroke-width="2.5"/>
+            <!-- root knot -->
+            <circle cx="70" cy="118" r="4" fill="#c97a3d"/>
+            <line x1="58" y1="124" x2="82" y2="124" stroke="#c97a3d" stroke-width="2"/>
+            <!-- branches (3 tiers, symmetric / sacred) -->
+            <g stroke="#f5ecda" stroke-width="1.5" fill="none">
+              <line x1="70" y1="92" x2="48" y2="80"/>
+              <line x1="70" y1="92" x2="92" y2="80"/>
+              <line x1="70" y1="78" x2="42" y2="62"/>
+              <line x1="70" y1="78" x2="98" y2="62"/>
+              <line x1="70" y1="64" x2="50" y2="48"/>
+              <line x1="70" y1="64" x2="90" y2="48"/>
+            </g>
+            <!-- canopy nodes (modules) -->
+            <g fill="#d9a441">
+              <circle cx="48" cy="80" r="3"/><circle cx="92" cy="80" r="3"/>
+              <circle cx="42" cy="62" r="3"/><circle cx="98" cy="62" r="3"/>
+              <circle cx="50" cy="48" r="3"/><circle cx="90" cy="48" r="3"/>
+              <circle cx="70" cy="36" r="4" stroke="#f5ecda" stroke-width="1" fill="#d9a441"/>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="wordmark">Ir<span class="acc">ok</span>o</div>
+          <div class="word-tag" style="margin-top:10px">tronco · ramas · cada cliente una rama</div>
+        </div>
+      </div>
+
+      <div class="body">
+        <p class="pitch">
+          <strong>Iroko</strong> — el árbol sagrado yoruba al que se le pide permiso antes de
+          cortarlo. La metáfora maps perfecta: <em>un tronco compartido</em> (tu template
+          base + Supabase) <em>y muchas ramas</em> (cada micro-SaaS que rebrandeas crece de
+          ahí). Cálido, terrenal, sin perder credibilidad técnica.
+        </p>
+        <ul class="signals">
+          <li>5 letras · 3 sílabas · sonoridad cálida en español e inglés</li>
+          <li>Símbolo = árbol como diagrama modular — el SaaS-as-platform literalmente</li>
+          <li>Mitología del <em>permiso y la raíz</em> — ética + ancestralidad + tech</li>
+          <li>Espacio expansivo: <em>Iroko Labs · Iroko Core · Iroko Roots</em></li>
+        </ul>
+      </div>
+
+      <div class="preview-strip">
+        <span class="lbl">Nav</span>
+        <div class="nav-mock">
+          <span class="nav-brand">
+            <svg viewBox="0 0 24 24" width="20" height="20"><line x1="12" y1="22" x2="12" y2="10" stroke="#f5ecda" stroke-width="1.5"/><line x1="12" y1="14" x2="7" y2="11" stroke="#f5ecda" stroke-width="1"/><line x1="12" y1="14" x2="17" y2="11" stroke="#f5ecda" stroke-width="1"/><circle cx="12" cy="6" r="3" fill="#c97a3d"/></svg>
+            Iroko
+          </span>
+          <div class="nav-links"><span>Tronco</span><span>Ramas</span><span>Login</span></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ░░░░░░░░░░░░ SANKOFA ░░░░░░░░░░░░ -->
+    <article class="card">
+      <header class="card-head">
+        <span class="num">03 · AKAN</span>
+        <span class="origin">retorno al origen</span>
+      </header>
+
+      <div class="stage">
+        <div class="mark">
+          <svg viewBox="0 0 140 140" width="140" height="140" xmlns="http://www.w3.org/2000/svg">
+            <g stroke="rgba(245,236,218,0.12)" stroke-width="0.5" fill="none">
+              <circle cx="70" cy="70" r="56"/>
+              <circle cx="70" cy="70" r="40"/>
+              <line x1="70" y1="0" x2="70" y2="140"/>
+              <line x1="0" y1="70" x2="140" y2="70"/>
+            </g>
+            <!-- sankofa bird: stylized geometric -->
+            <!-- body -->
+            <path d="M 50 90 Q 50 60 70 50 Q 92 60 92 86 Q 92 100 78 100 Q 60 100 50 90 Z"
+                  fill="none" stroke="#f5ecda" stroke-width="1.8"/>
+            <!-- neck twisting back -->
+            <path d="M 56 64 Q 50 50 60 38 Q 70 28 76 38"
+                  fill="none" stroke="#f5ecda" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- head + eye -->
+            <circle cx="76" cy="40" r="6" fill="#13110d" stroke="#f5ecda" stroke-width="1.8"/>
+            <circle cx="76" cy="40" r="1.5" fill="#d9a441"/>
+            <!-- beak reaching back toward egg -->
+            <line x1="72" y1="44" x2="64" y2="50" stroke="#c97a3d" stroke-width="1.8" stroke-linecap="round"/>
+            <!-- egg on the back -->
+            <ellipse cx="68" cy="56" rx="5.5" ry="7" fill="#c97a3d"/>
+            <!-- tail feathers -->
+            <g stroke="#f5ecda" stroke-width="1.5" fill="none" stroke-linecap="round">
+              <line x1="50" y1="86" x2="38" y2="92"/>
+              <line x1="50" y1="92" x2="34" y2="100"/>
+              <line x1="52" y1="98" x2="38" y2="108"/>
+            </g>
+            <!-- legs -->
+            <line x1="64" y1="100" x2="62" y2="110" stroke="#f5ecda" stroke-width="1.5"/>
+            <line x1="78" y1="100" x2="80" y2="110" stroke="#f5ecda" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div>
+          <div class="wordmark">San<span class="acc">k</span>ofa</div>
+          <div class="word-tag" style="margin-top:10px">volver atrás · tomar · seguir</div>
+        </div>
+      </div>
+
+      <div class="body">
+        <p class="pitch">
+          <strong>Sankofa</strong> — proverbio Akan: <em>"no es tabú volver atrás por aquello que
+          dejaste"</em>. El pájaro mira hacia atrás mientras carga un huevo: <em>el futuro se
+          construye recuperando el origen</em>. Para una marca que rebrandeas en cada proyecto,
+          es literalmente tu metodología.
+        </p>
+        <ul class="signals">
+          <li>7 letras · 3 sílabas · símbolo Adinkra reconocido globalmente</li>
+          <li>El mark del pájaro+huevo es uno de los logos más narrativos que puedes tener</li>
+          <li>Carga ética clara: <em>aprender del pasado para construir el futuro</em></li>
+          <li>Funciona como marca paraguas <em>Y</em> como nombre de cada producto-rama</li>
+        </ul>
+      </div>
+
+      <div class="preview-strip">
+        <span class="lbl">Nav</span>
+        <div class="nav-mock">
+          <span class="nav-brand">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path d="M 6 16 Q 6 8 12 6 Q 18 8 18 16 Q 18 20 14 20 Q 8 20 6 16 Z" fill="none" stroke="#f5ecda" stroke-width="1.3"/><ellipse cx="11" cy="10" rx="1.6" ry="2.2" fill="#c97a3d"/></svg>
+            Sankofa
+          </span>
+          <div class="nav-links"><span>Origen</span><span>Servicios</span><span>Login</span></div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="footnote">
+    <span class="folio-num">∼</span>
+    <p>
+      <strong>Cómo decidir:</strong> elige por <em>la mitología que prefieres habitar</em>, no
+      por el símbolo (los símbolos los puliré después). Si quieres mezclar, dime también — por
+      ejemplo "el nombre 2 con el espíritu del 3".
+    </p>
+    <span class="pill">paso 1 · 3</span>
+  </div>
+
+</div>
+</body>
+</html>

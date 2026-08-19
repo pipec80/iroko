@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Security Configuration - MFA</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#825336",
+                        "primary-fixed-dim": "#9acfd8",
+                        "surface-container": "#f2ede6",
+                        "on-primary-fixed-variant": "#134e55",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#6e4227",
+                        "tertiary-container": "#eeb18e",
+                        "on-secondary-fixed-variant": "#214d4f",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#002021",
+                        "surface": "#fdf9f2",
+                        "surface-bright": "#fdf9f2",
+                        "surface-tint": "#31666d",
+                        "outline-variant": "#bfc8c9",
+                        "surface-dim": "#dddad3",
+                        "surface-container-highest": "#e6e2db",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#bdebed",
+                        "surface-container-high": "#ece8e1",
+                        "tertiary-fixed": "#ffdbc9",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#31302c",
+                        "on-primary-fixed": "#001f23",
+                        "secondary": "#3a6567",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#673c21",
+                        "tertiary-fixed-dim": "#f7b996",
+                        "on-tertiary-fixed": "#321200",
+                        "secondary-fixed-dim": "#a2cfd1",
+                        "on-surface": "#1c1c17",
+                        "on-surface-variant": "#40484a",
+                        "inverse-on-surface": "#f4f0e9",
+                        "on-primary-container": "#1c545b",
+                        "on-secondary-container": "#406b6d",
+                        "outline": "#70797a",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#b6ecf4",
+                        "surface-container-low": "#f7f3ec",
+                        "surface-variant": "#e6e2db",
+                        "on-error": "#ffffff",
+                        "primary-container": "#92c7cf",
+                        "primary": "#31666d",
+                        "secondary-container": "#bdebed",
+                        "inverse-primary": "#9acfd8",
+                        "on-background": "#1c1c17",
+                        "error-container": "#ffdad6",
+                        "background": "#fdf9f2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"],
+                        "mono": ["IBM Plex Mono"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono { font-family: 'IBM Plex Mono', monospace; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex items-center justify-center p-4 antialiased">
+<!-- TopNavBar Omitted as per Semantic Shell Mandate (Task-focused/Transactional intent) -->
+<main class="w-full max-w-2xl">
+<div class="mb-10 text-center">
+<h1 class="text-3xl font-extrabold text-on-surface tracking-tight mb-3">Security Configuration</h1>
+<p class="text-on-surface-variant text-base max-w-lg mx-auto">Enhance your account security by enabling Two-Factor Authentication (2FA) using an authenticator app.</p>
+</div>
+<div class="bg-surface-container-highest rounded-xl p-8 shadow-[0_8px_30px_rgb(28,28,23,0.04)] relative overflow-hidden">
+<!-- Decorative accent -->
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
+<div class="flex flex-col md:flex-row gap-10">
+<!-- Step 1: QR Code -->
+<div class="flex-1 flex flex-col items-center text-center">
+<div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-lowest text-primary font-bold mb-4 shadow-sm text-sm">
+                        1
+                    </div>
+<h2 class="text-lg font-bold text-on-surface mb-2">Scan QR Code</h2>
+<p class="text-sm text-on-surface-variant mb-6">Open your authenticator app and scan this barcode.</p>
+<div class="bg-surface-container-lowest p-4 rounded-lg border border-outline-variant/15 shadow-sm inline-block">
+<img alt="QR Code Placeholder" class="w-40 h-40 object-cover mix-blend-multiply opacity-80" data-alt="Black and white square QR code pattern for two-factor authentication setup on a clean white background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBW-2ktnZOBrXM0Ly6jXzP-y0s5cqUr662NbklnK7baOv-VIsb5a61XhGi3Aa9jO83Yv5MXKayU0QEh4oKwqgnVNV3FYRfyA5ip1Dd-td_lN4Z4xMiW3PCioicn2t1ZtCEfNSziQKwrIqepjC3Gzh5LtrEnUtLL28Q_a7zUfYl7F7QGLYYj1wRsrVZN5O1PBNWtGDFNb3VQpXbmL1fUZqaVIimgVnrEAZPOk1Flqv37czSp53TlzUYRBJmV6iXbd-0z9Y9ciWSvPx4K"/>
+</div>
+<button class="mt-6 text-sm text-primary font-semibold hover:text-on-primary-container transition-colors flex items-center gap-1 group">
+<span class="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">key</span>
+                        Enter code manually instead
+                    </button>
+</div>
+<!-- Divider (Visual only, no solid border) -->
+<div class="hidden md:block w-px bg-surface-container-low self-stretch mx-2"></div>
+<!-- Step 2: Verification -->
+<div class="flex-1 flex flex-col items-center text-center md:items-start md:text-left">
+<div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-surface-container-lowest text-primary font-bold mb-4 shadow-sm text-sm self-center md:self-start">
+                        2
+                    </div>
+<h2 class="text-lg font-bold text-on-surface mb-2">Verify Code</h2>
+<p class="text-sm text-on-surface-variant mb-6">Enter the 6-digit code generated by your app.</p>
+<div class="w-full mb-8">
+<div class="flex justify-center md:justify-start gap-2 mb-2">
+<!-- 6 Digit OTP Inputs using IBM Plex Mono -->
+<input class="w-12 h-14 text-center text-2xl font-mono text-on-surface bg-surface-container-lowest border border-outline-variant/20 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-fixed shadow-sm transition-all" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-14 text-center text-2xl font-mono text-on-surface bg-surface-container-lowest border border-outline-variant/20 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-fixed shadow-sm transition-all" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-14 text-center text-2xl font-mono text-on-surface bg-surface-container-lowest border border-outline-variant/20 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-fixed shadow-sm transition-all" maxlength="1" placeholder="•" type="text"/>
+<span class="text-outline-variant self-center font-bold mx-1">-</span>
+<input class="w-12 h-14 text-center text-2xl font-mono text-on-surface bg-surface-container-lowest border border-outline-variant/20 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-fixed shadow-sm transition-all" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-14 text-center text-2xl font-mono text-on-surface bg-surface-container-lowest border border-outline-variant/20 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-fixed shadow-sm transition-all" maxlength="1" placeholder="•" type="text"/>
+<input class="w-12 h-14 text-center text-2xl font-mono text-on-surface bg-surface-container-lowest border border-outline-variant/20 rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary-fixed shadow-sm transition-all" maxlength="1" placeholder="•" type="text"/>
+</div>
+</div>
+<div class="mt-auto w-full">
+<button class="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold py-3 px-6 rounded-md shadow-sm hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[20px]" data-weight="fill">shield_lock</span>
+                            Enable Two-Factor Authentication
+                        </button>
+</div>
+</div>
+</div>
+<!-- Security Note Footer -->
+<div class="mt-8 pt-6 bg-surface-container-low -mx-8 -mb-8 px-8 pb-6 flex items-start gap-3">
+<span class="material-symbols-outlined text-outline text-[20px] mt-0.5">info</span>
+<p class="text-xs text-on-surface-variant leading-relaxed">
+                    Once enabled, you will be required to enter a code from your authenticator app every time you sign in. Ensure you save your backup codes in a secure location.
+                </p>
+</div>
+</div>
+<div class="mt-6 text-center">
+<button class="text-sm text-on-surface-variant hover:text-primary font-medium transition-colors">
+                Cancel and return to Dashboard
+            </button>
+</div>
+</main>
+</body></html>

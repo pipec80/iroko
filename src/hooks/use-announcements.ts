@@ -33,8 +33,9 @@ function lastSeenSnapshot(): string | null {
 // Coincide con lo que el servidor siempre asume (sin acceso a localStorage):
 // leer el cursor real solo en cliente vía useSyncExternalStore evita el
 // mismatch de hidratación que un useState(() => leer localStorage) produciría,
-// y evita el setState síncrono dentro de un efecto (ver
-// docs/superpowers/.../feedback_hydration_mismatch_document_cookie).
+// y evita el setState síncrono dentro de un efecto (mismo patrón que el
+// hallazgo de hidratación por document.cookie de la Fase C5 — ver memoria de
+// sesión, no un archivo de docs/).
 function lastSeenServerSnapshot(): string | null {
   return null;
 }

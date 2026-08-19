@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Producto - Axiom Ledger</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#31666d",
+                        "on-secondary-fixed": "#002021",
+                        "on-primary-fixed-variant": "#134e55",
+                        "on-tertiary-fixed-variant": "#673c21",
+                        "surface-container-highest": "#e6e2db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#b6ecf4",
+                        "surface-variant": "#e6e2db",
+                        "surface-dim": "#dddad3",
+                        "secondary-fixed": "#bdebed",
+                        "surface-container-high": "#ece8e1",
+                        "on-tertiary-container": "#6e4227",
+                        "on-secondary": "#ffffff",
+                        "background": "#fdf9f2",
+                        "tertiary-container": "#eeb18e",
+                        "surface": "#fdf9f2",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#bdebed",
+                        "surface-container-low": "#f7f3ec",
+                        "inverse-primary": "#9acfd8",
+                        "tertiary-fixed-dim": "#f7b996",
+                        "on-background": "#1c1c17",
+                        "on-secondary-fixed-variant": "#214d4f",
+                        "inverse-on-surface": "#f4f0e9",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#a2cfd1",
+                        "on-primary-fixed": "#001f23",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#31666d",
+                        "outline": "#70797a",
+                        "on-secondary-container": "#406b6d",
+                        "primary-container": "#92c7cf",
+                        "inverse-surface": "#31302c",
+                        "surface-container": "#f2ede6",
+                        "surface-bright": "#fdf9f2",
+                        "on-surface": "#1c1c17",
+                        "outline-variant": "#bfc8c9",
+                        "on-surface-variant": "#40484a",
+                        "tertiary": "#825336",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#9acfd8",
+                        "on-primary-container": "#1c545b",
+                        "secondary": "#3a6567",
+                        "tertiary-fixed": "#ffdbc9",
+                        "on-tertiary-fixed": "#321200",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans", "sans-serif"],
+                        "display": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Plus Jakarta Sans", "sans-serif"],
+                        "label": ["Plus Jakarta Sans", "sans-serif"],
+                        "mono": ["IBM Plex Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #fdf9f2; color: #1c1c17; }
+        .font-mono { font-family: 'IBM Plex Mono', monospace; }
+        .glass-panel { background: rgba(230, 226, 219, 0.7); backdrop-filter: blur(16px); }
+        .ghost-border { border: 1px solid rgba(191, 200, 201, 0.15); }
+        .ambient-shadow { box-shadow: 0 12px 32px 4px rgba(28, 28, 23, 0.05); }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased pt-24 pb-0 flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<nav class="fixed top-0 w-full z-50 bg-[#FBF9F1]/70 dark:bg-slate-900/70 backdrop-blur-xl">
+<div class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto no-border bg-surface/70 flat no-shadows">
+<div class="text-xl font-bold tracking-tighter text-[#31666d] dark:text-[#92C7CF] font-['Plus_Jakarta_Sans']">
+                Axiom Ledger
+            </div>
+<div class="hidden md:flex space-x-8 items-center font-['Plus_Jakarta_Sans'] font-medium tracking-tight">
+<a class="text-[#31666d] dark:text-[#92C7CF] font-bold border-b-2 border-[#31666d] hover:opacity-80 transition-opacity" href="#">Product</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Solutions</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Pricing</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Contact</a>
+</div>
+<div>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-6 py-2 rounded-md font-medium hover:opacity-90 transition-opacity">Login</button>
+</div>
+</div>
+</nav>
+<main class="flex-grow">
+<!-- Hero Section -->
+<section class="max-w-7xl mx-auto px-8 py-20 lg:py-32 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+<div class="space-y-8 relative z-10">
+<h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight text-on-surface leading-tight">
+                    Poder técnico para <br/>
+<span class="text-primary">decisiones precisas.</span>
+</h1>
+<p class="text-lg text-on-surface-variant max-w-xl leading-relaxed">
+                    Axiom Ledger transforma la complejidad de los datos en claridad accionable. Un motor analítico diseñado para la velocidad, construido para la precisión en el retail moderno.
+                </p>
+<div class="flex gap-4 pt-4">
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-4 rounded-md font-semibold text-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+                        Empieza tu prueba gratuita
+                        <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<button class="ghost-border text-primary px-8 py-4 rounded-md font-semibold text-lg hover:bg-surface-container-highest transition-colors">
+                        Ver documentación
+                    </button>
+</div>
+</div>
+<div class="relative">
+<!-- Abstract UI Representation -->
+<div class="bg-surface-container-highest rounded-xl p-6 ambient-shadow relative z-10 aspect-square flex flex-col gap-4">
+<div class="flex justify-between items-center pb-4 ghost-border border-b">
+<div class="w-1/3 h-4 bg-surface-container-lowest rounded-full"></div>
+<div class="w-16 h-4 bg-primary/20 rounded-full"></div>
+</div>
+<div class="flex-grow bg-surface-container-lowest rounded-lg p-4 flex flex-col gap-3">
+<div class="flex justify-between items-end">
+<div class="space-y-2 w-1/2">
+<div class="w-24 h-3 bg-surface-container-high rounded"></div>
+<div class="text-3xl font-mono text-primary font-semibold tracking-tighter">42,891.00</div>
+</div>
+<div class="w-16 h-8 bg-tertiary-container rounded-md"></div>
+</div>
+<div class="mt-auto grid grid-cols-4 gap-2 h-32 items-end">
+<div class="bg-primary-container rounded-t-sm h-full w-full"></div>
+<div class="bg-primary/40 rounded-t-sm h-3/4 w-full"></div>
+<div class="bg-primary/60 rounded-t-sm h-5/6 w-full"></div>
+<div class="bg-primary rounded-t-sm h-1/2 w-full"></div>
+</div>
+</div>
+</div>
+<!-- Decorative element -->
+<div class="absolute -bottom-8 -right-8 w-64 h-64 bg-primary-container/30 rounded-full blur-3xl -z-10"></div>
+</div>
+</section>
+<!-- Features Bento Grid -->
+<section class="max-w-7xl mx-auto px-8 py-24 bg-surface-container-low rounded-3xl mb-24">
+<div class="text-center max-w-2xl mx-auto mb-16">
+<h2 class="text-3xl font-bold tracking-tight text-on-surface mb-4">Arquitectura diseñada para la escala</h2>
+<p class="text-on-surface-variant">Cada componente de Axiom Ledger está optimizado para procesar altos volúmenes de datos sin comprometer la latencia.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Card 1 -->
+<div class="bg-surface-container-highest rounded-xl p-8 hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-6 text-primary">
+<span class="material-symbols-outlined" data-icon="inventory_2" data-weight="fill">inventory_2</span>
+</div>
+<h3 class="text-xl font-semibold mb-3">Gestión de Inventario en Tiempo Real</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                        Sincronización milimétrica a través de múltiples almacenes. Evite roturas de stock con actualizaciones de estado en milisegundos.
+                    </p>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-highest rounded-xl p-8 hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-6 text-primary">
+<span class="material-symbols-outlined" data-icon="trending_up" data-weight="fill">trending_up</span>
+</div>
+<h3 class="text-xl font-semibold mb-3">Analítica Predictiva</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                        Modelos estadísticos integrados para prever la demanda, optimizando sus niveles de inventario basados en tendencias históricas.
+                    </p>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-highest rounded-xl p-8 hover:-translate-y-1 transition-transform duration-300">
+<div class="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-6 text-primary">
+<span class="material-symbols-outlined" data-icon="database" data-weight="fill">database</span>
+</div>
+<h3 class="text-xl font-semibold mb-3">Integración con Supabase</h3>
+<p class="text-on-surface-variant text-sm leading-relaxed">
+                        Construido sobre PostgreSQL avanzado. Aproveche la potencia de las bases de datos relacionales con la flexibilidad de una API moderna.
+                    </p>
+</div>
+</div>
+</section>
+<!-- Technical Edge Section -->
+<section class="max-w-7xl mx-auto px-8 py-24">
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-16 items-center">
+<div class="lg:col-span-2 space-y-6">
+<h2 class="text-4xl font-bold tracking-tight">El 'Edge' Técnico</h2>
+<p class="text-on-surface-variant text-lg">
+                        La velocidad no es una característica, es la fundación. Axiom Ledger utiliza renderizado en el servidor avanzado para entregar datos críticos instantáneamente.
+                    </p>
+<ul class="space-y-4 pt-4">
+<li class="flex items-center gap-3 text-on-surface font-medium">
+<span class="material-symbols-outlined text-primary" data-icon="bolt">bolt</span>
+                            Construido con Next.js 15
+                        </li>
+<li class="flex items-center gap-3 text-on-surface font-medium">
+<span class="material-symbols-outlined text-primary" data-icon="data_object">data_object</span>
+                            Tipografía IBM Plex Mono para lectura de precisión
+                        </li>
+<li class="flex items-center gap-3 text-on-surface font-medium">
+<span class="material-symbols-outlined text-primary" data-icon="memory">memory</span>
+                            Procesamiento Edge de baja latencia
+                        </li>
+</ul>
+</div>
+<div class="lg:col-span-3 bg-[#1e1e1e] rounded-xl p-8 shadow-2xl overflow-hidden relative">
+<div class="flex gap-2 mb-6 border-b border-gray-700 pb-4">
+<div class="w-3 h-3 rounded-full bg-red-500"></div>
+<div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+<div class="w-3 h-3 rounded-full bg-green-500"></div>
+</div>
+<div class="font-mono text-sm text-gray-300 space-y-2">
+<p><span class="text-blue-400">import</span> { unstable_cache } <span class="text-blue-400">from</span> <span class="text-green-400">'next/cache'</span>;</p>
+<p><span class="text-blue-400">import</span> { getInventoryData } <span class="text-blue-400">from</span> <span class="text-green-400">'@/lib/db'</span>;</p>
+<br/>
+<p><span class="text-blue-400">export const</span> getCachedInventory = unstable_cache(</p>
+<p class="pl-4"><span class="text-blue-400">async</span> (storeId: <span class="text-yellow-400">string</span>) =&gt; {</p>
+<p class="pl-8"><span class="text-purple-400">const</span> data = <span class="text-blue-400">await</span> getInventoryData(storeId);</p>
+<p class="pl-8"><span class="text-blue-400">return</span> data;</p>
+<p class="pl-4">},</p>
+<p class="pl-4">[<span class="text-green-400">'inventory-metrics'</span>],</p>
+<p class="pl-4">{ <span class="text-orange-400">revalidate</span>: <span class="text-yellow-400">10</span>, <span class="text-orange-400">tags</span>: [<span class="text-green-400">'inventory'</span>] }</p>
+<p>);</p>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="max-w-7xl mx-auto px-8 py-32 text-center">
+<div class="bg-surface-container-low rounded-[2rem] p-16 relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
+<div class="relative z-10 max-w-2xl mx-auto space-y-8">
+<h2 class="text-4xl font-bold tracking-tight">Listo para optimizar sus operaciones?</h2>
+<p class="text-xl text-on-surface-variant">Experimente la precisión técnica de Axiom Ledger hoy mismo.</p>
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary px-10 py-5 rounded-md font-semibold text-lg hover:opacity-90 transition-opacity mt-4">
+                        Empieza tu prueba gratuita
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="bg-[#F7F3EC] dark:bg-slate-800 w-full py-12 px-8 tonal-shift flat no-shadows mt-auto">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-7xl mx-auto">
+<div class="col-span-1 md:col-span-4 flex justify-between items-center pb-8 mb-8 border-b border-surface-dim">
+<span class="font-bold text-[#31666d] font-['Plus_Jakarta_Sans'] text-xl">Axiom Ledger</span>
+</div>
+<div class="col-span-1 md:col-span-2">
+<p class="font-['Plus_Jakarta_Sans'] text-sm text-[#31666d] dark:text-[#92C7CF]">
+                    © 2024 Axiom Ledger. Built with Next.js 15 &amp; Tailwind 4.
+                </p>
+</div>
+<div class="col-span-1 md:col-span-2 flex justify-end gap-6 font-['Plus_Jakarta_Sans'] text-sm">
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Sitemap</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Terms of Service</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">LinkedIn</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Twitter</a>
+</div>
+</div>
+</footer>
+</body></html>

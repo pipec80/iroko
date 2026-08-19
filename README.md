@@ -117,7 +117,8 @@ Versionada en el repo — ver `docs/index.md` para el índice completo:
 - `docs/exec-plans/` — planes de estabilización activos y completados
 - `docs/runbooks/` — guías operativas paso a paso
 - `docs/quality/` — Definition of Done y estrategia de testing
+- `docs/design-system/` — patrón HTML/CSS de referencia para pantallas nuevas
 
-`docs/estado-fases.md`, `docs/modules/` y `docs/audit/` son notas de desarrollo
+`docs/estado-fases.md`, `docs/modules/` y `docs/local/` son notas de desarrollo
 privadas del mantenedor original (gitignored) — no existen en un checkout
 limpio de este boilerplate.
