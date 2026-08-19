@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Edit Profile &amp; Settings - Retail Analytics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-low": "#f7f3ec",
+                    "on-primary-fixed": "#001f23",
+                    "on-surface": "#1c1c17",
+                    "inverse-on-surface": "#f4f0e9",
+                    "surface-container-highest": "#e6e2db",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#31302c",
+                    "outline": "#70797a",
+                    "on-secondary-container": "#406b6d",
+                    "error": "#ba1a1a",
+                    "tertiary-container": "#eeb18e",
+                    "on-primary-container": "#1c545b",
+                    "on-tertiary": "#ffffff",
+                    "on-surface-variant": "#40484a",
+                    "tertiary": "#825336",
+                    "primary-container": "#92c7cf",
+                    "surface-container": "#f2ede6",
+                    "on-primary-fixed-variant": "#134e55",
+                    "on-tertiary-fixed": "#321200",
+                    "surface-bright": "#fdf9f2",
+                    "surface-container-high": "#ece8e1",
+                    "on-error": "#ffffff",
+                    "background": "#fdf9f2",
+                    "secondary-container": "#bdebed",
+                    "outline-variant": "#bfc8c9",
+                    "on-tertiary-container": "#6e4227",
+                    "on-secondary": "#ffffff",
+                    "surface-dim": "#dddad3",
+                    "primary-fixed": "#b6ecf4",
+                    "secondary-fixed": "#bdebed",
+                    "on-background": "#1c1c17",
+                    "surface": "#fdf9f2",
+                    "on-tertiary-fixed-variant": "#673c21",
+                    "tertiary-fixed-dim": "#f7b996",
+                    "tertiary-fixed": "#ffdbc9",
+                    "on-error-container": "#93000a",
+                    "error-container": "#ffdad6",
+                    "inverse-primary": "#9acfd8",
+                    "primary-fixed-dim": "#9acfd8",
+                    "on-secondary-fixed": "#002021",
+                    "secondary-fixed-dim": "#a2cfd1",
+                    "on-secondary-fixed-variant": "#214d4f",
+                    "surface-variant": "#e6e2db",
+                    "primary": "#31666d",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-tint": "#31666d",
+                    "secondary": "#3a6567"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "body": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "label": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "mono": [
+                            "IBM Plex Mono"
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fdf9f2;
+            color: #1c1c17;
+        }
+        .font-mono {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        .glass-panel {
+            background-color: rgba(230, 226, 219, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface h-screen overflow-hidden flex">
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-[#f7f3ec] dark:bg-stone-900 flex-col h-full py-6 px-4 gap-2 docked left-0 h-screen w-64 tonal-contrast against surface background, no borders flat ambient-depth smooth-transition duration-200">
+<div class="mb-8 px-2 flex items-center gap-3">
+<img alt="Company Logo" class="w-10 h-10 rounded-lg object-cover" data-alt="minimalist modern corporate building facade with warm sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCz6s7PXZYC7YM2L71E3EUDjCBSJi9_KUQcxwhjFdkEXVvvzCJIO7zj5lM7x90FwlhsWyhkXXfokVCXo6pIn-q6o7-vFDxW0Sp-rcBD8A06Mu6j1E0MPvP9FR3khEDb4qy4jszrdlom-PGBGVTjmmOOXzjjnaxwr6ejMfvDs-qR_mEyAXxVuaCsRVAzL_bDmaiODcRIWsvWH7nhNsPizBC5i8eYYq8coQHoysadts360wmKFtW7T7uhTeXWM9WUP2NGEUCTD-HN2pXP"/>
+<div>
+<h1 class="font-bold text-[#31666d] text-lg leading-tight">Corporate HQ</h1>
+<p class="text-xs text-on-surface-variant font-medium tracking-[0.05em] uppercase">Global Operations</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md transition-colors hover:bg-[#e6e2db] dark:hover:bg-stone-800/50" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-medium text-sm">Operations</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md transition-colors hover:bg-[#e6e2db] dark:hover:bg-stone-800/50" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-medium text-sm">Inventory</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md transition-colors hover:bg-[#e6e2db] dark:hover:bg-stone-800/50" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-medium text-sm">Billing</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-[#e6e2db] dark:bg-stone-800 text-[#31666d] dark:text-[#92c7cf] rounded-md font-bold transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings" data-weight="fill">settings</span>
+<span class="font-bold text-sm">Settings</span>
+</a>
+</div>
+<div class="mt-auto flex flex-col gap-1 pt-4">
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md transition-colors hover:bg-[#e6e2db] dark:hover:bg-stone-800/50" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span class="font-medium text-sm">Support</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-stone-600 dark:text-stone-400 hover:bg-[#e6e2db]/30 rounded-md transition-colors hover:bg-[#e6e2db] dark:hover:bg-stone-800/50" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="font-medium text-sm">Log Out</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto h-full">
+<!-- TopAppBar (Mobile Only) -->
+<header class="md:hidden flex justify-between items-center w-full px-6 h-16 bg-[#fdf9f2] dark:bg-stone-950 no-border tonal-shift bg-[#f7f3ec] dark:bg-stone-900 flat no-shadows layer-stacking sticky top-0 z-50">
+<span class="text-xl font-bold tracking-tight text-[#31666d] dark:text-[#92c7cf]">Retail Analytics</span>
+<button class="text-[#31666d] hover:bg-[#e6e2db]/50 p-2 rounded-md transition-colors">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+</header>
+<div class="max-w-5xl mx-auto px-6 py-8 md:py-12 flex flex-col gap-8">
+<!-- Page Header -->
+<div class="flex flex-col gap-2">
+<h2 class="text-4xl font-extrabold tracking-tight text-on-surface">Profile &amp; Settings</h2>
+<p class="text-on-surface-variant text-lg">Manage your account identity and security preferences.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+<!-- Left Column: Settings Navigation & Profile -->
+<div class="lg:col-span-1 flex flex-col gap-6">
+<!-- Inner Sidebar Nav -->
+<nav class="flex flex-col gap-1 p-2 bg-surface-container-low rounded-xl">
+<a class="flex items-center gap-3 px-4 py-3 bg-surface-container-highest text-primary font-bold rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person" data-weight="fill">person</span>
+<span>Profile</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="shield">shield</span>
+<span>Security</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Team</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-container-highest rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span>Notifications</span>
+</a>
+</nav>
+<!-- Avatar Card -->
+<div class="bg-surface-container-highest rounded-xl p-6 flex flex-col items-center text-center gap-4">
+<div class="relative group cursor-pointer">
+<img alt="User Avatar" class="w-32 h-32 rounded-full object-cover border-4 border-surface" data-alt="professional portrait of a woman in a bright modern office with soft warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARkTqKrXqlrLaAmAZvbafzQahbod54A-4eVPy3qJGaNemPZZDHnN6asj9NVEltt6CLjapZXe947Vf7CLCKWLc0o-0KQbFhkCOFmAHileN-yvawjgIiqGhzg65wm5zxw8yNftmwClbb6nC5xpSzP4juIW_hf6ug6knmKcpNJklWLWTLE3f4x-z8HVaL75TlLtXOjVgehU-n4GDM3-aN12aI4ZsAOREci3-_4k8jQIjjKVA2Im5HdiJu5C9cEcplgtpBmQTD3JMPTwIY"/>
+<div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white" data-icon="photo_camera">photo_camera</span>
+</div>
+</div>
+<div>
+<h3 class="font-bold text-lg">Eleanor Vance</h3>
+<p class="text-sm text-on-surface-variant font-mono mt-1">Lead Analyst</p>
+</div>
+<button class="text-sm font-semibold text-primary hover:text-on-primary-container transition-colors">Change Avatar</button>
+</div>
+</div>
+<!-- Right Column: Forms & Data -->
+<div class="lg:col-span-2 flex flex-col gap-8">
+<!-- Basic Info Form -->
+<section class="bg-surface-container-highest rounded-xl p-6 md:p-8 flex flex-col gap-6">
+<h3 class="text-xl font-bold text-on-surface">Personal Information</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-[0.05em]">Full Name</label>
+<input class="bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-lg px-4 py-3 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-fixed/30 transition-all" type="text" value="Eleanor Vance"/>
+</div>
+<div class="flex flex-col gap-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-[0.05em]">Email Address</label>
+<input class="bg-surface-container-lowest border border-outline-variant/20 text-on-surface rounded-lg px-4 py-3 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-fixed/30 transition-all" type="email" value="e.vance@corporatehq.com"/>
+</div>
+<div class="flex flex-col gap-2 md:col-span-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-[0.05em]">Role Designation</label>
+<input class="bg-surface-container-low border border-transparent text-on-surface-variant rounded-lg px-4 py-3 cursor-not-allowed opacity-70" disabled="" type="text" value="Lead Operations Analyst"/>
+</div>
+</div>
+<div class="flex justify-end mt-2">
+<button class="bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold py-2.5 px-6 rounded-md hover:opacity-90 transition-opacity">Save Changes</button>
+</div>
+</section>
+<!-- Linked Identities -->
+<section class="bg-surface-container-highest rounded-xl p-6 md:p-8 flex flex-col gap-6">
+<div class="flex justify-between items-center">
+<h3 class="text-xl font-bold text-on-surface">Linked Identities</h3>
+<button class="flex items-center gap-2 text-sm font-semibold text-primary hover:underline underline-offset-4">
+<span class="material-symbols-outlined text-sm" data-icon="add_link">add_link</span>
+                                Link new account
+                            </button>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Connected Account -->
+<div class="bg-surface-container-lowest rounded-lg p-4 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="mail">mail</span>
+</div>
+<div>
+<p class="font-bold text-sm">Google Workspace</p>
+<p class="text-xs text-on-surface-variant font-mono mt-0.5">e.vance@corporatehq.com</p>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<span class="bg-primary-container/20 text-primary px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wide">Connected</span>
+<button class="text-on-surface-variant hover:text-error transition-colors p-1">
+<span class="material-symbols-outlined text-sm" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Disconnected Account -->
+<div class="bg-surface-container-lowest/50 border border-outline-variant/15 rounded-lg p-4 flex items-center justify-between">
+<div class="flex items-center gap-4 opacity-60">
+<div class="w-10 h-10 bg-surface-container-low rounded-full flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="window">window</span>
+</div>
+<div>
+<p class="font-bold text-sm">Microsoft Azure AD</p>
+<p class="text-xs text-on-surface-variant mt-0.5">Not configured</p>
+</div>
+</div>
+<button class="text-sm font-semibold text-primary hover:text-on-primary-container transition-colors">Connect</button>
+</div>
+</div>
+</section>
+<!-- Active Sessions -->
+<section class="bg-surface-container-highest rounded-xl p-6 md:p-8 flex flex-col gap-6">
+<h3 class="text-xl font-bold text-on-surface">Active Sessions</h3>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high">
+<th class="py-3 px-4 text-xs font-bold text-on-surface-variant uppercase tracking-[0.05em] rounded-tl-lg rounded-bl-lg">Device</th>
+<th class="py-3 px-4 text-xs font-bold text-on-surface-variant uppercase tracking-[0.05em]">Location &amp; IP</th>
+<th class="py-3 px-4 text-xs font-bold text-on-surface-variant uppercase tracking-[0.05em] rounded-tr-lg rounded-br-lg text-right">Status</th>
+</tr>
+</thead>
+<tbody>
+<!-- Current Session -->
+<tr class="border-b border-transparent">
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary" data-icon="laptop_mac">laptop_mac</span>
+<div>
+<p class="font-semibold text-sm">MacBook Pro 16"</p>
+<p class="text-xs text-on-surface-variant font-mono mt-0.5">Chrome 120.0</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<p class="text-sm font-medium">New York, USA</p>
+<p class="text-xs text-on-surface-variant font-mono mt-0.5">192.168.1.104</p>
+</td>
+<td class="py-4 px-4 text-right">
+<div class="inline-flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#92c7cf]"></span>
+<span class="text-xs font-bold text-[#31666d] uppercase tracking-wide">Active Now</span>
+</div>
+</td>
+</tr>
+<!-- Previous Session -->
+<tr class="bg-surface-container-low rounded-lg">
+<td class="py-4 px-4 rounded-tl-lg rounded-bl-lg">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="smartphone">smartphone</span>
+<div>
+<p class="font-semibold text-sm">iPhone 14 Pro</p>
+<p class="text-xs text-on-surface-variant font-mono mt-0.5">Safari Mobile</p>
+</div>
+</div>
+</td>
+<td class="py-4 px-4">
+<p class="text-sm font-medium">New York, USA</p>
+<p class="text-xs text-on-surface-variant font-mono mt-0.5">10.0.0.42</p>
+</td>
+<td class="py-4 px-4 text-right rounded-tr-lg rounded-br-lg">
+<p class="text-xs text-on-surface-variant font-mono">Last seen 2h ago</p>
+<button class="text-xs font-semibold text-error hover:underline mt-1">Revoke</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Danger Zone -->
+<section class="mt-4 p-6 border border-error/20 bg-error-container/10 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+<div>
+<h3 class="text-lg font-bold text-error">Global Sign-out</h3>
+<p class="text-sm text-on-surface-variant mt-1">Instantly end all active sessions across all devices.</p>
+</div>
+<button class="shrink-0 bg-error text-on-error font-bold py-2.5 px-6 rounded-md hover:bg-error/90 transition-colors">
+                            Sign out of all devices
+                        </button>
+</section>
+</div>
+</div>
+</div>
+</main>
+</body></html>

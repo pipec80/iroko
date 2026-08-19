@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Unified Authentication Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary": "#825336",
+                        "primary-fixed-dim": "#9acfd8",
+                        "surface-container": "#f2ede6",
+                        "on-primary-fixed-variant": "#134e55",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#6e4227",
+                        "tertiary-container": "#eeb18e",
+                        "on-secondary-fixed-variant": "#214d4f",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#002021",
+                        "surface": "#fdf9f2",
+                        "surface-bright": "#fdf9f2",
+                        "surface-tint": "#31666d",
+                        "outline-variant": "#bfc8c9",
+                        "surface-dim": "#dddad3",
+                        "surface-container-highest": "#e6e2db",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#bdebed",
+                        "surface-container-high": "#ece8e1",
+                        "tertiary-fixed": "#ffdbc9",
+                        "on-error-container": "#93000a",
+                        "inverse-surface": "#31302c",
+                        "on-primary-fixed": "#001f23",
+                        "secondary": "#3a6567",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#673c21",
+                        "tertiary-fixed-dim": "#f7b996",
+                        "on-tertiary-fixed": "#321200",
+                        "secondary-fixed-dim": "#a2cfd1",
+                        "on-surface": "#1c1c17",
+                        "on-surface-variant": "#40484a",
+                        "inverse-on-surface": "#f4f0e9",
+                        "on-primary-container": "#1c545b",
+                        "on-secondary-container": "#406b6d",
+                        "outline": "#70797a",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#b6ecf4",
+                        "surface-container-low": "#f7f3ec",
+                        "surface-variant": "#e6e2db",
+                        "on-error": "#ffffff",
+                        "primary-container": "#92c7cf",
+                        "primary": "#31666d",
+                        "secondary-container": "#bdebed",
+                        "inverse-primary": "#9acfd8",
+                        "on-background": "#1c1c17",
+                        "error-container": "#ffdad6",
+                        "background": "#fdf9f2"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans", "sans-serif"],
+                        "body": ["Plus Jakarta Sans", "sans-serif"],
+                        "label": ["Plus Jakarta Sans", "sans-serif"],
+                        "mono": ["IBM Plex Mono", "monospace"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+        
+        /* Glassmorphism utilities */
+        .glass {
+            background-color: rgba(230, 226, 219, 0.7); /* surface-variant at 70% */
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        
+        /* Ghost border utility */
+        .ghost-border {
+            border: 1px solid rgba(191, 200, 201, 0.15); /* outline-variant at 15% */
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- Main Container: Split Layout -->
+<main class="flex w-full min-h-screen">
+<!-- Left Side: Authentication Form (#FBF9F1 / surface) -->
+<section class="w-full lg:w-1/2 flex flex-col justify-center px-8 sm:px-16 lg:px-24 xl:px-32 relative bg-surface z-10">
+<!-- Header / Brand -->
+<div class="absolute top-8 left-8 sm:left-16 lg:left-24">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-on-primary font-bold shadow-[0_4px_12px_rgba(49,102,109,0.3)]">
+                        RA
+                    </div>
+<span class="font-headline font-bold text-xl tracking-tight text-primary">Retail Analytics</span>
+</div>
+</div>
+<div class="max-w-md w-full mx-auto mt-16 lg:mt-0">
+<!-- Welcome Text -->
+<div class="mb-10 text-center lg:text-left">
+<h1 class="font-headline font-extrabold text-3xl sm:text-4xl text-on-surface mb-3 tracking-tight">Welcome back</h1>
+<p class="text-on-surface-variant text-sm sm:text-base">Enter your credentials to access your dashboard.</p>
+</div>
+<!-- Tabs -->
+<div class="flex rounded-full bg-surface-container-highest p-1 mb-8">
+<button class="flex-1 py-2.5 px-4 rounded-full bg-primary text-on-primary font-semibold text-sm transition-all shadow-[0_2px_8px_rgba(49,102,109,0.2)]">
+                        Sign In
+                    </button>
+<button class="flex-1 py-2.5 px-4 rounded-full text-on-surface-variant font-medium text-sm hover:text-primary transition-colors">
+                        Create Account
+                    </button>
+</div>
+<!-- Form -->
+<form class="space-y-5" onsubmit="event.preventDefault();">
+<!-- Email Input -->
+<div class="space-y-1.5">
+<label class="block font-label text-sm font-semibold text-on-surface" for="email">Email Address</label>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-outline">
+<span class="material-symbols-outlined text-[20px]" data-icon="mail">mail</span>
+</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-3 pl-10 pr-4 text-on-surface focus:border-primary focus:ring-4 focus:ring-primary-fixed/30 transition-all font-body text-sm" id="email" name="email" placeholder="name@company.com" required="" type="email"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="space-y-1.5">
+<div class="flex justify-between items-center">
+<label class="block font-label text-sm font-semibold text-on-surface" for="password">Password</label>
+<a class="text-xs font-semibold text-primary hover:text-primary-container transition-colors" href="#">Forgot Password?</a>
+</div>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-outline">
+<span class="material-symbols-outlined text-[20px]" data-icon="lock">lock</span>
+</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/20 rounded-lg py-3 pl-10 pr-4 text-on-surface focus:border-primary focus:ring-4 focus:ring-primary-fixed/30 transition-all font-body text-sm" id="password" name="password" placeholder="••••••••" required="" type="password"/>
+</div>
+</div>
+<!-- Primary Actions -->
+<div class="pt-2 space-y-3">
+<button class="w-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold py-3 px-4 rounded-lg hover:opacity-90 transition-opacity flex justify-center items-center shadow-[0_4px_16px_rgba(49,102,109,0.25)]" type="submit">
+                            Sign In
+                        </button>
+<!-- Magic Link Button (Secondary/Ghost) -->
+<button class="w-full bg-transparent border border-outline-variant/30 text-primary font-semibold py-3 px-4 rounded-lg hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]" data-icon="auto_awesome">auto_awesome</span>
+                            Send Magic Link
+                        </button>
+</div>
+</form>
+<!-- Divider -->
+<div class="flex items-center my-8">
+<div class="flex-grow border-t border-outline-variant/20"></div>
+<span class="px-4 text-xs font-medium text-outline uppercase tracking-wider">Or continue with</span>
+<div class="flex-grow border-t border-outline-variant/20"></div>
+</div>
+<!-- Social Logins -->
+<div class="grid grid-cols-2 gap-4">
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 bg-surface-container-lowest border border-[#E5E1DA] rounded-lg hover:bg-surface-container-low transition-colors text-sm font-medium text-on-surface">
+<img alt="Google" class="w-4 h-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDCKfHeon1YFuJGWT4xIV21YPPlj6-Cs_SmVtUxZhL1_2B9p-12fmhQ_D2nUxWxcDQzsj9aOw678ssr2pJjZ6QrCe2sPaOlRlYidWwR1bMAlrcunrGQo8TvWIzivblmc6sMHQw6bo5IEoB4CdEeu7nIXTfV3uEqMMnCTH69xb3RSTYP9WC4kECjRh23BVFa9I3PDyYHAO-hf1L9uaZflNCZT8g43eoBFMiu5NlOT0pChsqRED807maACoAhlBy6tFoRKlCbqaqIdnjW"/>
+                        Google
+                    </button>
+<button class="flex items-center justify-center gap-2 py-2.5 px-4 bg-surface-container-lowest border border-[#E5E1DA] rounded-lg hover:bg-surface-container-low transition-colors text-sm font-medium text-on-surface">
+<img alt="Microsoft" class="w-4 h-4" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnITzI2KpEuFqadH8EkOdExsiSejjtbYypcnnl9q5tTY-w9-0eS4t5dV_evqmNELk53Nzrq8QwoW0EuIkYIO2UIgY-LiAUWH08wNYV-yrRDb4NRC-IO6BKfbIBXedBY08WFaxCdJeT81Q7Nw_N6O5a5s2zJ4LjxdTarEXAjpVJku4-do64xp0JcI40pjJHShh_Dy6FoHneTLa-7bd7DPlIp0_JzOgiWAK71Wvrtl7HAZO42FLZqMVaeEjA3q9ikH7w-qWojrjvhDxX"/>
+                        Microsoft
+                    </button>
+</div>
+<div class="mt-8 text-center">
+<p class="text-xs text-on-surface-variant">
+                        By continuing, you agree to our <a class="text-primary font-medium hover:underline" href="#">Terms of Service</a> and <a class="text-primary font-medium hover:underline" href="#">Privacy Policy</a>.
+                    </p>
+</div>
+</div>
+</section>
+<!-- Right Side: Graphic/Quote (#92C7CF / primary-container) -->
+<section class="hidden lg:flex w-1/2 bg-primary-container relative overflow-hidden items-center justify-center p-16">
+<!-- Decorative Background Elements -->
+<div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent"></div>
+<div class="absolute -bottom-32 -left-32 w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-30"></div>
+<!-- Content Container -->
+<div class="relative z-10 max-w-lg">
+<!-- Bento-style Floating Card Graphic -->
+<div class="mb-12 relative w-full h-64 rounded-xl overflow-hidden shadow-[0_24px_48px_rgba(28,84,91,0.15)] bg-surface-container-lowest p-6 flex flex-col justify-between">
+<!-- Abstract Data Viz Representation -->
+<div class="flex justify-between items-start mb-6">
+<div>
+<div class="text-xs font-label uppercase tracking-widest text-outline mb-1">Q3 Performance</div>
+<div class="font-mono text-2xl font-semibold text-on-surface">+$2.4M</div>
+</div>
+<div class="w-10 h-10 rounded-full bg-primary-fixed flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-fixed" data-icon="trending_up">trending_up</span>
+</div>
+</div>
+<div class="space-y-3">
+<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary w-3/4 rounded-full"></div>
+</div>
+<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-1/2 rounded-full"></div>
+</div>
+</div>
+<div class="absolute -right-12 -bottom-12 w-48 h-48 bg-tertiary-fixed rounded-full filter blur-2xl opacity-50 z-[-1]"></div>
+</div>
+<!-- Quote / Copy -->
+<div class="glass p-8 rounded-xl ghost-border relative">
+<span class="material-symbols-outlined absolute -top-4 -left-4 text-[40px] text-primary opacity-50" data-icon="format_quote">format_quote</span>
+<h2 class="font-headline font-bold text-2xl text-on-primary-container mb-4 leading-snug">
+                        "Turning fragmented retail data into precise, actionable intelligence."
+                    </h2>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high">
+<img alt="Executive Portrait" class="w-full h-full object-cover" data-alt="professional portrait of female executive in corporate setting with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6RUffiqC6EEPPlgbSwWDAilFdpepizkVVPmhRbHGaof5DsqVlzJoxRpBXzo_EWOY3kyL1NGpoHGoWOhj4QTPDZAI4nY5jQ17B-FK2-4uUrJ7SG0WJ7MHgdE-i7fHoOnZ93OPOBz4IuR4xQCaTakBMT0--GUDYLnWFHNw4pYkGrMKLcgGyX_u_K7x8I-gD5rKDN4IWvQNp30yz1u1ga8iGfPsUe6fUFMOUGMM_jypyPhw1WAc4SQFmt2cXRcFH58AgPq3YsuVpoR1v"/>
+</div>
+<div>
+<p class="font-bold text-sm text-on-primary-container">Sarah Jenkins</p>
+<p class="text-xs font-mono text-on-secondary-container">VP of Analytics, Global Retail</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

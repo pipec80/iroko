@@ -1,0 +1,25 @@
+<!doctype html><html lang="es"><head>
+<meta charset="utf-8"><title>Cards</title>
+<link rel="stylesheet" href="_card.css">
+</head><body>
+<div class="pad">
+  <div class="label" style="margin-bottom: 14px;">Cards · elevated surface · poppy / cobalt icons</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+    <div style="background:var(--surface-elevated);border:1px solid var(--border);border-radius:6px;padding:18px;">
+      <div class="row" style="margin-bottom:10px;">
+        <i data-lucide="shield-check" style="stroke-width:1.5;width:20px;height:20px;color:var(--color-poppy);"></i>
+        <span style="font-size:14px;font-weight:600;color:var(--text-primary);">Auth incluido</span>
+      </div>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:var(--text-secondary);">Login con email, magic link, OAuth (Google, GitHub) y MFA listo desde Supabase.</p>
+    </div>
+    <div style="background:var(--surface-elevated);border:1px solid var(--border);border-radius:6px;padding:18px;">
+      <div class="row" style="margin-bottom:10px;">
+        <i data-lucide="credit-card" style="stroke-width:1.5;width:20px;height:20px;color:var(--color-cobalt);"></i>
+        <span style="font-size:14px;font-weight:600;color:var(--text-primary);">Billing Stripe</span>
+      </div>
+      <p style="margin:0;font-size:13px;line-height:1.5;color:var(--text-secondary);">Suscripciones, trials, upgrades y webhooks ya conectados. Solo enciende keys.</p>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script>lucide.createIcons();</script></body></html>

@@ -1,0 +1,296 @@
+<!doctype html>
+<!-- @dsCard group="Brand" name="Brand exploration / Optimus Prime palettes" subtitle="3 directions on the Optimus Prime palette" viewport="1340x1080" -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Optimus Prime · 3 direcciones</title>
+<meta name="viewport" content="width=1340">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700;800&display=swap">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  html,body{margin:0;background:#0e1117;color:#e6e8eb;font-family:'Geist',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .page{max-width:1340px;margin:0 auto;padding:48px 32px 80px}
+
+  /* Folio */
+  .folio{display:grid;grid-template-columns:1fr auto;gap:48px;align-items:flex-end;margin-bottom:40px;padding-bottom:24px;border-bottom:1px solid rgba(230,232,235,0.12)}
+  .folio h1{margin:0;font-family:'Geist',sans-serif;font-weight:700;font-size:44px;line-height:1;letter-spacing:-0.04em}
+  .folio h1 .acc{color:#d92121}
+  .folio .meta{font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.18em;text-transform:uppercase;color:rgba(230,232,235,0.5);text-align:right;line-height:1.8}
+  .brief{max-width:760px;margin:18px 0 0;font-size:15px;line-height:1.6;color:rgba(230,232,235,0.7)}
+  .brief em{color:#ff5a3c;font-style:normal}
+
+  /* Swatch ribbon at top */
+  .ribbon{margin:0 0 28px;background:rgba(230,232,235,0.04);border:1px solid rgba(230,232,235,0.10);border-radius:6px;padding:14px 18px;display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .ribbon .lbl{font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:rgba(230,232,235,0.5);margin-right:4px}
+  .chip{display:inline-flex;align-items:center;gap:8px;font-family:'Geist Mono',monospace;font-size:11px;font-weight:500;letter-spacing:0.04em;color:rgba(230,232,235,0.85)}
+  .chip .sq{width:14px;height:14px;border-radius:3px;border:1px solid rgba(230,232,235,0.15)}
+
+  /* Grid of options */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .opt{border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+  .opt-head{padding:18px 22px 14px;display:flex;flex-direction:column;gap:4px;border-bottom:1px solid currentColor;border-color:rgba(0,0,0,0.08)}
+  .num{font-family:'Geist Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.22em;text-transform:uppercase;opacity:0.55}
+  .name{font-size:24px;font-weight:700;letter-spacing:-0.025em;line-height:1.1}
+  .thesis{font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:0.02em;opacity:0.65}
+
+  /* Swatches strip */
+  .swatches{display:grid;grid-template-columns:repeat(5,1fr)}
+  .sw{aspect-ratio:1;display:flex;flex-direction:column;justify-content:flex-end;padding:8px 10px;font-family:'Geist Mono',monospace;font-size:9px;font-weight:600;letter-spacing:0.02em;line-height:1.2}
+  .sw .n{font-size:8px;opacity:0.75;text-transform:uppercase;letter-spacing:0.1em}
+  .sw .h{font-size:9px;font-weight:600;margin-top:2px}
+
+  /* Applied surface */
+  .applied{padding:28px 22px 24px;flex:1;display:flex;flex-direction:column;gap:22px}
+  .wm-row{display:flex;align-items:center;gap:14px}
+  .mark svg{display:block}
+  .wm{font-weight:700;letter-spacing:-0.025em;font-size:40px;line-height:1}
+
+  .kpi{border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;border:1px solid currentColor;border-color:rgba(0,0,0,0.10)}
+  .kpi .label{font-family:'Geist Mono',monospace;font-size:9px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;opacity:0.6}
+  .kpi .val{font-family:'Geist Mono',monospace;font-size:30px;font-weight:600;letter-spacing:-0.04em;line-height:1}
+  .kpi .row{display:flex;align-items:center;gap:8px}
+  .kpi .delta{font-family:'Geist Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px}
+
+  .btns{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{padding:9px 16px;border-radius:4px;border:0;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit}
+  .btn-outline{padding:8px 16px;border-radius:4px;background:transparent;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;font-family:inherit}
+
+  /* Type sample */
+  .ts{padding:16px 0 0;border-top:1px dashed currentColor;border-color:rgba(0,0,0,0.10)}
+  .ts .h{font-weight:700;font-size:26px;line-height:1.1;letter-spacing:-0.025em;margin:0 0 6px}
+  .ts .p{font-size:13px;line-height:1.55;margin:0;opacity:0.78}
+  .ts .pair{margin-top:12px;display:flex;gap:14px;font-family:'Geist Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;opacity:0.55;flex-wrap:wrap;padding-top:12px;border-top:1px dashed currentColor;border-color:rgba(0,0,0,0.1)}
+  .ts .pair b{font-weight:700;opacity:1}
+
+  /* =============== OPTION 01 — AUTOBOT (light, primary-heavy) =============== */
+  .opt-1{background:#ffffff;color:#0e1117}
+  .opt-1 .opt-head{background:#fafafa;border-color:#e8e9eb}
+  .opt-1 .wm{color:#0e1117}
+  .opt-1 .wm .acc{color:#d92121}
+  .opt-1 .kpi{background:#fafafa;border-color:#e8e9eb}
+  .opt-1 .kpi .val{color:#0e1117}
+  .opt-1 .kpi .delta{background:rgba(0,71,171,0.10);color:#0047ab}
+  .opt-1 .btn-primary{background:#d92121;color:#fff}
+  .opt-1 .btn-outline{border:1px solid #d3d3d3;color:#0e1117}
+  .opt-1 .ts .h{color:#0e1117}
+  .opt-1 .ts .p{color:#3a4252}
+  .opt-1 .ts{border-color:#e8e9eb}
+  .opt-1 .ts .pair{border-color:#e8e9eb}
+  .opt-1 .ts .pair b{color:#d92121}
+  .opt-1 .ts, .opt-1 .kpi{font-family:'Geist',sans-serif}
+
+  /* =============== OPTION 02 — TRUCK MODE (silver+chrome, industrial) =============== */
+  .opt-2{background:#e8e9ec;color:#0e1117;font-family:'Space Grotesk',sans-serif}
+  .opt-2 .opt-head{background:#dcdde0;border-color:#c1c3c8}
+  .opt-2 .wm{color:#0e1117;font-family:'Space Grotesk',sans-serif}
+  .opt-2 .wm .acc{color:#b11226}
+  .opt-2 .kpi{background:#ffffff;border-color:#c8cad0}
+  .opt-2 .kpi .val{color:#0e1117;font-family:'JetBrains Mono',monospace}
+  .opt-2 .kpi .delta{background:rgba(177,18,38,0.10);color:#b11226;font-family:'JetBrains Mono',monospace}
+  .opt-2 .kpi .label{font-family:'JetBrains Mono',monospace}
+  .opt-2 .btn-primary{background:#b11226;color:#fff}
+  .opt-2 .btn-outline{border:1px solid #0e1117;color:#0e1117}
+  .opt-2 .ts .h{color:#0e1117;font-family:'Space Grotesk',sans-serif}
+  .opt-2 .ts .p{color:#3a4252;font-family:'Space Grotesk',sans-serif}
+  .opt-2 .ts{border-color:#c8cad0}
+  .opt-2 .ts .pair{border-color:#c8cad0;font-family:'JetBrains Mono',monospace}
+  .opt-2 .ts .pair b{color:#b11226}
+
+  /* =============== OPTION 03 — HUD (dark / cinematic) =============== */
+  .opt-3{background:#0e1117;color:#e6e8eb;font-family:'Inter Tight',sans-serif}
+  .opt-3 .opt-head{background:#161a21;border-color:rgba(230,232,235,0.10)}
+  .opt-3 .wm{color:#e6e8eb;font-family:'Inter Tight',sans-serif}
+  .opt-3 .wm .acc{color:#ff3a3a}
+  .opt-3 .kpi{background:#161a21;border-color:rgba(230,232,235,0.12);color:#e6e8eb}
+  .opt-3 .kpi .val{color:#e6e8eb;font-family:'Geist Mono',monospace}
+  .opt-3 .kpi .delta{background:rgba(70,130,191,0.16);color:#79a8d4;font-family:'Geist Mono',monospace}
+  .opt-3 .kpi .label{font-family:'Geist Mono',monospace;opacity:0.55}
+  .opt-3 .btn-primary{background:#ff3a3a;color:#fff;box-shadow:0 0 0 1px rgba(255,58,58,0.4), 0 6px 18px -8px rgba(255,58,58,0.5)}
+  .opt-3 .btn-outline{border:1px solid rgba(230,232,235,0.20);color:#e6e8eb}
+  .opt-3 .ts .h{color:#e6e8eb;font-family:'Inter Tight',sans-serif}
+  .opt-3 .ts .p{color:rgba(230,232,235,0.7);font-family:'Inter Tight',sans-serif}
+  .opt-3 .ts{border-color:rgba(230,232,235,0.12)}
+  .opt-3 .ts .pair{border-color:rgba(230,232,235,0.12);font-family:'Geist Mono',monospace}
+  .opt-3 .ts .pair b{color:#79a8d4}
+
+  /* Footer note */
+  .note{margin-top:40px;display:grid;grid-template-columns:auto 1fr auto;gap:24px;align-items:center;padding:22px 26px;background:rgba(230,232,235,0.05);border:1px solid rgba(230,232,235,0.10);border-radius:6px}
+  .note .icon{font-family:'Geist',sans-serif;font-size:28px;color:#d92121;font-weight:700}
+  .note p{margin:0;font-size:14px;line-height:1.55;color:rgba(230,232,235,0.78)}
+  .note p strong{color:#e6e8eb}
+  .note .pill{font-family:'Geist Mono',monospace;font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:#0e1117;background:#d92121;padding:8px 14px;border-radius:999px}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="folio">
+    <div>
+      <h1>Optimus Prime<span class="acc"> ·</span> tres direcciones</h1>
+      <p class="brief">
+        Los mismos seis tonos base (Poppy, American Crimson, Light Gray, Metallic Silver,
+        Cobalt Blue, Jay Blue) habitan tres mundos visuales muy distintos:
+        <em>Autobot</em> (light + bold primary), <em>Truck Mode</em> (chrome industrial) y
+        <em>HUD</em> (oscuro cinematográfico). Las tres usan sans modernas — cero serif.
+      </p>
+    </div>
+    <div class="meta">
+      Paso · 02 / Re-roll<br>
+      Paleta + Tipografía<br>
+      pipec · 2026
+    </div>
+  </header>
+
+  <!-- Source ribbon -->
+  <div class="ribbon">
+    <span class="lbl">Source · Optimus Prime</span>
+    <span class="chip"><span class="sq" style="background:#d92121"></span>Poppy · #D92121</span>
+    <span class="chip"><span class="sq" style="background:#b11226"></span>Crimson · #B11226</span>
+    <span class="chip"><span class="sq" style="background:#d3d3d3"></span>Light Gray · #D3D3D3</span>
+    <span class="chip"><span class="sq" style="background:#a8a9ad"></span>Silver · #A8A9AD</span>
+    <span class="chip"><span class="sq" style="background:#0047ab"></span>Cobalt · #0047AB</span>
+    <span class="chip"><span class="sq" style="background:#4682bf"></span>Jay · #4682BF</span>
+  </div>
+
+  <div class="grid">
+
+    <!-- ░░ OPTION 01 — AUTOBOT ░░ -->
+    <article class="opt opt-1">
+      <header class="opt-head">
+        <span class="num">01 · LIGHT</span>
+        <span class="name">Autobot</span>
+        <span class="thesis">primary on white · vercel-precision con energía</span>
+      </header>
+
+      <div class="swatches">
+        <div class="sw" style="background:#ffffff;color:#0e1117"><span class="n">surface</span><span class="h">#FFFFFF</span></div>
+        <div class="sw" style="background:#fafafa;color:#0e1117"><span class="n">surface-2</span><span class="h">#FAFAFA</span></div>
+        <div class="sw" style="background:#d3d3d3;color:#0e1117"><span class="n">light gray</span><span class="h">#D3D3D3</span></div>
+        <div class="sw" style="background:#0047ab;color:#fff"><span class="n">cobalt</span><span class="h">#0047AB</span></div>
+        <div class="sw" style="background:#d92121;color:#fff"><span class="n">poppy</span><span class="h">#D92121</span></div>
+      </div>
+
+      <div class="applied">
+        <div class="wm-row">
+          <span class="mark">
+            <svg viewBox="0 0 40 40" width="40" height="40"><rect x="2" y="2" width="36" height="36" rx="4" fill="#0e1117"/><circle cx="20" cy="20" r="13" fill="none" stroke="#d92121" stroke-width="2.4"/><circle cx="20" cy="20" r="4" fill="#0047ab"/></svg>
+          </span>
+          <span class="wm">Iroko<span class="acc">.</span></span>
+        </div>
+        <div class="kpi">
+          <span class="label">Proyectos activos</span>
+          <span class="val">12</span>
+          <span class="row"><span class="delta">+3</span><span class="label" style="font-size:9px">vs semana</span></span>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary">Crear proyecto</button>
+          <button class="btn btn-outline">Ver docs</button>
+        </div>
+        <div class="ts">
+          <h3 class="h">El tronco que sostiene tus productos.</h3>
+          <p class="p">Auth + orgs + billing listos. Conecta Supabase, rebrandea y despliega.</p>
+          <div class="pair"><b>Display</b>Geist 700 · <b>UI</b>Geist · <b>Mono</b>Geist Mono</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ░░ OPTION 02 — TRUCK MODE ░░ -->
+    <article class="opt opt-2">
+      <header class="opt-head">
+        <span class="num">02 · CHROME</span>
+        <span class="name">Truck Mode</span>
+        <span class="thesis">silver base · crimson primary · industrial</span>
+      </header>
+
+      <div class="swatches">
+        <div class="sw" style="background:#e8e9ec;color:#0e1117"><span class="n">chrome</span><span class="h">#E8E9EC</span></div>
+        <div class="sw" style="background:#a8a9ad;color:#fff"><span class="n">silver</span><span class="h">#A8A9AD</span></div>
+        <div class="sw" style="background:#0e1117;color:#fff"><span class="n">ink</span><span class="h">#0E1117</span></div>
+        <div class="sw" style="background:#0047ab;color:#fff"><span class="n">cobalt</span><span class="h">#0047AB</span></div>
+        <div class="sw" style="background:#b11226;color:#fff"><span class="n">crimson</span><span class="h">#B11226</span></div>
+      </div>
+
+      <div class="applied">
+        <div class="wm-row">
+          <span class="mark">
+            <svg viewBox="0 0 40 40" width="40" height="40">
+              <polygon points="20,4 36,14 36,30 20,36 4,30 4,14" fill="none" stroke="#0e1117" stroke-width="2"/>
+              <polygon points="20,11 28,16 28,26 20,30 12,26 12,16" fill="#b11226"/>
+              <line x1="20" y1="4" x2="20" y2="36" stroke="#0e1117" stroke-width="2" opacity="0.5"/>
+            </svg>
+          </span>
+          <span class="wm">IROKO</span>
+        </div>
+        <div class="kpi">
+          <span class="label">Proyectos activos</span>
+          <span class="val">12</span>
+          <span class="row"><span class="delta">+3</span><span class="label" style="font-size:9px">vs semana</span></span>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary">Crear proyecto</button>
+          <button class="btn btn-outline">Ver docs</button>
+        </div>
+        <div class="ts">
+          <h3 class="h">EL TRONCO QUE SOSTIENE TUS PRODUCTOS.</h3>
+          <p class="p">Auth + orgs + billing listos. Conecta Supabase, rebrandea y despliega.</p>
+          <div class="pair"><b>Display</b>Space Grotesk 700 · <b>UI</b>Space Grotesk · <b>Mono</b>JetBrains Mono</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- ░░ OPTION 03 — HUD ░░ -->
+    <article class="opt opt-3">
+      <header class="opt-head">
+        <span class="num">03 · DARK</span>
+        <span class="name">HUD</span>
+        <span class="thesis">slate cinematográfico · poppy emisivo · cockpit</span>
+      </header>
+
+      <div class="swatches">
+        <div class="sw" style="background:#0e1117;color:#e6e8eb"><span class="n">slate</span><span class="h">#0E1117</span></div>
+        <div class="sw" style="background:#161a21;color:#e6e8eb"><span class="n">slate-2</span><span class="h">#161A21</span></div>
+        <div class="sw" style="background:#4682bf;color:#fff"><span class="n">jay</span><span class="h">#4682BF</span></div>
+        <div class="sw" style="background:#ff3a3a;color:#fff"><span class="n">poppy hot</span><span class="h">#FF3A3A</span></div>
+        <div class="sw" style="background:#e6e8eb;color:#0e1117"><span class="n">ink</span><span class="h">#E6E8EB</span></div>
+      </div>
+
+      <div class="applied">
+        <div class="wm-row">
+          <span class="mark">
+            <svg viewBox="0 0 40 40" width="40" height="40"><rect x="2" y="2" width="36" height="36" rx="6" fill="#0e1117" stroke="#ff3a3a" stroke-width="1.4"/><circle cx="20" cy="20" r="5" fill="#ff3a3a"/><circle cx="20" cy="20" r="11" fill="none" stroke="rgba(255,58,58,0.5)" stroke-dasharray="2 3"/></svg>
+          </span>
+          <span class="wm">Iroko<span class="acc">_</span></span>
+        </div>
+        <div class="kpi">
+          <span class="label">Proyectos activos</span>
+          <span class="val">12</span>
+          <span class="row"><span class="delta">+3</span><span class="label" style="font-size:9px">vs semana</span></span>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary">Crear proyecto</button>
+          <button class="btn btn-outline">Ver docs</button>
+        </div>
+        <div class="ts">
+          <h3 class="h">El tronco que sostiene tus productos.</h3>
+          <p class="p">Auth + orgs + billing listos. Conecta Supabase, rebrandea y despliega.</p>
+          <div class="pair"><b>Display</b>Inter Tight 700 · <b>UI</b>Inter Tight · <b>Mono</b>Geist Mono</div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <div class="note">
+    <span class="icon">▍</span>
+    <p>
+      <strong>Mientras eliges:</strong> con Optimus Prime como base, el nombre <em>Iroko</em>
+      (árbol sagrado yoruba) puede sentirse mezclado — la paleta es industrial/retro-futurista.
+      Si te late, podemos revisar el nombre también. Si <em>Iroko</em> te sigue gustando como
+      contraste poético/industrial, lo dejamos y movemos solo lo visual.
+    </p>
+    <span class="pill">paso 2 · re-roll</span>
+  </div>
+
+</div>
+</body>
+</html>

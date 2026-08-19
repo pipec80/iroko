@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Axiom Ledger - Soluciones</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#31666d",
+                        "on-secondary-fixed": "#002021",
+                        "on-primary-fixed-variant": "#134e55",
+                        "on-tertiary-fixed-variant": "#673c21",
+                        "surface-container-highest": "#e6e2db",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#b6ecf4",
+                        "surface-variant": "#e6e2db",
+                        "surface-dim": "#dddad3",
+                        "secondary-fixed": "#bdebed",
+                        "surface-container-high": "#ece8e1",
+                        "on-tertiary-container": "#6e4227",
+                        "on-secondary": "#ffffff",
+                        "background": "#fdf9f2",
+                        "tertiary-container": "#eeb18e",
+                        "surface": "#fdf9f2",
+                        "on-error": "#ffffff",
+                        "secondary-container": "#bdebed",
+                        "surface-container-low": "#f7f3ec",
+                        "inverse-primary": "#9acfd8",
+                        "tertiary-fixed-dim": "#f7b996",
+                        "on-background": "#1c1c17",
+                        "on-secondary-fixed-variant": "#214d4f",
+                        "inverse-on-surface": "#f4f0e9",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#a2cfd1",
+                        "on-primary-fixed": "#001f23",
+                        "on-tertiary": "#ffffff",
+                        "primary": "#31666d",
+                        "outline": "#70797a",
+                        "on-secondary-container": "#406b6d",
+                        "primary-container": "#92c7cf",
+                        "inverse-surface": "#31302c",
+                        "surface-container": "#f2ede6",
+                        "surface-bright": "#fdf9f2",
+                        "on-surface": "#1c1c17",
+                        "outline-variant": "#bfc8c9",
+                        "on-surface-variant": "#40484a",
+                        "tertiary": "#825336",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "primary-fixed-dim": "#9acfd8",
+                        "on-primary-container": "#1c545b",
+                        "secondary": "#3a6567",
+                        "tertiary-fixed": "#ffdbc9",
+                        "on-tertiary-fixed": "#321200",
+                        "on-error-container": "#93000a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body": ["Plus Jakarta Sans"],
+                        "label": ["Plus Jakarta Sans"],
+                        "mono": ["IBM Plex Mono"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .font-mono-data { font-family: 'IBM Plex Mono', monospace; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased selection:bg-primary selection:text-on-primary min-h-screen flex flex-col">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-[#FBF9F1]/70 dark:bg-slate-900/70 backdrop-blur-xl">
+<nav class="flex justify-between items-center px-8 py-4 max-w-7xl mx-auto font-['Plus_Jakarta_Sans'] font-medium tracking-tight">
+<div class="text-xl font-bold tracking-tighter text-[#31666d] dark:text-[#92C7CF] flex items-center gap-2">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">hexagon</span>
+                Axiom Ledger
+            </div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Product</a>
+<a class="text-[#31666d] dark:text-[#92C7CF] font-bold border-b-2 border-[#31666d] hover:opacity-80 transition-opacity pb-1" href="#">Solutions</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Pricing</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-[#31666d] hover:opacity-80 transition-opacity" href="#">Contact</a>
+</div>
+<button class="hidden md:block px-5 py-2 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-lg font-semibold hover:opacity-90 transition-opacity text-sm">
+                Login
+            </button>
+<button class="md:hidden text-primary">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</nav>
+</header>
+<main class="flex-grow pt-32">
+<!-- Hero Section -->
+<section class="max-w-7xl mx-auto px-8 mb-24">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+<div class="lg:col-span-7">
+<h1 class="font-display text-5xl md:text-6xl font-extrabold text-primary tracking-tighter leading-[1.1] mb-6">
+                        Soluciones a medida para cada escala de Retail
+                    </h1>
+<p class="font-body text-xl text-on-surface-variant max-w-2xl leading-relaxed mb-10">
+                        Nuestra arquitectura modular se adapta a la complejidad de tu operación. Desde el control local hasta la analítica consolidada a nivel corporativo, unificamos tu ecosistema financiero.
+                    </p>
+<div class="flex gap-4">
+<button class="px-6 py-3 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-lg font-bold hover:opacity-90 transition-opacity flex items-center gap-2">
+                            Agendar Consultoría
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+<button class="px-6 py-3 text-primary border border-outline-variant/30 rounded-lg font-semibold hover:border-outline-variant/60 transition-colors">
+                            Ver Documentación
+                        </button>
+</div>
+</div>
+<div class="lg:col-span-5 relative h-[400px] rounded-xl overflow-hidden bg-surface-container-highest">
+<img alt="Vista cenital de un analista interactuando con un dashboard financiero moderno en una tablet, luz cálida" class="object-cover w-full h-full opacity-90 mix-blend-multiply" data-alt="close up of a professional analyzing digital charts on a sleek tablet device in a well lit modern office environment warm tones" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9ixXWyhSG5OeiC8zJp946w6XdN5S1UlrxCPqg1AnJqOQaroMSvV5UbtRUOz5Ur_-Rb_t3pq2vcZ5BMT6fGSl9sKW2xH_j4R0sdgHkBzEbiZAWRbTLT5xmeDjW_xTUZLcbbs2DJ9Wrpu2htbNC02a5sHN-k2m8gu9kEt3Sn66HpACwFpy-GyPCgipRZd1Ah2dEFH7XTVxFTQ--jFuwYe6BSnpBBpbmRz34hxoZ4woLd75pEOw9hCUn2uO3ggJvaA_K_EG1OgdDSGmm"/>
+</div>
+</div>
+</section>
+<!-- Casos de Uso (Bento Grid) -->
+<section class="bg-surface-container-low py-24">
+<div class="max-w-7xl mx-auto px-8">
+<div class="mb-16">
+<h2 class="font-headline text-3xl font-bold text-primary tracking-tight mb-4">Adaptabilidad por Diseño</h2>
+<p class="text-on-surface-variant text-lg max-w-3xl">Estructuras pre-configuradas para desplegar valor inmediato según la naturaleza de tu red comercial.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Block 1 -->
+<div class="bg-surface-container-highest rounded-xl p-8 flex flex-col group hover:bg-surface-dim transition-colors duration-300">
+<div class="w-12 h-12 bg-surface-lowest rounded-full flex items-center justify-center mb-6 text-primary">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">storefront</span>
+</div>
+<h3 class="font-headline text-xl font-bold text-on-surface mb-3">Mini-supermercados locales</h3>
+<p class="text-on-surface-variant mb-8 flex-grow">
+                            Visibilidad inmediata del flujo de caja diario, conciliación automática de TPVs y control de inventario básico sin curva de aprendizaje.
+                        </p>
+<ul class="space-y-3 mt-auto border-t border-outline-variant/20 pt-6">
+<li class="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-primary text-base">check_circle</span>
+                                Conciliación TPV en 1-clic
+                            </li>
+<li class="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-primary text-base">check_circle</span>
+                                Alertas de stock crítico
+                            </li>
+</ul>
+</div>
+<!-- Block 2 -->
+<div class="bg-surface-container-highest rounded-xl p-8 flex flex-col group hover:bg-surface-dim transition-colors duration-300 relative overflow-hidden">
+<!-- Subtle gradient accent for the middle tier -->
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary-container"></div>
+<div class="w-12 h-12 bg-surface-lowest rounded-full flex items-center justify-center mb-6 text-primary">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">account_tree</span>
+</div>
+<h3 class="font-headline text-xl font-bold text-on-surface mb-3">Cadenas Regionales</h3>
+<p class="text-on-surface-variant mb-8 flex-grow">
+                            Gestión multi-sucursal con consolidación de datos en tiempo real. Estandarización de procesos contables entre regiones.
+                        </p>
+<ul class="space-y-3 mt-auto border-t border-outline-variant/20 pt-6">
+<li class="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-primary text-base">check_circle</span>
+                                Reportes comparativos por tienda
+                            </li>
+<li class="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-primary text-base">check_circle</span>
+                                Gestión centralizada de catálogos
+                            </li>
+</ul>
+</div>
+<!-- Block 3 -->
+<div class="bg-primary text-on-primary rounded-xl p-8 flex flex-col relative overflow-hidden">
+<!-- Glass overlay effect inside the solid card -->
+<div class="absolute inset-0 bg-surface-variant/10 backdrop-blur-sm pointer-events-none"></div>
+<div class="relative z-10 flex flex-col h-full">
+<div class="w-12 h-12 bg-on-primary/10 rounded-full flex items-center justify-center mb-6 text-on-primary">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">domain</span>
+</div>
+<h3 class="font-headline text-xl font-bold mb-3">Enterprise &amp; Franquicias</h3>
+<p class="text-primary-fixed-dim mb-8 flex-grow">
+                                Infraestructura de alta disponibilidad para miles de puntos de venta. APIs robustas y control granular de permisos por franquiciado.
+                            </p>
+<ul class="space-y-3 mt-auto border-t border-on-primary/20 pt-6">
+<li class="flex items-center gap-2 text-sm font-medium">
+<span class="material-symbols-outlined text-base">check_circle</span>
+                                    Liquidación a franquiciados
+                                </li>
+<li class="flex items-center gap-2 text-sm font-medium">
+<span class="material-symbols-outlined text-base">check_circle</span>
+                                    SLA garantizado 99.99%
+                                </li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Eficiencia Operativa (Bento Data Grid) -->
+<section class="py-24 max-w-7xl mx-auto px-8">
+<div class="mb-12 flex justify-between items-end">
+<div>
+<h2 class="font-headline text-3xl font-bold text-primary tracking-tight mb-2">Eficiencia Operativa</h2>
+<p class="text-on-surface-variant">Métricas clave consolidadas en tiempo real.</p>
+</div>
+<div class="hidden md:flex items-center gap-2 text-sm font-medium text-primary">
+<span class="material-symbols-outlined text-sm">sync</span>
+                    Actualizado hace 2 min
+                </div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Large Highlight Card -->
+<div class="md:col-span-2 bg-surface-container-highest rounded-xl p-8 flex flex-col justify-between">
+<div class="flex justify-between items-start mb-12">
+<div>
+<p class="font-label text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-1">Impacto Financiero</p>
+<h4 class="font-headline text-lg font-semibold text-on-surface">Reducción de Mermas</h4>
+</div>
+<span class="material-symbols-outlined text-secondary text-3xl">trending_down</span>
+</div>
+<div>
+<div class="flex items-baseline gap-3 mb-2">
+<span class="font-mono-data text-6xl font-semibold text-primary">-24.8%</span>
+<span class="text-sm font-medium text-secondary bg-secondary-fixed/50 px-2 py-1 rounded-md">YTD</span>
+</div>
+<p class="text-sm text-on-surface-variant">Ahorro proyectado de <span class="font-mono-data font-medium">€142,500</span> este trimestre.</p>
+</div>
+</div>
+<!-- Stock Optimization Card -->
+<div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div class="bg-surface-container-highest rounded-xl p-6 flex flex-col justify-between">
+<p class="font-label text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-4">Rotación de Inventario</p>
+<div>
+<div class="font-mono-data text-4xl font-semibold text-on-surface mb-1">4.2x</div>
+<p class="text-xs text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-tertiary text-xs">arrow_upward</span>
+                                +0.5 vs mes anterior
+                            </p>
+</div>
+</div>
+<div class="bg-surface-container-highest rounded-xl p-6 flex flex-col justify-between">
+<p class="font-label text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-4">Precisión de Stock</p>
+<div>
+<div class="font-mono-data text-4xl font-semibold text-on-surface mb-1">99.1%</div>
+<p class="text-xs text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-primary text-xs">check</span>
+                                Óptimo
+                            </p>
+</div>
+</div>
+<!-- Data Grid Preview -->
+<div class="sm:col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant/20 overflow-hidden">
+<div class="bg-surface-container-high px-4 py-2 border-b border-outline-variant/20">
+<p class="font-label text-xs font-bold text-on-surface-variant tracking-wider uppercase">Top SKUs Críticos</p>
+</div>
+<div class="p-0">
+<div class="grid grid-cols-3 px-4 py-2 text-xs font-medium text-on-surface-variant border-b border-outline-variant/10">
+<div>SKU</div>
+<div class="text-right">Stock</div>
+<div class="text-right">Días Cobertura</div>
+</div>
+<div class="grid grid-cols-3 px-4 py-3 text-sm border-b border-outline-variant/10 bg-surface-container-low/50">
+<div class="font-mono-data text-on-surface">P-8842</div>
+<div class="font-mono-data text-right text-error font-medium">12</div>
+<div class="font-mono-data text-right">1.5</div>
+</div>
+<div class="grid grid-cols-3 px-4 py-3 text-sm">
+<div class="font-mono-data text-on-surface">P-9102</div>
+<div class="font-mono-data text-right text-on-surface">84</div>
+<div class="font-mono-data text-right">4.2</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonial -->
+<section class="bg-surface-container-low py-20 border-y border-outline-variant/10">
+<div class="max-w-4xl mx-auto px-8 text-center">
+<span class="material-symbols-outlined text-4xl text-primary/40 mb-6">format_quote</span>
+<blockquote class="font-display text-2xl md:text-3xl text-primary font-medium leading-relaxed mb-8">
+                    "La implementación de Axiom Ledger transformó nuestra cadena regional. Pasamos de conciliar datos ciegos a fin de mes, a tener control quirúrgico diario sobre la rentabilidad de cada pasillo."
+                </blockquote>
+<div class="flex flex-col items-center">
+<p class="font-bold text-on-surface uppercase tracking-wider text-sm font-label">Elena Ríos</p>
+<p class="text-on-surface-variant text-sm">Directora de Operaciones, Supermercados Vértice</p>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="py-24 max-w-4xl mx-auto px-8 text-center">
+<h2 class="font-headline text-3xl font-bold text-primary mb-4">¿Listo para auditar su eficiencia?</h2>
+<p class="text-lg text-on-surface-variant mb-10">Agende una sesión técnica con nuestros arquitectos de soluciones.</p>
+<button class="px-8 py-4 bg-gradient-to-r from-primary to-primary-container text-on-primary rounded-xl font-bold text-lg hover:shadow-lg hover:shadow-primary/20 hover:-translate-y-0.5 transition-all duration-200">
+                Agendar Consultoría Gratuita
+            </button>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-[#F7F3EC] dark:bg-slate-800 w-full py-12 px-8 grid grid-cols-1 md:grid-cols-4 gap-8 max-w-7xl mx-auto font-['Plus_Jakarta_Sans'] text-sm">
+<div class="md:col-span-1">
+<div class="font-bold text-[#31666d] mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-lg" data-weight="fill" style="font-variation-settings: 'FILL' 1;">hexagon</span>
+                Axiom Ledger
+            </div>
+<p class="text-slate-500 dark:text-slate-400 mt-4">
+                © 2024 Axiom Ledger. Built with Next.js 15 &amp; Tailwind 4.
+            </p>
+</div>
+<div class="md:col-span-3 flex flex-wrap gap-8 md:justify-end">
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Sitemap</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Privacy Policy</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Terms of Service</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">LinkedIn</a>
+<a class="text-slate-500 dark:text-slate-400 hover:text-[#31666d] dark:hover:text-[#92C7CF] transition-colors" href="#">Twitter</a>
+</div>
+</footer>
+</body></html>
