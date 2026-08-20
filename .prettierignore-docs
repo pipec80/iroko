@@ -1,0 +1,19 @@
+.git/
+.agent/
+.agents/
+.claude/
+.codex/
+.pytest_cache/
+.superpowers/
+node_modules/
+CHANGELOG.md
+CLAUDE.local.md
+docs/design-system/dashboard/
+docs/design-system/public/
+docs/design-system/Axiom Ledger Design System/design_handoff_iroko/
+docs/local/
+docs/private/
+docs/estado-fases.md
+docs/**/*.local.md
+docs/**/*.private.md
+docs/**/*.draft.md
