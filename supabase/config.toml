@@ -58,7 +58,7 @@ max_client_conn = 100
 # LegacyDeclarativeShadowDbError por orden alfabético de carga de
 # supabase/schemas/*.sql (bug confirmado y cerrado "not planned" por los
 # maintainers: supabase/cli#4314). No usarlo — seguir con migración a mano +
-# espejo en supabase/schemas/ (ver CLAUDE.md).
+# espejo en supabase/schemas/ (ver AGENTS.md).
 #
 # Alternativa probada 2026-08-18 con CLI 2.110.0: el motor experimental
 # `pg-delta` SÍ resuelve el orden de dependencias automáticamente (no es un

@@ -1,6 +1,13 @@
-# Iroko — SaaS Boilerplate
+# Iroko — SaaS Foundation
 
-Base de producción para micro-SaaS. Auth completa, multi-tenancy, i18n, observabilidad y CI/CD listo para desplegar.
+Base SaaS interna y reutilizable para los proyectos de pipec, construida con la
+calidad y modularidad necesarias para poder convertirse más adelante en un
+boilerplate comercial. Hoy no se presenta como producto instalable, soportado
+o listo para clientes.
+
+Antes de trabajar en el repositorio, lee [AGENTS.md](AGENTS.md) y
+[docs/current-state.md](docs/current-state.md). El mapa completo de
+documentación está en [docs/index.md](docs/index.md).
 
 ## Stack
 
@@ -8,12 +15,12 @@ Base de producción para micro-SaaS. Auth completa, multi-tenancy, i18n, observa
 | --------------- | ------------------------------------------------- |
 | Framework       | Next.js 16 (App Router, React 19, React Compiler) |
 | Backend / Auth  | Supabase (PostgreSQL, RLS, RPCs, MFA, OAuth)      |
-| Estilos         | Tailwind CSS 4 + Material Design 3 tokens         |
+| Estilos         | Tailwind CSS 4 + shadcn + tokens Iroko            |
 | i18n            | next-intl (en / es / pt / fr)                     |
 | Estado servidor | TanStack Query 5                                  |
 | Observabilidad  | Sentry, Vercel Analytics, Vercel Speed Insights   |
 | Tests           | Vitest (unit) + Playwright (E2E) + pgTAP (DB)     |
-| Deploy          | Vercel (pipec80-labs/iroko)                       |
+| Deploy objetivo | Vercel + Supabase                                 |
 
 ## Requisitos
 
@@ -28,8 +35,8 @@ Base de producción para micro-SaaS. Auth completa, multi-tenancy, i18n, observa
 # 1. Instalar dependencias
 pnpm install
 
-# 2. Copiar variables de entorno
-cp .env.example .env.local
+# 2. Copiar variables de entorno (PowerShell)
+Copy-Item .env.example .env.local
 # Editar .env.local con tus credenciales de Supabase local
 
 # 3. Levantar Supabase local (requiere Docker)
@@ -41,25 +48,11 @@ pnpm dev
 
 Abre http://localhost:3000 — el dashboard de Supabase Studio está en http://localhost:54323.
 
-## Variables de entorno requeridas
+## Variables de entorno
 
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<anon-key>
-SUPABASE_SECRET_KEY=<service-role-key>
-
-# Site
-SITE_URL=http://localhost:3000
-
-# Sentry (opcional en dev)
-NEXT_PUBLIC_SENTRY_DSN=<dsn>
-SENTRY_AUTH_TOKEN=<auth-token>
-
-# OAuth Google
-GOOGLE_CLIENT_ID=<client-id>
-SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=<client-secret>
-```
+Usa `.env.example` como plantilla y `src/env.ts` como inventario validado y
+fuente de verdad. No dupliques aquí una lista que pueda quedar desactualizada.
+Las credenciales locales, Cloud y de proveedores nunca se versionan.
 
 ## Scripts
 
@@ -103,22 +96,34 @@ src/
 └── types/
     └── database.ts             # Tipos generados de Supabase
 supabase/
-├── migrations/                 # 38+ migraciones SQL
-├── schemas/                    # Declarative schema (source of truth)
+├── migrations/                 # Historial ejecutable y ordenado de cambios SQL
+├── schemas/                    # Espejo legible de la intención actual
 ├── templates/                  # Email templates
 └── tests/database/             # Tests pgTAP
 ```
 
 ## Documentación
 
-Versionada en el repo — ver `docs/index.md` para el índice completo:
+Versionada en el repositorio — ver [docs/index.md](docs/index.md) para el orden
+de lectura, autoridad y ciclo de vida:
 
+- `docs/current-state.md` — estado vigente, prioridades y evidencia
+- `docs/architecture/` y `docs/adr/` — límites y decisiones duraderas
 - `docs/audits/` — auditorías de plataforma con hallazgos y evidencia de cierre
-- `docs/exec-plans/` — planes de estabilización activos y completados
+- `docs/exec-plans/` — trabajo activo y registros de planes completados
 - `docs/runbooks/` — guías operativas paso a paso
 - `docs/quality/` — Definition of Done y estrategia de testing
-- `docs/design-system/` — patrón HTML/CSS de referencia para pantallas nuevas
+- `docs/modules/` — guías vigentes de capacidades implementadas; cada una
+  separa verificación estática de evidencia runtime/Cloud
+- `docs/design-system/` — entrada al sistema canónico Poppy/Cobalt/Geist,
+  estado, tokens, kits y clasificación de exportaciones históricas/generadas
 
-`docs/estado-fases.md`, `docs/modules/` y `docs/local/` son notas de desarrollo
-privadas del mantenedor original (gitignored) — no existen en un checkout
-limpio de este boilerplate.
+`docs/estado-fases.md` y `docs/local/` son notas de desarrollo locales o
+históricas (gitignored). No son autoridad y no existen en un checkout limpio.
+
+## Estado y alcance
+
+Los planes 010 y 011 contienen remediaciones P0 activas de aislamiento tenant
+y billing. Los planes 012 y 013 cubren hardening y preparación comercial. Una
+capacidad configurada o presente en código no implica certificación en
+producción; consulta siempre [el estado actual](docs/current-state.md).

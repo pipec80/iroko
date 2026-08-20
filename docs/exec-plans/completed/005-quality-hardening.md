@@ -64,7 +64,10 @@ Close the quality, caching, documentation and CI gaps found during the platform 
 - keep `docs/local/`, `docs/private/`, drafts and generated exports ignored;
 - scan new docs for secrets and personal information;
 - update README links so every referenced versioned document exists;
-- `AGENTS.md` is intentionally local and untracked (decided in #97, same as `CLAUDE.md`); do not re-add it to Git as part of this workstream.
+- Historical execution constraint: at the time of this plan, `AGENTS.md` and
+  `CLAUDE.md` were local. ADR 0001 later superseded that policy with a
+  versioned neutral contract and a thin Claude adapter; this completed plan is
+  evidence, not current repository instruction.
 
 ### B. Cache correctness
 

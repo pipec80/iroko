@@ -1,5 +1,10 @@
 # Handoff · Iroko Design System
 
+> **EXPORTACIÓN GENERADA — NO CANÓNICA.** Se conserva como referencia de origen
+> y no debe editarse para definir el sistema. Empiece por el
+> [estado canónico](../STATUS.md), la [guía](../README.md) y los
+> [tokens](../colors_and_type.css).
+
 > _"Antes de cortar el iroko, se le pide permiso al espíritu del árbol — porque sin tronco, no hay ramas."_
 
 This bundle is the **complete Iroko design system** plus a migration plan for applying it to the existing Next.js + Tailwind + shadcn + Supabase codebase that originated as a Google Stitch boilerplate (the same code shipped under the placeholder brand "Axiom Ledger / Retail Analytics").

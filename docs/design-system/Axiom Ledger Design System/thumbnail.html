@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Iroko</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;width:1280px;height:854px;overflow:hidden}
+  .tile{display:grid;grid-template-columns:1fr 320px;width:1280px;height:854px}
+  .main{background:#0e1117;display:flex;align-items:center;justify-content:center}
+  .wm{font-family:'Geist',system-ui,sans-serif;font-weight:800;text-transform:uppercase;font-size:210px;line-height:1;letter-spacing:2px;color:#ffffff}
+  .strip{display:grid;grid-template-rows:repeat(3,1fr)}
+  .strip span{display:block}
+</style>
+</head>
+<body>
+  <div class="tile">
+    <div class="main">
+      <div class="wm">IR<span style="color:#d92121">O</span>K<span style="color:#4682bf">O</span></div>
+    </div>
+    <div class="strip">
+      <span style="background:#d3d3d3"></span>
+      <span style="background:#d92121"></span>
+      <span style="background:#0047ab"></span>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Iroko · Dashboard — print</title>
+  <meta name="omelette-print-source" content="v1780410338900985 ui_kits/iroko-dashboard/index.html">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    doc-page:not(:defined) { visibility: hidden; }
+
+    /* Print fidelity: keep every background and colour */
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    /* Jump animations to their end state */
+    * { animation-delay: -99s !important; animation-duration: .001s !important;
+        animation-iteration-count: 1 !important; animation-fill-mode: both !important;
+        animation-play-state: running !important; transition-duration: 0s !important; }
+
+    /* ── The app shell was authored for a viewport; on paper each page IS the box ── */
+    html, body { height: auto !important; }
+    .page { display: flex; flex-direction: column; overflow: hidden; }
+    .app-root { flex: 1; display: flex; min-height: 0; }
+    .app-root > .shell,
+    .app-root > div[style] { flex: 1; }
+
+    .shell { min-height: 0 !important; height: 100% !important; }
+    .shell > aside { position: static !important; height: auto !important; }
+    .main { min-height: 0 !important; }
+    .main > header { position: static !important; }
+    .content { padding: 22px 28px 24px !important; flex: 1; }
+
+    /* Login page fills the sheet edge to edge */
+    .login-page > div[style] { min-height: 0 !important; height: 100% !important; }
+
+    /* ── Vertical compression so each screen fits its landscape page ── */
+    .page .content > div { gap: 20px !important; }
+    .page .content h1 { font-size: 30px !important; }
+    .page .content header p { font-size: 14px !important; }
+
+    /* Page label strip */
+    .sheet-tag {
+      flex: none;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 28px;
+      background: #0e1117; color: #e6e8eb;
+      font-family: 'Geist Mono', monospace;
+      font-size: 9px; font-weight: 700;
+      letter-spacing: 0.22em; text-transform: uppercase;
+    }
+    .sheet-tag .n { color: #d92121; }
+  </style>
+</head>
+<body>
+  <template id="__bundler_thumbnail" data-bg-color="#0e1117">
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1200" height="800" fill="#0e1117"/>
+      <circle cx="600" cy="380" r="150" fill="none" stroke="#d92121" stroke-width="54"/>
+      <circle cx="600" cy="380" r="60" fill="#0047ab"/>
+      <rect x="497" y="500" width="206" height="22" rx="4" fill="#e6e8eb"/>
+    </svg>
+  </template>
+
+  <doc-page orientation="landscape">
+    <section class="page login-page">
+      <div class="sheet-tag"><span><span class="n">01</span> &nbsp;·&nbsp; Autenticación</span><span>Iroko · UI Kit</span></div>
+      <div class="app-root" data-screen="login"></div>
+    </section>
+    <section class="page">
+      <div class="sheet-tag"><span><span class="n">02</span> &nbsp;·&nbsp; Overview</span><span>Iroko · UI Kit</span></div>
+      <div class="app-root" data-screen="overview"></div>
+    </section>
+    <section class="page">
+      <div class="sheet-tag"><span><span class="n">03</span> &nbsp;·&nbsp; Proyectos</span><span>Iroko · UI Kit</span></div>
+      <div class="app-root" data-screen="projects"></div>
+    </section>
+    <section class="page">
+      <div class="sheet-tag"><span><span class="n">04</span> &nbsp;·&nbsp; Miembros</span><span>Iroko · UI Kit</span></div>
+      <div class="app-root" data-screen="members"></div>
+    </section>
+    <section class="page">
+      <div class="sheet-tag"><span><span class="n">05</span> &nbsp;·&nbsp; Billing</span><span>Iroko · UI Kit</span></div>
+      <div class="app-root" data-screen="billing"></div>
+    </section>
+    <section class="page">
+      <div class="sheet-tag"><span><span class="n">06</span> &nbsp;·&nbsp; Ajustes</span><span>Iroko · UI Kit</span></div>
+      <div class="app-root" data-screen="settings"></div>
+    </section>
+  </doc-page>
+
+  <script src="./doc-page.js"></script>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <script type="text/babel" src="Sidebar.jsx"></script>
+  <script type="text/babel" src="Topbar.jsx"></script>
+  <script type="text/babel" src="OverviewScreen.jsx"></script>
+  <script type="text/babel" src="MembersScreen.jsx"></script>
+  <script type="text/babel" src="BillingScreen.jsx"></script>
+  <script type="text/babel" src="SettingsScreen.jsx"></script>
+  <script type="text/babel" src="ProjectsScreen.jsx"></script>
+  <script type="text/babel" src="Login.jsx"></script>
+
+  <script type="text/babel">
+    const USER = { name: 'Pipe Cárdenas', email: 'pipec@iroko.dev' };
+    const ORG  = { id: 'ace', name: 'Ace Jewelry', plan: 'Studio', initial: 'AJ', tone: 'iron' };
+
+    const SCREENS = {
+      overview: () => <OverviewScreen user={USER} org={ORG} />,
+      projects: () => <ProjectsScreen />,
+      members:  () => <MembersScreen />,
+      billing:  () => <BillingScreen />,
+      settings: () => <SettingsScreen />,
+    };
+
+    function Sheet({ screen }) {
+      if (screen === 'login') return <Login onSubmit={() => {}} />;
+      const Screen = SCREENS[screen];
+      return (
+        <div className="shell">
+          <Sidebar active={screen} onNavigate={() => {}} currentOrg={ORG} onSwitchOrg={() => {}} />
+          <div className="main">
+            <Topbar user={USER} org={ORG} route={screen} onSignOut={() => {}} />
+            <div className="content">{Screen ? <Screen /> : null}</div>
+          </div>
+        </div>
+      );
+    }
+
+    document.querySelectorAll('.app-root').forEach((host) => {
+      ReactDOM.createRoot(host).render(<Sheet screen={host.dataset.screen} />);
+    });
+
+    // Lucide replaces <i data-lucide> with SVG — run after every root has painted.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.lucide?.createIcons());
+    });
+  </script>
+</body>
+</html>
