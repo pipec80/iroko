@@ -1,7 +1,7 @@
 # Plan 007 — Cloud Smoke Check for the Sentry Tunnel
 
 - Priority: P1
-- Status: Completed (2026-08-11) — [PR TBD](about:blank) (`feat/sentry-tunnel-cloud-smoke-check`)
+- Status: Completed (2026-08-11) — PR #113 (`feat/sentry-tunnel-cloud-smoke-check`)
 - Scope: AUD-024 only. Two related but independent items from the same audit
   paragraph ("add a Cloud smoke check for Sentry tunnel, Supabase workers and
   provider callbacks") are deliberately out of scope:

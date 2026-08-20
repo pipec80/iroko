@@ -1,8 +1,8 @@
 # Plan de Testing — Iroko
 
-> Documento de planificación: qué se testea, dónde, con qué prioridad y en qué orden.
-> Última actualización: 2026-06-12 — **Fases 1, 2, 3 y 4 completadas** (310+ unit tests, 24 E2E).
-> Marca los checkboxes a medida que avances. Cada fase tiene un prompt listo para Claude Code al final.
+> Estrategia e inventario histórico de cobertura. Las fases 1–4 se cerraron el
+> 2026-06-12, pero las cantidades y cobertura descritas aquí no reemplazan una
+> ejecución actual. Los planes activos son autoridad para nueva cobertura P0/P1.
 
 ---
 
@@ -115,12 +115,21 @@ Regla de trinquete: **nunca bajarlos**; subirlos cuando una fase agregue cobertu
 
 ---
 
-## 6. Prompts para Claude Code
+## 6. Prompts históricos
 
-**Fase 4 (pendiente):**
+**Fase 4 (completada; prompt conservado como evidencia histórica):**
 
 > Lee TESTING-PLAN.md secciones 2 y 3. Agrega: (a) un spec `src/test/e2e/public.spec.ts` con un test `@smoke` de render por página pública (home, pricing, product, solutions, contact) que aserte el heading principal visible; (b) tests E2E autenticados para dashboard/team (invitar miembro con email válido → mensaje de éxito; remover miembro) y dashboard/projects (crear proyecto desde el dialog → aparece en el listado), usando el fixture de `src/test/e2e/fixtures/auth.ts`. Corre pnpm lint y pnpm typecheck al final. Un commit por punto, conventional commits. No toques src/proxy.ts ni crees middleware.ts.
 
 **Mantenimiento continuo:**
 
 > Al agregar una server action nueva, crea sus tests en el mismo PR siguiendo la sección 3 (validación + no-auth + error + camino feliz). Si el coverage cae bajo los thresholds, agrega tests — no bajes los thresholds.
+
+## 7. Trabajo actual
+
+- Plan 010 define los tests de regresión P0 para aislamiento tenant, Storage,
+  checkout e invitaciones.
+- Plan 011 define la matriz y certificación de Billing Platform v2.
+- Plan 012 agrega hardening y la fuente de verdad única para pricing.
+- Una ejecución enfocada o un conteo histórico no permite declarar verde la
+  suite completa. Registra comando, fecha, alcance y resultado observado.

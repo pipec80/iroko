@@ -1,7 +1,7 @@
 # Plan 008 — Automated Cloud Health Check for the Email Worker
 
 - Priority: P1
-- Status: Completed (2026-08-11) — [PR TBD](about:blank) (`feat/email-worker-cloud-smoke-check`)
+- Status: Completed (2026-08-11) — PR #114 (`feat/email-worker-cloud-smoke-check`)
 - Scope: AUD-025 only. Related items from the same audit hardening bullet
   (Sentry tunnel: AUD-024, its own branch/PR; provider webhooks: AUD-026,
   blocked — no real Stripe/MercadoPago account exists, only the `mock`

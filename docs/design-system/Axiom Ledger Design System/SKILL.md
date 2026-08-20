@@ -1,55 +1,75 @@
 ---
 name: iroko-design
-description: Use this skill to generate well-branded interfaces and assets for Iroko, either for production or throwaway prototypes/mocks/etc. Contains essential design guidelines, colors, type, fonts, assets, and UI kit components for prototyping. Iroko is a Spanish-first multi-tenant SaaS template (Next.js + Supabase) by pipec, with an afrofuturist "Tierra + Hierro" palette (iron #b8513a, gold #d9a441, night #13110d, bone #f5ecda), Cormorant Garamond italic display, Inter Tight UI, and Geist Mono numerals.
+description: Use the canonical Iroko Poppy, Cobalt, Geist, and Geist Mono design system when creating or reviewing production UI, prototypes, or visual assets in this repository.
 user-invocable: true
 ---
 
-Read the README.md file within this skill, and explore the other available files.
+# Iroko design — instrucciones para agentes
 
-Key files:
+Antes de producir o modificar una interfaz, lea completos y en este orden:
 
-- `README.md` — brand context, content fundamentals (voice, tone, casing, canonical copy), visual foundations (palette, type, spacing, animation, hover/press, borders, shadows, blur, layout), iconography rules.
-- `colors_and_type.css` — drop-in CSS custom properties. Import it and you have the full token system (semantic colors, type scale, radii, shadows, brand utilities like `.display-italic`, `.eyebrow`, `.mono`, `.iroko-grid`).
-- `assets/` — wordmark (light + dark), mark (light + dark), lockup, ornament, OAuth provider marks.
-- `preview/` — small specimen cards used in the Design System review tab; not for direct reuse, but the cleanest visual reference.
-- `ui_kits/iroko-marketing/` — public marketing site (navbar, hero, features, pricing, quote, CTA, footer).
-- `ui_kits/iroko-dashboard/` — authenticated multi-tenant dashboard (sidebar with org switcher, topbar, overview/projects/members/billing/settings screens, login).
-- `brand/` — historical record of the naming + palette exploration that led to Iroko. Useful if a future iteration wants to see *why*.
+1. `STATUS.md`
+2. `README.md`
+3. `colors_and_type.css`
+4. el README del UI kit correspondiente
+5. `AGENTS.md` en la raíz del repositorio
 
-## Usage — visual artifacts (slides, mocks, throwaway prototypes)
+## Autoridad
 
-1. Copy `colors_and_type.css` and any needed assets out of this skill folder into your project.
-2. Link `colors_and_type.css` from your HTML. It defines `:root` tokens and basic element styles.
-3. Load Cormorant Garamond + Inter Tight + Geist Mono from Google Fonts (the CSS does this for you).
-4. Either lift JSX components from `ui_kits/iroko-*/` and adapt them, or write fresh markup using the CSS custom properties (`var(--color-iron)`, `var(--font-display)`, `var(--radius-lg)`, etc.).
-5. For icons load Lucide via CDN and use `<i data-lucide="name">` with `stroke-width: 1.25`.
-6. *Never* invent new colors — pick from `colors_and_type.css`. *Never* use white as a background — use `bone` `#f5ecda`.
+- `README.md` define intención visual y de contenido.
+- `colors_and_type.css` define el contrato de tokens.
+- `ui_kits/` sirve como referencia de composición.
+- `src/app/globals.css` y `src/app/layout.tsx` demuestran el runtime actual.
+- `STATUS.md` registra paridad, evidencia y brechas.
 
-## Usage — production code (the real Next.js + Tailwind codebase)
+Si estas fuentes divergen, no elija silenciosamente ni improvise otra variante.
+Informe la brecha y, si la tarea autoriza cambios, alinee especificación y
+runtime de forma explícita.
 
-1. Read the README's "Content fundamentals", "Visual foundations", and "Iconography" sections to internalize voice and visual rules.
-2. The repo uses Tailwind + shadcn — map `colors_and_type.css` tokens onto your `globals.css` `@theme inline { … }` block so Tailwind utilities like `bg-surface-elevated`, `text-iron`, `rounded-lg` work out of the box.
-3. Use Lucide via `lucide-react` package, not the CDN.
-4. Default to Spanish copy. Add `en` strings to `next-intl` messages; never invert default.
-5. Numerals always in `font-mono` with `tracking-tighter` (`Inter Tight + Geist Mono` is the pair).
+## Reglas canónicas
 
-## Rules of thumb (the iron law)
+- Primario: Poppy `#d92121`; pressed: Crimson `#b11226`.
+- Secundario: Cobalt `#0047ab`.
+- Base: Ink `#0e1117` y Paper `#ffffff`.
+- Tipografía: Geist para interfaz/display y Geist Mono para datos/código.
+- No invente colores, fuentes, radios o sombras; use tokens existentes.
+- Use `lucide-react` en producción.
+- Use `cn()` de `@/lib/utils` para combinar clases.
+- Mantenga español e inglés mediante `next-intl`; español es el default.
+- Preserve App Router, contratos de componentes, accesibilidad y lógica de
+  negocio existentes.
+- No cree `middleware.ts`; el edge vive en `src/proxy.ts`.
+- No afirme estados de producto o negocio sin evidencia versionada.
 
-- Background is **bone `#f5ecda`**, not white.
-- Primary action is **iron `#b8513a`** — always solid, sentence-case.
-- Featured / dramatic surfaces are **night `#13110d`** with optional grid overlay and gold ribbons.
-- Display headlines are **Cormorant Garamond italic** — this single decision carries 80% of the brand emotion. Don't override it with another display font.
-- Eyebrow micro-labels (Geist Mono, 11px, weight 600, 0.22em tracking, uppercase) live ABOVE every page H1. They're the system's signature.
-- Cards have small radii (`radius-lg` = 8px) and `1px var(--border)` instead of shadows. Shadows are reserved for elevation-dependent surfaces (popovers, modals, the featured pricing card).
-- Spanish first. English microcopy fine when it carries technical weight (`PROD`, `BUILD`, `OWNER`).
-- Zero emoji. Zero exclamation marks. Use the Akan proverb sparingly — it's the brand's soul, not its garnish.
+## Trabajo de producción
 
-## If the user invokes this skill without other guidance
+1. Identifique la ruta y el componente real antes de usar un mockup.
+2. Reutilice primitivas en `src/components/ui/` y APIs existentes.
+3. Mapee la intención del kit a tokens semánticos de `globals.css`.
+4. Use componentes React para iconos; no CDN ni scripts inyectados.
+5. Incluya estados interactivos, teclado, foco, contraste, responsive y
+   reducción de movimiento.
+6. Actualice mensajes `es` y `en` cuando cambie copy visible.
+7. Ejecute `pnpm design-system:check` y las pruebas de la superficie.
+8. Adjunte evidencia visual cuando el resultado sea perceptible.
 
-Ask them:
-1. *What's the surface?* — marketing landing, dashboard screen, slide, email, or one-off mockup.
-2. *What's the action?* — onboarding, status update, pricing, etc. — so we know what the H1 promises.
-3. *Light or dark mode?* — Iroko defaults to light (bone) but the night variant is fully developed.
-4. *Do you need a new asset/illustration?* — if so we'll lift the geometric tree language from `mark-iroko.svg`.
+## Prototipos y artefactos aislados
 
-Then either write production code or output a self-contained HTML artifact depending on what they need.
+Los HTML de `ui_kits/` pueden orientar un prototipo autocontenido. Cargue
+`colors_and_type.css`, use los assets existentes y mantenga la misma semántica.
+Un prototipo no prueba que la ruta de producción esté implementada.
+
+## Material generado o histórico
+
+- `design_handoff_iroko/`, `_ds_manifest.json`, `_ds_bundle.js` y el PDF son
+  referencias generadas; no los edite como fuente de autoridad.
+- `brand/` y las muestras rotuladas como históricas en `preview/README.md` no
+  deben inspirar trabajo nuevo.
+- Los alias CSS heredados sólo garantizan compatibilidad transitoria.
+
+## Cuando falta información
+
+Pregunte por la superficie, el objetivo del usuario y el modo claro/oscuro sólo
+si no pueden deducirse de la ruta o tarea. Si falta evidencia, marque
+`[NO VERIFICADO]`; no complete el vacío desde memoria o desde una exportación
+generada.

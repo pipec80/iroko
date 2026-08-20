@@ -552,7 +552,7 @@ runbook — no se marca como cubierto sin estarlo.
 - `pnpm test` sin regresión.
 - `supabase test db` verde — cada PR con migración suma sus propios pgTAP.
 - Migraciones escritas **a mano** con espejo en `supabase/schemas/*.sql` en el
-  mismo commit (`supabase db diff` está roto en Windows, ver CLAUDE.md).
+  mismo commit (`supabase db diff` está roto en Windows, ver `AGENTS.md`).
 - Tras mergear cualquier PR con migración: `pnpm supa:cloud:migration:list` —
   las migraciones **no** se aplican solas a Cloud al mergear.
 - `nightly.yml` verde tras el PR 1, y verificado de nuevo al cerrar el plan.

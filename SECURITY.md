@@ -2,9 +2,10 @@
 
 ## Supported Versions
 
-| Version | Supported |
-| ------- | --------- |
-| latest  | ✅        |
+Iroko es actualmente una base interna y no publica todavía una versión con SLA
+de soporte para terceros. La rama activa recibe mantenimiento para los
+proyectos propios; una política de versiones soportadas se definirá si se
+aprueba su distribución comercial.
 
 ## Reporting a Vulnerability
 
@@ -22,7 +23,10 @@ If you discover a security vulnerability in Iroko, report it privately:
 - Affected component (auth, RLS policies, API, etc.)
 - Your suggested fix (optional but appreciated)
 
-### Response timeline
+### Response targets
+
+Mientras el proyecto sea interno, estos son objetivos operativos y no un SLA
+público o contractual:
 
 | Step                   | Time                                                       |
 | ---------------------- | ---------------------------------------------------------- |
@@ -33,7 +37,12 @@ If you discover a security vulnerability in Iroko, report it privately:
 
 ## Security Architecture
 
-This project implements multiple layers of security:
+The repository implements multiple security layers, but this list is not a
+certification or proof of current production health. Known P0 tenant-isolation
+remediation is tracked in
+[Plan 010](docs/exec-plans/active/010-tenant-isolation-and-regression-tests.md),
+and additional hardening in
+[Plan 012](docs/exec-plans/active/012-security-hardening-and-pricing-truth.md).
 
 - **Database**: Row Level Security (RLS) on all tables, SECURITY DEFINER RPCs with `SET search_path = ''`
 - **Auth**: Supabase Auth with MFA (TOTP; WebAuthn/phone available on Pro). MFA is enforced at the edge — a user with an enrolled factor cannot reach protected routes until the session is elevated to `aal2`.

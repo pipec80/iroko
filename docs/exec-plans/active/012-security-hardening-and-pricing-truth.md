@@ -30,8 +30,8 @@ puedan divergir silenciosamente.
   `GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."invitations" TO "authenticated"`
   (`supabase/schemas/public.sql:2117`) — no habilita bypass de RLS
   directamente (esos privilegios no tocan SELECT/INSERT/UPDATE/DELETE), pero
-  es superficie sobrante que contradice el principio de mínimo privilegio ya
-  declarado en `.claude/rules/supabase-setup.md`.
+  es superficie sobrante que contradice el principio de mínimo privilegio del
+  contrato compartido en `AGENTS.md`.
 - **SSRF saliente parcialmente mitigado, no demostrado explotable.**
   `private.assert_safe_webhook_url()` (`supabase/schemas/webhooks.sql:46-90`)
   valida HTTPS obligatorio, rechaza userinfo (`@`) y patrones sospechosos de

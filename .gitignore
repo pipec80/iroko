@@ -63,7 +63,6 @@ deno.lock
 /.kiro/
 /.scratch/
 .mcp.json
-AGENTS.md
 
 # supabase local runtime (no commitear)
 supabase/.temp/
@@ -82,13 +81,12 @@ docs/**/*.private.md
 docs/**/*.draft.md
 docs/**/*.pdf
 
-# docs/index.md § Directory policy: solo audits/, exec-plans/, runbooks/,
-# quality/, prompts/, architecture/, adr/, design-system/ y screenshots/ son
-# públicas. Todo lo demás que no sea código de producto vive en /docs/local/
+# docs/index.md § Directory policy: audits/, exec-plans/, runbooks/, quality/,
+# prompts/, architecture/, adr/, modules/, design-system/ y las evidencias
+# allowlisted son públicas. El resto del material local vive en /docs/local/
 # (reordenado 2026-08-19: audit/, codx-docs/, database/, intercon/, nextjs/ y
 # plans/ ya no son entradas propias — su contenido se consolidó dentro de
 # local/, que ya cubre el árbol completo con una sola regla).
-/docs/modules/
 /docs/estado-fases.md
 /.superpowers/
 
@@ -112,6 +110,5 @@ supabase/snippets/
 .pytest_cache/
 
 # archivos de configuración local de asistentes de IA
-CLAUDE.md
-AGENTS.md
+CLAUDE.local.md
 scratch/

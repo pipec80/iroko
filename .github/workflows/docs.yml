@@ -1,0 +1,88 @@
+name: Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/*.md'
+      - '.github/workflows/docs.yml'
+      - '.prettierignore-docs'
+      - 'docs/design-system/Axiom Ledger Design System/colors_and_type.css'
+      - 'src/app/globals.css'
+      - 'src/app/layout.tsx'
+      - 'scripts/check-design-system.mjs'
+      - 'scripts/__tests__/check-design-system.test.mjs'
+      - 'scripts/check-docs.mjs'
+      - 'scripts/__tests__/check-docs.test.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '**/*.md'
+      - '.github/workflows/docs.yml'
+      - '.prettierignore-docs'
+      - 'docs/design-system/Axiom Ledger Design System/colors_and_type.css'
+      - 'src/app/globals.css'
+      - 'src/app/layout.tsx'
+      - 'scripts/check-design-system.mjs'
+      - 'scripts/__tests__/check-design-system.test.mjs'
+      - 'scripts/check-docs.mjs'
+      - 'scripts/__tests__/check-docs.test.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  documentation:
+    name: Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test documentation checker
+        run: pnpm test:docs-check
+
+      - name: Test design-system checker
+        run: pnpm test:design-system-check
+
+      - name: Check internal links and stale references
+        run: pnpm docs:check
+
+      - name: Check canonical design-system parity
+        run: pnpm design-system:check
+
+      - name: Check Markdown formatting
+        run: |
+          git ls-files -z '*.md' \
+            | grep -zv '^docs/design-system/dashboard/' \
+            | grep -zv '^docs/design-system/public/' \
+            | grep -zv '^docs/design-system/Axiom Ledger Design System/design_handoff_iroko/' \
+            | grep -zv '^CHANGELOG.md$' \
+            | xargs -0 --no-run-if-empty pnpm exec prettier --check --ignore-path .prettierignore-docs

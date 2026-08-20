@@ -1,9 +1,23 @@
 # Iroko Engineering Documentation
 
-This directory is the versioned source of truth for engineering audits, execution plans, runbooks and durable technical decisions.
+This directory is the versioned knowledge base for current status, architecture,
+execution plans, runbooks, audits, and durable technical decisions.
 
 ## Start here
 
+- [Current state](current-state.md) — product position, active work, verification
+  boundary, and known documentation debt.
+- [System overview](architecture/system-overview.md) — system context,
+  architectural boundaries, and change map.
+- [ADR index](adr/README.md) — durable decisions and their trade-offs.
+- [Module catalog](modules/README.md) — current implementation guides and their
+  verification boundary.
+- [Operational evidence](quality/operational-evidence.md) — dated runtime,
+  Cloud, and release evidence with validity rules.
+- [Canonical design system](design-system/README.md) — visual authority,
+  palette contract, generated/historical boundaries, and maintenance rules.
+- [Active execution plans](exec-plans/active/) — pending bounded work and
+  acceptance criteria.
 - [Full platform audit — 2026-08-02](audits/2026-08-02-full-platform-audit.md)
 - [Sentry browser observability audit — 2026-08-03](audits/2026-08-03-sentry-audit.md)
 - [Definition of Done](quality/definition-of-done.md)
@@ -14,6 +28,17 @@ This directory is the versioned source of truth for engineering audits, executio
 - [Codex remediation orchestrator](prompts/codex-remediation-orchestrator.md)
 - [Codex follow-up operations prompt](prompts/codex-follow-up-operations.md)
 - [Codex task template](prompts/codex-task-template.md)
+
+## Authority when sources disagree
+
+Use this order: executable code; tests and observed evidence; configuration and
+database migrations; [current state](current-state.md); accepted ADRs and
+current architecture; active execution plans; `ROADMAP.md`; then audits,
+completed plans, and ignored/local notes as historical evidence.
+
+This repository is currently an internal-first reusable SaaS foundation, not a
+customer-ready installable product. Details and rationale are recorded in
+[ADR 0001](adr/0001-documentation-authority-and-agent-contract.md).
 
 ## Completed stabilization plans
 
@@ -30,7 +55,7 @@ create a new bounded plan if a regression or new audit finding appears.
 | 6     | [PostHog product analytics](exec-plans/completed/006-posthog-integration.md)                  | P2       | Completed (2026-08-06, via #109) |
 | 7     | [Cloud smoke check — Sentry tunnel](exec-plans/completed/007-cloud-smoke-sentry-tunnel.md)    | P1       | Completed (2026-08-11)           |
 | 8     | [Email worker Cloud health check](exec-plans/completed/008-email-worker-cloud-smoke-check.md) | P1       | Completed (2026-08-11)           |
-| 9     | V1 closeout — RBAC, membership lifecycle, QA                                                  | P0       | Completed (2026-08-18, via #135) |
+| 9     | [V1 closeout — RBAC, membership lifecycle, QA](exec-plans/completed/009-v1-closeout.md)       | P0       | Completed (2026-08-18, via #135) |
 
 ## Active plans
 
@@ -50,17 +75,20 @@ rationale.
 
 Versioned and safe to publish:
 
+- `current-state.md`
 - `audits/`
 - `exec-plans/`
 - `runbooks/`
 - `quality/`
+- `modules/`
 - `prompts/`
 - `architecture/`
 - `adr/`
-- `design-system/` — canonical HTML/CSS pattern reference; the official
-  pattern to follow before building any new screen. Versioned deliberately
-  (2026-08-19) so it survives a fresh clone, not just this machine.
-- `screenshots/` — small manual-QA reference images, already tracked.
+- `design-system/` — canonical Poppy/Cobalt/Geist specification plus explicitly
+  classified generated and historical references; see
+  [ADR 0002](adr/0002-canonical-design-system-authority.md).
+- `screenshots/` — local/manual-QA evidence unless an image is deliberately
+  allowlisted and reviewed for version control.
 
 Intentionally local and ignored by Git:
 
@@ -70,23 +98,29 @@ Intentionally local and ignored by Git:
   2026-08-19 to consolidate what used to be nine separate top-level ignored
   folders (`audit/`, `codx-docs/`, `database/`, `intercon/`, `nextjs/`,
   `plans/`, `superpowers/`) into one bucket — see `local/*/` subfolders.
-- `modules/` — per-module reference docs; kept as its own ignored category
-  rather than folded into `local/` since it has a distinct purpose.
 - `private/`
 - `drafts/`
 - `generated/`
 - `exports/`
 - files ending in `.local.md`, `.private.md`, `.draft.md` or `.pdf`
 
-At the repository root, `AGENTS.md` and `CLAUDE.md` are also intentionally local and ignored by Git (decided in #97): each developer/agent keeps their own copy, and their content is not the same across machines. Do not re-add either to version control as part of documentation work.
+At the repository root, `AGENTS.md` is the shared tool-neutral contract and
+`CLAUDE.md` is a thin versioned adapter. Permissions, machine preferences, and
+tool-specific runtime material remain local and ignored. See
+[ADR 0001](adr/0001-documentation-authority-and-agent-contract.md).
 
 Do not place credentials, database connection strings, service-role keys, customer data, signed URLs or private incident material in versioned documentation.
 
 ## Lifecycle
 
-1. Record a finding in the audit matrix.
+1. Record a finding in the audit matrix when an audit is the source.
 2. Create or update an execution plan with acceptance criteria.
-3. Implement one bounded plan per branch and pull request.
-4. Attach exact validation evidence.
-5. Update the audit status.
-6. Move the plan to `exec-plans/completed/` only when the Definition of Done is satisfied.
+3. Update `current-state.md` when priority, status, product position, or a
+   material architecture boundary changes.
+4. Implement one bounded plan per branch and pull request.
+5. Attach exact validation evidence.
+6. Update the audit status when applicable.
+7. Move the plan to `exec-plans/completed/` only when the Definition of Done is
+   satisfied.
+8. Keep placeholders, historical prompts, and runtime claims out of the current
+   status path; unresolved external evidence is `[NO VERIFICADO]`.
