@@ -10,6 +10,7 @@ const config: KnipConfig = {
     'src/lib/logger.ts',
     'src/lib/validation/**/*.ts',
     'src/components/dashboard/team/team-management.tsx',
+    'supabase/functions/**',
   ],
   ignoreDependencies: [
     // Radix UI — usados en src/components/ui/* (knip no detecta imports de barrel exports)
