@@ -129,21 +129,40 @@ revocación en este plan.
 
 | #   | PR                                   | Prioridad | Depende de | Esfuerzo | Por qué ahí                                                                           |
 | --- | ------------------------------------ | :-------: | :--------: | :------: | ------------------------------------------------------------------------------------- |
-| 1   | `fix/storage-rls-live-membership`    |  **P0**   |     —      |    M     | El hallazgo con mayor superficie — dos buckets, 7 policies                            |
+| 1   | `fix/storage-rls-live-membership`    |  **P0**   |     —      |    M     | El hallazgo con mayor superficie — dos buckets, 8 policies                            |
 | 2   | `fix/checkout-authz-live-membership` |  **P0**   |     —      |    S     | `requireAccountRole` es la base que P1 también va a reusar                            |
 | 3   | `fix/invitation-email-binding`       |  **P0**   |     —      |    S     | Account takeover B2B trivial, sin herramientas                                        |
 | 4   | `test/tenant-isolation-regression`   |  **P0**   |   1,2,3    |    M     | Cierra el Definition of Done — prueba que cada fix realmente cambia el comportamiento |
 
-PRs 1, 2 y 3 son independientes entre sí — se pueden trabajar en paralelo. El
-4 depende de los tres porque cada test debe fallar sobre `main` (pre-fix) y
-pasar sobre la rama del fix correspondiente — no se puede escribir "en el
-vacío" antes de que el fix exista.
+PRs 1, 2 y 3 corrigen superficies funcionalmente independientes. La prueba
+compuesta de PR 4 depende de los tres, pero su cobertura no se difiere hasta el
+final: cada fix empieza con su prueba roja observada y conserva esa prueba como
+regresión.
+
+### Corrección de secuencia TDD (2026-08-21)
+
+El texto original dejaba la primera escritura de pruebas para PR 4. Eso no
+cumple el contrato TDD del repositorio: una prueba creada después del fix no
+demuestra que habría detectado el defecto. Desde esta corrección:
+
+1. PR 1 crea `supabase/tests/database/32_tenant_isolation_regression.test.sql`
+   con los casos de Storage, los ejecuta en rojo sobre `main` y recién después
+   agrega la migración.
+2. PR 2 añade el caso Vitest de checkout al archivo de actions existente, lo
+   observa rojo y después agrega la revalidación viva.
+3. PR 3 amplía el archivo pgTAP 32 con el caso de email de invitación, también
+   rojo antes de la migración. Por compartir ese archivo con PR 1, debe basarse
+   en PR 1 ya mergeado o rebasarse antes de mergear.
+4. PR 4 conserva su rol de aceptación integrada: ejecuta todos los casos,
+   comprueba que cada reversión individual vuelva a rojo y añade solamente
+   cualquier caso cruzado que aún falte. No es el primer lugar donde se prueba
+   una vulnerabilidad.
 
 ---
 
 ## PR 1 — `fix/storage-rls-live-membership`
 
-**Problema.** 7 policies de `storage.objects` (documents: insert/select/delete/
+**Problema.** 8 policies de `storage.objects` (documents: insert/select/delete/
 update; org-assets: insert/update/delete/select) autorizan contra
 `auth.jwt() -> 'app_metadata'`, vigente hasta 1h después de que la membership
 real cambió en `accounts_memberships`.
@@ -151,8 +170,8 @@ real cambió en `accounts_memberships`.
 **Ejecución.**
 
 1. Migración nueva `supabase/migrations/<timestamp>_storage_rls_live_membership.sql`
-   que hace `DROP POLICY` de las 7 policies existentes y las recrea:
-   - `documents_insert_member`, `documents_select_member`,
+   que hace `DROP POLICY` de las 8 policies existentes y las recrea:
+   - `documents_insert_editor`, `documents_select_member`,
      `documents_delete_own_or_admin`, `documents_update_own_or_admin`.
    - `org_assets_insert_admin`, `org_assets_update_admin`,
      `org_assets_delete_admin`, `org_assets_select_member`.
@@ -257,12 +276,16 @@ email del usuario autenticado.
 
 ## PR 4 — `test/tenant-isolation-regression`
 
-**Problema.** Ninguno de los tres bugs de arriba tiene hoy un test que falle
-sobre `main` — es la condición explícita del Definition of Done de este plan.
+**Problema.** Ninguno de los tres bugs de arriba tenía un test que falle sobre
+`main` — es la condición explícita del Definition of Done de este plan. Tras la
+corrección TDD anterior, los casos se introducen en rojo dentro de PR 1, 2 y 3;
+este PR los integra y prueba su resistencia a regresiones.
 
-**Ejecución.** Nuevo archivo pgTAP
-`supabase/tests/database/32_tenant_isolation_regression.test.sql` (siguiente
-número tras `31_list_team_members_invitation_id.test.sql`), casos mínimos:
+**Ejecución.** El archivo pgTAP
+`supabase/tests/database/32_tenant_isolation_regression.test.sql` se crea en
+PR 1 (siguiente número tras `31_list_team_members_invitation_id.test.sql`) y
+se amplía en PR 3; este PR lo ejecuta completo junto al test TS de
+`startCheckout`, casos mínimos:
 
 1. Usuario removido de una cuenta (`DELETE FROM accounts_memberships`) intenta
    `SELECT`/`INSERT` sobre `storage.objects` de esa cuenta simulando el JWT
