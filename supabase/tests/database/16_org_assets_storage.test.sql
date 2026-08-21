@@ -4,7 +4,7 @@
 BEGIN;
 SELECT plan(5);
 
--- Seed: 2 usuarios en 2 cuentas distintas. 1200 = admin de su cuenta, 1201 = member.
+-- Seed: dos usuarios de la cuenta objetivo y un owner de otra cuenta.
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
   confirmation_token, email_confirmed_at, recovery_token, aud, role)
 VALUES
@@ -13,17 +13,23 @@ VALUES
    'authenticated', 'authenticated'),
   ('00000000-0000-0000-0000-000000002002', 'org-assets-member@example.com',
    '{"given_name":"Member","family_name":"User"}'::jsonb, now(), now(), '', now(), '',
+   'authenticated', 'authenticated'),
+  ('00000000-0000-0000-0000-000000002003', 'org-assets-external-owner@example.com',
+   '{"given_name":"External","family_name":"Owner"}'::jsonb, now(), now(), '', now(), '',
    'authenticated', 'authenticated');
 
 INSERT INTO public.accounts (id, type, name, slug, created_by)
 VALUES
   ('00000000-0000-0000-0000-000000002100', 'team', 'Assets Org', 'assets-org',
-   '00000000-0000-0000-0000-000000002001');
+   '00000000-0000-0000-0000-000000002001'),
+  ('00000000-0000-0000-0000-000000009999', 'team', 'External Org', 'external-org',
+   '00000000-0000-0000-0000-000000002003');
 
 INSERT INTO public.accounts_memberships (account_id, user_id, role)
 VALUES
   ('00000000-0000-0000-0000-000000002100', '00000000-0000-0000-0000-000000002001', 'owner'),
-  ('00000000-0000-0000-0000-000000002100', '00000000-0000-0000-0000-000000002002', 'member');
+  ('00000000-0000-0000-0000-000000002100', '00000000-0000-0000-0000-000000002002', 'member'),
+  ('00000000-0000-0000-0000-000000009999', '00000000-0000-0000-0000-000000002003', 'owner');
 
 -- Owner puede subir a la carpeta de su propia cuenta
 -- (RETURNING replica el comportamiento real de la Storage API — un INSERT
@@ -71,16 +77,18 @@ SELECT throws_like(
   'member (no admin/owner) no puede subir logo');
 RESET role;
 
--- Owner de OTRA cuenta no puede subir a esta carpeta ajena
+-- Owner de OTRA cuenta no puede subir a esta carpeta ajena, incluso con un
+-- JWT coherente para su propia cuenta: la policy debe verificar membership en
+-- la cuenta codificada por el path, no el claim activo.
 SELECT set_config('request.jwt.claims',
-  json_build_object('sub', '00000000-0000-0000-0000-000000002001', 'role', 'authenticated',
+  json_build_object('sub', '00000000-0000-0000-0000-000000002003', 'role', 'authenticated',
     'app_metadata', json_build_object(
       'account_id', '00000000-0000-0000-0000-000000009999', 'role', 'owner'))::text, true);
 SET LOCAL role authenticated;
 SELECT throws_like(
   $$INSERT INTO storage.objects (bucket_id, name, owner)
     VALUES ('org-assets', '00000000-0000-0000-0000-000000002100/logo3.png',
-            '00000000-0000-0000-0000-000000002001')$$,
+            '00000000-0000-0000-0000-000000002003')$$,
   '%row-level security%',
   'owner de otra cuenta no puede subir a una carpeta ajena');
 RESET role;
