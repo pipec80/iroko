@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getActiveAccountId: vi.fn(),
-  getActiveAccountRole: vi.fn(),
+  requireAccountRole: vi.fn(),
   createCheckout: vi.fn(),
   cancelSubscription: vi.fn(),
   getPaymentProvider: vi.fn(),
@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/active-account', () => ({
   getActiveAccountId: mocks.getActiveAccountId,
-  getActiveAccountRole: mocks.getActiveAccountRole,
+  requireAccountRole: mocks.requireAccountRole,
 }));
 vi.mock('@/lib/billing/registry', () => ({ getPaymentProvider: mocks.getPaymentProvider }));
 vi.mock('@/lib/billing/webhook-handler', () => ({ handleProviderWebhook: mocks.handle }));
@@ -54,7 +54,7 @@ describe('billing actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('a1');
-    mocks.getActiveAccountRole.mockResolvedValue('owner');
+    mocks.requireAccountRole.mockResolvedValue();
     mocks.getPaymentProvider.mockReturnValue({
       name: 'mock',
       createCheckout: mocks.createCheckout,
@@ -91,7 +91,6 @@ describe('billing actions', () => {
   });
 
   it('startCheckout succeeds when the caller is admin', async () => {
-    mocks.getActiveAccountRole.mockResolvedValue('admin');
     mocks.createCheckout.mockResolvedValue({
       url: 'http://localhost:3000/es/billing/mock-checkout?data=x',
     });
@@ -100,16 +99,28 @@ describe('billing actions', () => {
   });
 
   it('startCheckout returns not_authorized when the caller is a member', async () => {
-    mocks.getActiveAccountRole.mockResolvedValue('member');
+    mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
     const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
     expect(res.error).toBe('not_authorized');
     expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 
   it('startCheckout returns not_authorized when the caller is a viewer', async () => {
-    mocks.getActiveAccountRole.mockResolvedValue('viewer');
+    mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
     const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
     expect(res.error).toBe('not_authorized');
+    expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it('startCheckout does not call the provider when live authorization was revoked', async () => {
+    mocks.createCheckout.mockResolvedValue({
+      url: 'http://localhost:3000/es/billing/mock-checkout?data=x',
+    });
+    mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
+
+    const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
+
+    expect(res).toEqual({ data: null, error: 'not_authorized' });
     expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 

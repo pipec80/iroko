@@ -13,7 +13,7 @@ export type MembershipRole = Database['public']['Enums']['membership_role'];
  * acciones que la DB va a rechazar de todas formas.
  */
 const EDITOR_ROLES: readonly MembershipRole[] = ['owner', 'admin', 'member'];
-const ADMIN_ROLES: readonly MembershipRole[] = ['owner', 'admin'];
+export const ADMIN_ROLES: readonly MembershipRole[] = ['owner', 'admin'];
 
 /** owner/admin/member — crea y edita projects/documents, sube a Storage documents. */
 export function canEditContent(role: MembershipRole | null): boolean {

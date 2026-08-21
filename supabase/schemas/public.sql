@@ -737,6 +737,19 @@ $$;
 ALTER FUNCTION "public"."get_my_account_id"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."get_my_account_role"("p_account_id" "uuid") RETURNS "public"."membership_role"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  RETURN private.get_user_role(p_account_id, (SELECT auth.uid()));
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_my_account_role"("p_account_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."get_my_accounts"() RETURNS TABLE("account_id" "uuid", "name" "text", "slug" "text", "type" "public"."account_type", "logo_url" "text", "role" "public"."membership_role", "website" "text", "country" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
@@ -2015,6 +2028,10 @@ REVOKE ALL ON FUNCTION "public"."get_my_account_id"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_my_account_id"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_my_account_id"() TO "service_role";
 
+
+
+REVOKE ALL ON FUNCTION "public"."get_my_account_role"("p_account_id" "uuid") FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION "public"."get_my_account_role"("p_account_id" "uuid") TO "authenticated";
 
 
 REVOKE ALL ON FUNCTION "public"."get_my_accounts"() FROM PUBLIC;
