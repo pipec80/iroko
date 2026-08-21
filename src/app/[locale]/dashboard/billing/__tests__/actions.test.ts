@@ -54,7 +54,7 @@ describe('billing actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('a1');
-    mocks.requireAccountRole.mockResolvedValue();
+    mocks.requireAccountRole.mockImplementation(async () => {});
     mocks.getPaymentProvider.mockReturnValue({
       name: 'mock',
       createCheckout: mocks.createCheckout,
