@@ -37,10 +37,9 @@ on:
   push:
     branches:
       - main
-      - 'fix/**'
-      - 'feat/**'
-      - 'refactor/**'
-      - 'chore/**'
+    # Required checks must be produced by the pull_request run for feature
+    # branches. Jobs skipped on a feature push report success and could
+    # otherwise satisfy branch protection before the real E2E and build finish.
     paths-ignore:
       - '**.md'
       - 'docs/**'
