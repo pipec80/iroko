@@ -1624,6 +1624,10 @@ export type Database = {
         }[]
       }
       get_my_account_id: { Args: never; Returns: string }
+      get_my_account_role: {
+        Args: { p_account_id: string }
+        Returns: Database["public"]["Enums"]["membership_role"]
+      }
       get_my_accounts: {
         Args: never
         Returns: {

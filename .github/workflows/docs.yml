@@ -20,19 +20,9 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - '**/*.md'
-      - '.github/workflows/docs.yml'
-      - '.prettierignore-docs'
-      - 'docs/design-system/Axiom Ledger Design System/colors_and_type.css'
-      - 'src/app/globals.css'
-      - 'src/app/layout.tsx'
-      - 'scripts/check-design-system.mjs'
-      - 'scripts/__tests__/check-design-system.test.mjs'
-      - 'scripts/check-docs.mjs'
-      - 'scripts/__tests__/check-docs.test.mjs'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
+    # Documentation is a required status check on main. It must run for every
+    # PR, otherwise GitHub leaves the check pending when this paths list does
+    # not match and blocks a valid merge.
   workflow_dispatch:
 
 concurrency:

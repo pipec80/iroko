@@ -2,14 +2,14 @@
 
 import { z } from 'zod';
 
-import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
+import { getActiveAccountId, requireAccountRole } from '@/lib/active-account';
 import { captureServer } from '@/lib/analytics/server';
 import { getPaymentProvider } from '@/lib/billing/registry';
 import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
 import type { NormalizedEvent } from '@/lib/billing/types';
 import { handleProviderWebhook } from '@/lib/billing/webhook-handler';
 import { logger } from '@/lib/logger';
-import { canManageBilling } from '@/lib/permissions';
+import { ADMIN_ROLES } from '@/lib/permissions';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { env } from '@/env';
@@ -86,8 +86,11 @@ export const startCheckout = withServerAction(async function startCheckout(input
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
 
-  const role = await getActiveAccountRole();
-  if (!canManageBilling(role)) return { data: null, error: 'not_authorized' };
+  try {
+    await requireAccountRole(accountId, ADMIN_ROLES);
+  } catch {
+    return { data: null, error: 'not_authorized' };
+  }
 
   const provider = getPaymentProvider();
   const { url } = await provider.createCheckout({
