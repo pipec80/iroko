@@ -37,6 +37,6 @@ overrides:
   # @react-email/ui (solo usado por `email:dev`, preview local) fija next@16.2.6
   # como dependencia directa exacta — nunca sigue el bump del next raíz. Forzar
   # acá para que no quede una segunda instancia vulnerable en el árbol.
-  next: 16.2.12
+  next: 16.3.2
 patchedDependencies:
   minimatch@3.1.5: patches/minimatch@3.1.5.patch
