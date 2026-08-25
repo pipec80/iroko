@@ -100,6 +100,11 @@ BEGIN
     RAISE EXCEPTION 'Invalid or expired invitation';
   END IF;
 
+  IF lower(btrim((SELECT email FROM auth.users WHERE id = v_user_id)))
+     IS DISTINCT FROM lower(btrim(v_invitation.email)) THEN
+    RAISE EXCEPTION 'Invalid or expired invitation';
+  END IF;
+
   INSERT INTO public.accounts_memberships (account_id, user_id, role, invited_by)
   VALUES (v_invitation.account_id, v_user_id, v_invitation.role, v_invitation.invited_by)
   ON CONFLICT DO NOTHING;
