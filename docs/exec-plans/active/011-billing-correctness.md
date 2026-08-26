@@ -5,12 +5,9 @@
   audit + a formal design spec/roadmap/implementation plan, all verified
   against the live codebase and Supabase Cloud)
 - Baseline: `main` @ `d9e2648`
-- Depends on: nada bloqueante de Plan 010, pero no mezclar PRs en el mismo
-  branch. **Coordinar orden de merge con Plan 010** — ambos tocan
-  `src/app/[locale]/dashboard/billing/actions.ts` (Plan 010 agrega
-  `requireAccountRole`; este plan mueve la orquestación a `BillingService`)
-  — mergear uno completo antes de ramificar el otro para evitar un merge
-  conflictivo.
+- Depends on: Plan 010 cerró el 2026-08-26; reutilizar
+  `requireAccountRole` como la autorización viva ya integrada. No mezclar
+  cambios de esta orquestación con esa remediación ya cerrada.
 - Spec: [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md)
   — arquitectura aprobada, tipos, modelo de datos, comportamiento por
   provider, política de acceso, observabilidad, reconciliación. Este

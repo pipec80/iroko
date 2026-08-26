@@ -57,9 +57,10 @@ documentation pass.
   route guards improve UX but do not replace database authorization.
 - Generated database types live in `src/types/database.ts`.
 
-Plan 010 documents known tenant-isolation gaps and the required regression
-coverage. Therefore, this overview must not be read as proof that all tenant
-boundaries are already remediated.
+[Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md)
+records the completed remediation for its Storage, checkout and invitation
+tenant-isolation gaps, plus regression coverage. This evidence does not prove
+that every tenant boundary outside that explicit scope is remediated.
 
 ### Background and external integrations
 
@@ -87,7 +88,7 @@ boundaries are already remediated.
 
 | If changing                              | Read first                                                                                                                  |
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Tenant membership, authorization, or RLS | [Plan 010](../exec-plans/active/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                 |
+| Tenant membership, authorization, or RLS | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests       |
 | Billing contracts or providers           | [Billing Platform v2 design](billing-platform-v2-design.md) and [Plan 011](../exec-plans/active/011-billing-correctness.md) |
 | Security or pricing truth                | [Plan 012](../exec-plans/active/012-security-hardening-and-pricing-truth.md)                                                |
 | Commercial readiness                     | [Plan 013](../exec-plans/active/013-launch-readiness-roadmap.md)                                                            |

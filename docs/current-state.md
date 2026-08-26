@@ -23,21 +23,26 @@ product. Commercialization remains an option, not a present-tense claim.
   Functions.
 - Vitest covers unit/component tests and Playwright covers end-to-end flows.
 - Sentry, Pino, and PostHog provide the current observability foundations.
-- Billing Platform v2 and tenant-isolation remediation are active work, not
-  completed capabilities.
+- Plan 010 tenant-isolation remediation is completed with regression evidence.
+  Billing Platform v2 remains active work, not a completed capability.
 
 ## Active work and order
 
-Plans 010 and 011 are both P0. Their internal dependency order is authoritative
-inside each plan; coordinate overlapping database, authorization, and billing
+Plan 011 is the remaining P0 behavior plan. Its internal dependency order is
+authoritative; coordinate overlapping database, authorization, and billing
 changes before implementation.
 
 | Order | Work                                                                                                    | Priority | Current meaning                                                          |
 | ----- | ------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
-| 010   | [Tenant isolation and regression tests](exec-plans/active/010-tenant-isolation-and-regression-tests.md) | P0       | Active remediation and regression coverage                               |
 | 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                     | P0       | Active multi-phase billing redesign and certification                    |
 | 012   | [Security hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md)   | P1       | Starts after the relevant P0 behavior is stable                          |
 | 013   | [Launch-readiness roadmap](exec-plans/active/013-launch-readiness-roadmap.md)                           | P2       | Commercial-readiness roadmap; not yet decomposed into implementation PRs |
+
+Plan 010 closed on 2026-08-26 through PRs #139, #140, #147 and #149. Its
+final PR passed the full GitHub CI and Vercel Preview after the independent
+toolchain repair in #150. This is implementation and disposable-preview
+evidence, not a fresh certification of every external provider or Cloud
+runtime.
 
 Plans 001–009 are filed as completed evidence records. Their historical status
 was not re-certified against a live runtime or cloud environment during this
