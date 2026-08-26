@@ -7,9 +7,10 @@
   contenido concreto de D-1/D-4 (copy de landing, estructura de Fumadocs) no
   existe aún y desglosar PRs sobre eso sería inventar detalle, no planificar.
 - Baseline: `main` @ `d9e2648`
-- Depende de: Plan 010 y 011 cerrados. **No lanzar con "billing completamente
-  resuelto" en ningún copy de D-4 hasta que Plan 011 esté cerrado** — riesgo
-  ya señalado en la sesión de auditoría.
+- Depende de: Plan 010 cerró el 2026-08-26; Plan 011 sigue siendo bloqueante.
+  **No lanzar con "billing completamente resuelto" en ningún copy de D-4
+  hasta que Plan 011 esté cerrado** — riesgo ya señalado en la sesión de
+  auditoría.
 - Orden interno: D-1 → D-2 → D-3 → D-4 → D-5 → D-6 → lanzamiento. D-3
   (licenciamiento) tiene una restricción de timing dura: ver Nota de squash
   de migraciones abajo.

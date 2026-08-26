@@ -819,11 +819,10 @@ export async function startBillingCheckout(input: StartCheckoutInput): Promise<C
 ```
 
 Also ensure the existing plan is actually paid; Free must not block paid
-checkout. **Sequencing:** if Plan 010 has not merged yet when this task
-starts, implement against its already-designed signature
-(`requireAccountRole(accountId, allowedRoles): Promise<void>`, see Plan
-010 Design decision 2) and land the import once it exists — do not build a
-throwaway local copy of the same check "for now".
+checkout. **Sequencing:** Plan 010 is closed and
+`requireAccountRole(accountId, allowedRoles): Promise<void>` is available in
+`main`; import it directly and do not build a throwaway local copy of the
+same check "for now".
 
 - [ ] **Step 3: Move provider orchestration out of server action**
 

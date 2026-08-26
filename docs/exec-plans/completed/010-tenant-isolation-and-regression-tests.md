@@ -1,7 +1,7 @@
 # Plan 010 — Cerrar aislamiento tenant (Storage, checkout, invitaciones) + tests de regresión
 
 - Priority: P0
-- Status: Active (abierto 2026-08-19)
+- Status: Completed (2026-08-26; PRs #139, #140, #147 y #149)
 - Baseline: `main` @ `d9e2648` (post PR #136, `fix: convert email_worker_health to dynamic SQL`)
 - Scope: tres vulnerabilidades de aislamiento tenant confirmadas por lectura directa
   de código (no hipotéticas), más los tests que las convierten en regresiones
@@ -317,3 +317,30 @@ un E2E completo, ya que eso requeriría credenciales reales de Stripe/MP
 - Gates existentes sin regresión: `pnpm typecheck`, `pnpm lint`,
   `pnpm supa:test` (274+ pgTAP), `pnpm test`, CI completo (CodeQL, Gitleaks,
   E2E) en verde.
+
+## Cierre y evidencia — 2026-08-26
+
+El alcance de este plan quedó integrado en `main` mediante cuatro PRs
+independientes y trazables:
+
+| Superficie                        | PR                                                | Resultado integrado                                                           |
+| --------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Storage RLS con membresía en vivo | [#139](https://github.com/pipec80/iroko/pull/139) | Las policies de `documents` y `org-assets` consultan la membresía/rol actual. |
+| Inicio de checkout                | [#140](https://github.com/pipec80/iroko/pull/140) | `startCheckout` revalida el rol contra la base antes de llamar a un provider. |
+| Aceptación de invitación          | [#147](https://github.com/pipec80/iroko/pull/147) | La función vincula la invitación al email autenticado con un error genérico.  |
+| Regresión integrada               | [#149](https://github.com/pipec80/iroko/pull/149) | Cubre degradación/remoción de membresía y claims cross-tenant obsoletos.      |
+
+Evidencia final observada:
+
+- Al deshabilitar temporalmente y sólo en local la migración correctiva de
+  Storage, seis de las doce aserciones del test focalizado fallaron; con la
+  migración restaurada, pasaron las 12/12.
+- El candidato de cierre pasó 286 pruebas pgTAP, TypeScript, ESLint,
+  Prettier y 768 pruebas Vitest locales.
+- La CI final de #149, ya sincronizada con `main`, pasó Quality, CodeQL,
+  Database Tests/Types, E2E Chromium, E2E Smoke WebKit, Gitleaks, Security,
+  Build y el Preview de Vercel.
+
+Este cierre prueba las superficies definidas aquí. No certifica por sí solo
+otros límites tenant fuera de alcance ni la salud vigente de proveedores
+externos; esos siguen sujetos a sus propios planes y evidencia operacional.

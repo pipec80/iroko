@@ -38,10 +38,10 @@ público o contractual:
 ## Security Architecture
 
 The repository implements multiple security layers, but this list is not a
-certification or proof of current production health. Known P0 tenant-isolation
-remediation is tracked in
-[Plan 010](docs/exec-plans/active/010-tenant-isolation-and-regression-tests.md),
-and additional hardening in
+certification or proof of current production health. The completed P0
+tenant-isolation remediation is recorded in
+[Plan 010](docs/exec-plans/completed/010-tenant-isolation-and-regression-tests.md),
+and additional hardening is tracked in
 [Plan 012](docs/exec-plans/active/012-security-hardening-and-pricing-truth.md).
 
 - **Database**: Row Level Security (RLS) on all tables, SECURITY DEFINER RPCs with `SET search_path = ''`

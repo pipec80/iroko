@@ -3,9 +3,9 @@
 - Priority: P1
 - Status: Active (abierto 2026-08-19)
 - Baseline: `main` @ `d9e2648`
-- Depende de: nada bloqueante de Plan 010/011 — puede ejecutarse en paralelo,
-  aunque conviene esperar a que `requireAccountRole` (Plan 010, PR 2) exista
-  antes del ítem de rate limiting si se decide usarlo ahí también.
+- Depende de: nada bloqueante de Plan 011 — puede ejecutarse en paralelo.
+  `requireAccountRole` de Plan 010 ya existe en `main` para cualquier ítem
+  que necesite autorización viva.
 - Scope: reducir privilegios/superficie sin cambiar arquitectura (P1-1), y
   hacer que landing + pricing + checkout + entitlements hablen del mismo
   catálogo (P1-2). No corrige comportamiento roto (eso es P0) ni aumenta
