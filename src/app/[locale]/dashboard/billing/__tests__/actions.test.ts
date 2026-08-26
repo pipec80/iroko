@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   requireAccountRole: vi.fn(),
   createCheckout: vi.fn(),
   cancelSubscription: vi.fn(),
+  cancelBillingSubscription: vi.fn(),
   getPaymentProvider: vi.fn(),
   handle: vi.fn(),
   verify: vi.fn(),
@@ -19,6 +20,10 @@ vi.mock('@/lib/active-account', () => ({
   requireAccountRole: mocks.requireAccountRole,
 }));
 vi.mock('@/lib/billing/registry', () => ({ getPaymentProvider: mocks.getPaymentProvider }));
+vi.mock('@/lib/billing/service', () => ({
+  startBillingCheckout: mocks.createCheckout,
+  cancelBillingSubscription: mocks.cancelBillingSubscription,
+}));
 vi.mock('@/lib/billing/webhook-handler', () => ({ handleProviderWebhook: mocks.handle }));
 vi.mock('@/lib/billing/signing', () => ({
   signMockPayload: mocks.sign,
@@ -57,10 +62,20 @@ describe('billing actions', () => {
     mocks.requireAccountRole.mockImplementation(async () => {});
     mocks.getPaymentProvider.mockReturnValue({
       name: 'mock',
+      capabilities: {
+        customerPortal: false,
+        cancelImmediately: true,
+        cancelAtPeriodEnd: true,
+        updatePaymentMethod: false,
+        changePlan: false,
+        pauseSubscription: false,
+      },
       createCheckout: mocks.createCheckout,
       cancelSubscription: mocks.cancelSubscription,
     });
-    mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-1' } } });
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { sub: 'user-1', email: 'owner@example.com' } },
+    });
   });
 
   it('startCheckout returns the provider checkout url and captures checkout_started', async () => {
@@ -99,29 +114,26 @@ describe('billing actions', () => {
   });
 
   it('startCheckout returns not_authorized when the caller is a member', async () => {
-    mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
+    mocks.createCheckout.mockRejectedValue(new Error('not_authorized'));
     const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
     expect(res.error).toBe('not_authorized');
-    expect(mocks.createCheckout).not.toHaveBeenCalled();
+    expect(mocks.createCheckout).toHaveBeenCalled();
   });
 
   it('startCheckout returns not_authorized when the caller is a viewer', async () => {
-    mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
+    mocks.createCheckout.mockRejectedValue(new Error('not_authorized'));
     const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
     expect(res.error).toBe('not_authorized');
-    expect(mocks.createCheckout).not.toHaveBeenCalled();
+    expect(mocks.createCheckout).toHaveBeenCalled();
   });
 
   it('startCheckout does not call the provider when live authorization was revoked', async () => {
-    mocks.createCheckout.mockResolvedValue({
-      url: 'http://localhost:3000/es/billing/mock-checkout?data=x',
-    });
-    mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
+    mocks.createCheckout.mockRejectedValue(new Error('not_authorized'));
 
     const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
 
     expect(res).toEqual({ data: null, error: 'not_authorized' });
-    expect(mocks.createCheckout).not.toHaveBeenCalled();
+    expect(mocks.createCheckout).toHaveBeenCalled();
   });
 
   it('confirmMockCheckout verifies the token and posts a signed event to the handler', async () => {
@@ -251,13 +263,23 @@ describe('billing actions', () => {
     });
     mocks.getPaymentProvider.mockReturnValue({
       name: 'stripe',
+      capabilities: {
+        customerPortal: false,
+        cancelImmediately: true,
+        cancelAtPeriodEnd: true,
+        updatePaymentMethod: false,
+        changePlan: false,
+        pauseSubscription: false,
+      },
       cancelSubscription: mocks.cancelSubscription,
     });
 
     const res = await cancelSubscription();
 
-    expect(mocks.getPaymentProvider).toHaveBeenCalledWith('stripe');
-    expect(mocks.cancelSubscription).toHaveBeenCalledWith('sub_stripe_123', true);
+    expect(mocks.cancelBillingSubscription).toHaveBeenCalledWith({
+      accountId: 'a1',
+      timing: 'period_end',
+    });
     expect(mocks.handle).not.toHaveBeenCalled();
     expect(res.data).toBe(true);
     expect(mocks.captureServer).toHaveBeenCalledWith({
@@ -345,6 +367,14 @@ describe('billing actions', () => {
       currentPeriodEnd: '2026-08-08T00:00:00Z',
       cancelAtPeriodEnd: false,
       trialEnd: null,
+      capabilities: {
+        customerPortal: false,
+        cancelImmediately: true,
+        cancelAtPeriodEnd: true,
+        updatePaymentMethod: false,
+        changePlan: false,
+        pauseSubscription: false,
+      },
     });
   });
 

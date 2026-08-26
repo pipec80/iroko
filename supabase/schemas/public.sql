@@ -638,92 +638,163 @@ ALTER FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit"
 COMMENT ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p_limit" integer, "p_cursor_created_at" timestamp with time zone, "p_cursor_id" "uuid") IS 'Facturas de la cuenta paginadas por keyset (owner/admin).';
 
 
-CREATE OR REPLACE FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_current_period_end" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_cancel_at_period_end" boolean DEFAULT false, "p_trial_end" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_invoice" "jsonb" DEFAULT NULL::"jsonb", "p_provider" "text" DEFAULT 'mock'::"text") RETURNS "text"
-    LANGUAGE "plpgsql"
+CREATE OR REPLACE FUNCTION "public"."apply_subscription_created"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_plan_id" "uuid", "p_external_subscription_id" "text", "p_status" "billing"."subscription_status", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_external_customer_id" "text", "p_payload" "jsonb") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 DECLARE
-  v_customer_id     uuid;
-  v_plan_id         uuid;
-  v_subscription_id uuid;
+  v_customer_id uuid;
 BEGIN
-  -- Idempotencia: si el evento externo ya se procesó, no-op.
+  IF NULLIF(btrim(p_provider), '') IS NULL
+    OR NULLIF(btrim(p_external_event_id), '') IS NULL
+    OR NULLIF(btrim(p_external_subscription_id), '') IS NULL THEN
+    RAISE EXCEPTION 'billing_required_provider_event_or_subscription_id_missing';
+  END IF;
+
   INSERT INTO billing.events (event_type, provider, external_event_id, payload, processed_at)
-  VALUES (p_event_type, p_provider, p_external_event_id, COALESCE(p_invoice, '{}'::jsonb), now())
-  ON CONFLICT (external_event_id) DO NOTHING;
+  VALUES ('subscription_created', p_provider, p_external_event_id,
+          COALESCE(p_payload, '{}'::jsonb), now())
+  ON CONFLICT (provider, external_event_id) DO NOTHING;
   IF NOT FOUND THEN
     RETURN 'duplicate';
   END IF;
 
-  SELECT id INTO v_plan_id FROM billing.plans
-  WHERE slug = p_plan_slug AND "interval" = p_interval LIMIT 1;
-  IF v_plan_id IS NULL THEN
-    RAISE EXCEPTION 'plan_not_found';
-  END IF;
-
-  -- Upsert del customer (account_id UNIQUE).
-  INSERT INTO billing.customers (account_id, provider)
-  VALUES (p_account_id, p_provider)
-  ON CONFLICT (account_id) DO UPDATE SET updated_at = now()
+  INSERT INTO billing.customers (account_id, provider, external_id)
+  VALUES (p_account_id, p_provider, NULLIF(btrim(p_external_customer_id), ''))
+  ON CONFLICT (account_id, provider) DO UPDATE
+  SET external_id = COALESCE(EXCLUDED.external_id, billing.customers.external_id),
+      updated_at = now()
   RETURNING id INTO v_customer_id;
 
-  -- Upsert de la suscripción por external_subscription_id.
-  SELECT id INTO v_subscription_id FROM billing.subscriptions
-  WHERE external_subscription_id = p_external_subscription_id;
-
-  IF v_subscription_id IS NULL THEN
-    INSERT INTO billing.subscriptions (
-      customer_id, plan_id, status, current_period_start, current_period_end,
-      cancel_at_period_end, trial_end, provider, external_subscription_id)
-    VALUES (
-      v_customer_id, v_plan_id, p_status, p_current_period_start, p_current_period_end,
-      COALESCE(p_cancel_at_period_end, false), p_trial_end, p_provider, p_external_subscription_id)
-    RETURNING id INTO v_subscription_id;
-  ELSE
-    UPDATE billing.subscriptions
-    SET plan_id = v_plan_id, status = p_status,
-        current_period_start = p_current_period_start,
-        current_period_end = p_current_period_end,
-        cancel_at_period_end = COALESCE(p_cancel_at_period_end, cancel_at_period_end),
-        trial_end = p_trial_end
-    WHERE id = v_subscription_id;
-  END IF;
-
-  -- Invoice opcional (invoice_paid).
-  IF p_invoice IS NOT NULL AND p_event_type = 'invoice_paid' THEN
-    INSERT INTO billing.invoices (
-      customer_id, subscription_id, status, currency, total, amount_paid,
-      period_start, period_end, paid_at)
-    VALUES (
-      v_customer_id, v_subscription_id, 'paid',
-      COALESCE(p_invoice->>'currency', 'USD'),
-      COALESCE((p_invoice->>'amountPaid')::int, 0),
-      COALESCE((p_invoice->>'amountPaid')::int, 0),
-      (p_invoice->>'periodStart')::timestamptz,
-      (p_invoice->>'periodEnd')::timestamptz,
-      now());
-  END IF;
-
-  -- Emitir el evento saliente (2D). Mapea el tipo interno → nombre del catálogo.
-  PERFORM private.emit_webhook_event(
-    p_account_id,
-    CASE p_event_type
-      WHEN 'subscription_created'  THEN 'subscription.created'
-      WHEN 'subscription_canceled' THEN 'subscription.canceled'
-      ELSE 'subscription.updated'
-    END,
-    jsonb_build_object('plan_slug', p_plan_slug, 'status', p_status,
-                       'cancel_at_period_end', COALESCE(p_cancel_at_period_end, false)));
+  INSERT INTO billing.subscriptions (
+    customer_id, plan_id, status, current_period_start, current_period_end,
+    cancel_at_period_end, provider, external_subscription_id
+  )
+  VALUES (
+    v_customer_id, p_plan_id, p_status, p_current_period_start,
+    p_current_period_end, p_cancel_at_period_end, p_provider,
+    p_external_subscription_id
+  )
+  ON CONFLICT (provider, external_subscription_id)
+    WHERE external_subscription_id IS NOT NULL
+  DO UPDATE
+  SET customer_id = EXCLUDED.customer_id,
+      plan_id = EXCLUDED.plan_id,
+      status = EXCLUDED.status,
+      current_period_start = EXCLUDED.current_period_start,
+      current_period_end = EXCLUDED.current_period_end,
+      cancel_at_period_end = EXCLUDED.cancel_at_period_end;
 
   RETURN 'applied';
 END;
 $$;
 
 
-ALTER FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") OWNER TO "postgres";
+ALTER FUNCTION "public"."apply_subscription_created"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_plan_id" "uuid", "p_external_subscription_id" "text", "p_status" "billing"."subscription_status", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_external_customer_id" "text", "p_payload" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") IS 'Persiste un evento de suscripción resuelto (idempotente por external_event_id), graba el provider real, y emite subscription.* a los webhooks salientes. Solo service_role (F2-2A-providers).';
+COMMENT ON FUNCTION "public"."apply_subscription_created"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_plan_id" "uuid", "p_external_subscription_id" "text", "p_status" "billing"."subscription_status", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_external_customer_id" "text", "p_payload" "jsonb") IS 'Billing Core v2 narrow reducer: applies one resolved subscription-created event atomically and idempotently.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+  v_customer_id     uuid;
+  v_subscription_id uuid;
+  v_invoice_id      uuid;
+BEGIN
+  IF NULLIF(btrim(p_provider), '') IS NULL
+    OR NULLIF(btrim(p_external_event_id), '') IS NULL
+    OR NULLIF(btrim(p_external_subscription_id), '') IS NULL
+    OR NULLIF(btrim(p_external_invoice_id), '') IS NULL THEN
+    RAISE EXCEPTION 'billing_required_provider_event_subscription_or_invoice_id_missing';
+  END IF;
+
+  IF p_amount_paid < 0 THEN
+    RAISE EXCEPTION 'billing_invoice_amount_must_be_nonnegative';
+  END IF;
+
+  SELECT subscription.id, subscription.customer_id
+  INTO v_subscription_id, v_customer_id
+  FROM billing.subscriptions AS subscription
+  INNER JOIN billing.customers AS customer
+    ON customer.id = subscription.customer_id
+  WHERE subscription.provider = p_provider
+    AND subscription.external_subscription_id = p_external_subscription_id
+    AND customer.account_id = p_account_id;
+  IF v_subscription_id IS NULL THEN
+    RAISE EXCEPTION 'billing_subscription_not_found';
+  END IF;
+
+  INSERT INTO billing.events (
+    customer_id, event_type, provider, external_event_id, payload, processed_at
+  )
+  VALUES (
+    v_customer_id, 'invoice_paid', p_provider, p_external_event_id,
+    COALESCE(p_payload, '{}'::jsonb), now()
+  )
+  ON CONFLICT (provider, external_event_id) DO NOTHING;
+  IF NOT FOUND THEN
+    RETURN 'duplicate';
+  END IF;
+
+  INSERT INTO billing.invoices (
+    customer_id, subscription_id, provider, status, currency, total,
+    amount_paid, period_start, period_end, paid_at, external_invoice_id,
+    hosted_url, pdf_url
+  )
+  VALUES (
+    v_customer_id, v_subscription_id, p_provider, 'paid', p_currency,
+    p_amount_paid, p_amount_paid, p_period_start, p_period_end, p_paid_at,
+    p_external_invoice_id, p_hosted_url, p_pdf_url
+  )
+  ON CONFLICT (provider, external_invoice_id)
+    WHERE external_invoice_id IS NOT NULL
+  DO UPDATE
+  SET status = EXCLUDED.status,
+      currency = EXCLUDED.currency,
+      total = EXCLUDED.total,
+      amount_paid = EXCLUDED.amount_paid,
+      period_start = EXCLUDED.period_start,
+      period_end = EXCLUDED.period_end,
+      paid_at = EXCLUDED.paid_at,
+      hosted_url = EXCLUDED.hosted_url,
+      pdf_url = EXCLUDED.pdf_url
+  RETURNING id INTO v_invoice_id;
+
+  INSERT INTO billing.payment_attempts (
+    provider, subscription_id, invoice_id, external_payment_id,
+    external_invoice_id, status, amount, currency, attempted_at, metadata
+  )
+  VALUES (
+    p_provider, v_subscription_id, v_invoice_id,
+    NULLIF(btrim(p_external_payment_id), ''), p_external_invoice_id, 'paid',
+    p_amount_paid, p_currency, p_paid_at, COALESCE(p_payload, '{}'::jsonb)
+  )
+  ON CONFLICT (provider, external_payment_id)
+    WHERE external_payment_id IS NOT NULL
+  DO UPDATE
+  SET subscription_id = EXCLUDED.subscription_id,
+      invoice_id = EXCLUDED.invoice_id,
+      external_invoice_id = EXCLUDED.external_invoice_id,
+      status = EXCLUDED.status,
+      amount = EXCLUDED.amount,
+      currency = EXCLUDED.currency,
+      attempted_at = EXCLUDED.attempted_at,
+      metadata = EXCLUDED.metadata;
+
+  RETURN 'applied';
+END;
+$$;
+
+
+ALTER FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") IS 'Billing Core v2 narrow reducer: records one paid invoice and payment attempt without mutating subscription state.';
 
 
 
@@ -2022,10 +2093,20 @@ GRANT ALL ON FUNCTION "public"."list_account_invoices"("p_account_id" "uuid", "p
 
 
 
-REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") FROM PUBLIC;
-REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") FROM "authenticated";
-REVOKE ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") FROM "anon";
-GRANT ALL ON FUNCTION "public"."apply_subscription_event"("p_account_id" "uuid", "p_plan_slug" "text", "p_interval" "billing"."plan_interval", "p_status" "billing"."subscription_status", "p_external_subscription_id" "text", "p_external_event_id" "text", "p_event_type" "text", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_trial_end" timestamp with time zone, "p_invoice" "jsonb", "p_provider" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."apply_subscription_created"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_plan_id" "uuid", "p_external_subscription_id" "text", "p_status" "billing"."subscription_status", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_external_customer_id" "text", "p_payload" "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."apply_subscription_created"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_plan_id" "uuid", "p_external_subscription_id" "text", "p_status" "billing"."subscription_status", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_external_customer_id" "text", "p_payload" "jsonb") FROM "authenticated";
+REVOKE ALL ON FUNCTION "public"."apply_subscription_created"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_plan_id" "uuid", "p_external_subscription_id" "text", "p_status" "billing"."subscription_status", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_external_customer_id" "text", "p_payload" "jsonb") FROM "anon";
+GRANT ALL ON FUNCTION "public"."apply_subscription_created"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_plan_id" "uuid", "p_external_subscription_id" "text", "p_status" "billing"."subscription_status", "p_current_period_start" timestamp with time zone, "p_current_period_end" timestamp with time zone, "p_cancel_at_period_end" boolean, "p_external_customer_id" "text", "p_payload" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") FROM PUBLIC;
+REVOKE ALL ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") FROM "authenticated";
+REVOKE ALL ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") FROM "anon";
+GRANT ALL ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") TO "service_role";
 
 
 
@@ -3129,3 +3210,173 @@ COMMENT ON FUNCTION public.revoke_invitation(uuid) IS
   'Revoca una invitación pending (deja de poder aceptarse). Solo owner/admin '
   'de la cuenta de la invitación. Idempotente en el sentido de que una '
   'invitación ya no-pending lanza invitation_not_pending en vez de silenciarse.';
+
+
+-- Billing Core v2 reducer helpers and narrow mutation RPCs.
+CREATE OR REPLACE FUNCTION billing.reserve_provider_event(
+  p_customer_id uuid, p_event_type text, p_provider text, p_external_event_id text, p_payload jsonb
+) RETURNS boolean
+LANGUAGE plpgsql
+SET search_path = ''
+AS $$
+BEGIN
+  INSERT INTO billing.events (customer_id, event_type, provider, external_event_id, payload, processed_at)
+  VALUES (p_customer_id, p_event_type, p_provider, p_external_event_id,
+          COALESCE(p_payload, '{}'::jsonb), now())
+  ON CONFLICT (provider, external_event_id) DO NOTHING;
+  RETURN FOUND;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.apply_subscription_updated(
+  p_provider text, p_external_event_id text, p_account_id uuid,
+  p_external_subscription_id text, p_plan_id uuid, p_status billing.subscription_status,
+  p_current_period_start timestamptz, p_current_period_end timestamptz,
+  p_cancel_at_period_end boolean, p_external_customer_id text, p_payload jsonb
+) RETURNS text
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE v_customer_id uuid; v_subscription_id uuid;
+BEGIN
+  SELECT subscription.id, subscription.customer_id INTO v_subscription_id, v_customer_id
+  FROM billing.subscriptions AS subscription
+  INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+  WHERE subscription.provider = p_provider
+    AND subscription.external_subscription_id = p_external_subscription_id
+    AND customer.account_id = p_account_id;
+  IF v_subscription_id IS NULL THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
+  IF NOT billing.reserve_provider_event(v_customer_id, 'subscription_updated', p_provider,
+    p_external_event_id, p_payload) THEN RETURN 'duplicate'; END IF;
+  UPDATE billing.subscriptions
+  SET plan_id = COALESCE(p_plan_id, plan_id), status = p_status,
+      current_period_start = COALESCE(p_current_period_start, current_period_start),
+      current_period_end = COALESCE(p_current_period_end, current_period_end),
+      cancel_at_period_end = p_cancel_at_period_end
+  WHERE id = v_subscription_id;
+  UPDATE billing.customers
+  SET external_id = COALESCE(NULLIF(btrim(p_external_customer_id), ''), external_id)
+  WHERE id = v_customer_id;
+  RETURN 'applied';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.apply_subscription_canceled(
+  p_provider text, p_external_event_id text, p_account_id uuid,
+  p_external_subscription_id text, p_canceled_at timestamptz,
+  p_access_until timestamptz, p_payload jsonb
+) RETURNS text
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE v_customer_id uuid; v_subscription_id uuid;
+BEGIN
+  SELECT subscription.id, subscription.customer_id INTO v_subscription_id, v_customer_id
+  FROM billing.subscriptions AS subscription
+  INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+  WHERE subscription.provider = p_provider
+    AND subscription.external_subscription_id = p_external_subscription_id
+    AND customer.account_id = p_account_id;
+  IF v_subscription_id IS NULL THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
+  IF NOT billing.reserve_provider_event(v_customer_id, 'subscription_canceled', p_provider,
+    p_external_event_id, p_payload) THEN RETURN 'duplicate'; END IF;
+  UPDATE billing.subscriptions
+  SET status = 'canceled', canceled_at = COALESCE(p_canceled_at, now()),
+      current_period_end = COALESCE(p_access_until, current_period_end),
+      cancel_at_period_end = false
+  WHERE id = v_subscription_id;
+  RETURN 'applied';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.apply_invoice_payment_failed(
+  p_provider text, p_external_event_id text, p_account_id uuid,
+  p_external_subscription_id text, p_external_invoice_id text,
+  p_external_payment_id text, p_status text, p_amount integer, p_currency char(3),
+  p_attempted_at timestamptz, p_failure_code text, p_failure_message text, p_payload jsonb
+) RETURNS text
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE v_customer_id uuid; v_subscription_id uuid; v_invoice_id uuid;
+BEGIN
+  IF p_status <> 'failed' THEN RAISE EXCEPTION 'billing_invalid_payment_attempt_status'; END IF;
+  SELECT subscription.id, subscription.customer_id INTO v_subscription_id, v_customer_id
+  FROM billing.subscriptions AS subscription
+  INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+  WHERE subscription.provider = p_provider
+    AND subscription.external_subscription_id = p_external_subscription_id
+    AND customer.account_id = p_account_id;
+  IF v_subscription_id IS NULL THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
+  IF NOT billing.reserve_provider_event(v_customer_id, 'invoice_payment_failed', p_provider,
+    p_external_event_id, p_payload) THEN RETURN 'duplicate'; END IF;
+  SELECT id INTO v_invoice_id FROM billing.invoices
+  WHERE provider = p_provider AND external_invoice_id = p_external_invoice_id;
+  INSERT INTO billing.payment_attempts (
+    provider, subscription_id, invoice_id, external_payment_id, external_invoice_id,
+    status, amount, currency, failure_code, failure_message, attempted_at, metadata
+  ) VALUES (
+    p_provider, v_subscription_id, v_invoice_id, NULLIF(btrim(p_external_payment_id), ''),
+    p_external_invoice_id, 'failed', p_amount, p_currency, p_failure_code,
+    p_failure_message, p_attempted_at, COALESCE(p_payload, '{}'::jsonb)
+  ) ON CONFLICT (provider, external_payment_id) WHERE external_payment_id IS NOT NULL
+  DO UPDATE SET status = EXCLUDED.status, amount = EXCLUDED.amount,
+    currency = EXCLUDED.currency, failure_code = EXCLUDED.failure_code,
+    failure_message = EXCLUDED.failure_message, attempted_at = EXCLUDED.attempted_at,
+    metadata = EXCLUDED.metadata;
+  RETURN 'applied';
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.apply_payment_recovered(
+  p_provider text, p_external_event_id text, p_account_id uuid,
+  p_external_subscription_id text, p_external_invoice_id text,
+  p_external_payment_id text, p_status text, p_amount integer, p_currency char(3),
+  p_recovered_at timestamptz, p_payload jsonb
+) RETURNS text
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE v_customer_id uuid; v_subscription_id uuid; v_invoice_id uuid;
+BEGIN
+  IF p_status <> 'recovered' THEN RAISE EXCEPTION 'billing_invalid_payment_attempt_status'; END IF;
+  SELECT subscription.id, subscription.customer_id INTO v_subscription_id, v_customer_id
+  FROM billing.subscriptions AS subscription
+  INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+  WHERE subscription.provider = p_provider
+    AND subscription.external_subscription_id = p_external_subscription_id
+    AND customer.account_id = p_account_id;
+  IF v_subscription_id IS NULL THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
+  IF NOT billing.reserve_provider_event(v_customer_id, 'payment_recovered', p_provider,
+    p_external_event_id, p_payload) THEN RETURN 'duplicate'; END IF;
+  SELECT id INTO v_invoice_id FROM billing.invoices
+  WHERE provider = p_provider AND external_invoice_id = p_external_invoice_id;
+  INSERT INTO billing.payment_attempts (
+    provider, subscription_id, invoice_id, external_payment_id, external_invoice_id,
+    status, amount, currency, attempted_at, metadata
+  ) VALUES (
+    p_provider, v_subscription_id, v_invoice_id, NULLIF(btrim(p_external_payment_id), ''),
+    p_external_invoice_id, 'recovered', p_amount, p_currency, p_recovered_at,
+    COALESCE(p_payload, '{}'::jsonb)
+  ) ON CONFLICT (provider, external_payment_id) WHERE external_payment_id IS NOT NULL
+  DO UPDATE SET status = EXCLUDED.status, amount = EXCLUDED.amount,
+    currency = EXCLUDED.currency, attempted_at = EXCLUDED.attempted_at,
+    metadata = EXCLUDED.metadata;
+  RETURN 'applied';
+END;
+$$;
+
+REVOKE ALL ON FUNCTION billing.reserve_provider_event(uuid, text, text, text, jsonb)
+  FROM PUBLIC, anon, authenticated, service_role;
+REVOKE ALL ON FUNCTION public.apply_subscription_updated(text, text, uuid, text, uuid, billing.subscription_status, timestamptz, timestamptz, boolean, text, jsonb)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_subscription_updated(text, text, uuid, text, uuid, billing.subscription_status, timestamptz, timestamptz, boolean, text, jsonb) TO service_role;
+REVOKE ALL ON FUNCTION public.apply_subscription_canceled(text, text, uuid, text, timestamptz, timestamptz, jsonb)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_subscription_canceled(text, text, uuid, text, timestamptz, timestamptz, jsonb) TO service_role;
+REVOKE ALL ON FUNCTION public.apply_invoice_payment_failed(text, text, uuid, text, text, text, text, integer, char(3), timestamptz, text, text, jsonb)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_invoice_payment_failed(text, text, uuid, text, text, text, text, integer, char(3), timestamptz, text, text, jsonb) TO service_role;
+REVOKE ALL ON FUNCTION public.apply_payment_recovered(text, text, uuid, text, text, text, text, integer, char(3), timestamptz, jsonb)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_payment_recovered(text, text, uuid, text, text, text, text, integer, char(3), timestamptz, jsonb) TO service_role;

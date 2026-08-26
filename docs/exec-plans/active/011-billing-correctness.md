@@ -1,9 +1,9 @@
 # Plan 011 — Billing Platform v2: Core → Stripe → Paddle → Lemon Squeezy → MercadoPago → Reconciliation
 
 - Priority: P0
-- Status: Active (roadmap finalized 2026-08-19, after three rounds of
-  audit + a formal design spec/roadmap/implementation plan, all verified
-  against the live codebase and Supabase Cloud)
+- Status: Active — Fase 1 implementada y verificada localmente el 2026-08-26;
+  pendiente de commit, PR y CI. Las migraciones nuevas no se han aplicado a
+  Supabase Cloud `[NO VERIFICADO]`.
 - Baseline: `main` @ `d9e2648`
 - Depends on: Plan 010 cerró el 2026-08-26; reutilizar
   `requireAccountRole` como la autorización viva ya integrada. No mezclar
@@ -20,6 +20,22 @@
   - Fase 4 (Lemon Squeezy): [`011-phase4-lemon-squeezy-tasks.md`](011-phase4-lemon-squeezy-tasks.md)
   - Fase 5 (MercadoPago, P0 antes de producción): [`011-phase5-mercadopago-redesign-tasks.md`](011-phase5-mercadopago-redesign-tasks.md)
   - Fase 6 (Reconciliation): [`011-phase6-reconciliation-tasks.md`](011-phase6-reconciliation-tasks.md)
+
+## Actualización de ejecución — Fase 1 local (2026-08-26)
+
+- Implementado: identidad provider-scoped, catálogo `provider_prices`, eventos
+  discriminados, reducer con RPCs de mutación acotada, `BillingService`, UI por
+  capabilities, guard de producción para Mock y retiro del RPC amplio
+  `apply_subscription_event`.
+- Migraciones locales: `20260826123000` a `20260826130000`; cada cambio de
+  esquema tiene espejo en `supabase/schemas/` y tipos regenerados.
+- Evidencia local: `pnpm test` 92 archivos / 796 tests; `pnpm supa:test` 32
+  archivos / 310 tests después de `pnpm supa:reset`; `pnpm typecheck`,
+  `pnpm lint` y `pnpm format:check` verdes. `supabase db lint --local` sale
+  0, pero conserva avisos históricos de extensiones ajenas a billing.
+- Pendiente fuera de esta fase: certificación real de Stripe (Fase 2), rediseño
+  y sandbox real de Mercado Pago (Fase 5), otros proveedores, reconciliación y
+  la aplicación de las migraciones a Cloud con autorización explícita.
 
 ## Objective
 

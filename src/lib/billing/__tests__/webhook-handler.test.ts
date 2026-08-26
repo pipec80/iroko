@@ -1,16 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  rpc: vi.fn(),
+  reduceBillingEvent: vi.fn(),
+  resolvePlanByExternalPrice: vi.fn(),
+  getPaymentProvider: vi.fn(),
   verifyWebhook: vi.fn(),
   maybeSingle: vi.fn(),
   captureServer: vi.fn(),
   notify: vi.fn(async () => {}),
+  sentryScope: {
+    setTag: vi.fn(),
+    setContext: vi.fn(),
+  },
+  captureException: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => ({
-    rpc: mocks.rpc,
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
@@ -22,13 +28,22 @@ vi.mock('@/lib/supabase/admin', () => ({
 }));
 
 vi.mock('../registry', () => ({
-  getPaymentProvider: vi.fn(() => ({ name: 'mock', verifyWebhook: mocks.verifyWebhook })),
+  getPaymentProvider: mocks.getPaymentProvider,
 }));
 
+vi.mock('../reducer', () => ({ reduceBillingEvent: mocks.reduceBillingEvent }));
+vi.mock('../catalog', () => ({
+  resolvePlanByExternalPrice: mocks.resolvePlanByExternalPrice,
+}));
 vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
 vi.mock('@/lib/notifications', () => ({ notify: mocks.notify }));
 
-vi.mock('@sentry/nextjs', () => ({ withScope: vi.fn(), captureException: vi.fn() }));
+vi.mock('@sentry/nextjs', () => ({
+  withScope: vi.fn((callback: (scope: typeof mocks.sentryScope) => void) => {
+    callback(mocks.sentryScope);
+  }),
+  captureException: mocks.captureException,
+}));
 
 vi.mock('@/env', () => ({
   env: {
@@ -45,45 +60,80 @@ vi.mock('@/env', () => ({
 import { handleProviderWebhook } from '../webhook-handler';
 
 const validEvent = {
+  provider: 'mock' as const,
   externalEventId: 'evt_1',
-  type: 'subscription_created',
+  type: 'subscription_created' as const,
   accountId: 'a1',
-  planSlug: 'pro',
-  status: 'active',
   externalSubscriptionId: 'sub_1',
+  externalPriceId: 'price_pro_month',
+  status: 'active' as const,
   currentPeriodStart: '2026-07-08T00:00:00Z',
   currentPeriodEnd: '2026-08-08T00:00:00Z',
+  cancelAtPeriodEnd: false,
   raw: {},
 };
 
 describe('handleProviderWebhook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.getPaymentProvider.mockImplementation((providerName: string) => ({
+      name: providerName,
+      verifyWebhook: mocks.verifyWebhook,
+    }));
     mocks.maybeSingle.mockResolvedValue({ data: { user_id: 'owner-1' } });
+    mocks.resolvePlanByExternalPrice.mockResolvedValue({
+      planId: 'plan-pro-month',
+      planSlug: 'pro',
+      interval: 'month',
+    });
   });
 
-  it('should return 400 when the signature is invalid', async () => {
+  it('returns 400 when the signature is invalid', async () => {
     mocks.verifyWebhook.mockResolvedValue(null);
-    const res = await handleProviderWebhook('mock', '{}', 'bad');
-    expect(res.status).toBe(400);
-    expect(mocks.rpc).not.toHaveBeenCalled();
+
+    const result = await handleProviderWebhook('mock', '{}', 'bad');
+
+    expect(result.status).toBe(400);
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 
-  it('should apply a valid event, return 200, and capture subscription_activated for the account owner', async () => {
-    mocks.verifyWebhook.mockResolvedValue(validEvent);
-    mocks.rpc.mockResolvedValue({ data: 'applied', error: null });
-    const res = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
-    expect(res.status).toBe(200);
-    expect(mocks.rpc).toHaveBeenCalledWith(
-      'apply_subscription_event',
-      expect.objectContaining({
-        p_account_id: 'a1',
-        p_plan_slug: 'pro',
-        p_status: 'active',
-        p_external_subscription_id: 'sub_1',
-        p_external_event_id: 'evt_1',
-      }),
+  it('returns 404 when the requested provider is not configured', async () => {
+    mocks.getPaymentProvider.mockImplementation(() => {
+      throw new Error('provider_not_configured');
+    });
+
+    await expect(handleProviderWebhook('paddle', '{}', 'sig')).resolves.toEqual({
+      status: 404,
+      body: { error: 'provider_not_configured' },
+    });
+    expect(mocks.verifyWebhook).not.toHaveBeenCalled();
+  });
+
+  it('never invents the free plan when a subscription price cannot be resolved', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      ...validEvent,
+      provider: 'stripe',
+      externalPriceId: 'price_unknown',
+    });
+    mocks.reduceBillingEvent.mockRejectedValue(new Error('provider_price_mapping_not_found'));
+
+    const result = await handleProviderWebhook('stripe', '{}', 'sig');
+
+    expect(result.status).toBe(500);
+    expect(mocks.reduceBillingEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ externalPriceId: 'price_unknown' }),
     );
+    expect(mocks.captureServer).not.toHaveBeenCalled();
+  });
+
+  it('applies a valid event and captures activation only after the reducer commits', async () => {
+    mocks.verifyWebhook.mockResolvedValue(validEvent);
+    mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
+
+    const result = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
+
+    expect(result).toEqual({ status: 200, body: { result: 'applied' } });
+    expect(mocks.reduceBillingEvent).toHaveBeenCalledWith(validEvent);
     expect(mocks.captureServer).toHaveBeenCalledWith({
       event: 'subscription_activated',
       properties: { plan_slug: 'pro', interval: 'month', provider: 'mock' },
@@ -99,50 +149,86 @@ describe('handleProviderWebhook', () => {
     });
   });
 
-  it('should still return 200 when notify() fails', async () => {
+  it('still returns 200 when a post-commit notification fails', async () => {
     mocks.verifyWebhook.mockResolvedValue(validEvent);
-    mocks.rpc.mockResolvedValue({ data: 'applied', error: null });
+    mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
     mocks.notify.mockRejectedValueOnce(new Error('insert failed'));
-    const res = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
-    expect(res.status).toBe(200);
+
+    const result = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
+
+    expect(result.status).toBe(200);
   });
 
-  it('should forward the real provider name to apply_subscription_event and to the capture', async () => {
-    mocks.verifyWebhook.mockResolvedValue(validEvent);
-    mocks.rpc.mockResolvedValue({ data: 'applied', error: null });
-    await handleProviderWebhook('stripe', JSON.stringify(validEvent), 'sig');
-    expect(mocks.rpc).toHaveBeenCalledWith(
-      'apply_subscription_event',
-      expect.objectContaining({ p_provider: 'stripe' }),
-    );
+  it('uses the provider supplied by the verified normalized event for analytics', async () => {
+    const stripeEvent = { ...validEvent, provider: 'stripe' as const };
+    mocks.verifyWebhook.mockResolvedValue(stripeEvent);
+    mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
+
+    await handleProviderWebhook('stripe', JSON.stringify(stripeEvent), 'sig');
+
     expect(mocks.captureServer).toHaveBeenCalledWith(
-      expect.objectContaining({ properties: expect.objectContaining({ provider: 'stripe' }) }),
+      expect.objectContaining({
+        properties: expect.objectContaining({ provider: 'stripe' }),
+      }),
     );
   });
 
-  it('should return 200 on a duplicate event (idempotent) without re-capturing', async () => {
+  it('returns 200 for a duplicate without repeating side effects', async () => {
     mocks.verifyWebhook.mockResolvedValue(validEvent);
-    mocks.rpc.mockResolvedValue({ data: 'duplicate', error: null });
-    const res = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
-    expect(res.status).toBe(200);
+    mocks.reduceBillingEvent.mockResolvedValue({ status: 'duplicate' });
+
+    const result = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
+
+    expect(result.status).toBe(200);
     expect(mocks.captureServer).not.toHaveBeenCalled();
     expect(mocks.notify).not.toHaveBeenCalled();
   });
 
-  it('should not capture or notify for a subscription_updated event (not an activation)', async () => {
-    mocks.verifyWebhook.mockResolvedValue({ ...validEvent, type: 'subscription_updated' });
-    mocks.rpc.mockResolvedValue({ data: 'applied', error: null });
-    await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
+  it('does not capture or notify for a non-activation event', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mock',
+      externalEventId: 'evt_invoice',
+      type: 'invoice_paid',
+      accountId: 'a1',
+      externalSubscriptionId: 'sub_1',
+      externalInvoiceId: 'in_1',
+      amountPaid: 2500,
+      currency: 'USD',
+      paidAt: '2026-08-08T00:00:00Z',
+      raw: {},
+    });
+    mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
+
+    await handleProviderWebhook('mock', '{}', 'mock');
+
     expect(mocks.captureServer).not.toHaveBeenCalled();
     expect(mocks.notify).not.toHaveBeenCalled();
   });
 
-  it('should return 500 when the RPC errors', async () => {
+  it('returns 500 when the reducer cannot persist the verified event', async () => {
     mocks.verifyWebhook.mockResolvedValue(validEvent);
-    mocks.rpc.mockResolvedValue({ data: null, error: { message: 'boom' } });
-    const res = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
-    expect(res.status).toBe(500);
+    mocks.reduceBillingEvent.mockRejectedValue(new Error('billing_rpc_failed'));
+
+    const result = await handleProviderWebhook('mock', JSON.stringify(validEvent), 'mock');
+
+    expect(result.status).toBe(500);
     expect(mocks.captureServer).not.toHaveBeenCalled();
     expect(mocks.notify).not.toHaveBeenCalled();
+    expect(mocks.sentryScope.setTag).toHaveBeenNthCalledWith(1, 'billing_provider', 'mock');
+    expect(mocks.sentryScope.setTag).toHaveBeenNthCalledWith(
+      2,
+      'billing_event_type',
+      'subscription_created',
+    );
+    expect(mocks.sentryScope.setTag).toHaveBeenNthCalledWith(
+      3,
+      'billing_operation',
+      'webhook_reduce',
+    );
+    expect(mocks.sentryScope.setContext).toHaveBeenCalledWith('billing_webhook', {
+      account_id: 'a1',
+      external_event_id: 'evt_1',
+    });
+    expect(mocks.captureException).toHaveBeenCalledWith(expect.any(Error));
   });
 });

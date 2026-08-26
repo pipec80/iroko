@@ -27,6 +27,11 @@ pino logger.
 **Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md)
 — the plan argues from the spec; read both.
 
+> **Execution update (2026-08-26):** Tasks 1–9 are implemented locally and
+> Task 10's local gates are green. The remaining operational steps are a
+> conventional commit, PR/CI review, and explicitly authorized Cloud migration
+> deployment. Provider certification remains in its dedicated later phases.
+
 ## Global Constraints
 
 - Follow SOLID/DRY/KISS/YAGNI; use early returns and small functions.

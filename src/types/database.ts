@@ -135,7 +135,7 @@ export type Database = {
           created_at: string | null
           customer_id: string | null
           event_type: string
-          external_event_id: string | null
+          external_event_id: string
           id: number
           payload: Json
           processed_at: string | null
@@ -145,7 +145,7 @@ export type Database = {
           created_at?: string | null
           customer_id?: string | null
           event_type: string
-          external_event_id?: string | null
+          external_event_id: string
           id?: never
           payload?: Json
           processed_at?: string | null
@@ -155,7 +155,7 @@ export type Database = {
           created_at?: string | null
           customer_id?: string | null
           event_type?: string
-          external_event_id?: string | null
+          external_event_id?: string
           id?: never
           payload?: Json
           processed_at?: string | null
@@ -223,6 +223,7 @@ export type Database = {
           pdf_url: string | null
           period_end: string | null
           period_start: string | null
+          provider: string
           status: Database["billing"]["Enums"]["invoice_status"] | null
           subscription_id: string | null
           subtotal: number | null
@@ -243,6 +244,7 @@ export type Database = {
           pdf_url?: string | null
           period_end?: string | null
           period_start?: string | null
+          provider: string
           status?: Database["billing"]["Enums"]["invoice_status"] | null
           subscription_id?: string | null
           subtotal?: number | null
@@ -263,6 +265,7 @@ export type Database = {
           pdf_url?: string | null
           period_end?: string | null
           period_start?: string | null
+          provider?: string
           status?: Database["billing"]["Enums"]["invoice_status"] | null
           subscription_id?: string | null
           subtotal?: number | null
@@ -280,6 +283,72 @@ export type Database = {
           },
           {
             foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_attempts: {
+        Row: {
+          amount: number | null
+          attempted_at: string
+          created_at: string
+          currency: string | null
+          external_invoice_id: string | null
+          external_payment_id: string | null
+          failure_code: string | null
+          failure_message: string | null
+          id: string
+          invoice_id: string | null
+          metadata: Json
+          provider: string
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          attempted_at: string
+          created_at?: string
+          currency?: string | null
+          external_invoice_id?: string | null
+          external_payment_id?: string | null
+          failure_code?: string | null
+          failure_message?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json
+          provider: string
+          status: string
+          subscription_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          attempted_at?: string
+          created_at?: string
+          currency?: string | null
+          external_invoice_id?: string | null
+          external_payment_id?: string | null
+          failure_code?: string | null
+          failure_message?: string | null
+          id?: string
+          invoice_id?: string | null
+          metadata?: Json
+          provider?: string
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_attempts_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_attempts_subscription_id_fkey"
             columns: ["subscription_id"]
             isOneToOne: false
             referencedRelation: "subscriptions"
@@ -393,6 +462,53 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      provider_prices: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          external_price_id: string | null
+          id: string
+          is_active: boolean
+          metadata: Json
+          plan_id: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency: string
+          external_price_id?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          plan_id: string
+          provider: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          external_price_id?: string | null
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          plan_id?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_prices_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_items: {
         Row: {
@@ -522,7 +638,16 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      reserve_provider_event: {
+        Args: {
+          p_customer_id: string
+          p_event_type: string
+          p_external_event_id: string
+          p_payload: Json
+          p_provider: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       invoice_status: "draft" | "open" | "paid" | "void" | "uncollectible"
@@ -1453,21 +1578,100 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"]
         }[]
       }
-      apply_subscription_event: {
+      apply_invoice_paid: {
         Args: {
           p_account_id: string
-          p_cancel_at_period_end?: boolean
-          p_current_period_end?: string
-          p_current_period_start?: string
-          p_event_type: string
+          p_amount_paid: number
+          p_currency: string
+          p_external_event_id: string
+          p_external_invoice_id: string
+          p_external_payment_id: string
+          p_external_subscription_id: string
+          p_hosted_url: string
+          p_paid_at: string
+          p_payload: Json
+          p_pdf_url: string
+          p_period_end: string
+          p_period_start: string
+          p_provider: string
+        }
+        Returns: string
+      }
+      apply_invoice_payment_failed: {
+        Args: {
+          p_account_id: string
+          p_amount: number
+          p_attempted_at: string
+          p_currency: string
+          p_external_event_id: string
+          p_external_invoice_id: string
+          p_external_payment_id: string
+          p_external_subscription_id: string
+          p_failure_code: string
+          p_failure_message: string
+          p_payload: Json
+          p_provider: string
+          p_status: string
+        }
+        Returns: string
+      }
+      apply_payment_recovered: {
+        Args: {
+          p_account_id: string
+          p_amount: number
+          p_currency: string
+          p_external_event_id: string
+          p_external_invoice_id: string
+          p_external_payment_id: string
+          p_external_subscription_id: string
+          p_payload: Json
+          p_provider: string
+          p_recovered_at: string
+          p_status: string
+        }
+        Returns: string
+      }
+      apply_subscription_canceled: {
+        Args: {
+          p_access_until: string
+          p_account_id: string
+          p_canceled_at: string
           p_external_event_id: string
           p_external_subscription_id: string
-          p_interval: Database["billing"]["Enums"]["plan_interval"]
-          p_invoice?: Json
-          p_plan_slug: string
-          p_provider?: string
+          p_payload: Json
+          p_provider: string
+        }
+        Returns: string
+      }
+      apply_subscription_created: {
+        Args: {
+          p_account_id: string
+          p_cancel_at_period_end: boolean
+          p_current_period_end: string
+          p_current_period_start: string
+          p_external_customer_id: string
+          p_external_event_id: string
+          p_external_subscription_id: string
+          p_payload: Json
+          p_plan_id: string
+          p_provider: string
           p_status: Database["billing"]["Enums"]["subscription_status"]
-          p_trial_end?: string
+        }
+        Returns: string
+      }
+      apply_subscription_updated: {
+        Args: {
+          p_account_id: string
+          p_cancel_at_period_end: boolean
+          p_current_period_end: string
+          p_current_period_start: string
+          p_external_customer_id: string
+          p_external_event_id: string
+          p_external_subscription_id: string
+          p_payload: Json
+          p_plan_id: string
+          p_provider: string
+          p_status: Database["billing"]["Enums"]["subscription_status"]
         }
         Returns: string
       }

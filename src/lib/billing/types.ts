@@ -1,3 +1,8 @@
+import type { ProviderCapabilities } from './capabilities';
+import type { NormalizedBillingEvent } from './events';
+
+export type ProviderName = 'mock' | 'stripe' | 'paddle' | 'lemonsqueezy' | 'mercadopago';
+
 export type SubscriptionStatus =
   'trialing' | 'active' | 'past_due' | 'canceled' | 'paused' | 'unpaid' | 'incomplete';
 
@@ -5,35 +10,36 @@ export type PlanInterval = 'month' | 'year';
 
 export interface CheckoutParams {
   accountId: string;
+  customerEmail: string;
   planSlug: string;
   interval: PlanInterval;
   successUrl: string;
   cancelUrl: string;
 }
 
+export interface CheckoutResult {
+  url: string;
+  externalCheckoutId?: string;
+  externalSubscriptionId?: string;
+}
+
 export interface PortalParams {
-  accountId: string;
+  externalCustomerId: string;
   returnUrl: string;
 }
 
-export interface NormalizedEvent {
-  externalEventId: string;
-  type: 'subscription_created' | 'subscription_updated' | 'subscription_canceled' | 'invoice_paid';
-  accountId: string;
-  planSlug?: string;
-  status?: SubscriptionStatus;
-  externalSubscriptionId?: string;
-  currentPeriodStart?: string;
-  currentPeriodEnd?: string;
-  cancelAtPeriodEnd?: boolean;
-  invoice?: { amountPaid: number; currency: string; periodStart: string; periodEnd: string };
-  raw: unknown;
+export type CancellationTiming = 'immediate' | 'period_end';
+
+export interface CancelSubscriptionParams {
+  externalSubscriptionId: string;
+  timing: CancellationTiming;
 }
 
 export interface PaymentProvider {
-  readonly name: string;
-  createCheckout(params: CheckoutParams): Promise<{ url: string }>;
-  createPortalSession(params: PortalParams): Promise<{ url: string }>;
-  cancelSubscription(externalId: string, atPeriodEnd: boolean): Promise<void>;
-  verifyWebhook(rawBody: string, signature: string): Promise<NormalizedEvent | null>;
+  readonly name: ProviderName;
+  readonly capabilities: ProviderCapabilities;
+  createCheckout(params: CheckoutParams): Promise<CheckoutResult>;
+  createPortalSession?(params: PortalParams): Promise<{ url: string }>;
+  cancelSubscription?(params: CancelSubscriptionParams): Promise<void>;
+  verifyWebhook(rawBody: string, signature: string): Promise<NormalizedBillingEvent | null>;
 }

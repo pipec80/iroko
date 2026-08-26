@@ -6,12 +6,13 @@ vi.mock('@/env', () => ({
 
 import { mockProvider } from '../mock';
 import { signMockPayload } from '../../signing';
-import type { NormalizedEvent } from '../../types';
+import type { SubscriptionCreatedEvent } from '../../events';
 
 describe('mockProvider', () => {
   it('createCheckout returns a signed hosted-page url with the params as a token', async () => {
     const { url } = await mockProvider.createCheckout({
       accountId: 'a1',
+      customerEmail: 'owner@example.com',
       planSlug: 'pro',
       interval: 'month',
       successUrl: 'http://ok',
@@ -22,23 +23,30 @@ describe('mockProvider', () => {
     expect(parsed.searchParams.get('data')).toBeTruthy();
   });
 
-  it('createPortalSession returns the returnUrl unchanged', async () => {
-    const { url } = await mockProvider.createPortalSession({
-      accountId: 'a1',
-      returnUrl: 'http://back-to-app',
-    });
-    expect(url).toBe('http://back-to-app');
+  it('does not advertise a customer portal it cannot provide', () => {
+    expect(mockProvider.capabilities.customerPortal).toBe(false);
+    expect(mockProvider.createPortalSession).toBeUndefined();
   });
 
   it('cancelSubscription resolves without throwing (no-op)', async () => {
-    await expect(mockProvider.cancelSubscription('sub_1', true)).resolves.toBeUndefined();
+    await expect(
+      mockProvider.cancelSubscription?.({
+        externalSubscriptionId: 'sub_1',
+        timing: 'period_end',
+      }),
+    ).resolves.toBeUndefined();
   });
 
   it('verifyWebhook returns the decoded event when the signature is "mock" and the body is valid', async () => {
-    const event: NormalizedEvent = {
+    const event: SubscriptionCreatedEvent = {
+      provider: 'mock',
       externalEventId: 'evt_1',
       type: 'subscription_created',
       accountId: 'a1',
+      externalSubscriptionId: 'sub_1',
+      externalPriceId: 'mock_pro_month',
+      status: 'active',
+      cancelAtPeriodEnd: false,
       raw: {},
     };
     const signed = await signMockPayload(event);
@@ -47,10 +55,15 @@ describe('mockProvider', () => {
   });
 
   it('verifyWebhook returns null when the signature marker is not "mock"', async () => {
-    const event: NormalizedEvent = {
+    const event: SubscriptionCreatedEvent = {
+      provider: 'mock',
       externalEventId: 'evt_1',
       type: 'subscription_created',
       accountId: 'a1',
+      externalSubscriptionId: 'sub_1',
+      externalPriceId: 'mock_pro_month',
+      status: 'active',
+      cancelAtPeriodEnd: false,
       raw: {},
     };
     const signed = await signMockPayload(event);

@@ -2,15 +2,17 @@ import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { notify } from '@/lib/notifications';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { captureException, withScope } from '@sentry/nextjs';
 
+import { resolvePlanByExternalPrice } from './catalog';
+import type { SubscriptionCreatedEvent } from './events';
+import { reduceBillingEvent } from './reducer';
 import { getPaymentProvider } from './registry';
-import type { PlanInterval } from './types';
 
 /**
  * Resolves the account owner's user id for analytics attribution. Webhooks
- * carry no authenticated user — the owner is the closest stable identity to
- * attribute a subscription event to. Returns null (capture is skipped) if
- * the account has no owner membership row, which should not happen in practice.
+ * carry no authenticated user, so no capture is emitted when the owner is
+ * unavailable.
  */
 async function getAccountOwnerId(
   admin: ReturnType<typeof createAdminClient>,
@@ -25,77 +27,122 @@ async function getAccountOwnerId(
   return data?.user_id ?? null;
 }
 
+/** Runs non-critical activation side effects after the database transition committed. */
+async function reportSubscriptionActivated(event: SubscriptionCreatedEvent): Promise<void> {
+  if (!isAnalyticsProvider(event.provider)) return;
+
+  let plan: { planSlug: string; interval: 'month' | 'year' };
+  try {
+    plan = await resolvePlanByExternalPrice({
+      provider: event.provider,
+      externalPriceId: event.externalPriceId,
+    });
+  } catch (error) {
+    logger.error(
+      { action: 'billing.webhook.capture', accountId: event.accountId },
+      error instanceof Error ? error.message : 'Provider price mapping unavailable after commit',
+    );
+    return;
+  }
+
+  const admin = createAdminClient();
+  const ownerId = await getAccountOwnerId(admin, event.accountId);
+  if (!ownerId) return;
+
+  try {
+    await captureServer({
+      event: 'subscription_activated',
+      properties: {
+        plan_slug: plan.planSlug,
+        interval: plan.interval,
+        provider: event.provider,
+      },
+      distinctId: ownerId,
+      accountId: event.accountId,
+      insertId: event.externalEventId,
+    });
+  } catch (error) {
+    logger.error(
+      { action: 'billing.webhook.capture', accountId: event.accountId },
+      error instanceof Error ? error.message : 'Unknown error',
+    );
+  }
+
+  await notify(ownerId, {
+    type: 'success',
+    title: `Tu plan ${plan.planSlug} está activo`,
+    link: '/dashboard/billing',
+    emailDelivery: true,
+  }).catch((error: unknown) => {
+    logger.error(
+      { action: 'billing.webhook.notify', accountId: event.accountId },
+      error instanceof Error ? error.message : 'Unknown error',
+    );
+  });
+}
+
+function isAnalyticsProvider(
+  provider: SubscriptionCreatedEvent['provider'],
+): provider is 'mock' | 'stripe' | 'mercadopago' {
+  return provider === 'mock' || provider === 'stripe' || provider === 'mercadopago';
+}
+
+function captureBillingException(
+  error: unknown,
+  event: {
+    provider: string;
+    type: string;
+    accountId: string;
+    externalEventId: string;
+  },
+): void {
+  withScope((scope) => {
+    scope.setTag('billing_provider', event.provider);
+    scope.setTag('billing_event_type', event.type);
+    scope.setTag('billing_operation', 'webhook_reduce');
+    scope.setContext('billing_webhook', {
+      account_id: event.accountId,
+      external_event_id: event.externalEventId,
+    });
+    captureException(error);
+  });
+}
+
 /**
- * Verifica y aplica un webhook de un proveedor de pago. La decisión de estado
- * ya está resuelta en el NormalizedEvent (status); la persistencia atómica +
- * idempotencia + emisión a webhooks salientes vive en apply_subscription_event.
+ * Verifies and reduces a provider webhook. Providers produce the typed event;
+ * the reducer owns the only persistence boundary and its idempotency key.
  */
 export async function handleProviderWebhook(
   providerName: string,
   rawBody: string,
   signature: string,
 ): Promise<{ status: number; body: object }> {
-  const provider = getPaymentProvider(providerName);
+  let provider: ReturnType<typeof getPaymentProvider>;
+  try {
+    provider = getPaymentProvider(providerName);
+  } catch {
+    return { status: 404, body: { error: 'provider_not_configured' } };
+  }
   const event = await provider.verifyWebhook(rawBody, signature);
-  if (!event) {
+  if (!event || event.provider !== provider.name) {
     return { status: 400, body: { error: 'invalid_signature' } };
   }
 
-  const admin = createAdminClient();
-  const interval = (event.raw as { interval?: PlanInterval })?.interval ?? 'month';
-  const { data, error } = await admin.rpc('apply_subscription_event', {
-    p_account_id: event.accountId,
-    p_plan_slug: event.planSlug ?? 'free',
-    p_interval: interval,
-    p_status: event.status ?? 'active',
-    p_external_subscription_id: event.externalSubscriptionId ?? `mock_${event.accountId}`,
-    p_external_event_id: event.externalEventId,
-    p_provider: providerName,
-    p_event_type: event.type,
-    p_current_period_start: event.currentPeriodStart ?? undefined,
-    p_current_period_end: event.currentPeriodEnd ?? undefined,
-    p_cancel_at_period_end: event.cancelAtPeriodEnd ?? false,
-    p_trial_end: undefined,
-    p_invoice: event.invoice ?? undefined,
-  });
-
-  if (error) {
+  let result: Awaited<ReturnType<typeof reduceBillingEvent>>;
+  try {
+    result = await reduceBillingEvent(event);
+  } catch (error) {
+    captureBillingException(error, event);
     logger.error(
-      { action: 'billing.webhook', provider: providerName, code: error.code },
-      'apply_subscription_event failed',
+      { action: 'billing.webhook', provider: provider.name },
+      error instanceof Error ? error.message : 'Billing reducer failed',
     );
     return { status: 500, body: { error: 'internal_error' } };
   }
 
-  // 'duplicate' = apply_subscription_event's own idempotency short-circuit
-  // (external_event_id already processed) — never re-capture a replayed event.
-  if (data !== 'duplicate' && event.type === 'subscription_created') {
-    const ownerId = await getAccountOwnerId(admin, event.accountId);
-    if (
-      ownerId &&
-      (providerName === 'mock' || providerName === 'stripe' || providerName === 'mercadopago')
-    ) {
-      const planSlug = event.planSlug ?? 'free';
-      await captureServer({
-        event: 'subscription_activated',
-        properties: { plan_slug: planSlug, interval, provider: providerName },
-        distinctId: ownerId,
-        accountId: event.accountId,
-        insertId: event.externalEventId,
-      });
-      await notify(ownerId, {
-        type: 'success',
-        title: `Tu plan ${planSlug} está activo`,
-        link: '/dashboard/billing',
-        emailDelivery: true,
-      }).catch((err: unknown) => {
-        logger.error(
-          { action: 'billing.webhook.notify', accountId: event.accountId },
-          err instanceof Error ? err.message : 'Unknown error',
-        );
-      });
-    }
+  if (result.status === 'applied' && event.type === 'subscription_created') {
+    await reportSubscriptionActivated(event);
   }
 
-  return { status: 200, body: { result: data } };
+  return { status: 200, body: { result: result.status } };
 }

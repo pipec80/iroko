@@ -10,9 +10,30 @@ import type { PaymentProvider } from './types';
  * están en env — así "si la pasarela existe, se agrega". `mock` siempre está.
  */
 const registry = new Map<string, PaymentProvider>();
+
+type ProviderCredentialEnvironment = {
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  MERCADOPAGO_ACCESS_TOKEN?: string;
+  MERCADOPAGO_WEBHOOK_SECRET?: string;
+};
+
+/** Returns whether a provider has both the API and webhook credentials it needs. */
+export function hasProviderCredentials(
+  provider: 'stripe' | 'mercadopago',
+  credentials: ProviderCredentialEnvironment,
+): boolean {
+  if (provider === 'stripe') {
+    return Boolean(credentials.STRIPE_SECRET_KEY && credentials.STRIPE_WEBHOOK_SECRET);
+  }
+
+  return Boolean(credentials.MERCADOPAGO_ACCESS_TOKEN && credentials.MERCADOPAGO_WEBHOOK_SECRET);
+}
+
 registry.set(mockProvider.name, mockProvider);
-if (env.STRIPE_SECRET_KEY) registry.set(stripeProvider.name, stripeProvider);
-if (env.MERCADOPAGO_ACCESS_TOKEN) registry.set(mercadopagoProvider.name, mercadopagoProvider);
+if (hasProviderCredentials('stripe', env)) registry.set(stripeProvider.name, stripeProvider);
+if (hasProviderCredentials('mercadopago', env))
+  registry.set(mercadopagoProvider.name, mercadopagoProvider);
 
 export function availableProviders(): string[] {
   return [...registry.keys()];

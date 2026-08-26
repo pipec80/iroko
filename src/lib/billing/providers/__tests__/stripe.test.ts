@@ -4,32 +4,24 @@ vi.mock('@/env', () => ({
   env: { STRIPE_SECRET_KEY: 'sk_test_x', STRIPE_WEBHOOK_SECRET: 'whsec_test' },
 }));
 
-const {
-  constructEvent,
-  sessionsCreate,
-  billingPortalCreate,
-  subscriptionsUpdate,
-  subscriptionsCancel,
-} = vi.hoisted(() => ({
-  constructEvent: vi.fn(),
-  sessionsCreate: vi.fn(),
-  billingPortalCreate: vi.fn(),
-  subscriptionsUpdate: vi.fn(),
-  subscriptionsCancel: vi.fn(),
-}));
+const { constructEvent, sessionsCreate, subscriptionsUpdate, subscriptionsCancel } = vi.hoisted(
+  () => ({
+    constructEvent: vi.fn(),
+    sessionsCreate: vi.fn(),
+    subscriptionsUpdate: vi.fn(),
+    subscriptionsCancel: vi.fn(),
+  }),
+);
 vi.mock('stripe', () => ({
   default: class {
     webhooks = { constructEvent };
     checkout = { sessions: { create: sessionsCreate } };
-    billingPortal = { sessions: { create: billingPortalCreate } };
     subscriptions = { update: subscriptionsUpdate, cancel: subscriptionsCancel };
   },
 }));
 
-const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(async () => ({ rpc })),
-}));
+const { getProviderPrice } = vi.hoisted(() => ({ getProviderPrice: vi.fn() }));
+vi.mock('../../catalog', () => ({ getProviderPrice }));
 
 import { stripeProvider } from '../stripe';
 
@@ -52,7 +44,13 @@ describe('stripeProvider.verifyWebhook', () => {
           status: 'active',
           metadata: { accountId: 'acc_1' },
           items: {
-            data: [{ current_period_start: 1720000000, current_period_end: 1722592000 }],
+            data: [
+              {
+                price: { id: 'price_pro_month' },
+                current_period_start: 1720000000,
+                current_period_end: 1722592000,
+              },
+            ],
           },
           cancel_at_period_end: false,
         },
@@ -66,6 +64,7 @@ describe('stripeProvider.verifyWebhook', () => {
         accountId: 'acc_1',
         status: 'active',
         externalSubscriptionId: 'sub_1',
+        externalPriceId: 'price_pro_month',
         cancelAtPeriodEnd: false,
       }),
     );
@@ -88,7 +87,9 @@ describe('stripeProvider.verifyWebhook', () => {
       },
     });
     const result = await stripeProvider.verifyWebhook('{}', 'sig');
-    expect(result?.status).toBe('canceled');
+    expect(result).toEqual(
+      expect.objectContaining({ type: 'subscription_updated', status: 'canceled' }),
+    );
   });
 
   it('should normalize customer.subscription.deleted into subscription_canceled', async () => {
@@ -127,11 +128,13 @@ describe('stripeProvider.verifyWebhook', () => {
       type: 'invoice.paid',
       data: {
         object: {
+          id: 'in_5',
           parent: {
             subscription_details: { subscription: 'sub_5', metadata: { accountId: 'acc_5' } },
           },
           amount_paid: 1999,
           currency: 'usd',
+          status_transitions: { paid_at: 1722592000 },
           period_start: 1720000000,
           period_end: 1722592000,
         },
@@ -143,7 +146,9 @@ describe('stripeProvider.verifyWebhook', () => {
         type: 'invoice_paid',
         accountId: 'acc_5',
         externalSubscriptionId: 'sub_5',
-        invoice: expect.objectContaining({ amountPaid: 1999, currency: 'usd' }),
+        externalInvoiceId: 'in_5',
+        amountPaid: 1999,
+        currency: 'usd',
       }),
     );
   });
@@ -156,22 +161,24 @@ describe('stripeProvider.verifyWebhook', () => {
 });
 
 describe('stripeProvider.createCheckout', () => {
-  it('should resolve the price id from get_plan_provider_id and create a subscription session', async () => {
-    rpc.mockResolvedValue({ data: 'price_test_123', error: null });
+  it('resolves the price id from the provider catalog and creates a subscription session', async () => {
+    getProviderPrice.mockResolvedValue({ externalPriceId: 'price_test_123' });
     sessionsCreate.mockResolvedValue({ url: 'https://checkout.stripe.com/session_1' });
 
     const { url } = await stripeProvider.createCheckout({
       accountId: 'acc_1',
+      customerEmail: 'owner@example.com',
       planSlug: 'pro',
       interval: 'month',
       successUrl: 'https://app/ok',
       cancelUrl: 'https://app/no',
     });
 
-    expect(rpc).toHaveBeenCalledWith('get_plan_provider_id', {
-      p_slug: 'pro',
-      p_interval: 'month',
-      p_provider: 'stripe',
+    expect(getProviderPrice).toHaveBeenCalledWith({
+      planSlug: 'pro',
+      interval: 'month',
+      provider: 'stripe',
+      currency: 'USD',
     });
     expect(sessionsCreate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -179,6 +186,7 @@ describe('stripeProvider.createCheckout', () => {
         line_items: [{ price: 'price_test_123', quantity: 1 }],
         success_url: 'https://app/ok',
         cancel_url: 'https://app/no',
+        customer_email: 'owner@example.com',
         subscription_data: { metadata: { accountId: 'acc_1' } },
         metadata: { accountId: 'acc_1' },
       }),
@@ -186,43 +194,43 @@ describe('stripeProvider.createCheckout', () => {
     expect(url).toBe('https://checkout.stripe.com/session_1');
   });
 
-  it('should throw when the plan has no stripe price configured', async () => {
-    rpc.mockResolvedValue({ data: null, error: null });
+  it('throws when the catalog mapping has no Stripe external price id', async () => {
+    getProviderPrice.mockResolvedValue({ externalPriceId: null });
     await expect(
       stripeProvider.createCheckout({
         accountId: 'acc_1',
+        customerEmail: 'owner@example.com',
         planSlug: 'pro',
         interval: 'month',
         successUrl: 'https://app/ok',
         cancelUrl: 'https://app/no',
       }),
-    ).rejects.toThrow('plan_provider_id_not_configured');
+    ).rejects.toThrow('provider_price_external_id_not_configured');
   });
 });
 
-describe('stripeProvider.createPortalSession', () => {
-  it('should create a billing portal session and return its url', async () => {
-    billingPortalCreate.mockResolvedValue({ url: 'https://billing.stripe.com/portal_1' });
-    const { url } = await stripeProvider.createPortalSession({
-      accountId: 'acc_1',
-      returnUrl: 'https://app/billing',
-    });
-    expect(billingPortalCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ return_url: 'https://app/billing' }),
-    );
-    expect(url).toBe('https://billing.stripe.com/portal_1');
+describe('stripeProvider.capabilities', () => {
+  it('does not advertise a portal until it has a provider customer id', () => {
+    expect(stripeProvider.capabilities.customerPortal).toBe(false);
+    expect(stripeProvider.createPortalSession).toBeUndefined();
   });
 });
 
 describe('stripeProvider.cancelSubscription', () => {
   it('should mark cancel_at_period_end when atPeriodEnd is true', async () => {
-    await stripeProvider.cancelSubscription('sub_1', true);
+    await stripeProvider.cancelSubscription?.({
+      externalSubscriptionId: 'sub_1',
+      timing: 'period_end',
+    });
     expect(subscriptionsUpdate).toHaveBeenCalledWith('sub_1', { cancel_at_period_end: true });
     expect(subscriptionsCancel).not.toHaveBeenCalled();
   });
 
   it('should cancel immediately when atPeriodEnd is false', async () => {
-    await stripeProvider.cancelSubscription('sub_1', false);
+    await stripeProvider.cancelSubscription?.({
+      externalSubscriptionId: 'sub_1',
+      timing: 'immediate',
+    });
     expect(subscriptionsCancel).toHaveBeenCalledWith('sub_1');
     expect(subscriptionsUpdate).not.toHaveBeenCalled();
   });

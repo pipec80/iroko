@@ -5,12 +5,14 @@ vi.mock('@/env', () => ({
     MOCK_BILLING_SECRET: 'test-secret',
     BILLING_DEFAULT_PROVIDER: 'mock',
     STRIPE_SECRET_KEY: 'sk_test_x',
+    STRIPE_WEBHOOK_SECRET: 'whsec_test_x',
     MERCADOPAGO_ACCESS_TOKEN: 'TEST-token',
+    MERCADOPAGO_WEBHOOK_SECRET: 'mp_webhook_test',
     LOG_LEVEL: 'silent',
   },
 }));
 
-import { getPaymentProvider, availableProviders } from '../registry';
+import { getPaymentProvider, availableProviders, hasProviderCredentials } from '../registry';
 
 describe('payment provider registry', () => {
   it('should always expose the mock provider', () => {
@@ -29,6 +31,7 @@ describe('payment provider registry', () => {
     const provider = getPaymentProvider('mock');
     const { url } = await provider.createCheckout({
       accountId: 'a1',
+      customerEmail: 'owner@example.com',
       planSlug: 'pro',
       interval: 'month',
       successUrl: 'https://app/ok',
@@ -43,11 +46,24 @@ describe('payment provider registry', () => {
     expect(await provider.verifyWebhook('{"not":"signed"}', 'bad-sig')).toBeNull();
   });
 
-  it('should register stripe when STRIPE_SECRET_KEY is set', () => {
+  it('should register stripe only when its API and webhook secrets are set', () => {
     expect(availableProviders()).toContain('stripe');
   });
 
-  it('should register mercadopago when MERCADOPAGO_ACCESS_TOKEN is set', () => {
+  it('should register mercadopago only when its API and webhook secrets are set', () => {
     expect(availableProviders()).toContain('mercadopago');
+  });
+
+  it('fails closed when a real provider has only one of its required credentials', () => {
+    expect(
+      hasProviderCredentials('stripe', {
+        STRIPE_SECRET_KEY: 'sk_test_x',
+      }),
+    ).toBe(false);
+    expect(
+      hasProviderCredentials('mercadopago', {
+        MERCADOPAGO_WEBHOOK_SECRET: 'mp_webhook_test',
+      }),
+    ).toBe(false);
   });
 });

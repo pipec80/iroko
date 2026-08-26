@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS "billing"."events" (
     "customer_id" "uuid",
     "event_type" "text" NOT NULL,
     "provider" "text" DEFAULT 'stripe'::"text" NOT NULL,
-    "external_event_id" "text",
+    "external_event_id" "text" NOT NULL,
     "payload" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "processed_at" timestamp with time zone,
     "created_at" timestamp with time zone DEFAULT "now"()
@@ -156,7 +156,8 @@ CREATE TABLE IF NOT EXISTS "billing"."invoices" (
     "hosted_url" "text",
     "pdf_url" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
-    "updated_at" timestamp with time zone DEFAULT "now"()
+    "updated_at" timestamp with time zone DEFAULT "now"(),
+    "provider" "text" NOT NULL
 );
 
 
@@ -182,6 +183,28 @@ CREATE TABLE IF NOT EXISTS "billing"."payment_methods" (
 ALTER TABLE "billing"."payment_methods" OWNER TO "postgres";
 
 
+CREATE TABLE IF NOT EXISTS "billing"."payment_attempts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "provider" "text" NOT NULL,
+    "subscription_id" "uuid",
+    "invoice_id" "uuid",
+    "external_payment_id" "text",
+    "external_invoice_id" "text",
+    "status" "text" NOT NULL,
+    "amount" integer,
+    "currency" character(3),
+    "failure_code" "text",
+    "failure_message" "text",
+    "attempted_at" timestamp with time zone NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "payment_attempts_status_check" CHECK (("status" = ANY (ARRAY['failed'::"text", 'paid'::"text", 'recovered'::"text"])))
+);
+
+
+ALTER TABLE "billing"."payment_attempts" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "billing"."plans" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "slug" "text" NOT NULL,
@@ -202,6 +225,25 @@ CREATE TABLE IF NOT EXISTS "billing"."plans" (
 
 
 ALTER TABLE "billing"."plans" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "billing"."provider_prices" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "plan_id" "uuid" NOT NULL,
+    "provider" "text" NOT NULL,
+    "external_price_id" "text",
+    "currency" character(3) NOT NULL,
+    "amount" integer NOT NULL,
+    "is_active" boolean DEFAULT true NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "provider_prices_amount_check" CHECK (("amount" >= 0)),
+    CONSTRAINT "provider_prices_plan_provider_currency_key" UNIQUE ("plan_id", "provider", "currency")
+);
+
+
+ALTER TABLE "billing"."provider_prices" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "billing"."subscription_items" (
@@ -265,8 +307,28 @@ CREATE OR REPLACE VIEW "billing"."v_mrr_by_plan" AS
 ALTER VIEW "billing"."v_mrr_by_plan" OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "billing"."assert_provider_price_matches_plan"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+  v_plan_price integer;
+BEGIN
+  SELECT price INTO v_plan_price
+  FROM billing.plans
+  WHERE id = NEW.plan_id;
+
+  IF NEW.currency = 'USD' AND NEW.amount <> v_plan_price THEN
+    RAISE EXCEPTION 'provider_price_amount_mismatch: plan price is %, provider price is %',
+      v_plan_price, NEW.amount;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
 ALTER TABLE ONLY "billing"."customers"
-    ADD CONSTRAINT "customers_account_id_key" UNIQUE ("account_id");
+    ADD CONSTRAINT "customers_account_provider_key" UNIQUE ("account_id", "provider");
 
 
 
@@ -281,7 +343,7 @@ ALTER TABLE ONLY "billing"."customers"
 
 
 ALTER TABLE ONLY "billing"."events"
-    ADD CONSTRAINT "events_external_event_id_key" UNIQUE ("external_event_id");
+    ADD CONSTRAINT "events_provider_external_event_key" UNIQUE ("provider", "external_event_id");
 
 
 
@@ -307,6 +369,10 @@ ALTER TABLE ONLY "billing"."invoices"
 
 ALTER TABLE ONLY "billing"."payment_methods"
     ADD CONSTRAINT "payment_methods_pkey" PRIMARY KEY ("id");
+
+
+ALTER TABLE ONLY "billing"."payment_attempts"
+    ADD CONSTRAINT "payment_attempts_pkey" PRIMARY KEY ("id");
 
 
 
@@ -357,6 +423,18 @@ CREATE INDEX "idx_invoices_subscription" ON "billing"."invoices" USING "btree" (
 CREATE INDEX "idx_payment_methods_customer" ON "billing"."payment_methods" USING "btree" ("customer_id");
 
 
+CREATE UNIQUE INDEX "payment_attempts_provider_payment_unique" ON "billing"."payment_attempts" USING "btree" ("provider", "external_payment_id") WHERE ("external_payment_id" IS NOT NULL);
+
+
+CREATE INDEX "payment_attempts_invoice_id_idx" ON "billing"."payment_attempts" USING "btree" ("invoice_id");
+
+
+CREATE INDEX "payment_attempts_subscription_id_idx" ON "billing"."payment_attempts" USING "btree" ("subscription_id");
+
+
+CREATE UNIQUE INDEX "provider_prices_external_id_unique" ON "billing"."provider_prices" USING "btree" ("provider", "external_price_id") WHERE ("external_price_id" IS NOT NULL);
+
+
 
 CREATE INDEX "idx_subscription_items_subscription" ON "billing"."subscription_items" USING "btree" ("subscription_id");
 
@@ -371,6 +449,12 @@ CREATE INDEX "idx_subscriptions_plan" ON "billing"."subscriptions" USING "btree"
 
 
 CREATE INDEX "idx_subscriptions_status" ON "billing"."subscriptions" USING "btree" ("status") WHERE ("status" = 'active'::"billing"."subscription_status");
+
+
+CREATE UNIQUE INDEX "invoices_provider_external_id_unique" ON "billing"."invoices" USING "btree" ("provider", "external_invoice_id") WHERE ("external_invoice_id" IS NOT NULL);
+
+
+CREATE UNIQUE INDEX "subscriptions_provider_external_id_unique" ON "billing"."subscriptions" USING "btree" ("provider", "external_subscription_id") WHERE ("external_subscription_id" IS NOT NULL);
 
 
 
@@ -391,6 +475,12 @@ CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "billing"."payment_m
 
 
 CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "billing"."plans" FOR EACH ROW EXECUTE FUNCTION "private"."set_updated_at"();
+
+
+CREATE OR REPLACE TRIGGER "provider_prices_amount_coherence" BEFORE INSERT OR UPDATE ON "billing"."provider_prices" FOR EACH ROW EXECUTE FUNCTION "billing"."assert_provider_price_matches_plan"();
+
+
+CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "billing"."provider_prices" FOR EACH ROW EXECUTE FUNCTION "private"."set_updated_at"();
 
 
 
@@ -425,6 +515,18 @@ ALTER TABLE ONLY "billing"."invoices"
 
 ALTER TABLE ONLY "billing"."payment_methods"
     ADD CONSTRAINT "payment_methods_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "billing"."customers"("id") ON DELETE CASCADE;
+
+
+ALTER TABLE ONLY "billing"."payment_attempts"
+    ADD CONSTRAINT "payment_attempts_invoice_id_fkey" FOREIGN KEY ("invoice_id") REFERENCES "billing"."invoices"("id") ON DELETE SET NULL;
+
+
+ALTER TABLE ONLY "billing"."payment_attempts"
+    ADD CONSTRAINT "payment_attempts_subscription_id_fkey" FOREIGN KEY ("subscription_id") REFERENCES "billing"."subscriptions"("id") ON DELETE SET NULL;
+
+
+ALTER TABLE ONLY "billing"."provider_prices"
+    ADD CONSTRAINT "provider_prices_plan_id_fkey" FOREIGN KEY ("plan_id") REFERENCES "billing"."plans"("id") ON DELETE CASCADE;
 
 
 
@@ -462,8 +564,14 @@ CREATE POLICY "billing_invoices_deny_all" ON "billing"."invoices" AS RESTRICTIVE
 CREATE POLICY "billing_payment_methods_deny_all" ON "billing"."payment_methods" AS RESTRICTIVE USING (false) WITH CHECK (false);
 
 
+CREATE POLICY "billing_payment_attempts_deny_all" ON "billing"."payment_attempts" AS RESTRICTIVE USING (false) WITH CHECK (false);
+
+
 
 CREATE POLICY "billing_plans_deny_all" ON "billing"."plans" AS RESTRICTIVE USING (false) WITH CHECK (false);
+
+
+CREATE POLICY "billing_provider_prices_deny_all" ON "billing"."provider_prices" AS RESTRICTIVE USING (false) WITH CHECK (false);
 
 
 
@@ -490,7 +598,13 @@ ALTER TABLE "billing"."invoices" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "billing"."payment_methods" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "billing"."payment_attempts" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "billing"."plans" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "billing"."provider_prices" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "billing"."subscription_items" ENABLE ROW LEVEL SECURITY;
@@ -522,13 +636,13 @@ GRANT USAGE ON SCHEMA "billing" TO "anon", "authenticated", "service_role";
 -- billing.customers
 -- ============================================================================
 COMMENT ON TABLE billing.customers IS
-  'Cliente de billing por cuenta (F2-2A). 1:1 con public.accounts vía account_id -- el proveedor real (Stripe/MercadoPago) se guarda en provider/external_id.';
+  'Customer identity for one Iroko account at one payment provider. An account may have one identity per provider.';
 COMMENT ON COLUMN billing.customers.id IS
   'Clave primaria UUID generada automáticamente.';
 COMMENT ON COLUMN billing.customers.account_id IS
-  'Cuenta dueña de este customer. UNIQUE: una cuenta tiene un solo customer de billing.';
+  'Owning account. Unique together with provider so one account may use multiple payment providers.';
 COMMENT ON COLUMN billing.customers.provider IS
-  'Proveedor de pago que gestiona este customer: ''stripe'' o ''mercadopago''.';
+  'Payment provider that owns this customer identity, such as mock, stripe, or mercadopago.';
 COMMENT ON COLUMN billing.customers.external_id IS
   'ID del customer en el proveedor externo (ej. cus_xxx de Stripe). UNIQUE junto con provider.';
 COMMENT ON COLUMN billing.customers.created_at IS
@@ -536,8 +650,8 @@ COMMENT ON COLUMN billing.customers.created_at IS
 COMMENT ON COLUMN billing.customers.updated_at IS
   'Timestamp de última modificación.';
 
-COMMENT ON INDEX billing.customers_account_id_key IS
-  'Garantiza 1 customer de billing por cuenta.';
+COMMENT ON INDEX billing.customers_account_provider_key IS
+  'Ensures one customer identity per account and provider.';
 COMMENT ON INDEX billing.customers_provider_external_id_key IS
   'Evita duplicar el mismo customer externo (idempotencia de webhooks del proveedor).';
 
@@ -553,9 +667,9 @@ COMMENT ON COLUMN billing.events.customer_id IS
 COMMENT ON COLUMN billing.events.event_type IS
   'Tipo de evento tal como lo nombra el proveedor (ej. ''invoice.paid'', ''customer.subscription.updated'').';
 COMMENT ON COLUMN billing.events.provider IS
-  'Proveedor que emitió el evento: ''stripe'' o ''mercadopago''.';
+  'Payment provider that emitted the event, such as mock, stripe, or mercadopago.';
 COMMENT ON COLUMN billing.events.external_event_id IS
-  'ID del evento en el proveedor. UNIQUE: descarta reintentos duplicados del webhook.';
+  'Provider event identifier. Unique together with provider to reject duplicate deliveries safely.';
 COMMENT ON COLUMN billing.events.payload IS
   'Payload crudo del webhook, tal como lo envió el proveedor -- sin transformar.';
 COMMENT ON COLUMN billing.events.processed_at IS
@@ -563,8 +677,8 @@ COMMENT ON COLUMN billing.events.processed_at IS
 COMMENT ON COLUMN billing.events.created_at IS
   'Timestamp de recepción del webhook (inmutable).';
 
-COMMENT ON INDEX billing.events_external_event_id_key IS
-  'Idempotencia: un mismo evento del proveedor no se procesa dos veces.';
+COMMENT ON INDEX billing.events_provider_external_event_key IS
+  'Provider-scoped idempotency: one provider event is reduced at most once.';
 COMMENT ON INDEX billing.idx_billing_events_created_brin IS
   'Índice BRIN: created_at crece de forma monótona en una tabla append-only, más liviano que un B-tree para rangos de fecha.';
 COMMENT ON INDEX billing.idx_billing_events_customer IS
@@ -637,9 +751,9 @@ COMMENT ON COLUMN billing.subscriptions.trial_start IS
 COMMENT ON COLUMN billing.subscriptions.trial_end IS
   'Fin del período de prueba; a partir de acá se cobra.';
 COMMENT ON COLUMN billing.subscriptions.provider IS
-  'Proveedor que gestiona esta suscripción: ''stripe'' o ''mercadopago''.';
+  'Payment provider that manages this subscription, such as mock, stripe, or mercadopago.';
 COMMENT ON COLUMN billing.subscriptions.external_subscription_id IS
-  'ID de la suscripción en el proveedor externo.';
+  'Provider subscription identifier. Unique together with provider when present.';
 COMMENT ON COLUMN billing.subscriptions.metadata IS
   'jsonb libre para datos auxiliares del proveedor que no ameritan columna propia.';
 COMMENT ON COLUMN billing.subscriptions.created_at IS
@@ -692,6 +806,8 @@ COMMENT ON COLUMN billing.invoices.customer_id IS
   'Customer facturado.';
 COMMENT ON COLUMN billing.invoices.subscription_id IS
   'Suscripción que originó la factura. NULL si es un cargo one-off.';
+COMMENT ON COLUMN billing.invoices.provider IS
+  'Payment provider that issued the invoice. External invoice identity is scoped by this provider.';
 COMMENT ON COLUMN billing.invoices.number IS
   'Número de factura legible asignado por el proveedor (para mostrar al usuario).';
 COMMENT ON COLUMN billing.invoices.status IS

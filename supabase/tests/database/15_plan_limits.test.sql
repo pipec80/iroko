@@ -29,11 +29,17 @@ VALUES
   ('00000000-0000-0000-0000-000000001101', '00000000-0000-0000-0000-000000001002', 'owner');
 
 -- Sub pro para la cuenta B (patrón de 11_billing.test.sql)
+SELECT set_config(
+  'app.test_pro_plan_id',
+  (SELECT id::text FROM billing.plans WHERE slug = 'pro' AND "interval" = 'month'),
+  true
+);
 SET LOCAL role service_role;
-SELECT public.apply_subscription_event(
-  '00000000-0000-0000-0000-000000001101', 'pro', 'month', 'active',
-  'sub_limits_pro', 'evt_limits_1', 'subscription_created',
-  now(), now() + interval '30 days', false, NULL, NULL);
+SELECT public.apply_subscription_created(
+  'mock', 'evt_limits_1', '00000000-0000-0000-0000-000000001101',
+  current_setting('app.test_pro_plan_id')::uuid,
+  'sub_limits_pro', 'active', now(), now() + interval '30 days', false,
+  NULL, '{}'::jsonb);
 RESET role;
 
 -- ── helpers ──────────────────────────────────────────────────────────────
