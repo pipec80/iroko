@@ -323,12 +323,12 @@ un E2E completo, ya que eso requeriría credenciales reales de Stripe/MP
 El alcance de este plan quedó integrado en `main` mediante cuatro PRs
 independientes y trazables:
 
-| Superficie | PR | Resultado integrado |
-| ---------- | -- | ------------------- |
+| Superficie                        | PR                                                | Resultado integrado                                                           |
+| --------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Storage RLS con membresía en vivo | [#139](https://github.com/pipec80/iroko/pull/139) | Las policies de `documents` y `org-assets` consultan la membresía/rol actual. |
-| Inicio de checkout | [#140](https://github.com/pipec80/iroko/pull/140) | `startCheckout` revalida el rol contra la base antes de llamar a un provider. |
-| Aceptación de invitación | [#147](https://github.com/pipec80/iroko/pull/147) | La función vincula la invitación al email autenticado con un error genérico. |
-| Regresión integrada | [#149](https://github.com/pipec80/iroko/pull/149) | Cubre degradación/remoción de membresía y claims cross-tenant obsoletos. |
+| Inicio de checkout                | [#140](https://github.com/pipec80/iroko/pull/140) | `startCheckout` revalida el rol contra la base antes de llamar a un provider. |
+| Aceptación de invitación          | [#147](https://github.com/pipec80/iroko/pull/147) | La función vincula la invitación al email autenticado con un error genérico.  |
+| Regresión integrada               | [#149](https://github.com/pipec80/iroko/pull/149) | Cubre degradación/remoción de membresía y claims cross-tenant obsoletos.      |
 
 Evidencia final observada:
 

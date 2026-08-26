@@ -59,8 +59,8 @@ create a new bounded plan if a regression or new audit finding appears.
 
 ## Completed execution plans
 
-| Order | Plan                                                                                                       | Priority | Status                                              |
-| ----- | ---------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------- |
+| Order | Plan                                                                                                     | Priority | Status                                             |
+| ----- | -------------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------- |
 | 10    | [Tenant isolation + regression tests](exec-plans/completed/010-tenant-isolation-and-regression-tests.md) | P0       | Completed (2026-08-26, via #139, #140, #147, #149) |
 
 ## Active plans
