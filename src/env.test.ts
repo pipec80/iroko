@@ -23,7 +23,7 @@ describe('billing environment validation', () => {
     vi.clearAllMocks();
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('BILLING_DEFAULT_PROVIDER', 'mock');
-    vi.stubEnv('ALLOW_MOCK_BILLING');
+    delete process.env.ALLOW_MOCK_BILLING;
   });
 
   afterEach(() => {
