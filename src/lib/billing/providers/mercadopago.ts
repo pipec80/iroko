@@ -28,9 +28,24 @@ interface AuthorizedPaymentResource {
   id: string;
   preapproval_id: string;
   external_reference: string;
-  transaction_amount: number;
-  currency_id: string;
+  transaction_amount?: number;
+  currency_id?: string;
   date_created: string;
+  payment: {
+    id: string;
+    status: string;
+    status_detail?: string;
+  };
+}
+
+function toMercadoPagoTransactionAmount(amount: number, currency: string): number {
+  return currency === 'CLP' ? amount : amount / 100;
+}
+
+function isValidProviderPrice(price: { amount: number; currency: string }): boolean {
+  return (
+    Number.isSafeInteger(price.amount) && price.amount >= 0 && /^[A-Z]{3}$/.test(price.currency)
+  );
 }
 
 /** MercadoPago no distingue 'authorized'/'cancelled' 1:1 con SubscriptionStatus
@@ -127,34 +142,51 @@ export const mercadopagoProvider: PaymentProvider = {
     pauseSubscription: true,
   },
 
-  async createCheckout(params: CheckoutParams): Promise<{ url: string }> {
+  async createCheckout(
+    params: CheckoutParams,
+  ): Promise<{ url: string; externalSubscriptionId: string }> {
     const providerPrice = await getProviderPrice({
       planSlug: params.planSlug,
       interval: params.interval,
       provider: 'mercadopago',
-      currency: 'USD',
+      currency: 'CLP',
     });
-    if (!providerPrice.externalPriceId) {
-      throw new Error('provider_price_external_id_not_configured');
+    if (!isValidProviderPrice(providerPrice)) {
+      throw new Error('provider_price_invalid');
     }
 
     // MercadoPago no distingue success/cancel: solo hay un back_url. cancelUrl
     // se ignora deliberadamente en este adapter (documentado en el spec, §4).
     const preapproval = await postResource<{ id: string; init_point: string }>('/preapproval', {
-      preapproval_plan_id: providerPrice.externalPriceId,
+      reason: `Iroko ${params.planSlug} subscription`,
       external_reference: params.accountId,
       payer_email: params.customerEmail,
       back_url: params.successUrl,
       status: 'pending',
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: 'months',
+        transaction_amount: toMercadoPagoTransactionAmount(
+          providerPrice.amount,
+          providerPrice.currency,
+        ),
+        currency_id: providerPrice.currency,
+      },
     });
-    return { url: preapproval.init_point };
+    return { url: preapproval.init_point, externalSubscriptionId: preapproval.id };
   },
 
   async cancelSubscription(params: CancelSubscriptionParams): Promise<void> {
     if (params.timing === 'period_end') {
       throw new Error('billing_capability_not_supported:cancelAtPeriodEnd');
     }
-    await putResource(`/preapproval/${params.externalSubscriptionId}`, { status: 'cancelled' });
+    const preapproval = await putResource<{ status: string }>(
+      `/preapproval/${params.externalSubscriptionId}`,
+      { status: 'cancelled' },
+    );
+    if (preapproval.status !== 'cancelled') {
+      throw new Error('mercadopago_cancellation_not_confirmed');
+    }
   },
 
   async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedBillingEvent | null> {
@@ -202,6 +234,26 @@ export const mercadopagoProvider: PaymentProvider = {
         `/authorized_payments/${body.data.id}`,
       );
       if (!payment.external_reference) return null;
+      if (payment.payment.status !== 'approved') {
+        return {
+          provider: 'mercadopago',
+          externalEventId: payment.id,
+          type: 'invoice_payment_failed',
+          accountId: payment.external_reference,
+          externalSubscriptionId: payment.preapproval_id,
+          externalInvoiceId: payment.id,
+          externalPaymentId: payment.payment.id,
+          ...(payment.transaction_amount === undefined ?
+            {}
+          : { amountDue: payment.transaction_amount }),
+          ...(payment.currency_id === undefined ? {} : { currency: payment.currency_id }),
+          failureCode: payment.payment.status_detail,
+          attemptedAt: payment.date_created,
+          raw: payment,
+        };
+      }
+      if (payment.transaction_amount === undefined || payment.currency_id === undefined)
+        return null;
       return {
         provider: 'mercadopago',
         externalEventId: payment.id,
@@ -209,7 +261,7 @@ export const mercadopagoProvider: PaymentProvider = {
         accountId: payment.external_reference,
         externalSubscriptionId: payment.preapproval_id,
         externalInvoiceId: payment.id,
-        externalPaymentId: payment.id,
+        externalPaymentId: payment.payment.id,
         amountPaid: payment.transaction_amount,
         currency: payment.currency_id,
         paidAt: payment.date_created,
