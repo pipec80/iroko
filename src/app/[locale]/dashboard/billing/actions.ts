@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { getActiveAccountId } from '@/lib/active-account';
 import { captureServer } from '@/lib/analytics/server';
+import { getProviderPrice } from '@/lib/billing/catalog';
 import { getPaymentProvider } from '@/lib/billing/registry';
 import { cancelBillingSubscription, startBillingCheckout } from '@/lib/billing/service';
 import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
@@ -101,6 +102,10 @@ export const startCheckout = withServerAction(async function startCheckout(input
 }): Promise<ActionResult<{ url: string }>> {
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return { data: null, error: 'validation_error' };
+
+  if (getPaymentProvider().name === 'mercadopago' && parsed.data.interval !== 'month') {
+    return { data: null, error: 'validation_error' };
+  }
 
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
@@ -268,7 +273,7 @@ export const getBillingData = withServerAction(async function getBillingData(): 
     supabase.rpc('get_active_plans'),
     supabase.rpc('get_billing_overview', { p_account_id: accountId }),
   ]);
-  const mappedPlans: PlanRow[] = (plans ?? []).map((p) => ({
+  const basePlans: PlanRow[] = (plans ?? []).map((p) => ({
     slug: p.slug,
     name: p.name,
     description: p.description,
@@ -279,6 +284,33 @@ export const getBillingData = withServerAction(async function getBillingData(): 
     features: (p.features ?? {}) as Record<string, boolean>,
     limits: (p.limits ?? {}) as Record<string, number>,
   }));
+  const paymentProvider = getPaymentProvider();
+  const mappedPlans: PlanRow[] =
+    paymentProvider.name === 'mercadopago' ?
+      (
+        await Promise.all(
+          basePlans
+            .filter((plan) => plan.interval === 'month')
+            .map(async (plan) => {
+              try {
+                const providerPrice = await getProviderPrice({
+                  planSlug: plan.slug,
+                  interval: 'month',
+                  provider: 'mercadopago',
+                  currency: 'CLP',
+                });
+                return {
+                  ...plan,
+                  price: providerPrice.amount,
+                  currency: providerPrice.currency,
+                };
+              } catch {
+                return null;
+              }
+            }),
+        )
+      ).filter((plan): plan is PlanRow => plan !== null)
+    : basePlans;
   const o = overview?.[0];
   const mappedOverview: BillingOverview | null =
     o ?

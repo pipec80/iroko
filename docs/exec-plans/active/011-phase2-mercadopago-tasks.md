@@ -15,8 +15,7 @@ must never become `canceled` until the Mercado Pago `PUT /preapproval/{id}`
 response confirms cancellation.
 
 This plan records implementation progress in the current branch. It is not
-sandbox, Cloud, price-approval, provider-enablement, or production-certification
-evidence.
+sandbox, Cloud, provider-enablement, or production-certification evidence.
 
 ## Authoritative policy and constraints
 
@@ -31,6 +30,10 @@ evidence.
   inline `auto_recurring` amount in provider minor units, and never sends
   `preapproval_plan_id`. CLP is zero-decimal; the conversion remains
   two-decimal for USD.
+- The approved Chilean monthly catalog is Free `CLP 0`, Plus `CLP 19.990`, and
+  Pro `CLP 102.990`. It preserves durable internal slugs `free` / `pro` /
+  `scale`; only the public labels change, and Mercado Pago exposes no annual
+  checkout without a separately approved annual CLP price.
 - Mercado Pago has no reusable external price in this flow. The returned
   preapproval ID is the external subscription ID; the selected local plan is
   retained by the provisional subscription rather than inferred from an
@@ -71,25 +74,27 @@ provider or runtime.
   preapproval is created and before redirect. If that persistence fails, it
   immediately compensates by canceling the remote preapproval, logs safe
   incident metadata, and preserves the original error.
+- [x] **Chilean catalog and checkout surface.** A versioned
+  Mercado Pago `CLP` provider-price catalog maps Free / Plus / Pro to `0` /
+  `19.990` / `102.990` monthly. The checkout surface displays zero-decimal CLP
+  correctly and does not offer a yearly Mercado Pago flow.
 
 ## Remaining certification tasks
 
 ### Task 4: Review the focused contract and regression evidence
 
-- [ ] Run the focused Mercado Pago provider and BillingService tests, plus the
-  corresponding pgTAP database test, in an environment where their
-  dependencies are available.
-- [ ] Run `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, and the relevant
-  documentation checks before requesting review.
-- [ ] Verify the migration/schema mirror and generated database types against
-  a local Supabase reset. Docker-local execution and generated-type evidence
-  are currently **[NO VERIFICADO]**.
+- [x] Focused Mercado Pago provider/BillingService tests and the corresponding
+  pgTAP database tests passed locally.
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, and the relevant
+  documentation checks passed after the catalog/UI change.
+- [x] The migration/schema mirror and generated database types passed a local
+  Supabase reset. Linked Cloud parity remains **[NO VERIFICADO]**.
 
 ### Task 5: Sandbox lifecycle — release gate
 
-- [ ] Confirm that sandbox credentials and a permitted `mercadopago`/`CLP`
-  catalog price are available. Neither price approval nor provider enablement
-  is implied by this plan; both are **[NO VERIFICADO]**.
+- [x] The approved `mercadopago`/`CLP` catalog is versioned and verified in
+  local Supabase. Sandbox runtime credentials in the application environment
+  remain **[NO VERIFICADO]**.
 - [ ] Exercise the full lifecycle: pending preapproval creation; provisional
   `incomplete` local row with the selected plan; preapproval authorization
   webhook; authorized-payment invoice/payment event; and immediate
@@ -114,5 +119,5 @@ provider or runtime.
   evidence; local Docker/type generation evidence is not substituted by
   static review.
 - A documented sandbox lifecycle proves the provider-side cancellation and is
-  reviewed before any Mercado Pago enablement. Linked Cloud parity, approved
-  CLP prices, and production enablement remain separate explicit approvals.
+  reviewed before any Mercado Pago enablement. Linked Cloud parity and
+  production enablement remain separate explicit approvals.

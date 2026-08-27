@@ -154,4 +154,28 @@ describe('BillingTab — role-awareness', () => {
     await waitFor(() => expect(screen.getByTestId('cancel-immediately')).toBeDefined());
     expect(screen.queryByTestId('cancel-period-end')).toBeNull();
   });
+
+  it('shows Chilean prices without offering an unavailable annual checkout', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: {
+        plans: [
+          { ...PLAN_FREE, currency: 'CLP' },
+          { ...PLAN_PRO, name: 'Plus', price: 19_990, currency: 'CLP' },
+          {
+            ...PLAN_PRO,
+            slug: 'scale',
+            name: 'Pro',
+            price: 102_990,
+            currency: 'CLP',
+          },
+        ],
+        overview: null,
+      },
+    });
+
+    renderBillingTab('owner');
+
+    await waitFor(() => expect(screen.getByText(/19[.\s]990/)).toBeDefined());
+    expect(screen.queryByText(es.Billing.toggle_yearly)).toBeNull();
+  });
 });

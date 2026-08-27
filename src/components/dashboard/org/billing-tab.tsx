@@ -37,6 +37,10 @@ const INVOICE_STATUS_KEYS: Record<string, string> = {
   uncollectible: 'invoice_status_uncollectible',
 };
 
+function toDisplayAmount(amount: number, currency: string): number {
+  return currency === 'CLP' ? amount : amount / 100;
+}
+
 export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRole | null }) {
   const t = useTranslations('Billing');
   const locale = useLocale();
@@ -85,6 +89,7 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
   }
 
   const plans = data.plans.filter((p) => p.interval === interval || p.slug === 'free');
+  const hasAnnualPlans = data.plans.some((plan) => plan.interval === 'year');
   const overview = data.overview;
   const hasBlockingPaidSubscription = Boolean(
     overview &&
@@ -94,7 +99,7 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
 
   const formatPrice = (plan: PlanRow) =>
     new Intl.NumberFormat(locale, { style: 'currency', currency: plan.currency }).format(
-      plan.price / 100,
+      toDisplayAmount(plan.price, plan.currency),
     );
 
   const formatDate = (value: string) =>
@@ -122,28 +127,30 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
       <section>
         <div className="mb-4 flex items-center justify-between">
           <span className="eyebrow">{t('current_plan')}</span>
-          <div className="border-border flex rounded-lg border p-0.5">
-            <button
-              type="button"
-              onClick={() => setInterval('month')}
-              className={cn(
-                'rounded-md px-3 py-1 text-[12px] font-semibold transition-colors',
-                interval === 'month' ? 'text-white' : 'text-muted-foreground',
-              )}
-              style={interval === 'month' ? { background: 'var(--color-cobalt)' } : undefined}>
-              {t('toggle_monthly')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setInterval('year')}
-              className={cn(
-                'rounded-md px-3 py-1 text-[12px] font-semibold transition-colors',
-                interval === 'year' ? 'text-white' : 'text-muted-foreground',
-              )}
-              style={interval === 'year' ? { background: 'var(--color-cobalt)' } : undefined}>
-              {t('toggle_yearly')}
-            </button>
-          </div>
+          {hasAnnualPlans && (
+            <div className="border-border flex rounded-lg border p-0.5">
+              <button
+                type="button"
+                onClick={() => setInterval('month')}
+                className={cn(
+                  'rounded-md px-3 py-1 text-[12px] font-semibold transition-colors',
+                  interval === 'month' ? 'text-white' : 'text-muted-foreground',
+                )}
+                style={interval === 'month' ? { background: 'var(--color-cobalt)' } : undefined}>
+                {t('toggle_monthly')}
+              </button>
+              <button
+                type="button"
+                onClick={() => setInterval('year')}
+                className={cn(
+                  'rounded-md px-3 py-1 text-[12px] font-semibold transition-colors',
+                  interval === 'year' ? 'text-white' : 'text-muted-foreground',
+                )}
+                style={interval === 'year' ? { background: 'var(--color-cobalt)' } : undefined}>
+                {t('toggle_yearly')}
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -327,7 +334,7 @@ function InvoiceHistory() {
     new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
   const formatAmount = (invoice: Invoice) =>
     new Intl.NumberFormat(locale, { style: 'currency', currency: invoice.currency }).format(
-      invoice.amountPaid / 100,
+      toDisplayAmount(invoice.amountPaid, invoice.currency),
     );
 
   return (
