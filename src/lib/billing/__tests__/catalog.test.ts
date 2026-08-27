@@ -1,21 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  const query = {
-    eq: vi.fn(),
-    maybeSingle: vi.fn(),
-  };
-  query.eq.mockReturnValue(query);
-
   return {
-    from: vi.fn(() => ({ select: vi.fn(() => query) })),
-    query,
-    schema: vi.fn(() => ({ from: vi.fn(() => ({ select: vi.fn(() => query) })) })),
+    rpc: vi.fn(),
   };
 });
 
 vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: vi.fn(() => ({ schema: mocks.schema })),
+  createAdminClient: vi.fn(() => ({ rpc: mocks.rpc })),
 }));
 
 import { getProviderPrice, resolvePlanByExternalPrice } from '../catalog';
@@ -23,20 +15,22 @@ import { getProviderPrice, resolvePlanByExternalPrice } from '../catalog';
 describe('billing provider price catalog', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.query.eq.mockReturnValue(mocks.query);
   });
 
-  it('resolves an outbound provider price', async () => {
-    mocks.query.maybeSingle.mockResolvedValue({
-      data: {
-        id: 'provider-price-1',
-        plan_id: 'plan-1',
-        provider: 'stripe',
-        external_price_id: 'price_pro_month',
-        amount: 2500,
-        currency: 'USD',
-        plan: { slug: 'pro', interval: 'month' },
-      },
+  it('resolves an outbound provider price through the server-only catalog RPC', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          id: 'provider-price-1',
+          plan_id: 'plan-1',
+          plan_slug: 'pro',
+          interval: 'month',
+          provider: 'stripe',
+          external_price_id: 'price_pro_month',
+          amount: 2500,
+          currency: 'USD',
+        },
+      ],
       error: null,
     });
 
@@ -57,24 +51,31 @@ describe('billing provider price catalog', () => {
       amount: 2500,
       currency: 'USD',
     });
+    expect(mocks.rpc).toHaveBeenCalledWith('get_billing_provider_price', {
+      p_currency: 'USD',
+      p_interval: 'month',
+      p_plan_slug: 'pro',
+      p_provider: 'stripe',
+    });
   });
 
-  it('reverse maps an external price to one Iroko plan', async () => {
-    mocks.query.maybeSingle.mockResolvedValue({
-      data: {
-        plan_id: 'plan-1',
-        plan: { slug: 'pro', interval: 'year' },
-      },
+  it('reverse maps an external price through the server-only catalog RPC', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [{ plan_id: 'plan-1', plan_slug: 'pro', interval: 'year' }],
       error: null,
     });
 
     await expect(
       resolvePlanByExternalPrice({ provider: 'stripe', externalPriceId: 'price_pro_year' }),
     ).resolves.toEqual({ planId: 'plan-1', planSlug: 'pro', interval: 'year' });
+    expect(mocks.rpc).toHaveBeenCalledWith('resolve_billing_plan_by_external_price', {
+      p_external_price_id: 'price_pro_year',
+      p_provider: 'stripe',
+    });
   });
 
   it('throws when an outbound provider price is not configured', async () => {
-    mocks.query.maybeSingle.mockResolvedValue({ data: null, error: null });
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
 
     await expect(
       getProviderPrice({
@@ -86,32 +87,8 @@ describe('billing provider price catalog', () => {
     ).rejects.toThrow('plan_provider_price_not_configured');
   });
 
-  it('rejects an outbound provider price whose joined plan is missing', async () => {
-    mocks.query.maybeSingle.mockResolvedValue({
-      data: {
-        id: 'provider-price-1',
-        plan_id: 'plan-1',
-        provider: 'stripe',
-        external_price_id: 'price_pro_month',
-        amount: 2500,
-        currency: 'USD',
-        plan: null,
-      },
-      error: null,
-    });
-
-    await expect(
-      getProviderPrice({
-        planSlug: 'pro',
-        interval: 'month',
-        provider: 'stripe',
-        currency: 'USD',
-      }),
-    ).rejects.toThrow('provider_price_plan_not_found');
-  });
-
   it('throws when an inbound provider price has no mapping', async () => {
-    mocks.query.maybeSingle.mockResolvedValue({ data: null, error: null });
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
 
     await expect(
       resolvePlanByExternalPrice({ provider: 'stripe', externalPriceId: 'price_unknown' }),

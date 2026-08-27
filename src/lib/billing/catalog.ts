@@ -13,29 +13,23 @@ export interface ProviderPrice {
   currency: string;
 }
 
-interface PlanReference {
-  slug: string;
-  interval: PlanInterval;
-}
-
 interface ProviderPriceRecord {
   id: string;
   plan_id: string;
+  plan_slug: string;
+  interval: PlanInterval;
   provider: ProviderName;
   external_price_id: string | null;
   amount: number;
   currency: string;
-  plan: PlanReference | null;
 }
 
 function toProviderPrice(record: ProviderPriceRecord): ProviderPrice {
-  if (!record.plan) throw new Error('provider_price_plan_not_found');
-
   return {
     id: record.id,
     planId: record.plan_id,
-    planSlug: record.plan.slug,
-    interval: record.plan.interval,
+    planSlug: record.plan_slug,
+    interval: record.interval,
     provider: record.provider,
     externalPriceId: record.external_price_id,
     amount: record.amount,
@@ -51,25 +45,20 @@ export async function getProviderPrice(input: {
   currency: string;
 }): Promise<ProviderPrice> {
   const admin = createAdminClient();
-  const result = await admin
-    .schema('billing')
-    .from('provider_prices')
-    .select(
-      'id, plan_id, provider, external_price_id, amount, currency, plan:plans!inner(slug, interval)',
-    )
-    .eq('provider', input.provider)
-    .eq('currency', input.currency)
-    .eq('is_active', true)
-    .eq('plan.slug', input.planSlug)
-    .eq('plan.interval', input.interval)
-    .maybeSingle();
+  const result = await admin.rpc('get_billing_provider_price', {
+    p_plan_slug: input.planSlug,
+    p_interval: input.interval,
+    p_provider: input.provider,
+    p_currency: input.currency,
+  });
   const { data, error } = result as {
-    data: ProviderPriceRecord | null;
+    data: ProviderPriceRecord[] | null;
     error: { message: string } | null;
   };
 
-  if (error || !data) throw new Error('plan_provider_price_not_configured');
-  return toProviderPrice(data);
+  const providerPrice = data?.[0];
+  if (error || !providerPrice) throw new Error('plan_provider_price_not_configured');
+  return toProviderPrice(providerPrice);
 }
 
 /** Resolves a provider webhook price identifier back to the Iroko plan. */
@@ -78,22 +67,20 @@ export async function resolvePlanByExternalPrice(input: {
   externalPriceId: string;
 }): Promise<{ planId: string; planSlug: string; interval: PlanInterval }> {
   const admin = createAdminClient();
-  const result = await admin
-    .schema('billing')
-    .from('provider_prices')
-    .select('plan_id, plan:plans!inner(slug, interval)')
-    .eq('provider', input.provider)
-    .eq('external_price_id', input.externalPriceId)
-    .maybeSingle();
+  const result = await admin.rpc('resolve_billing_plan_by_external_price', {
+    p_provider: input.provider,
+    p_external_price_id: input.externalPriceId,
+  });
   const { data, error } = result as {
-    data: Pick<ProviderPriceRecord, 'plan_id' | 'plan'> | null;
+    data: Array<Pick<ProviderPriceRecord, 'plan_id' | 'plan_slug' | 'interval'>> | null;
     error: { message: string } | null;
   };
 
-  if (error || !data?.plan) throw new Error('provider_price_mapping_not_found');
+  const plan = data?.[0];
+  if (error || !plan) throw new Error('provider_price_mapping_not_found');
   return {
-    planId: data.plan_id,
-    planSlug: data.plan.slug,
-    interval: data.plan.interval,
+    planId: plan.plan_id,
+    planSlug: plan.plan_slug,
+    interval: plan.interval,
   };
 }

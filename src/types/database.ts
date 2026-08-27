@@ -1815,6 +1815,24 @@ export type Database = {
           trial_end: string
         }[]
       }
+      get_billing_provider_price: {
+        Args: {
+          p_currency: string
+          p_interval: Database["billing"]["Enums"]["plan_interval"]
+          p_plan_slug: string
+          p_provider: string
+        }
+        Returns: {
+          amount: number
+          currency: string
+          external_price_id: string
+          id: string
+          interval: Database["billing"]["Enums"]["plan_interval"]
+          plan_id: string
+          plan_slug: string
+          provider: string
+        }[]
+      }
       get_email_worker_health: {
         Args: never
         Returns: {
@@ -2023,6 +2041,14 @@ export type Database = {
         Returns: undefined
       }
       request_account_deletion: { Args: never; Returns: undefined }
+      resolve_billing_plan_by_external_price: {
+        Args: { p_external_price_id: string; p_provider: string }
+        Returns: {
+          interval: Database["billing"]["Enums"]["plan_interval"]
+          plan_id: string
+          plan_slug: string
+        }[]
+      }
       revoke_api_key: { Args: { p_key_id: string }; Returns: undefined }
       revoke_invitation: {
         Args: { p_invitation_id: string }
