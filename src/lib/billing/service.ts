@@ -17,19 +17,6 @@ import type {
 
 const BLOCKING_PAID_STATUSES = new Set(['trialing', 'active', 'past_due']);
 
-interface ProvisionalSubscriptionRpcArgs {
-  p_account_id: string;
-  p_plan_id: string;
-  p_external_preapproval_id: string;
-}
-
-interface ProvisionalSubscriptionRpcClient {
-  rpc(
-    functionName: 'create_billing_provisional_subscription',
-    args: ProvisionalSubscriptionRpcArgs,
-  ): Promise<{ data: string | null; error: { code?: string | null } | null }>;
-}
-
 interface StartBillingCheckoutInput {
   accountId: string;
   customerEmail: string;
@@ -51,9 +38,7 @@ async function persistMercadoPagoProvisionalSubscription(input: {
   planId: string;
   externalPreapprovalId: string;
 }): Promise<void> {
-  // Temporary generated-type boundary: the Task 2 SQL RPC is not in
-  // src/types/database.ts until local Supabase can generate types again.
-  const admin = createAdminClient() as unknown as ProvisionalSubscriptionRpcClient;
+  const admin = createAdminClient();
   const { error } = await admin.rpc('create_billing_provisional_subscription', {
     p_account_id: input.accountId,
     p_plan_id: input.planId,
