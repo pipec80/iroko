@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { applyEvent } from '../subscription-state';
 import type {
   InvoicePaidEvent,
+  InvoicePaymentFailedEvent,
   SubscriptionCanceledEvent,
   SubscriptionCreatedEvent,
   SubscriptionUpdatedEvent,
@@ -53,6 +54,17 @@ const invoicePaid: InvoicePaidEvent = {
   raw: {},
 };
 
+const invoicePaymentFailed: InvoicePaymentFailedEvent = {
+  provider: 'stripe',
+  externalEventId: 'e5',
+  type: 'invoice_payment_failed',
+  accountId: 'a1',
+  externalSubscriptionId: 'sub_1',
+  externalInvoiceId: 'in_1',
+  attemptedAt: '2026-08-26T12:00:00.000Z',
+  raw: {},
+};
+
 describe('applyEvent', () => {
   it('should activate on subscription_created', () => {
     const next = applyEvent(null, created);
@@ -72,5 +84,11 @@ describe('applyEvent', () => {
   it('does not change subscription status when an invoice is paid', () => {
     const next = applyEvent({ status: 'past_due', cancelAtPeriodEnd: false }, invoicePaid);
     expect(next.status).toBe('past_due');
+  });
+
+  it('rejects a payment event when the subscription snapshot is unavailable', () => {
+    expect(() => applyEvent(null, invoicePaymentFailed)).toThrow(
+      'subscription_snapshot_not_found:invoice_payment_failed',
+    );
   });
 });

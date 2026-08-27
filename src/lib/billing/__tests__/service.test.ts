@@ -28,7 +28,7 @@ const input = {
 describe('BillingService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireAccountRole.mockResolvedValue();
+    mocks.requireAccountRole.mockImplementation(async () => {});
     mocks.rpc.mockResolvedValue({ data: [], error: null });
     mocks.getPaymentProvider.mockReturnValue({
       name: 'mock',
@@ -72,6 +72,23 @@ describe('BillingService', () => {
     expect(mocks.createCheckout).toHaveBeenCalledWith(input);
   });
 
+  it('surfaces an overview lookup failure before invoking checkout', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'overview_unavailable' } });
+
+    await expect(startBillingCheckout(input)).rejects.toThrow(
+      'billing_overview_failed:overview_unavailable',
+    );
+    expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it('rejects cancellation when there is no provider subscription to cancel', async () => {
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
+
+    await expect(
+      cancelBillingSubscription({ accountId: 'account-1', timing: 'immediate' }),
+    ).rejects.toThrow('billing_subscription_not_found');
+  });
+
   it('checks the provider capability before cancellation', async () => {
     mocks.rpc.mockResolvedValue({
       data: [{ provider: 'mercadopago', external_subscription_id: 'preapproval-1' }],
@@ -91,5 +108,42 @@ describe('BillingService', () => {
     await expect(
       cancelBillingSubscription({ accountId: 'account-1', timing: 'period_end' }),
     ).rejects.toThrow('billing_capability_not_supported:cancelAtPeriodEnd');
+  });
+
+  it('rejects an advertised cancellation capability without an adapter operation', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [{ provider: 'mock', external_subscription_id: 'sub-1' }],
+      error: null,
+    });
+    mocks.getPaymentProvider.mockReturnValue({
+      capabilities: {
+        customerPortal: false,
+        cancelImmediately: true,
+        cancelAtPeriodEnd: true,
+        updatePaymentMethod: false,
+        changePlan: false,
+        pauseSubscription: false,
+      },
+    });
+
+    await expect(
+      cancelBillingSubscription({ accountId: 'account-1', timing: 'immediate' }),
+    ).rejects.toThrow('billing_capability_not_supported:cancelImmediately');
+  });
+
+  it('delegates an immediate cancellation to the configured provider', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [{ provider: 'mock', external_subscription_id: 'sub-1' }],
+      error: null,
+    });
+    mocks.cancelSubscription.mockImplementation(async () => {});
+
+    await expect(
+      cancelBillingSubscription({ accountId: 'account-1', timing: 'immediate' }),
+    ).resolves.toBeUndefined();
+    expect(mocks.cancelSubscription).toHaveBeenCalledWith({
+      externalSubscriptionId: 'sub-1',
+      timing: 'immediate',
+    });
   });
 });

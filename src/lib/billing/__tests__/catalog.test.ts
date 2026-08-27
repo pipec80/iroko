@@ -86,6 +86,30 @@ describe('billing provider price catalog', () => {
     ).rejects.toThrow('plan_provider_price_not_configured');
   });
 
+  it('rejects an outbound provider price whose joined plan is missing', async () => {
+    mocks.query.maybeSingle.mockResolvedValue({
+      data: {
+        id: 'provider-price-1',
+        plan_id: 'plan-1',
+        provider: 'stripe',
+        external_price_id: 'price_pro_month',
+        amount: 2500,
+        currency: 'USD',
+        plan: null,
+      },
+      error: null,
+    });
+
+    await expect(
+      getProviderPrice({
+        planSlug: 'pro',
+        interval: 'month',
+        provider: 'stripe',
+        currency: 'USD',
+      }),
+    ).rejects.toThrow('provider_price_plan_not_found');
+  });
+
   it('throws when an inbound provider price has no mapping', async () => {
     mocks.query.maybeSingle.mockResolvedValue({ data: null, error: null });
 
