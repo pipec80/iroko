@@ -89,6 +89,7 @@ docs/**/*.pdf
 # local/, que ya cubre el árbol completo con una sola regla).
 /docs/estado-fases.md
 /.superpowers/
+/.worktrees/
 
 # scratch / herramientas locales (no pertenecen al repo)
 /scratch/
