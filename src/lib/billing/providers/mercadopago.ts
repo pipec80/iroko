@@ -25,35 +25,66 @@ interface PreapprovalResource {
 }
 
 interface AuthorizedPaymentResource {
-  id: string | number;
-  preapproval_id: string | number;
-  external_reference: string;
-  transaction_amount?: string | number;
-  currency_id?: string;
-  date_created: string;
+  id?: unknown;
+  preapproval_id?: unknown;
+  external_reference?: unknown;
+  transaction_amount?: unknown;
+  currency_id?: unknown;
+  date_created?: unknown;
   payment: {
     id: string | number;
     status: string;
-    status_detail?: string;
+    status_detail?: unknown;
   };
 }
 
-function normalizeExternalId(value: string | number | undefined): string | null {
-  if (typeof value === 'string' && value.length > 0) return String(value);
+function normalizeExternalId(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim().length > 0) return value;
   if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return String(value);
   return null;
 }
 
-function normalizeIntegerAmount(value: string | number | undefined): number | null {
-  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return value;
-  if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
-
-  const amount = Number(value);
-  return Number.isSafeInteger(amount) ? amount : null;
+function normalizeCurrency(value: unknown): string | null {
+  return typeof value === 'string' && /^[A-Z]{3}$/.test(value) ? value : null;
 }
 
-function normalizeCurrency(value: string | undefined): string | null {
-  return value && /^[A-Z]{3}$/.test(value) ? value : null;
+function normalizeAmount(value: unknown, currency: string): number | null {
+  if (typeof value !== 'string' && typeof value !== 'number') return null;
+  if (typeof value === 'number' && (!Number.isFinite(value) || value < 0 || Object.is(value, -0))) {
+    return null;
+  }
+
+  const match = /^(\d+)(?:\.(\d+))?$/.exec(String(value));
+  if (!match) return null;
+
+  const whole = Number(match[1]);
+  if (!Number.isSafeInteger(whole)) return null;
+
+  const fraction = match[2] ?? '';
+  const fractionDigits = currency === 'CLP' ? 0 : 2;
+  if (fraction.length > fractionDigits) return null;
+
+  const scale = 10 ** fractionDigits;
+  const minorAmount = whole * scale + Number(fraction.padEnd(fractionDigits, '0'));
+  return Number.isSafeInteger(minorAmount) ? minorAmount : null;
+}
+
+function isAuthorizedPaymentResource(value: unknown): value is AuthorizedPaymentResource {
+  if (typeof value !== 'object' || value === null || !('payment' in value)) return false;
+  const nestedPayment = value.payment;
+  return (
+    typeof nestedPayment === 'object' &&
+    nestedPayment !== null &&
+    'id' in nestedPayment &&
+    'status' in nestedPayment &&
+    normalizeExternalId(nestedPayment.id) !== null &&
+    typeof nestedPayment.status === 'string' &&
+    nestedPayment.status.trim().length > 0
+  );
+}
+
+function authorizedPaymentEventId(invoiceId: string, paymentId: string, status: string): string {
+  return `authorized_payment:${encodeURIComponent(invoiceId)}:${encodeURIComponent(paymentId)}:${encodeURIComponent(status)}`;
 }
 
 function toMercadoPagoTransactionAmount(amount: number, currency: string): number {
@@ -248,32 +279,45 @@ export const mercadopagoProvider: PaymentProvider = {
     }
 
     if (body.type === 'subscription_authorized_payment') {
-      const payment = await fetchResource<AuthorizedPaymentResource>(
-        `/authorized_payments/${body.data.id}`,
-      );
+      const payment = await fetchResource<unknown>(`/authorized_payments/${body.data.id}`);
+      if (!isAuthorizedPaymentResource(payment)) return null;
       const invoiceId = normalizeExternalId(payment.id);
       const subscriptionId = normalizeExternalId(payment.preapproval_id);
       const paymentId = normalizeExternalId(payment.payment?.id);
-      if (!payment.external_reference || !invoiceId || !subscriptionId || !paymentId) return null;
+      const accountId =
+        (
+          typeof payment.external_reference === 'string' &&
+          payment.external_reference.trim().length > 0
+        ) ?
+          payment.external_reference
+        : null;
+      if (!accountId || !invoiceId || !subscriptionId || !paymentId) return null;
 
-      const amount = normalizeIntegerAmount(payment.transaction_amount);
-      if (payment.transaction_amount !== undefined && amount === null) return null;
       const currency =
         payment.currency_id === undefined ? undefined : normalizeCurrency(payment.currency_id);
       if (currency === null) return null;
+      const amount =
+        payment.transaction_amount === undefined || currency === undefined ?
+          null
+        : normalizeAmount(payment.transaction_amount, currency);
+      if (payment.transaction_amount !== undefined && amount === null) return null;
+      if (typeof payment.date_created !== 'string') return null;
 
       if (payment.payment.status !== 'approved') {
         return {
           provider: 'mercadopago',
-          externalEventId: invoiceId,
+          externalEventId: authorizedPaymentEventId(invoiceId, paymentId, payment.payment.status),
           type: 'invoice_payment_failed',
-          accountId: payment.external_reference,
+          accountId,
           externalSubscriptionId: subscriptionId,
           externalInvoiceId: invoiceId,
           externalPaymentId: paymentId,
           ...(amount === null ? {} : { amountDue: amount }),
           ...(currency === undefined ? {} : { currency }),
-          failureCode: payment.payment.status_detail,
+          failureCode:
+            typeof payment.payment.status_detail === 'string' ?
+              payment.payment.status_detail
+            : undefined,
           attemptedAt: payment.date_created,
           raw: payment,
         };
@@ -281,9 +325,9 @@ export const mercadopagoProvider: PaymentProvider = {
       if (amount === null || currency === undefined) return null;
       return {
         provider: 'mercadopago',
-        externalEventId: invoiceId,
+        externalEventId: authorizedPaymentEventId(invoiceId, paymentId, payment.payment.status),
         type: 'invoice_paid',
-        accountId: payment.external_reference,
+        accountId,
         externalSubscriptionId: subscriptionId,
         externalInvoiceId: invoiceId,
         externalPaymentId: paymentId,
