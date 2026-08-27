@@ -10,8 +10,8 @@ SELECT plan(4);
 INSERT INTO audit.logs (actor_id, action, resource_type, resource_id)
 VALUES ('00000000-0000-0000-0000-000000000002', 'create', 'profile', 'p1');
 
-INSERT INTO billing.events (event_type, provider, payload)
-VALUES ('invoice.paid', 'stripe', '{"amount": 9900}'::jsonb);
+INSERT INTO billing.events (event_type, provider, external_event_id, payload)
+VALUES ('invoice.paid', 'stripe', 'evt_immutability_1', '{"amount": 9900}'::jsonb);
 
 -- 1. UPDATE on audit.logs must raise the deny_mutation exception
 SELECT throws_ok(

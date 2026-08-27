@@ -1,13 +1,12 @@
 import Stripe from 'stripe';
 
 import { env } from '@/env';
-import { createClient } from '@/lib/supabase/server';
-
+import { getProviderPrice } from '../catalog';
+import type { NormalizedBillingEvent } from '../events';
 import type {
+  CancelSubscriptionParams,
   CheckoutParams,
-  NormalizedEvent,
   PaymentProvider,
-  PortalParams,
   SubscriptionStatus,
 } from '../types';
 
@@ -28,30 +27,77 @@ function mapStatus(status: Stripe.Subscription.Status): SubscriptionStatus {
   return status as SubscriptionStatus;
 }
 
+function toIsoTimestamp(unixSeconds: number | null | undefined): string | undefined {
+  return typeof unixSeconds === 'number' ? new Date(unixSeconds * 1000).toISOString() : undefined;
+}
+
+function getExternalPriceId(item: Stripe.SubscriptionItem | undefined): string | undefined {
+  if (!item?.price) return undefined;
+  return typeof item.price === 'string' ? item.price : item.price.id;
+}
+
 function fromSubscriptionEvent(
   stripeEvent: Stripe.Event,
-  type: NormalizedEvent['type'],
-): NormalizedEvent | null {
+  type: 'subscription_created' | 'subscription_updated' | 'subscription_canceled',
+): NormalizedBillingEvent | null {
   const sub = stripeEvent.data.object as Stripe.Subscription;
   const accountId = sub.metadata?.accountId;
   if (!accountId) return null;
   // API 2025-03-31.basil: el período de facturación vive por ítem, no en la
   // suscripción — este adapter solo soporta suscripciones de un único ítem.
   const item = sub.items.data[0];
+  const externalPriceId = getExternalPriceId(item);
+  const currentPeriodStart = toIsoTimestamp(item?.current_period_start);
+  const currentPeriodEnd = toIsoTimestamp(item?.current_period_end);
+
+  if (type === 'subscription_canceled') {
+    return {
+      provider: 'stripe',
+      externalEventId: stripeEvent.id,
+      type,
+      accountId,
+      externalSubscriptionId: sub.id,
+      canceledAt: toIsoTimestamp(sub.canceled_at),
+      accessUntil: currentPeriodEnd,
+      raw: sub,
+    };
+  }
+
+  if (type === 'subscription_created' && !externalPriceId) return null;
+
+  if (type === 'subscription_created') {
+    if (!externalPriceId) return null;
+    return {
+      provider: 'stripe',
+      externalEventId: stripeEvent.id,
+      type,
+      accountId,
+      status: mapStatus(sub.status),
+      externalSubscriptionId: sub.id,
+      externalPriceId,
+      currentPeriodStart,
+      currentPeriodEnd,
+      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      raw: sub,
+    };
+  }
+
   return {
+    provider: 'stripe',
     externalEventId: stripeEvent.id,
     type,
     accountId,
     status: mapStatus(sub.status),
     externalSubscriptionId: sub.id,
-    currentPeriodStart: item ? new Date(item.current_period_start * 1000).toISOString() : undefined,
-    currentPeriodEnd: item ? new Date(item.current_period_end * 1000).toISOString() : undefined,
+    ...(externalPriceId ? { externalPriceId } : {}),
+    currentPeriodStart,
+    currentPeriodEnd,
     cancelAtPeriodEnd: sub.cancel_at_period_end,
     raw: sub,
   };
 }
 
-function fromInvoiceEvent(stripeEvent: Stripe.Event): NormalizedEvent | null {
+function fromInvoiceEvent(stripeEvent: Stripe.Event): NormalizedBillingEvent | null {
   const invoice = stripeEvent.data.object as Stripe.Invoice;
   // API 2025-03-31.basil: la suscripción de origen se mudó a
   // invoice.parent.subscription_details (antes invoice.subscription).
@@ -59,17 +105,21 @@ function fromInvoiceEvent(stripeEvent: Stripe.Event): NormalizedEvent | null {
   const accountId = subscriptionDetails?.metadata?.accountId;
   if (!accountId) return null;
   const subscriptionId = subscriptionDetails?.subscription;
+  const paidAt = toIsoTimestamp(invoice.status_transitions?.paid_at);
+  if (typeof subscriptionId !== 'string' || !paidAt) return null;
+
   return {
+    provider: 'stripe',
     externalEventId: stripeEvent.id,
     type: 'invoice_paid',
     accountId,
-    externalSubscriptionId: typeof subscriptionId === 'string' ? subscriptionId : undefined,
-    invoice: {
-      amountPaid: invoice.amount_paid,
-      currency: invoice.currency,
-      periodStart: new Date(invoice.period_start * 1000).toISOString(),
-      periodEnd: new Date(invoice.period_end * 1000).toISOString(),
-    },
+    externalSubscriptionId: subscriptionId,
+    externalInvoiceId: invoice.id,
+    amountPaid: invoice.amount_paid,
+    currency: invoice.currency,
+    periodStart: toIsoTimestamp(invoice.period_start),
+    periodEnd: toIsoTimestamp(invoice.period_end),
+    paidAt,
     raw: invoice,
   };
 }
@@ -78,21 +128,32 @@ function fromInvoiceEvent(stripeEvent: Stripe.Event): NormalizedEvent | null {
  * completan en la siguiente tarea del plan; por ahora lanzan si se llaman. */
 export const stripeProvider: PaymentProvider = {
   name: 'stripe',
+  capabilities: {
+    customerPortal: false,
+    cancelImmediately: true,
+    cancelAtPeriodEnd: true,
+    updatePaymentMethod: false,
+    changePlan: false,
+    pauseSubscription: false,
+  },
 
   async createCheckout(params: CheckoutParams): Promise<{ url: string }> {
-    const supabase = await createClient();
-    const { data: priceId } = await supabase.rpc('get_plan_provider_id', {
-      p_slug: params.planSlug,
-      p_interval: params.interval,
-      p_provider: 'stripe',
+    const providerPrice = await getProviderPrice({
+      planSlug: params.planSlug,
+      interval: params.interval,
+      provider: 'stripe',
+      currency: 'USD',
     });
-    if (!priceId) throw new Error('plan_provider_id_not_configured');
+    if (!providerPrice.externalPriceId) {
+      throw new Error('provider_price_external_id_not_configured');
+    }
 
     const session = await getStripe().checkout.sessions.create({
       mode: 'subscription',
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: providerPrice.externalPriceId, quantity: 1 }],
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,
+      customer_email: params.customerEmail,
       subscription_data: { metadata: { accountId: params.accountId } },
       metadata: { accountId: params.accountId },
     });
@@ -100,23 +161,17 @@ export const stripeProvider: PaymentProvider = {
     return { url: session.url };
   },
 
-  async createPortalSession(params: PortalParams): Promise<{ url: string }> {
-    const session = await getStripe().billingPortal.sessions.create({
-      customer: params.accountId,
-      return_url: params.returnUrl,
-    });
-    return { url: session.url };
-  },
-
-  async cancelSubscription(externalId: string, atPeriodEnd: boolean): Promise<void> {
-    if (atPeriodEnd) {
-      await getStripe().subscriptions.update(externalId, { cancel_at_period_end: true });
+  async cancelSubscription(params: CancelSubscriptionParams): Promise<void> {
+    if (params.timing === 'period_end') {
+      await getStripe().subscriptions.update(params.externalSubscriptionId, {
+        cancel_at_period_end: true,
+      });
     } else {
-      await getStripe().subscriptions.cancel(externalId);
+      await getStripe().subscriptions.cancel(params.externalSubscriptionId);
     }
   },
 
-  async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedEvent | null> {
+  async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedBillingEvent | null> {
     let event: Stripe.Event;
     try {
       event = getStripe().webhooks.constructEvent(

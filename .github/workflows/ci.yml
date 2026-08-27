@@ -407,6 +407,11 @@ jobs:
             sleep 15
           done
 
+      # El Postgres efímero parte sin historial. `migration up` materializa el
+      # schema versionado sin reiniciar el stack completo como hace `db reset`.
+      - name: Apply versioned Supabase migrations
+        run: supabase migration up --local
+
       - name: Save Docker images to cache
         if: steps.supabase-cache-e2e.outputs.cache-hit != 'true'
         run: |
@@ -429,6 +434,9 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
           MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
+          # E2E ejecuta `next build && next start`, por lo que requiere opt-in
+          # explícito para el fixture MockProvider en NODE_ENV=production.
+          ALLOW_MOCK_BILLING: 'true'
           # Sin token, initAnalytics() no hace nada — 5 de los 7 escenarios de
           # analytics.spec.ts esperan tráfico de captura real hacia /ingest.
           NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: ${{ secrets.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN }}
@@ -519,6 +527,10 @@ jobs:
             sleep 15
           done
 
+      # Usa el mismo schema versionado que E2E sin reiniciar servicios locales.
+      - name: Apply versioned Supabase migrations
+        run: supabase migration up --local
+
       - name: Save Docker images to cache
         if: steps.supabase-cache-e2e-webkit.outputs.cache-hit != 'true'
         run: |
@@ -539,6 +551,8 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
           MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
+          # WebKit también arranca Next en modo producción contra Supabase local.
+          ALLOW_MOCK_BILLING: 'true'
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -588,6 +602,9 @@ jobs:
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
       FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
       MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
+      # El build de CI valida la app con el fixture mock; los deploys reales
+      # siguen requiriendo su provider configurado en el entorno del proveedor.
+      ALLOW_MOCK_BILLING: 'true'
       NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
       SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
     steps:

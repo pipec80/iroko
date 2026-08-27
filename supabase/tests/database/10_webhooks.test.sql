@@ -29,11 +29,17 @@ VALUES
 -- Sub pro (F3-3H-1: create_webhook_endpoint/send_webhook_delivery gatean por
 -- feature webhooks_enabled del plan; este suite no testea ese gate en sí,
 -- así que la cuenta necesita el feature activo, patrón de 11_billing.test.sql).
+SELECT set_config(
+  'app.test_pro_plan_id',
+  (SELECT id::text FROM billing.plans WHERE slug = 'pro' AND "interval" = 'month'),
+  true
+);
 SET LOCAL role service_role;
-SELECT public.apply_subscription_event(
-  '00000000-0000-0000-0000-000000000920', 'pro', 'month', 'active',
-  'sub_webhooks_test', 'evt_webhooks_test_1', 'subscription_created',
-  now(), now() + interval '30 days', false, NULL, NULL);
+SELECT public.apply_subscription_created(
+  'mock', 'evt_webhooks_test_1', '00000000-0000-0000-0000-000000000920',
+  current_setting('app.test_pro_plan_id')::uuid,
+  'sub_webhooks_test', 'active', now(), now() + interval '30 days', false,
+  NULL, '{}'::jsonb);
 RESET role;
 
 -- ── 1. Member no puede crear endpoints ──────────────────────────────────────

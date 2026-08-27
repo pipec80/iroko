@@ -32,6 +32,16 @@ describe('entitlements', () => {
     });
   });
 
+  it('falls back to the free plan when entitlements cannot be read', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'entitlements_unavailable' } });
+
+    await expect(getEntitlements('a1')).resolves.toEqual({
+      planSlug: 'free',
+      features: {},
+      limits: {},
+    });
+  });
+
   it('hasFeature returns true for an enabled feature', async () => {
     mocks.rpc.mockResolvedValue({ data: entitlementRow(), error: null });
     expect(await hasFeature('a1', 'webhooks_enabled')).toBe(true);

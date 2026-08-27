@@ -932,6 +932,8 @@
     "cancels_on": "Cancels on {date}",
     "cancel_btn": "Cancel subscription",
     "cancel_confirm": "Cancel your subscription at the end of the current period?",
+    "cancel_now_btn": "Cancel now",
+    "cancel_now_confirm": "Cancel your subscription immediately?",
     "history_title": "History",
     "col_date": "Date",
     "col_amount": "Amount",

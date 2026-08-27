@@ -37,6 +37,28 @@ const PLAN_FREE = {
 
 const PLAN_PRO = { ...PLAN_FREE, slug: 'pro', name: 'Pro', price: 2900 };
 
+const NO_CAPABILITIES = {
+  customerPortal: false,
+  cancelImmediately: false,
+  cancelAtPeriodEnd: false,
+  updatePaymentMethod: false,
+  changePlan: false,
+  pauseSubscription: false,
+};
+
+const ACTIVE_PRO_OVERVIEW = {
+  planSlug: 'pro',
+  planName: 'Pro',
+  planInterval: 'month' as const,
+  status: 'active',
+  currentPeriodEnd: '2026-09-01T00:00:00.000Z',
+  cancelAtPeriodEnd: false,
+  trialEnd: null,
+  provider: 'mercadopago',
+  externalSubscriptionId: 'preapproval_1',
+  capabilities: NO_CAPABILITIES,
+};
+
 function renderBillingTab(role: 'owner' | 'admin' | 'member' | 'viewer' | null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -91,5 +113,45 @@ describe('BillingTab — role-awareness', () => {
     button.click();
 
     await waitFor(() => expect(screen.getByText(es.Billing.checkout_error)).toBeDefined());
+  });
+
+  it('does not offer a second paid checkout while a paid subscription is active', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: { plans: [PLAN_FREE, PLAN_PRO], overview: ACTIVE_PRO_OVERVIEW },
+    });
+
+    renderBillingTab('owner');
+
+    const button = await waitFor(() => screen.getByTestId('subscribe-pro'));
+    expect(button).toHaveProperty('disabled', true);
+  });
+
+  it('hides unsupported cancellation actions from provider capabilities', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: { plans: [PLAN_FREE, PLAN_PRO], overview: ACTIVE_PRO_OVERVIEW },
+    });
+
+    renderBillingTab('owner');
+
+    await waitFor(() => expect(screen.getByTestId('current-plan')).toBeDefined());
+    expect(screen.queryByTestId('cancel-period-end')).toBeNull();
+    expect(screen.queryByTestId('cancel-immediately')).toBeNull();
+  });
+
+  it('renders immediate cancellation only when the provider advertises it', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: {
+        plans: [PLAN_FREE, PLAN_PRO],
+        overview: {
+          ...ACTIVE_PRO_OVERVIEW,
+          capabilities: { ...NO_CAPABILITIES, cancelImmediately: true },
+        },
+      },
+    });
+
+    renderBillingTab('owner');
+
+    await waitFor(() => expect(screen.getByTestId('cancel-immediately')).toBeDefined());
+    expect(screen.queryByTestId('cancel-period-end')).toBeNull();
   });
 });

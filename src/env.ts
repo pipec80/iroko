@@ -1,6 +1,17 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
 
+/** Allows Mock billing in production only when deployment configuration opts in explicitly. */
+export function isMockBillingAllowed(input: {
+  nodeEnv: string | undefined;
+  provider: string;
+  allowMockBilling: string | undefined;
+}): boolean {
+  return (
+    input.nodeEnv !== 'production' || input.provider !== 'mock' || input.allowMockBilling === 'true'
+  );
+}
+
 export const env = createEnv({
   // GitHub Actions passes unset secrets as empty strings.
   // SKIP_ENV_VALIDATION=1 lets CI build without real credentials
@@ -25,7 +36,21 @@ export const env = createEnv({
     // producción, contra el stack local (mismo motivo documentado en
     // src/proxy.ts para el CSP). Vacía o ausente en producción.
     MAILPIT_URL: z.string().url().optional(),
-    BILLING_DEFAULT_PROVIDER: z.string().default('mock'),
+    BILLING_DEFAULT_PROVIDER: z
+      .enum(['mock', 'stripe', 'mercadopago'])
+      .default('mock')
+      .refine(
+        (provider) =>
+          isMockBillingAllowed({
+            nodeEnv: process.env.NODE_ENV,
+            provider,
+            allowMockBilling: process.env.ALLOW_MOCK_BILLING,
+          }),
+        {
+          message: 'BILLING_DEFAULT_PROVIDER=mock in production requires ALLOW_MOCK_BILLING=true.',
+        },
+      ),
+    ALLOW_MOCK_BILLING: z.enum(['true']).optional(),
     MOCK_BILLING_SECRET: z.string().min(1),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
@@ -62,6 +87,7 @@ export const env = createEnv({
     FROM_EMAIL: process.env.FROM_EMAIL,
     MAILPIT_URL: process.env.MAILPIT_URL,
     BILLING_DEFAULT_PROVIDER: process.env.BILLING_DEFAULT_PROVIDER ?? 'mock',
+    ALLOW_MOCK_BILLING: process.env.ALLOW_MOCK_BILLING,
     MOCK_BILLING_SECRET: process.env.MOCK_BILLING_SECRET,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,

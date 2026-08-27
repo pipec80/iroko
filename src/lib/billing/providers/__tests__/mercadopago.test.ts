@@ -10,14 +10,8 @@ vi.mock('@/env', () => ({
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
 
-const { rpc, handleProviderWebhook } = vi.hoisted(() => ({
-  rpc: vi.fn(),
-  handleProviderWebhook: vi.fn(),
-}));
-vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(async () => ({ rpc })),
-}));
-vi.mock('../../webhook-handler', () => ({ handleProviderWebhook }));
+const { getProviderPrice } = vi.hoisted(() => ({ getProviderPrice: vi.fn() }));
+vi.mock('../../catalog', () => ({ getProviderPrice }));
 
 import { mercadopagoProvider } from '../mercadopago';
 
@@ -79,6 +73,7 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     expect(result).toEqual(
       expect.objectContaining({
         type: 'subscription_updated',
+        provider: 'mercadopago',
         accountId: 'acc_1',
         status: 'active',
         externalSubscriptionId: dataId,
@@ -135,9 +130,13 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     expect(result).toEqual(
       expect.objectContaining({
         type: 'invoice_paid',
+        provider: 'mercadopago',
         accountId: 'acc_1',
         externalSubscriptionId: 'pa_1',
-        invoice: expect.objectContaining({ amountPaid: 999, currency: 'ARS' }),
+        externalInvoiceId: 'pay_1',
+        externalPaymentId: 'pay_1',
+        amountPaid: 999,
+        currency: 'ARS',
       }),
     );
   });
@@ -151,7 +150,7 @@ describe('mercadopagoProvider.verifyWebhook', () => {
 
 describe('mercadopagoProvider.createCheckout', () => {
   it('should create a preapproval and return its init_point as the checkout url', async () => {
-    rpc.mockResolvedValue({ data: 'plan_test_456', error: null });
+    getProviderPrice.mockResolvedValue({ externalPriceId: 'plan_test_456' });
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -162,16 +161,18 @@ describe('mercadopagoProvider.createCheckout', () => {
 
     const { url } = await mercadopagoProvider.createCheckout({
       accountId: 'acc_1',
+      customerEmail: 'owner@example.com',
       planSlug: 'pro',
       interval: 'month',
       successUrl: 'https://app/ok',
       cancelUrl: 'https://app/no',
     });
 
-    expect(rpc).toHaveBeenCalledWith('get_plan_provider_id', {
-      p_slug: 'pro',
-      p_interval: 'month',
-      p_provider: 'mercadopago',
+    expect(getProviderPrice).toHaveBeenCalledWith({
+      planSlug: 'pro',
+      interval: 'month',
+      provider: 'mercadopago',
+      currency: 'USD',
     });
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/preapproval'),
@@ -180,37 +181,38 @@ describe('mercadopagoProvider.createCheckout', () => {
         body: expect.stringContaining('"external_reference":"acc_1"'),
       }),
     );
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        body: expect.stringContaining('"payer_email":"owner@example.com"'),
+      }),
+    );
     expect(url).toBe('https://mercadopago.com/subscriptions/pa_new');
   });
 
-  it('should throw when the plan has no mercadopago plan id configured', async () => {
-    rpc.mockResolvedValue({ data: null, error: null });
+  it('throws when the catalog mapping has no Mercado Pago external plan id', async () => {
+    getProviderPrice.mockResolvedValue({ externalPriceId: null });
     await expect(
       mercadopagoProvider.createCheckout({
         accountId: 'acc_1',
+        customerEmail: 'owner@example.com',
         planSlug: 'pro',
         interval: 'month',
         successUrl: 'https://app/ok',
         cancelUrl: 'https://app/no',
       }),
-    ).rejects.toThrow('plan_provider_id_not_configured');
+    ).rejects.toThrow('provider_price_external_id_not_configured');
   });
 });
 
 describe('mercadopagoProvider.cancelSubscription', () => {
-  it('should synthesize a subscription_updated event through the webhook pipeline when atPeriodEnd is true', async () => {
-    rpc.mockResolvedValue({ data: 'acc_1', error: null });
-    handleProviderWebhook.mockResolvedValue({ status: 200, body: { result: 'applied' } });
-    await mercadopagoProvider.cancelSubscription('pa_1', true);
-    expect(handleProviderWebhook).toHaveBeenCalledWith(
-      'mercadopago',
-      expect.stringContaining('"cancelAtPeriodEnd":true'),
-      expect.any(String),
-    );
-    expect(fetchMock).not.toHaveBeenCalledWith(
-      expect.stringContaining('/preapproval/pa_1'),
-      expect.anything(),
-    );
+  it('rejects end-of-period cancellation because Mercado Pago does not support it natively', async () => {
+    await expect(
+      mercadopagoProvider.cancelSubscription?.({
+        externalSubscriptionId: 'pa_1',
+        timing: 'period_end',
+      }),
+    ).rejects.toThrow('billing_capability_not_supported:cancelAtPeriodEnd');
   });
 
   it('should cancel immediately via the API when atPeriodEnd is false', async () => {
@@ -218,7 +220,10 @@ describe('mercadopagoProvider.cancelSubscription', () => {
       ok: true,
       json: async () => ({ id: 'pa_1', status: 'cancelled' }),
     });
-    await mercadopagoProvider.cancelSubscription('pa_1', false);
+    await mercadopagoProvider.cancelSubscription?.({
+      externalSubscriptionId: 'pa_1',
+      timing: 'immediate',
+    });
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/preapproval/pa_1'),
       expect.objectContaining({
@@ -226,5 +231,16 @@ describe('mercadopagoProvider.cancelSubscription', () => {
         body: expect.stringContaining('"status":"cancelled"'),
       }),
     );
+  });
+});
+
+describe('mercadopagoProvider.capabilities', () => {
+  it('does not advertise unsupported billing portal or deferred cancellation', () => {
+    expect(mercadopagoProvider.capabilities).toMatchObject({
+      customerPortal: false,
+      cancelImmediately: true,
+      cancelAtPeriodEnd: false,
+    });
+    expect(mercadopagoProvider.createPortalSession).toBeUndefined();
   });
 });

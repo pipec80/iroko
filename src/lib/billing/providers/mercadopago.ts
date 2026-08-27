@@ -1,14 +1,13 @@
 import { env } from '@/env';
-import { createClient } from '@/lib/supabase/server';
 
+import { getProviderPrice } from '../catalog';
+import type { NormalizedBillingEvent } from '../events';
 import type {
+  CancelSubscriptionParams,
   CheckoutParams,
-  NormalizedEvent,
   PaymentProvider,
-  PortalParams,
   SubscriptionStatus,
 } from '../types';
-import { handleProviderWebhook } from '../webhook-handler';
 
 const API_BASE = 'https://api.mercadopago.com';
 
@@ -116,65 +115,49 @@ async function putResource<T>(path: string, body: unknown): Promise<T> {
   return (await res.json()) as T;
 }
 
-/** cancelSubscription solo recibe externalId (contrato de PaymentProvider) —
- * para la cancelación diferida hace falta accountId, que se resuelve acá vía
- * la suscripción ya persistida en vez de agregar un parámetro nuevo a la
- * interfaz (rompería el contrato compartido con Stripe). */
-async function findAccountIdBySubscription(externalId: string): Promise<string | null> {
-  const supabase = await createClient();
-  const { data } = await supabase.rpc('get_account_id_by_external_subscription', {
-    p_external_subscription_id: externalId,
-  });
-  return data ?? null;
-}
-
 /** Adapter real de MercadoPago (F2-2A-providers). */
 export const mercadopagoProvider: PaymentProvider = {
   name: 'mercadopago',
+  capabilities: {
+    customerPortal: false,
+    cancelImmediately: true,
+    cancelAtPeriodEnd: false,
+    updatePaymentMethod: false,
+    changePlan: false,
+    pauseSubscription: true,
+  },
 
   async createCheckout(params: CheckoutParams): Promise<{ url: string }> {
-    const supabase = await createClient();
-    const { data: planId } = await supabase.rpc('get_plan_provider_id', {
-      p_slug: params.planSlug,
-      p_interval: params.interval,
-      p_provider: 'mercadopago',
+    const providerPrice = await getProviderPrice({
+      planSlug: params.planSlug,
+      interval: params.interval,
+      provider: 'mercadopago',
+      currency: 'USD',
     });
-    if (!planId) throw new Error('plan_provider_id_not_configured');
+    if (!providerPrice.externalPriceId) {
+      throw new Error('provider_price_external_id_not_configured');
+    }
 
     // MercadoPago no distingue success/cancel: solo hay un back_url. cancelUrl
     // se ignora deliberadamente en este adapter (documentado en el spec, §4).
     const preapproval = await postResource<{ id: string; init_point: string }>('/preapproval', {
-      preapproval_plan_id: planId,
+      preapproval_plan_id: providerPrice.externalPriceId,
       external_reference: params.accountId,
+      payer_email: params.customerEmail,
       back_url: params.successUrl,
       status: 'pending',
     });
     return { url: preapproval.init_point };
   },
 
-  async createPortalSession(params: PortalParams): Promise<{ url: string }> {
-    return { url: params.returnUrl };
-  },
-
-  async cancelSubscription(externalId: string, atPeriodEnd: boolean): Promise<void> {
-    if (atPeriodEnd) {
-      const accountId = await findAccountIdBySubscription(externalId);
-      if (!accountId) throw new Error('subscription_not_found');
-      const event: NormalizedEvent = {
-        externalEventId: `mp_cancel_${externalId}_${Date.now()}`,
-        type: 'subscription_updated',
-        accountId,
-        externalSubscriptionId: externalId,
-        cancelAtPeriodEnd: true,
-        raw: {},
-      };
-      await handleProviderWebhook('mercadopago', JSON.stringify(event), 'internal');
-      return;
+  async cancelSubscription(params: CancelSubscriptionParams): Promise<void> {
+    if (params.timing === 'period_end') {
+      throw new Error('billing_capability_not_supported:cancelAtPeriodEnd');
     }
-    await putResource(`/preapproval/${externalId}`, { status: 'cancelled' });
+    await putResource(`/preapproval/${params.externalSubscriptionId}`, { status: 'cancelled' });
   },
 
-  async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedEvent | null> {
+  async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedBillingEvent | null> {
     let body: WebhookBody;
     try {
       body = JSON.parse(rawBody) as WebhookBody;
@@ -186,14 +169,30 @@ export const mercadopagoProvider: PaymentProvider = {
 
     if (body.type === 'subscription_preapproval') {
       const preapproval = await fetchResource<PreapprovalResource>(`/preapproval/${body.data.id}`);
+      if (!preapproval.external_reference) return null;
       const status = mapPreapprovalStatus(preapproval.status);
+      if (status === 'canceled') {
+        return {
+          provider: 'mercadopago',
+          externalEventId: `${preapproval.id}_${preapproval.status}`,
+          type: 'subscription_canceled',
+          accountId: preapproval.external_reference,
+          externalSubscriptionId: preapproval.id,
+          canceledAt: preapproval.date_created,
+          accessUntil: preapproval.next_payment_date,
+          raw: preapproval,
+        };
+      }
       return {
+        provider: 'mercadopago',
         externalEventId: `${preapproval.id}_${preapproval.status}`,
-        type: status === 'canceled' ? 'subscription_canceled' : 'subscription_updated',
+        type: 'subscription_updated',
         accountId: preapproval.external_reference,
         status,
         externalSubscriptionId: preapproval.id,
         currentPeriodEnd: preapproval.next_payment_date,
+        // Mercado Pago has no supported period-end cancellation capability.
+        cancelAtPeriodEnd: false,
         raw: preapproval,
       };
     }
@@ -202,17 +201,18 @@ export const mercadopagoProvider: PaymentProvider = {
       const payment = await fetchResource<AuthorizedPaymentResource>(
         `/authorized_payments/${body.data.id}`,
       );
+      if (!payment.external_reference) return null;
       return {
+        provider: 'mercadopago',
         externalEventId: payment.id,
         type: 'invoice_paid',
         accountId: payment.external_reference,
         externalSubscriptionId: payment.preapproval_id,
-        invoice: {
-          amountPaid: payment.transaction_amount,
-          currency: payment.currency_id,
-          periodStart: payment.date_created,
-          periodEnd: payment.date_created,
-        },
+        externalInvoiceId: payment.id,
+        externalPaymentId: payment.id,
+        amountPaid: payment.transaction_amount,
+        currency: payment.currency_id,
+        paidAt: payment.date_created,
         raw: payment,
       };
     }

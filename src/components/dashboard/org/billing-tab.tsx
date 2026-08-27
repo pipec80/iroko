@@ -86,6 +86,11 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
 
   const plans = data.plans.filter((p) => p.interval === interval || p.slug === 'free');
   const overview = data.overview;
+  const hasBlockingPaidSubscription = Boolean(
+    overview &&
+    overview.planSlug !== 'free' &&
+    ['trialing', 'active', 'past_due'].includes(overview.status),
+  );
 
   const formatPrice = (plan: PlanRow) =>
     new Intl.NumberFormat(locale, { style: 'currency', currency: plan.currency }).format(
@@ -151,6 +156,7 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
               onSubscribe={() => checkout.mutate({ slug: plan.slug, interval })}
               isSubscribing={checkout.isPending}
               canManage={canManage}
+              isCheckoutBlocked={hasBlockingPaidSubscription}
             />
           ))}
         </div>
@@ -170,6 +176,7 @@ function PlanCard({
   onSubscribe,
   isSubscribing,
   canManage,
+  isCheckoutBlocked,
 }: {
   plan: PlanRow;
   isCurrent: boolean;
@@ -177,6 +184,7 @@ function PlanCard({
   onSubscribe: () => void;
   isSubscribing: boolean;
   canManage: boolean;
+  isCheckoutBlocked: boolean;
 }) {
   const t = useTranslations('Billing');
   const isFree = plan.slug === 'free';
@@ -205,7 +213,7 @@ function PlanCard({
       )}
       <button
         type="button"
-        disabled={isCurrent || isFree || isSubscribing || !canManage}
+        disabled={isCurrent || isFree || isSubscribing || !canManage || isCheckoutBlocked}
         onClick={onSubscribe}
         data-testid={`subscribe-${plan.slug}`}
         className={cn('w-full justify-center', isCurrent || isFree ? 'btn-outline' : 'btn-iron')}>
@@ -229,8 +237,8 @@ function SubscriptionStatusPanel({
   const t = useTranslations('Billing');
 
   const cancel = useMutation({
-    mutationFn: async () => {
-      const result = await cancelSubscription();
+    mutationFn: async (timing: 'immediate' | 'period_end') => {
+      const result = await cancelSubscription({ timing });
       if (result.error) throw new Error(result.error);
     },
   });
@@ -263,16 +271,30 @@ function SubscriptionStatusPanel({
           : <p className="mt-1 text-[13px]" style={{ color: 'rgba(245,236,218,0.55)' }}>
               {t('renews_on', { date: formatDate(overview.currentPeriodEnd) })}
             </p>)}
-        {!overview.cancelAtPeriodEnd && (
+        {!overview.cancelAtPeriodEnd && overview.capabilities.cancelAtPeriodEnd && (
           <button
             type="button"
             disabled={cancel.isPending}
             onClick={() => {
-              if (window.confirm(t('cancel_confirm'))) cancel.mutate();
+              if (window.confirm(t('cancel_confirm'))) cancel.mutate('period_end');
             }}
+            data-testid="cancel-period-end"
             className="mt-5 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{ borderColor: 'rgba(245,236,218,0.25)', color: 'var(--color-bone)' }}>
             {t('cancel_btn')}
+          </button>
+        )}
+        {overview.capabilities.cancelImmediately && (
+          <button
+            type="button"
+            disabled={cancel.isPending}
+            onClick={() => {
+              if (window.confirm(t('cancel_now_confirm'))) cancel.mutate('immediate');
+            }}
+            data-testid="cancel-immediately"
+            className="mt-5 ml-3 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
+            style={{ borderColor: 'rgba(245,236,218,0.25)', color: 'var(--color-bone)' }}>
+            {t('cancel_now_btn')}
           </button>
         )}
       </div>

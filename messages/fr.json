@@ -936,6 +936,8 @@
     "cancels_on": "Se termine le {date}",
     "cancel_btn": "Annuler l'abonnement",
     "cancel_confirm": "Annuler votre abonnement à la fin de la période en cours ?",
+    "cancel_now_btn": "Annuler maintenant",
+    "cancel_now_confirm": "Annuler votre abonnement immédiatement ?",
     "history_title": "Historique",
     "col_date": "Date",
     "col_amount": "Montant",
