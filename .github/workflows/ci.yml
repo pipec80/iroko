@@ -410,7 +410,15 @@ jobs:
       # `supabase start` levanta servicios, pero no materializa las migraciones
       # versionadas en el Postgres efímero del runner.
       - name: Reset local Supabase to the versioned schema
-        run: supabase db reset --local
+        run: |
+          # El CLI reinicia el stack completo al terminar; el proxy local puede
+          # devolver 502 transitoriamente durante esa ventana.
+          for i in 1 2 3; do
+            supabase db reset --local && break
+            if [ "$i" = 3 ]; then echo "All 3 attempts failed"; exit 1; fi
+            echo "Attempt $i failed — retrying in 15s..."
+            sleep 15
+          done
 
       - name: Save Docker images to cache
         if: steps.supabase-cache-e2e.outputs.cache-hit != 'true'
@@ -529,7 +537,15 @@ jobs:
 
       # Mantiene el smoke test sobre el mismo schema y seed versionados que E2E.
       - name: Reset local Supabase to the versioned schema
-        run: supabase db reset --local
+        run: |
+          # El CLI reinicia el stack completo al terminar; el proxy local puede
+          # devolver 502 transitoriamente durante esa ventana.
+          for i in 1 2 3; do
+            supabase db reset --local && break
+            if [ "$i" = 3 ]; then echo "All 3 attempts failed"; exit 1; fi
+            echo "Attempt $i failed — retrying in 15s..."
+            sleep 15
+          done
 
       - name: Save Docker images to cache
         if: steps.supabase-cache-e2e-webkit.outputs.cache-hit != 'true'
