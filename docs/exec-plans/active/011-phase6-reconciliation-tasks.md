@@ -6,11 +6,10 @@
 >
 > Detailed breakdown of **Phase 6** from
 > [`011-billing-correctness.md`](011-billing-correctness.md). Corresponds
-> to PR-8 — depends on PR-4 (Stripe certified, the reference
-> `getSubscriptionSnapshot` implementation), extends to cover each later
-> provider (Paddle/Lemon Squeezy/MercadoPago) as their own phases merge.
-> Can start with Stripe-only coverage and grow — it does not need to wait
-> for all 4 providers to be done.
+> to PR-8 — depends on PR-4 (Mercado Pago certified, the reference
+> `getSubscriptionSnapshot` implementation), then extends to Stripe,
+> Paddle and Lemon Squeezy as their own phases merge. It can start with
+> Mercado Pago-only coverage and does not need to wait for all providers.
 
 **Goal:** Webhooks are the primary source of truth; this phase adds the
 safety net for when they are delayed, duplicated, or missed entirely — a
@@ -70,8 +69,8 @@ project's existing pattern; switch only with a documented reason).
 **Files:**
 
 - Modify: `src/lib/billing/types.ts`
-- Modify: `src/lib/billing/providers/stripe.ts` (reference implementation)
-- Create: `src/lib/billing/providers/__tests__/stripe.test.ts` additions
+- Modify: `src/lib/billing/providers/mercadopago.ts` (reference implementation)
+- Extend: `src/lib/billing/providers/__tests__/mercadopago.test.ts`
 
 **Interfaces:**
 
@@ -89,41 +88,52 @@ export interface SubscriptionSnapshot {
 getSubscriptionSnapshot?(externalSubscriptionId: string): Promise<SubscriptionSnapshot | null>;
 ```
 
-- [ ] **Step 1: Test (Stripe as reference)**
+- [ ] **Step 1: Test (Mercado Pago as reference)**
 
 ```ts
-it('fetches the current subscription state directly from Stripe, not from local cache', async () => {
-  getStripeMock().subscriptions.retrieve.mockResolvedValue(FIXTURE_ACTIVE_SUBSCRIPTION);
+it('fetches the current subscription state directly from Mercado Pago, not from local cache', async () => {
+  fetchMock.mockResolvedValue({
+    ok: true,
+    json: async () => ({
+      id: 'pa_123',
+      status: 'authorized',
+      next_payment_date: '2026-10-01T00:00:00.000-04:00',
+    }),
+  });
 
-  const snapshot = await stripeProvider.getSubscriptionSnapshot('sub_123');
+  const snapshot = await mercadopagoProvider.getSubscriptionSnapshot('pa_123');
 
-  expect(getStripeMock().subscriptions.retrieve).toHaveBeenCalledWith('sub_123');
+  expect(fetchMock).toHaveBeenCalledWith(
+    expect.stringContaining('/preapproval/pa_123'),
+    expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer TEST-token' }) }),
+  );
   expect(snapshot).toMatchObject({ status: 'active', cancelAtPeriodEnd: false });
 });
 
 it('returns null when the subscription no longer exists at the provider', async () => {
-  getStripeMock().subscriptions.retrieve.mockRejectedValue({ code: 'resource_missing' });
-  expect(await stripeProvider.getSubscriptionSnapshot('sub_gone')).toBeNull();
+  fetchMock.mockResolvedValue({ ok: false, status: 404 });
+  expect(await mercadopagoProvider.getSubscriptionSnapshot('pa_gone')).toBeNull();
 });
 ```
 
-- [ ] **Step 2: Implement for Stripe**
+- [ ] **Step 2: Implement for Mercado Pago**
 
 ```ts
 async getSubscriptionSnapshot(externalSubscriptionId: string): Promise<SubscriptionSnapshot | null> {
   try {
-    const sub = await getStripe().subscriptions.retrieve(externalSubscriptionId);
-    const item = sub.items.data[0];
+    const preapproval = await fetchResource<MercadoPagoPreapproval>(
+      `/preapproval/${externalSubscriptionId}`,
+    );
     return {
-      externalSubscriptionId: sub.id,
-      externalCustomerId: typeof sub.customer === 'string' ? sub.customer : sub.customer.id,
-      externalPriceId: item?.price.id,
-      status: mapStatus(sub.status),
-      currentPeriodEnd: item ? new Date(item.current_period_end * 1000).toISOString() : undefined,
-      cancelAtPeriodEnd: sub.cancel_at_period_end,
+      externalSubscriptionId: preapproval.id,
+      // Mercado Pago's pending-preapproval flow has no reusable remote price;
+      // the local provisional subscription owns the selected plan_id.
+      status: mapPreapprovalStatus(preapproval.status),
+      currentPeriodEnd: preapproval.next_payment_date,
+      cancelAtPeriodEnd: false,
     };
   } catch (error) {
-    if (isStripeNotFoundError(error)) return null;
+    if (error instanceof Error && error.message === 'mercadopago_fetch_failed_404') return null;
     throw error;
   }
 }
@@ -132,15 +142,15 @@ async getSubscriptionSnapshot(externalSubscriptionId: string): Promise<Subscript
 - [ ] **Step 3: Verify and commit**
 
 ```bash
-pnpm test -- src/lib/billing/providers/__tests__/stripe.test.ts
+pnpm test -- src/lib/billing/providers/__tests__/mercadopago.test.ts
 pnpm typecheck && pnpm lint
 
-git add src/lib/billing/types.ts src/lib/billing/providers/stripe.ts
-git commit -m "feat: add getSubscriptionSnapshot to the Stripe provider"
+git add src/lib/billing/types.ts src/lib/billing/providers/mercadopago.ts
+git commit -m "feat: add getSubscriptionSnapshot to the Mercado Pago provider"
 ```
 
-Repeat for MercadoPago (fetch `/preapproval/{id}`) once Phase 5 is merged;
-Paddle/Lemon Squeezy when Phases 3/4 land. Each addition is its own small
+Repeat for Stripe after Phase 3, then Paddle/Lemon Squeezy when Phases 4/5
+land. Each addition is its own small
 commit against this same task shape — do not block this phase on every
 provider having a snapshot method before shipping the worker with partial
 coverage.
@@ -281,7 +291,7 @@ pnpm typecheck && pnpm lint
 - Create: `supabase/functions/billing-reconciliation/` (Edge Function) +
   `supabase/migrations/<timestamp>_billing_reconciliation_cron.sql`
   (`pg_cron` schedule calling it, same pattern as
-  `process-email-queue`/`cancel-mercadopago-subscriptions` from Phase 5)
+  `process-email-queue`/`cancel-mercadopago-subscriptions` from Phase 2)
 
 - [ ] **Step 1: Confirm the existing cron+Edge-Function auth pattern**
       (service role, whatever header convention `process-email-queue` already

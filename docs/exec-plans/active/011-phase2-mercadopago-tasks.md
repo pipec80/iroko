@@ -1,24 +1,25 @@
-# Phase 5 (PR-5) — Mercado Pago redesign: task-by-task implementation plan
+# Phase 2 (PR-4) — Mercado Pago reference certification: task-by-task implementation plan
 
 > For agentic workers: REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development`
 > (recommended) or `superpowers:executing-plans` to implement this plan
 > task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> Detailed breakdown of **Phase 5** from
+> Detailed breakdown of **Phase 2** from
 > [`011-billing-correctness.md`](011-billing-correctness.md). Corresponds
-> to PR-5 (depends on PR-3 — `BillingService`+capabilities+UI guard —
-> **not** on Stripe certification; this phase can run in parallel with
-> Phase 2 once Fase 1 is merged). **P0 before enabling MercadoPago in
-> production** — this is not optional hardening, the current adapter has
+> to PR-4 and depends on merged Fase 1 (`BillingService`+capabilities+UI
+> guard), not on Stripe. It is the first provider certification and the
+> **P0 gate before enabling Mercado Pago in production** — this is not
+> optional hardening, the current adapter has
 > two confirmed bugs that let a canceled-in-Iroko subscription keep
 > charging in MercadoPago (BILL-002, see Plan 011 Contexto).
 
-**Goal:** Replace the current `preapproval_plan_id` + `status: pending`
+**Goal:** Make Mercado Pago the LATAM reference implementation of the Billing
+Core v2: replace the current `preapproval_plan_id` + `status: pending`
 checkout path (which nothing in `billing.plans.provider_ids` actually
 configures today — verified empty in Cloud) with the hosted
-pending-preapproval flow, and close the two confirmed cancellation
-mechanisms that let MercadoPago keep charging after Iroko marks a
-subscription canceled.
+pending-preapproval flow, close the two confirmed cancellation mechanisms
+that let MercadoPago keep charging after Iroko marks a subscription canceled,
+and certify the complete sandbox lifecycle.
 
 **Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md),
 section 7.4. **Re-open before implementing** (last checked 2026-08-18) —
@@ -449,7 +450,7 @@ default) → recurring payment webhook (`subscription_authorized_payment`) →
 
 - [ ] **Step 3: Document event IDs/results in the PR.**
 
-## Completion criteria for Phase 5
+## Completion criteria for Phase 2
 
 - No code path exists that marks a subscription `canceled` in Iroko
   without either (a) a real confirmed provider cancellation, or (b) an

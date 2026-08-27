@@ -399,7 +399,7 @@ generate random idempotency keys for incoming webhooks.
 
 ## 7. Provider behavior
 
-### 7.1 Stripe — reference implementation
+### 7.1 Stripe — subsequent provider implementation
 
 - Create or reuse a Stripe Customer and persist its `cus_*` in `billing.customers`.
 - Checkout Session uses `mode: 'subscription'`, `customer: cus_*`, and a
@@ -444,7 +444,7 @@ generate random idempotency keys for incoming webhooks.
 - Portal URLs are generated fresh on click; never cache signed portal URLs.
 - Lemon Squeezy owns dunning/retries.
 
-### 7.4 Mercado Pago
+### 7.4 Mercado Pago — reference launch provider
 
 The current adapter's `preapproval_plan_id` + `status: pending` creation
 path must be replaced.
@@ -617,11 +617,19 @@ A provider is not considered production-ready until all are true:
 Implement in this dependency order:
 
 1. Billing Core v2.
-2. Stripe certification as reference provider.
-3. Paddle adapter.
-4. Lemon Squeezy adapter.
-5. Mercado Pago redesign/hardening.
+2. Mercado Pago redesign/hardening and sandbox certification as the LATAM
+   reference provider.
+3. Stripe certification as a subsequent provider implementation.
+4. Paddle adapter.
+5. Lemon Squeezy adapter.
 6. Reconciliation + observability release hardening.
+
+Mercado Pago is the launch reference because its credentials are available and
+it is the nearer LATAM path. This changes delivery order, not the
+provider-neutral Core v2 contract or any provider's release gate: Mercado Pago
+still requires a real sandbox lifecycle and confirmed provider-side
+cancellation before enablement. Stripe remains an independently certified
+provider once its test credentials are available.
 
 Do not implement Paddle/Lemon Squeezy on top of the current broad
 event/RPC contract; doing so would multiply the known core defects across

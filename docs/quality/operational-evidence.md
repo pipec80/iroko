@@ -1,6 +1,6 @@
 # Operational Evidence Register
 
-Last updated: **2026-08-20**
+Last updated: **2026-08-27**
 
 This register prevents historical green checks from being read as present-day
 operational truth. GitHub Actions and provider consoles remain the primary live
@@ -33,8 +33,8 @@ the rule that determines when it expires.
 | Email worker                 | Linked Supabase                                                    | Latest `Nightly Monitoring / Email Worker Health` result not inspected in this pass                  | —                 | 48 hours     | **[NO VERIFICADO]**            |
 | Database advisors            | CI local database rebuilt from migrations                          | Latest `Nightly Monitoring / Database Advisors` result not inspected in this pass                    | —                 | 48 hours     | **[NO VERIFICADO]**            |
 | Migration parity             | Local ↔ linked Supabase                                            | Current local and linked migration lists were not compared after the latest migrations               | —                 | Change-bound | **[NO VERIFICADO]**            |
-| Full CI and production build | GitHub Actions                                                     | No authenticated current-branch run was inspected in this pass                                       | —                 | Commit-bound | **[NO VERIFICADO]**            |
-| Billing providers            | Stripe / PayPal                                                    | Provider certification belongs to active Plan 011 and has not been completed                         | —                 | Change-bound | **[NO VERIFICADO]**            |
+| Full CI and preview build    | GitHub Actions + Vercel Preview                                    | [PR #152](https://github.com/pipec80/iroko/pull/152) head `b396aa4` passed Quality, CodeQL, Documentation, Security, Gitleaks, Unit, Database Types/Tests, Edge Function, Chromium/WebKit E2E, Build and Vercel Preview; it was squash-merged as `4a0a3d4` | 2026-08-27        | Commit-bound | CURRENT for PR head; separate `main` run **[NO VERIFICADO]** |
+| Billing providers            | Mercado Pago reference; Stripe, Paddle, Lemon Squeezy              | Core v2 is merged, but no provider sandbox lifecycle has been certified. Mercado Pago Fase 2 is the next gate. | —                 | Change-bound | **[NO VERIFICADO]**            |
 
 ## Historical evidence
 

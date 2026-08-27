@@ -24,7 +24,9 @@ product. Commercialization remains an option, not a present-tense claim.
 - Vitest covers unit/component tests and Playwright covers end-to-end flows.
 - Sentry, Pino, and PostHog provide the current observability foundations.
 - Plan 010 tenant-isolation remediation is completed with regression evidence.
-  Billing Platform v2 remains active work, not a completed capability.
+  Billing Platform v2 remains active work: its provider-neutral Core v2 closed
+  through PR #152 on 2026-08-27, while Mercado Pago certification is the next
+  P0 delivery gate. The program is not a completed capability.
 
 ## Active work and order
 
@@ -34,7 +36,7 @@ changes before implementation.
 
 | Order | Work                                                                                                  | Priority | Current meaning                                                          |
 | ----- | ----------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
-| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                   | P0       | Active multi-phase billing redesign and certification                    |
+| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                   | P0       | Fase 1 Core v2 merged; Mercado Pago is the next LATAM reference provider |
 | 012   | [Security hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Starts after the relevant P0 behavior is stable                          |
 | 013   | [Launch-readiness roadmap](exec-plans/active/013-launch-readiness-roadmap.md)                         | P2       | Commercial-readiness roadmap; not yet decomposed into implementation PRs |
 
@@ -51,10 +53,12 @@ documentation pass.
 ## Verification boundary
 
 This document was checked against the repository tree, configuration, and
-versioned plans. The application runtime, linked Supabase project, Vercel,
-payment providers, Sentry, PostHog, and email delivery were not revalidated on
-2026-08-20. Treat current external or runtime behavior as **[NO VERIFICADO]**
-until a plan or runbook records fresh evidence.
+versioned plans. The commit-bound CI and Vercel Preview evidence for PR #152 is
+recorded in the operational evidence register. The application runtime, linked
+Supabase project, payment-provider sandbox, Sentry, PostHog, email delivery,
+and a separate post-merge `main` run were not revalidated in this documentation
+update. Treat them as **[NO VERIFICADO]** until a plan or runbook records fresh
+evidence.
 
 A passing focused test proves only the exercised scope. It does not close a
 plan, certify a provider, or establish launch readiness by itself.

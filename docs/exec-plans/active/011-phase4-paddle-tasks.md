@@ -1,12 +1,13 @@
-# Phase 3 (PR-6) — Paddle adapter: task-by-task implementation plan
+# Phase 4 (PR-6) — Paddle adapter: task-by-task implementation plan
 
 > For agentic workers: REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development`
 > (recommended) or `superpowers:executing-plans` to implement this plan
 > task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> Detailed breakdown of **Phase 3** from
+> Detailed breakdown of **Phase 4** from
 > [`011-billing-correctness.md`](011-billing-correctness.md). Corresponds
-> to PR-6 (depends on PR-4, Stripe certification). **New adapter — no
+> to PR-6 (scheduled after PR-4, Mercado Pago reference certification).
+> **New adapter — no
 > existing Paddle code in the repo.** Every field name/endpoint below must
 > be re-verified against the live Paddle API docs before implementing; this
 > plan follows the design spec's own instruction (section 16) because
@@ -34,7 +35,7 @@ Same as Phase 1 — SOLID/DRY/KISS/YAGNI, early returns, no
 `(select auth.uid())`, `SECURITY DEFINER` + `search_path=''` + explicit
 grants, `pnpm typecheck && pnpm lint` before every commit, squash merge,
 fix bugs found in-branch. **Do not run this suite's tests in parallel with
-Lemon Squeezy's (Phase 4) on this machine** — constrained local RAM (see
+Lemon Squeezy's (Phase 5) on this machine** — constrained local RAM (see
 Plan 011 Global execution rules).
 
 ## Design constraints specific to this adapter
@@ -195,7 +196,7 @@ Confirm against the live Paddle API (checkout via transaction endpoint,
 mirror the auth header pattern (`Authorization: Bearer ${PADDLE_API_KEY}`)
 and base URL split by `PADDLE_ENVIRONMENT` (`sandbox-api.paddle.com` vs
 `api.paddle.com`). Use `getProviderPrice()` (Fase 1 catalog) for price
-resolution — same pattern as Stripe (Fase 2, Task 3), never a hardcoded
+resolution — same provider-neutral catalog contract as Fase 2, never a hardcoded
 lookup.
 
 - [ ] **Step 3: Verify and commit**
@@ -418,9 +419,9 @@ failed transaction → `payment_attempts` row → cancel immediate and cancel
 at period end (both paths) → webhook replay idempotent.
 
 - [ ] **Step 3: Document event IDs/results in the PR** — same evidence
-      requirement as Phase 2 (Stripe), design spec section 14.
+      requirement as Fase 2 (Mercado Pago), design spec section 14.
 
-## Completion criteria for Phase 3
+## Completion criteria for Phase 4
 
 - `paddleProvider` satisfies `PaymentProvider` with zero core reducer
   changes.
@@ -430,4 +431,4 @@ at period end (both paths) → webhook replay idempotent.
   Paddle-computed signature, not a synthetic one.
 - Sandbox E2E evidence recorded in the merged PR.
 - `pnpm typecheck && pnpm lint`, relevant Vitest pass; do not run this
-  suite's tests concurrently with Phase 4's on this machine.
+  suite's tests concurrently with Phase 5's on this machine.
