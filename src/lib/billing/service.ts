@@ -1,12 +1,34 @@
 import { requireAccountRole } from '@/lib/active-account';
+import { logger } from '@/lib/logger';
 import { ADMIN_ROLES } from '@/lib/permissions';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
 import { assertProviderCapability } from './capabilities';
+import { getProviderPrice } from './catalog';
 import { getPaymentProvider } from './registry';
-import type { CancellationTiming, CheckoutResult, PlanInterval, ProviderName } from './types';
+import type {
+  CancellationTiming,
+  CheckoutResult,
+  PaymentProvider,
+  PlanInterval,
+  ProviderName,
+} from './types';
 
 const BLOCKING_PAID_STATUSES = new Set(['trialing', 'active', 'past_due']);
+
+interface ProvisionalSubscriptionRpcArgs {
+  p_account_id: string;
+  p_plan_id: string;
+  p_external_preapproval_id: string;
+}
+
+interface ProvisionalSubscriptionRpcClient {
+  rpc(
+    functionName: 'create_billing_provisional_subscription',
+    args: ProvisionalSubscriptionRpcArgs,
+  ): Promise<{ data: string | null; error: { code?: string | null } | null }>;
+}
 
 interface StartBillingCheckoutInput {
   accountId: string;
@@ -21,6 +43,35 @@ interface StartBillingCheckoutInput {
 interface CancelBillingSubscriptionInput {
   accountId: string;
   timing: CancellationTiming;
+}
+
+/** Persists only the server-side pending-preapproval state created by Mercado Pago checkout. */
+async function persistMercadoPagoProvisionalSubscription(input: {
+  accountId: string;
+  planId: string;
+  externalPreapprovalId: string;
+}): Promise<void> {
+  // Temporary generated-type boundary: the Task 2 SQL RPC is not in
+  // src/types/database.ts until local Supabase can generate types again.
+  const admin = createAdminClient() as unknown as ProvisionalSubscriptionRpcClient;
+  const { error } = await admin.rpc('create_billing_provisional_subscription', {
+    p_account_id: input.accountId,
+    p_plan_id: input.planId,
+    p_external_preapproval_id: input.externalPreapprovalId,
+  });
+  if (error) {
+    throw new Error(`billing_provisional_subscription_failed:${error.code ?? 'unknown'}`);
+  }
+}
+
+async function compensateMercadoPagoProvisionalSubscription(
+  provider: PaymentProvider,
+  externalSubscriptionId: string,
+): Promise<void> {
+  if (!provider.cancelSubscription) {
+    throw new Error('billing_capability_not_supported:cancelImmediately');
+  }
+  await provider.cancelSubscription({ externalSubscriptionId, timing: 'immediate' });
 }
 
 /**
@@ -44,7 +95,7 @@ export async function startBillingCheckout(
   }
 
   const provider = getPaymentProvider(input.provider);
-  return provider.createCheckout({
+  const checkout = await provider.createCheckout({
     accountId: input.accountId,
     customerEmail: input.customerEmail,
     planSlug: input.planSlug,
@@ -52,6 +103,44 @@ export async function startBillingCheckout(
     successUrl: input.successUrl,
     cancelUrl: input.cancelUrl,
   });
+
+  if (provider.name !== 'mercadopago' || !checkout.externalSubscriptionId) return checkout;
+
+  try {
+    const providerPrice = await getProviderPrice({
+      planSlug: input.planSlug,
+      interval: input.interval,
+      provider: 'mercadopago',
+      currency: 'CLP',
+    });
+    await persistMercadoPagoProvisionalSubscription({
+      accountId: input.accountId,
+      planId: providerPrice.planId,
+      externalPreapprovalId: checkout.externalSubscriptionId,
+    });
+  } catch (persistenceError) {
+    logger.error(
+      {
+        action: 'billing.provisional_subscription_persistence_failed',
+        component: 'BillingService',
+      },
+      'Mercado Pago provisional subscription persistence failed',
+    );
+    try {
+      await compensateMercadoPagoProvisionalSubscription(provider, checkout.externalSubscriptionId);
+    } catch {
+      logger.error(
+        {
+          action: 'billing.provisional_subscription_compensation_failed',
+          component: 'BillingService',
+        },
+        'Mercado Pago provisional subscription compensation failed',
+      );
+    }
+    throw persistenceError;
+  }
+
+  return checkout;
 }
 
 /** Cancels an existing provider subscription only through advertised capabilities. */
