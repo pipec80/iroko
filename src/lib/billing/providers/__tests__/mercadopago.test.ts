@@ -114,14 +114,14 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
-        id: dataId,
+        id: 10_001,
         preapproval_id: 'pa_1',
         external_reference: 'acc_1',
-        transaction_amount: 999,
+        transaction_amount: '29900',
         currency_id: 'ARS',
         date_created: '2026-07-08T00:00:00.000-04:00',
         payment: {
-          id: 'payment_1',
+          id: 10_002,
           status: 'approved',
         },
       }),
@@ -137,9 +137,9 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         provider: 'mercadopago',
         accountId: 'acc_1',
         externalSubscriptionId: 'pa_1',
-        externalInvoiceId: 'authorized_payment_1',
-        externalPaymentId: 'payment_1',
-        amountPaid: 999,
+        externalInvoiceId: '10001',
+        externalPaymentId: '10002',
+        amountPaid: 29_900,
         currency: 'ARS',
       }),
     );
@@ -155,14 +155,14 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
-        id: dataId,
+        id: 10_003,
         preapproval_id: 'pa_1',
         external_reference: 'acc_1',
-        transaction_amount: 999,
+        transaction_amount: '29900',
         currency_id: 'ARS',
         date_created: '2026-07-09T00:00:00.000-04:00',
         payment: {
-          id: 'payment_rejected_1',
+          id: 10_004,
           status: 'rejected',
           status_detail: 'cc_rejected_bad_filled_card_number',
         },
@@ -180,14 +180,39 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         provider: 'mercadopago',
         accountId: 'acc_1',
         externalSubscriptionId: 'pa_1',
-        externalInvoiceId: dataId,
-        externalPaymentId: 'payment_rejected_1',
-        amountDue: 999,
+        externalInvoiceId: '10003',
+        externalPaymentId: '10004',
+        amountDue: 29_900,
         currency: 'ARS',
         attemptedAt: '2026-07-09T00:00:00.000-04:00',
         failureCode: 'cc_rejected_bad_filled_card_number',
       }),
     );
+  });
+
+  it('returns null for an authorized payment with a malformed non-integer amount', async () => {
+    const dataId = 'authorized_payment_invalid_amount';
+    const requestId = 'req_5';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+    const body = JSON.stringify({ type: 'subscription_authorized_payment', data: { id: dataId } });
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 10_005,
+        preapproval_id: 'pa_1',
+        external_reference: 'acc_1',
+        transaction_amount: '299.50',
+        currency_id: 'ARS',
+        date_created: '2026-07-10T00:00:00.000-04:00',
+        payment: { id: 10_006, status: 'approved' },
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
+    ).resolves.toBeNull();
   });
 
   it('should return null for unhandled event types', async () => {

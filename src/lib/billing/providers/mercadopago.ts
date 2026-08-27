@@ -25,17 +25,35 @@ interface PreapprovalResource {
 }
 
 interface AuthorizedPaymentResource {
-  id: string;
-  preapproval_id: string;
+  id: string | number;
+  preapproval_id: string | number;
   external_reference: string;
-  transaction_amount?: number;
+  transaction_amount?: string | number;
   currency_id?: string;
   date_created: string;
   payment: {
-    id: string;
+    id: string | number;
     status: string;
     status_detail?: string;
   };
+}
+
+function normalizeExternalId(value: string | number | undefined): string | null {
+  if (typeof value === 'string' && value.length > 0) return String(value);
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return String(value);
+  return null;
+}
+
+function normalizeIntegerAmount(value: string | number | undefined): number | null {
+  if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return value;
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) return null;
+
+  const amount = Number(value);
+  return Number.isSafeInteger(amount) ? amount : null;
+}
+
+function normalizeCurrency(value: string | undefined): string | null {
+  return value && /^[A-Z]{3}$/.test(value) ? value : null;
 }
 
 function toMercadoPagoTransactionAmount(amount: number, currency: string): number {
@@ -233,37 +251,44 @@ export const mercadopagoProvider: PaymentProvider = {
       const payment = await fetchResource<AuthorizedPaymentResource>(
         `/authorized_payments/${body.data.id}`,
       );
-      if (!payment.external_reference) return null;
+      const invoiceId = normalizeExternalId(payment.id);
+      const subscriptionId = normalizeExternalId(payment.preapproval_id);
+      const paymentId = normalizeExternalId(payment.payment?.id);
+      if (!payment.external_reference || !invoiceId || !subscriptionId || !paymentId) return null;
+
+      const amount = normalizeIntegerAmount(payment.transaction_amount);
+      if (payment.transaction_amount !== undefined && amount === null) return null;
+      const currency =
+        payment.currency_id === undefined ? undefined : normalizeCurrency(payment.currency_id);
+      if (currency === null) return null;
+
       if (payment.payment.status !== 'approved') {
         return {
           provider: 'mercadopago',
-          externalEventId: payment.id,
+          externalEventId: invoiceId,
           type: 'invoice_payment_failed',
           accountId: payment.external_reference,
-          externalSubscriptionId: payment.preapproval_id,
-          externalInvoiceId: payment.id,
-          externalPaymentId: payment.payment.id,
-          ...(payment.transaction_amount === undefined ?
-            {}
-          : { amountDue: payment.transaction_amount }),
-          ...(payment.currency_id === undefined ? {} : { currency: payment.currency_id }),
+          externalSubscriptionId: subscriptionId,
+          externalInvoiceId: invoiceId,
+          externalPaymentId: paymentId,
+          ...(amount === null ? {} : { amountDue: amount }),
+          ...(currency === undefined ? {} : { currency }),
           failureCode: payment.payment.status_detail,
           attemptedAt: payment.date_created,
           raw: payment,
         };
       }
-      if (payment.transaction_amount === undefined || payment.currency_id === undefined)
-        return null;
+      if (amount === null || currency === undefined) return null;
       return {
         provider: 'mercadopago',
-        externalEventId: payment.id,
+        externalEventId: invoiceId,
         type: 'invoice_paid',
         accountId: payment.external_reference,
-        externalSubscriptionId: payment.preapproval_id,
-        externalInvoiceId: payment.id,
-        externalPaymentId: payment.payment.id,
-        amountPaid: payment.transaction_amount,
-        currency: payment.currency_id,
+        externalSubscriptionId: subscriptionId,
+        externalInvoiceId: invoiceId,
+        externalPaymentId: paymentId,
+        amountPaid: amount,
+        currency,
         paidAt: payment.date_created,
         raw: payment,
       };
