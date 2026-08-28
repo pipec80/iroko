@@ -61,52 +61,52 @@ bounded code/migration task is present; it does **not** certify an external
 provider or runtime.
 
 - [x] **Task 1 — Checkout and webhook normalization.** Checkout uses the
-  active `mercadopago` catalog price and inline pending preapproval flow;
-  it returns the preapproval ID and omits `preapproval_plan_id`. Price amounts
-  convert to provider minor units correctly for zero-decimal CLP and
-  two-decimal USD. Preapproval and authorized-payment webhook normalization
-  retain the local-plan path and distinguish invoice from nested payment data.
+      active `mercadopago` catalog price and inline pending preapproval flow;
+      it returns the preapproval ID and omits `preapproval_plan_id`. Price amounts
+      convert to provider minor units correctly for zero-decimal CLP and
+      two-decimal USD. Preapproval and authorized-payment webhook normalization
+      retain the local-plan path and distinguish invoice from nested payment data.
 - [x] **Task 2 — Retire deferred cancellation.** `period_end` is rejected as
-  unsupported, the DB-only cancellation cron/private function is retired, and
-  no cancellation Edge Function was added. Immediate cancellation validates
-  the provider response before the local cancellation path proceeds.
+      unsupported, the DB-only cancellation cron/private function is retired, and
+      no cancellation Edge Function was added. Immediate cancellation validates
+      the provider response before the local cancellation path proceeds.
 - [x] **Task 3 — Persist the provisional subscription safely.**
-  `BillingService` persists the selected local plan as `incomplete` after a
-  preapproval is created and before redirect. If that persistence fails, it
-  immediately compensates by canceling the remote preapproval, logs safe
-  incident metadata, and preserves the original error.
+      `BillingService` persists the selected local plan as `incomplete` after a
+      preapproval is created and before redirect. If that persistence fails, it
+      immediately compensates by canceling the remote preapproval, logs safe
+      incident metadata, and preserves the original error.
 - [x] **Chilean catalog and checkout surface.** A versioned
-  Mercado Pago `CLP` provider-price catalog maps Free / Plus / Pro to `0` /
-  `19.990` / `102.990` monthly. The checkout surface displays zero-decimal CLP
-  correctly and does not offer a yearly Mercado Pago flow.
+      Mercado Pago `CLP` provider-price catalog maps Free / Plus / Pro to `0` /
+      `19.990` / `102.990` monthly. The checkout surface displays zero-decimal CLP
+      correctly and does not offer a yearly Mercado Pago flow.
 
 ## Remaining certification tasks
 
 ### Task 4: Review the focused contract and regression evidence
 
 - [x] Focused Mercado Pago provider/BillingService tests and the corresponding
-  pgTAP database tests passed locally.
+      pgTAP database tests passed locally.
 - [x] `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, and the relevant
-  documentation checks passed after the catalog/UI change.
+      documentation checks passed after the catalog/UI change.
 - [x] The migration/schema mirror and generated database types passed a local
-  Supabase reset. On 2026-08-27, the ten pending billing/Mercado Pago
-  migrations were applied to the linked Cloud project; read-only checks
-  confirmed all versions, the three CLP catalog entries, and retirement of the
-  deferred-cancellation cron/function.
+      Supabase reset. On 2026-08-27, the ten pending billing/Mercado Pago
+      migrations were applied to the linked Cloud project; read-only checks
+      confirmed all versions, the three CLP catalog entries, and retirement of the
+      deferred-cancellation cron/function.
 
 ### Task 5: Sandbox lifecycle — release gate
 
 - [x] The approved `mercadopago`/`CLP` catalog is versioned and verified in
-  local and linked Cloud Supabase. Sandbox runtime credentials in the
-  application environment remain **[NO VERIFICADO]**.
+      local and linked Cloud Supabase. Sandbox runtime credentials in the
+      application environment remain **[NO VERIFICADO]**.
 - [ ] Exercise the full lifecycle: pending preapproval creation; provisional
-  `incomplete` local row with the selected plan; preapproval authorization
-  webhook; authorized-payment invoice/payment event; and immediate
-  cancellation.
+      `incomplete` local row with the selected plan; preapproval authorization
+      webhook; authorized-payment invoice/payment event; and immediate
+      cancellation.
 - [ ] Record provider event IDs and evidence that Mercado Pago itself reports
-  `cancelled` before local cancellation. Webhook delivery, a sandbox payment,
-  a linked-Cloud checkout run, and real-payment evidence remain
-  **[NO VERIFICADO]** until captured in approved PR evidence.
+      `cancelled` before local cancellation. Webhook delivery, a sandbox payment,
+      a linked-Cloud checkout run, and real-payment evidence remain
+      **[NO VERIFICADO]** until captured in approved PR evidence.
 
 ## Completion criteria for Phase 2
 

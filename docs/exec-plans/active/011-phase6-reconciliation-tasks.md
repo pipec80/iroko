@@ -105,7 +105,9 @@ it('fetches the current subscription state directly from Mercado Pago, not from 
 
   expect(fetchMock).toHaveBeenCalledWith(
     expect.stringContaining('/preapproval/pa_123'),
-    expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer TEST-token' }) }),
+    expect.objectContaining({
+      headers: expect.objectContaining({ Authorization: 'Bearer TEST-token' }),
+    }),
   );
   expect(snapshot).toMatchObject({ status: 'active', cancelAtPeriodEnd: false });
 });
