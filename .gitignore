@@ -113,3 +113,5 @@ supabase/snippets/
 # archivos de configuración local de asistentes de IA
 CLAUDE.local.md
 scratch/
+
+.env*

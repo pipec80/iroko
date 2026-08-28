@@ -14,8 +14,9 @@ supports **immediate cancellation only** in this phase: a local subscription
 must never become `canceled` until the Mercado Pago `PUT /preapproval/{id}`
 response confirms cancellation.
 
-This plan records implementation progress in the current branch. It is not
-sandbox, Cloud, provider-enablement, or production-certification evidence.
+This plan records implementation progress in the current branch and the
+verified linked-Cloud schema deployment. It is not sandbox, provider-enablement,
+or production-certification evidence.
 
 ## Authoritative policy and constraints
 
@@ -88,21 +89,24 @@ provider or runtime.
 - [x] `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, and the relevant
   documentation checks passed after the catalog/UI change.
 - [x] The migration/schema mirror and generated database types passed a local
-  Supabase reset. Linked Cloud parity remains **[NO VERIFICADO]**.
+  Supabase reset. On 2026-08-27, the ten pending billing/Mercado Pago
+  migrations were applied to the linked Cloud project; read-only checks
+  confirmed all versions, the three CLP catalog entries, and retirement of the
+  deferred-cancellation cron/function.
 
 ### Task 5: Sandbox lifecycle — release gate
 
 - [x] The approved `mercadopago`/`CLP` catalog is versioned and verified in
-  local Supabase. Sandbox runtime credentials in the application environment
-  remain **[NO VERIFICADO]**.
+  local and linked Cloud Supabase. Sandbox runtime credentials in the
+  application environment remain **[NO VERIFICADO]**.
 - [ ] Exercise the full lifecycle: pending preapproval creation; provisional
   `incomplete` local row with the selected plan; preapproval authorization
   webhook; authorized-payment invoice/payment event; and immediate
   cancellation.
 - [ ] Record provider event IDs and evidence that Mercado Pago itself reports
-  `cancelled` before local cancellation. A webhook, sandbox, real-payment,
-  Cloud-parity, and linked-Supabase run are all **[NO VERIFICADO]** until
-  captured in approved PR evidence.
+  `cancelled` before local cancellation. Webhook delivery, a sandbox payment,
+  a linked-Cloud checkout run, and real-payment evidence remain
+  **[NO VERIFICADO]** until captured in approved PR evidence.
 
 ## Completion criteria for Phase 2
 
@@ -119,5 +123,5 @@ provider or runtime.
   evidence; local Docker/type generation evidence is not substituted by
   static review.
 - A documented sandbox lifecycle proves the provider-side cancellation and is
-  reviewed before any Mercado Pago enablement. Linked Cloud parity and
-  production enablement remain separate explicit approvals.
+  reviewed before any Mercado Pago enablement. Production enablement remains a
+  separate explicit approval.
