@@ -9,12 +9,12 @@ import { test as authTest, expect } from './fixtures/auth';
 authTest.describe('Billing — mock checkout', () => {
   authTest.setTimeout(60_000);
 
-  authTest('subscribing to Pro activates the plan', async ({ authenticatedPage: page }) => {
+  authTest('subscribing to Plus activates the plan', async ({ authenticatedPage: page }) => {
     await page.goto('/es/dashboard/billing');
     await page.waitForURL(/\/es\/dashboard\/billing/);
     await runAxeCheck(page);
 
-    // Elegir Pro → redirige a la hosted-page mock
+    // Elegir Plus → redirige a la hosted-page mock
     await page.getByTestId('subscribe-pro').click();
     await page.waitForURL(/\/billing\/mock-checkout/);
 
@@ -22,6 +22,6 @@ authTest.describe('Billing — mock checkout', () => {
     await page.getByTestId('mock-pay').click();
     await page.waitForURL(/\/dashboard\/billing/);
 
-    await expect(page.getByTestId('current-plan')).toContainText(/pro/i);
+    await expect(page.getByTestId('current-plan')).toContainText(/plus/i);
   });
 });
