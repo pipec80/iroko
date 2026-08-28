@@ -1,10 +1,10 @@
-# Plan 011 — Billing Platform v2: Core → Stripe → Paddle → Lemon Squeezy → MercadoPago → Reconciliation
+# Plan 011 — Billing Platform v2: Core → Mercado Pago → Stripe → Paddle → Lemon Squeezy → Reconciliation
 
 - Priority: P0
-- Status: Active — Fase 1 implementada y verificada localmente el 2026-08-26;
-  pendiente de commit, PR y CI. Las migraciones nuevas no se han aplicado a
-  Supabase Cloud `[NO VERIFICADO]`.
-- Baseline: `main` @ `d9e2648`
+- Status: Active — Fase 1 cerrada por PR #152 el 2026-08-27. Mercado Pago es
+  ahora la Fase 2 y proveedor de referencia para el lanzamiento LATAM. Las
+  migraciones nuevas no se han aplicado a Supabase Cloud `[NO VERIFICADO]`.
+- Baseline: `main` @ `4a0a3d4`
 - Depends on: Plan 010 cerró el 2026-08-26; reutilizar
   `requireAccountRole` como la autorización viva ya integrada. No mezclar
   cambios de esta orquestación con esa remediación ya cerrada.
@@ -15,27 +15,29 @@
 - Detalle task-by-task por fase, todos al mismo nivel de rigor (código,
   Files/Interfaces/Steps, TDD), listos para ejecutar:
   - Fase 1 (Core v2): [`011-phase1-core-v2-tasks.md`](011-phase1-core-v2-tasks.md)
-  - Fase 2 (Stripe, referencia): [`011-phase2-stripe-certification-tasks.md`](011-phase2-stripe-certification-tasks.md)
-  - Fase 3 (Paddle): [`011-phase3-paddle-tasks.md`](011-phase3-paddle-tasks.md)
-  - Fase 4 (Lemon Squeezy): [`011-phase4-lemon-squeezy-tasks.md`](011-phase4-lemon-squeezy-tasks.md)
-  - Fase 5 (MercadoPago, P0 antes de producción): [`011-phase5-mercadopago-redesign-tasks.md`](011-phase5-mercadopago-redesign-tasks.md)
+  - Fase 2 (Mercado Pago, referencia LATAM): [`011-phase2-mercadopago-tasks.md`](011-phase2-mercadopago-tasks.md)
+  - Fase 3 (Stripe): [`011-phase3-stripe-certification-tasks.md`](011-phase3-stripe-certification-tasks.md)
+  - Fase 4 (Paddle): [`011-phase4-paddle-tasks.md`](011-phase4-paddle-tasks.md)
+  - Fase 5 (Lemon Squeezy): [`011-phase5-lemon-squeezy-tasks.md`](011-phase5-lemon-squeezy-tasks.md)
   - Fase 6 (Reconciliation): [`011-phase6-reconciliation-tasks.md`](011-phase6-reconciliation-tasks.md)
 
-## Actualización de ejecución — Fase 1 local (2026-08-26)
+## Cierre de ejecución — Fase 1 Core v2 (2026-08-27)
 
-- Implementado: identidad provider-scoped, catálogo `provider_prices`, eventos
-  discriminados, reducer con RPCs de mutación acotada, `BillingService`, UI por
-  capabilities, guard de producción para Mock y retiro del RPC amplio
-  `apply_subscription_event`.
-- Migraciones locales: `20260826123000` a `20260826130000`; cada cambio de
+- Implementado: identidad provider-scoped, catálogo `provider_prices` con
+  RPCs de lectura acotadas, eventos discriminados, reducer con RPCs de
+  mutación acotada, `BillingService`, UI por capabilities, guard de
+  producción para Mock y retiro del RPC amplio `apply_subscription_event`.
+- Migraciones versionadas: `20260826123000` a `20260826220000`; cada cambio de
   esquema tiene espejo en `supabase/schemas/` y tipos regenerados.
-- Evidencia local: `pnpm test` 92 archivos / 796 tests; `pnpm supa:test` 32
-  archivos / 310 tests después de `pnpm supa:reset`; `pnpm typecheck`,
-  `pnpm lint` y `pnpm format:check` verdes. `supabase db lint --local` sale
-  0, pero conserva avisos históricos de extensiones ajenas a billing.
-- Pendiente fuera de esta fase: certificación real de Stripe (Fase 2), rediseño
-  y sandbox real de Mercado Pago (Fase 5), otros proveedores, reconciliación y
-  la aplicación de las migraciones a Cloud con autorización explícita.
+- Entrega: [PR #152](https://github.com/pipec80/iroko/pull/152), validado en
+  la cabeza `b396aa4` por el
+  [run 33037169891](https://github.com/pipec80/iroko/actions/runs/33037169891)
+  (Quality, CodeQL, Documentation, Security, Gitleaks, Unit, Database
+  Types/Tests, Edge Function, Chromium/WebKit E2E, Build y Vercel Preview en
+  verde) y squash-merged como `4a0a3d4`.
+- Este cierre no certifica proveedores, sandbox de Mercado Pago, paridad de
+  migraciones Local↔Cloud, ni una ejecución CI posterior al squash en `main`:
+  todos siguen `[NO VERIFICADO]` hasta evidencia específica.
 
 ## Objective
 
@@ -115,7 +117,7 @@ z.string().default('mock')`, sin `.refine()` ni chequeo de `NODE_ENV`.
 - **`billing.invoices` no recibe identidad externa.** El `INSERT` dentro de
   `apply_subscription_event` (líneas 689-699) puebla 9 columnas, ninguna es
   `external_invoice_id`/`hosted_url`/`pdf_url`. Se cierra en Fase 1 (schema)
-  - Fase 2 (Stripe puebla los campos reales).
+  - Fase 3 (Stripe puebla los campos reales).
 - **Riesgo de doble suscripción.** `startCheckout()`
   (`billing/actions.ts:79-114`) no verifica suscripción paga existente
   antes de iniciar un checkout nuevo. Se cierra en Fase 1, Task 7
@@ -129,34 +131,34 @@ z.string().default('mock')`, sin `.refine()` ni chequeo de `NODE_ENV`.
 Documentado en detalle en el roadmap formal — resumen aquí, no
 duplicado palabra por palabra:
 
-| Fase | Nombre                                 |       Prioridad        | Depende de | Outcome                                                                                                                                                                                                                     |
-| ---- | -------------------------------------- | :--------------------: | :--------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Congelar contrato y tests de regresión |           P0           |     —      | Los 9 defectos conocidos (B0.1-B0.9) quedan codificados como tests que fallan sobre `main`, antes de tocar nada — bullets en el roadmap formal, sin companion file propio (son parte de las Tasks 1 de cada fase siguiente) |
-| 1    | Billing Core v2                        |           P0           |   Fase 0   | Modelo de dominio provider-neutral — [`011-phase1-core-v2-tasks.md`](011-phase1-core-v2-tasks.md)                                                                                                                           |
-| 2    | Certificación Stripe (referencia)      |           P0           |   Fase 1   | Stripe como implementación de referencia — [`011-phase2-stripe-certification-tasks.md`](011-phase2-stripe-certification-tasks.md)                                                                                           |
-| 3    | Paddle                                 |           P1           |   Fase 2   | Mismo contrato, sin cambios al core — [`011-phase3-paddle-tasks.md`](011-phase3-paddle-tasks.md)                                                                                                                            |
-| 4    | Lemon Squeezy                          |           P1           |   Fase 2   | Preserva semántica `cancelled` vs `expired` propia — [`011-phase4-lemon-squeezy-tasks.md`](011-phase4-lemon-squeezy-tasks.md)                                                                                               |
-| 5    | Rediseño MercadoPago                   | P0 antes de producción |   Fase 1   | Reemplaza `preapproval_plan_id` + cancelación insegura — [`011-phase5-mercadopago-redesign-tasks.md`](011-phase5-mercadopago-redesign-tasks.md)                                                                             |
-| 6    | Reconciliation + hardening             |           P1           | Fases 1+2  | Red de seguridad PSP↔DB — [`011-phase6-reconciliation-tasks.md`](011-phase6-reconciliation-tasks.md)                                                                                                                        |
+| Fase | Nombre                                 | Prioridad | Depende de | Outcome                                                                                                                                                                                                                     |
+| ---- | -------------------------------------- | :-------: | :--------: | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | Congelar contrato y tests de regresión |    P0     |     —      | Los 9 defectos conocidos (B0.1-B0.9) quedan codificados como tests que fallan sobre `main`, antes de tocar nada — bullets en el roadmap formal, sin companion file propio (son parte de las Tasks 1 de cada fase siguiente) |
+| 1    | Billing Core v2                        |    P0     |   Fase 0   | Cerrada por #152: modelo de dominio provider-neutral — [`011-phase1-core-v2-tasks.md`](011-phase1-core-v2-tasks.md)                                                                                                         |
+| 2    | Mercado Pago (referencia LATAM)        |    P0     |   Fase 1   | Reemplaza `preapproval_plan_id`, confirma cancelación real y certifica sandbox — [`011-phase2-mercadopago-tasks.md`](011-phase2-mercadopago-tasks.md)                                                                       |
+| 3    | Certificación Stripe                   |    P1     |   Fase 1   | Segundo provider, cuando existan credenciales de test — [`011-phase3-stripe-certification-tasks.md`](011-phase3-stripe-certification-tasks.md)                                                                              |
+| 4    | Paddle                                 |    P1     |   Fase 2   | Mismo contrato, sin cambios al core — [`011-phase4-paddle-tasks.md`](011-phase4-paddle-tasks.md)                                                                                                                            |
+| 5    | Lemon Squeezy                          |    P1     |   Fase 2   | Preserva semántica `cancelled` vs `expired` propia — [`011-phase5-lemon-squeezy-tasks.md`](011-phase5-lemon-squeezy-tasks.md)                                                                                               |
+| 6    | Reconciliation + hardening             |    P1     | Fases 1+2  | Red de seguridad PSP↔DB, inicia con Mercado Pago — [`011-phase6-reconciliation-tasks.md`](011-phase6-reconciliation-tasks.md)                                                                                               |
 
-**PR slicing recomendado** (del roadmap formal): PR-1 (schema+tests) → PR-2
-(eventos tipados+reducer+webhook) → PR-3 (`BillingService`+capabilities+UI)
-→ PR-4 (Stripe) → {PR-5 (MercadoPago), PR-6 (Paddle tras PR-4), PR-7 (Lemon
-Squeezy tras PR-4)} en paralelo → PR-8 (reconciliation). PR-1/2/3 = Fase 1,
-desglosadas como Task 1-10 en el archivo companion.
+**PR slicing ejecutable:** PR-1/2/3 se consolidaron como [PR #152](https://github.com/pipec80/iroko/pull/152)
+(Fase 1) → PR-4 (Mercado Pago) → PR-5 (Stripe, con credenciales de test) →
+PR-6 (Paddle) → PR-7 (Lemon Squeezy) → PR-8 (reconciliation). Los providers
+P1 pueden planificarse después de que la referencia Mercado Pago demuestre el
+contrato, pero no se implementan en paralelo con la certificación P0.
 
-**Paddle y Lemon Squeezy no están pausados** — corrección a mi propio
-borrador anterior de este plan, que los trataba como "fuera de scope".
-Van secuenciados dentro del mismo programa, después de certificar Stripe
-(Fase 2), tal como lo especifica la sección 15 del design spec.
+**Paddle y Lemon Squeezy no están pausados** — siguen dentro del mismo
+programa, después de certificar Mercado Pago (Fase 2) como referencia de
+lanzamiento. Stripe ya no bloquea esa secuencia, aunque conserva su propia
+certificación antes de ofrecerse como provider.
 
 **Decisión declarada sobre Fase 0 (2026-08-19):** el roadmap formal
 describe los 9 tests de regresión (B0.1-B0.9) como un paquete único, todo
 antes de tocar Fase 1. Al escribir los companion files los repartí: 7 de
 los 9 quedaron en Fase 1 (Task 1 y Task 7, que son provider-neutral, igual
-que Fase 1 misma) — pero **B0.8** (portal de Stripe usa `cus_*`) fue a
-Fase 2 Task 1, y **B0.9** (MercadoPago no marca cancelado sin confirmar en
-el proveedor) fue a Fase 5 Task 1. Motivo: son regresiones específicas de
+que Fase 1 misma) — pero **B0.8** (portal de Stripe usa `cus_*`) va a
+Fase 3 Task 1, y **B0.9** (MercadoPago no marca cancelado sin confirmar en
+el proveedor) está en Fase 2 Task 1. Motivo: son regresiones específicas de
 un provider concreto, y Fase 1 es deliberadamente provider-neutral —
 meter fixtures de Stripe/MercadoPago ahí violaría la misma separación de
 responsabilidades que todo este rediseño persigue. Es una desviación
@@ -179,15 +181,15 @@ un precio distinto (ej. redondeo de MercadoPago en CLP), se relaja ahí
 puntualmente — no se empieza permitiendo divergencia sin necesidad
 demostrada.
 
-## Antes de ejecutar Fase 2 (Stripe) y Fase 5 (MercadoPago)
+## Antes de ejecutar Fase 2 (Mercado Pago) y Fase 3 (Stripe)
 
-Ambas fases tienen como gate de cierre un E2E real contra test-mode/sandbox
-— no es opcional, es la condición de "listo". **Confirmar si ya existen
-credenciales de test de Stripe y sandbox de MercadoPago** antes de empezar
-esas fases — condiciona si se pueden cerrar en la misma iteración o quedan
-con el gate abierto como seguimiento inmediato.
+Ambas fases tienen como gate de cierre un E2E real contra sandbox/test-mode
+— no es opcional, es la condición de "listo". El dueño declaró disponibles
+las credenciales de Mercado Pago para Fase 2, pero el sandbox E2E sigue
+`[NO VERIFICADO]` hasta ejecutarlo. Stripe no bloquea el lanzamiento LATAM y
+permanece pendiente de sus propias credenciales y certificación.
 
-## Definition of Done (Fase 1 — el hito inmediato)
+## Definition of Done (Fase 1 — cerrado)
 
 Ver Completion criteria completo en
 [`011-phase1-core-v2-tasks.md`](011-phase1-core-v2-tasks.md). Resumen: sin

@@ -1,22 +1,23 @@
-# Phase 2 (PR-4) — Stripe certification: task-by-task implementation plan
+# Phase 3 (PR-5) — Stripe certification: task-by-task implementation plan
 
 > For agentic workers: REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development`
 > (recommended) or `superpowers:executing-plans` to implement this plan
 > task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> Detailed breakdown of **Phase 2** from
+> Detailed breakdown of **Phase 3** from
 > [`011-billing-correctness.md`](011-billing-correctness.md). Corresponds
-> to PR-4 in that plan's PR slicing table. **Depends on Phase 1
-> (`011-phase1-core-v2-tasks.md`) being merged and green** — this plan
-> assumes `events.ts`, `capabilities.ts`, `catalog.ts`, `reducer.ts`,
-> `service.ts`, and the `billing.provider_prices`/`billing.payment_attempts`
-> schema already exist.
+> to PR-5 in that plan's PR slicing table. It is scheduled after the Mercado
+> Pago reference certification (Fase 2), and technically depends on merged
+> Fase 1 (`011-phase1-core-v2-tasks.md`). This plan assumes `events.ts`,
+> `capabilities.ts`, `catalog.ts`, `reducer.ts`, `service.ts`, and the
+> `billing.provider_prices`/`billing.payment_attempts` schema already exist.
 
-**Goal:** Make Stripe the reference implementation of the Billing Core v2
-contract — real customer/price resolution, no invented plan defaults, real
-Customer Portal, and full lifecycle (checkout → active → paid invoice →
-failed/recovered payment → cancellation → webhook replay) verified against
-Stripe test mode.
+**Goal:** Certify Stripe as a subsequent provider implementation of the
+Billing Core v2 contract — real customer/price resolution, no invented plan
+defaults, real Customer Portal, and full lifecycle (checkout → active → paid
+invoice → failed/recovered payment → cancellation → webhook replay) verified
+against Stripe test mode. It is not the launch reference or a gate for the
+Mercado Pago LATAM path.
 
 **Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md),
 section 7.1. **Re-open before implementing** (APIs evolve; last checked
@@ -251,7 +252,7 @@ it('throws plan_provider_price_not_configured before calling Stripe when no mapp
 Replace the direct `supabase.rpc('get_plan_provider_id', ...)` call
 (current `stripe.ts:84-89`) with `getProviderPrice()` from the Fase 1
 catalog (`src/lib/billing/catalog.ts`) — this is the same abstraction
-MercadoPago will use in Fase 5, keeps both adapters on one lookup path.
+Mercado Pago uses in Fase 2, keeping both adapters on one lookup path.
 Pass `customer: cus_real123` from Task 2's resolver, not left implicit.
 
 - [ ] **Step 3: Verify and commit**
@@ -500,7 +501,7 @@ Per design spec section 14: PR description must include the Stripe test
 mode event IDs used and the resulting row states — not just "tested
 manually", actual evidence.
 
-## Completion criteria for Phase 2
+## Completion criteria for Phase 3
 
 - `createPortalSession` never receives an Iroko UUID.
 - Every subscription/invoice webhook resolves `externalPriceId`/
@@ -513,6 +514,7 @@ manually", actual evidence.
 - `pnpm typecheck && pnpm lint`, relevant Vitest, and the Fase 1 pgTAP
   suite still pass.
 
-Only after this gate should Phase 5 (Mercado Pago) rely on the same
-catalog abstraction being proven correct, and Phases 3/4 (Paddle, Lemon
-Squeezy) should start from this adapter as the reference shape.
+This gate certifies Stripe as an additional provider. Mercado Pago Fase 2 is
+the reference shape for the current launch path; Fases 4/5 (Paddle, Lemon
+Squeezy) must start from the provider-neutral Core v2 contract, not copy
+provider-specific assumptions from either adapter.

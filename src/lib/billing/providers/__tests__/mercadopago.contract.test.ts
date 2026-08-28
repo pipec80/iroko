@@ -59,6 +59,7 @@ describe('mercadopagoProvider.verifyWebhook — fixed HMAC vector', () => {
         externalSubscriptionId: FIXTURE_DATA_ID,
       }),
     );
+    expect(result).not.toHaveProperty('externalPriceId');
   });
 
   it('rejects the same fixed hex when any manifest component changes (different data.id)', async () => {

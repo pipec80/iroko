@@ -1719,6 +1719,14 @@ export type Database = {
           key: string
         }[]
       }
+      create_billing_provisional_subscription: {
+        Args: {
+          p_account_id: string
+          p_external_preapproval_id: string
+          p_plan_id: string
+        }
+        Returns: string
+      }
       create_team: { Args: { p_name: string }; Returns: string }
       create_webhook_endpoint: {
         Args: {

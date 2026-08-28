@@ -1,15 +1,16 @@
-# Phase 4 (PR-7) — Lemon Squeezy adapter: task-by-task implementation plan
+# Phase 5 (PR-7) — Lemon Squeezy adapter: task-by-task implementation plan
 
 > For agentic workers: REQUIRED SUB-SKILL: use `superpowers:subagent-driven-development`
 > (recommended) or `superpowers:executing-plans` to implement this plan
 > task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
-> Detailed breakdown of **Phase 4** from
+> Detailed breakdown of **Phase 5** from
 > [`011-billing-correctness.md`](011-billing-correctness.md). Corresponds
-> to PR-7 (depends on PR-4, Stripe certification). **New adapter — no
+> to PR-7 (scheduled after PR-4, Mercado Pago reference certification).
+> **New adapter — no
 > existing Lemon Squeezy code in the repo.** Every field name/endpoint
 > below must be re-verified against the live Lemon Squeezy API docs before
-> implementing, same caveat as Phase 3 (Paddle).
+> implementing, same caveat as Phase 4 (Paddle).
 
 **Goal:** Lemon Squeezy implements the Billing Core v2 contract while
 preserving its own `cancelled`-vs-`expired` lifecycle distinction, which
@@ -32,7 +33,7 @@ Same as Phase 1 — SOLID/DRY/KISS/YAGNI, early returns, no
 `(select auth.uid())`, `SECURITY DEFINER` + `search_path=''` + explicit
 grants, `pnpm typecheck && pnpm lint` before every commit, squash merge,
 fix bugs found in-branch. **Do not run this suite's tests in parallel with
-Paddle's (Phase 3) on this machine.**
+Paddle's (Phase 4) on this machine.**
 
 ## Design constraints specific to this adapter — read before Task 1
 
@@ -121,7 +122,7 @@ git commit -m "chore: add Lemon Squeezy provider configuration"
 
 ## Task 2: Provider prices — map Iroko plans to Lemon Squeezy Variant IDs
 
-**Files:** none — data task, same pattern as Phase 3 Task 2.
+**Files:** none — data task, same pattern as Phase 4 Task 2.
 
 - [ ] **Step 1:** Insert `billing.provider_prices` rows,
       `provider='lemonsqueezy'`, `external_price_id` = the Lemon Squeezy
@@ -386,7 +387,7 @@ denied → webhook replay idempotent.
 
 - [ ] **Step 3: Document event IDs/results in the PR.**
 
-## Completion criteria for Phase 4
+## Completion criteria for Phase 5
 
 - `lemonSqueezyProvider` satisfies `PaymentProvider` with zero core
   reducer changes.
@@ -398,4 +399,4 @@ denied → webhook replay idempotent.
   because the mock happened to return the same one twice).
 - Sandbox E2E evidence recorded in the merged PR.
 - `pnpm typecheck && pnpm lint`, relevant Vitest pass; do not run this
-  suite's tests concurrently with Phase 3's on this machine.
+  suite's tests concurrently with Phase 4's on this machine.

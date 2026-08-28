@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   verify: vi.fn(),
   sign: vi.fn(),
   rpc: vi.fn(),
+  getProviderPrice: vi.fn(),
   getClaims: vi.fn(),
   captureServer: vi.fn(),
 }));
@@ -20,6 +21,7 @@ vi.mock('@/lib/active-account', () => ({
   requireAccountRole: mocks.requireAccountRole,
 }));
 vi.mock('@/lib/billing/registry', () => ({ getPaymentProvider: mocks.getPaymentProvider }));
+vi.mock('@/lib/billing/catalog', () => ({ getProviderPrice: mocks.getProviderPrice }));
 vi.mock('@/lib/billing/service', () => ({
   startBillingCheckout: mocks.createCheckout,
   cancelBillingSubscription: mocks.cancelBillingSubscription,
@@ -102,6 +104,26 @@ describe('billing actions', () => {
   it('startCheckout rejects an invalid interval', async () => {
     const res = await startCheckout({ planSlug: 'pro', interval: 'weekly' as 'month' });
     expect(res.error).toBe('validation_error');
+    expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it('startCheckout rejects an annual Mercado Pago checkout without an approved annual CLP price', async () => {
+    mocks.getPaymentProvider.mockReturnValue({
+      name: 'mercadopago',
+      capabilities: {
+        customerPortal: false,
+        cancelImmediately: true,
+        cancelAtPeriodEnd: false,
+        updatePaymentMethod: false,
+        changePlan: false,
+        pauseSubscription: true,
+      },
+      createCheckout: mocks.createCheckout,
+    });
+
+    const res = await startCheckout({ planSlug: 'pro', interval: 'year' });
+
+    expect(res).toEqual({ data: null, error: 'validation_error' });
     expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 
@@ -376,6 +398,125 @@ describe('billing actions', () => {
         pauseSubscription: false,
       },
     });
+  });
+
+  it('getBillingData returns only Mercado Pago plans with their configured CLP checkout prices', async () => {
+    mocks.getPaymentProvider.mockReturnValue({
+      name: 'mercadopago',
+      capabilities: {
+        customerPortal: false,
+        cancelImmediately: true,
+        cancelAtPeriodEnd: false,
+        updatePaymentMethod: false,
+        changePlan: false,
+        pauseSubscription: true,
+      },
+    });
+    mocks.rpc.mockImplementation((fn: string) => {
+      if (fn === 'get_active_plans') {
+        return Promise.resolve({
+          data: [
+            {
+              slug: 'free',
+              name: 'Free',
+              description: 'Para empezar',
+              interval: 'month',
+              price: 0,
+              currency: 'USD',
+              trial_days: 0,
+              features: {},
+              limits: {},
+            },
+            {
+              slug: 'pro',
+              name: 'Plus',
+              description: 'Para equipos',
+              interval: 'month',
+              price: 2900,
+              currency: 'USD',
+              trial_days: 14,
+              features: { webhooks_enabled: true },
+              limits: { api_keys_max: 20 },
+            },
+            {
+              slug: 'pro',
+              name: 'Plus',
+              description: 'Para equipos',
+              interval: 'year',
+              price: 29000,
+              currency: 'USD',
+              trial_days: 14,
+              features: { webhooks_enabled: true },
+              limits: { api_keys_max: 20 },
+            },
+            {
+              slug: 'scale',
+              name: 'Pro',
+              description: 'Para operaciones',
+              interval: 'month',
+              price: 9900,
+              currency: 'USD',
+              trial_days: 14,
+              features: { priority_support: true },
+              limits: { api_keys_max: 100 },
+            },
+          ],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+    mocks.getProviderPrice.mockImplementation(async ({ planSlug }: { planSlug: string }) => {
+      const amountByPlan: Record<string, number> = { free: 0, pro: 19_990, scale: 102_990 };
+      return {
+        id: `mercadopago-${planSlug}`,
+        planId: `${planSlug}-id`,
+        planSlug,
+        interval: 'month',
+        provider: 'mercadopago',
+        externalPriceId: null,
+        amount: amountByPlan[planSlug] ?? 0,
+        currency: 'CLP',
+      };
+    });
+
+    const res = await getBillingData();
+
+    expect(res.data?.plans).toEqual([
+      {
+        slug: 'free',
+        name: 'Free',
+        description: 'Para empezar',
+        interval: 'month',
+        price: 0,
+        currency: 'CLP',
+        trialDays: 0,
+        features: {},
+        limits: {},
+      },
+      {
+        slug: 'pro',
+        name: 'Plus',
+        description: 'Para equipos',
+        interval: 'month',
+        price: 19_990,
+        currency: 'CLP',
+        trialDays: 14,
+        features: { webhooks_enabled: true },
+        limits: { api_keys_max: 20 },
+      },
+      {
+        slug: 'scale',
+        name: 'Pro',
+        description: 'Para operaciones',
+        interval: 'month',
+        price: 102_990,
+        currency: 'CLP',
+        trialDays: 14,
+        features: { priority_support: true },
+        limits: { api_keys_max: 100 },
+      },
+    ]);
   });
 
   it('getBillingData returns null overview when the member is not admin', async () => {

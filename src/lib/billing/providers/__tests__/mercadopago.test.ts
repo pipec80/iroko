@@ -104,8 +104,8 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     expect(result?.type).toBe('subscription_canceled');
   });
 
-  it('should enrich subscription_authorized_payment events into invoice_paid', async () => {
-    const dataId = 'pay_1';
+  it('normalizes an approved authorized payment into its invoice and nested payment identities', async () => {
+    const dataId = 'authorized_payment_1';
     const requestId = 'req_3';
     const ts = '1720000000';
     const v1 = await sign('test-mp-secret', requestId, dataId, ts);
@@ -114,12 +114,16 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
-        id: dataId,
+        id: 10_001,
         preapproval_id: 'pa_1',
         external_reference: 'acc_1',
-        transaction_amount: 999,
-        currency_id: 'ARS',
+        transaction_amount: '29900',
+        currency_id: 'CLP',
         date_created: '2026-07-08T00:00:00.000-04:00',
+        payment: {
+          id: 10_002,
+          status: 'approved',
+        },
       }),
     });
 
@@ -133,12 +137,249 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         provider: 'mercadopago',
         accountId: 'acc_1',
         externalSubscriptionId: 'pa_1',
-        externalInvoiceId: 'pay_1',
-        externalPaymentId: 'pay_1',
-        amountPaid: 999,
-        currency: 'ARS',
+        externalInvoiceId: '10001',
+        externalPaymentId: '10002',
+        amountPaid: 29_900,
+        currency: 'CLP',
       }),
     );
+  });
+
+  it('normalizes a rejected authorized payment as invoice_payment_failed using its nested failure detail', async () => {
+    const dataId = 'authorized_payment_rejected';
+    const requestId = 'req_4';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+    const body = JSON.stringify({ type: 'subscription_authorized_payment', data: { id: dataId } });
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 10_003,
+        preapproval_id: 'pa_1',
+        external_reference: 'acc_1',
+        transaction_amount: '29900',
+        currency_id: 'CLP',
+        date_created: '2026-07-09T00:00:00.000-04:00',
+        payment: {
+          id: 10_004,
+          status: 'rejected',
+          status_detail: 'cc_rejected_bad_filled_card_number',
+        },
+      }),
+    });
+
+    const result = await mercadopagoProvider.verifyWebhook(
+      body,
+      `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        type: 'invoice_payment_failed',
+        provider: 'mercadopago',
+        accountId: 'acc_1',
+        externalSubscriptionId: 'pa_1',
+        externalInvoiceId: '10003',
+        externalPaymentId: '10004',
+        amountDue: 29_900,
+        currency: 'CLP',
+        attemptedAt: '2026-07-09T00:00:00.000-04:00',
+        failureCode: 'cc_rejected_bad_filled_card_number',
+      }),
+    );
+  });
+
+  it('uses distinct lifecycle external event ids when an authorized payment changes from rejected to approved', async () => {
+    const invoiceId = 'authorized_payment_lifecycle';
+    const paymentId = 'payment_lifecycle';
+    const ts = '1720000000';
+    const failedRequestId = 'req_lifecycle_failed';
+    const approvedRequestId = 'req_lifecycle_approved';
+    const failedBody = JSON.stringify({
+      type: 'subscription_authorized_payment',
+      data: { id: 'authorized_payment_lifecycle_failed' },
+    });
+    const approvedBody = JSON.stringify({
+      type: 'subscription_authorized_payment',
+      data: { id: 'authorized_payment_lifecycle_approved' },
+    });
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: invoiceId,
+          preapproval_id: 'pa_lifecycle',
+          external_reference: 'acc_lifecycle',
+          transaction_amount: '29900',
+          currency_id: 'CLP',
+          date_created: '2026-07-09T00:00:00.000-04:00',
+          payment: { id: paymentId, status: 'rejected', status_detail: 'cc_rejected' },
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: invoiceId,
+          preapproval_id: 'pa_lifecycle',
+          external_reference: 'acc_lifecycle',
+          transaction_amount: '29900',
+          currency_id: 'CLP',
+          date_created: '2026-07-10T00:00:00.000-04:00',
+          payment: { id: paymentId, status: 'approved' },
+        }),
+      });
+
+    const failed = await mercadopagoProvider.verifyWebhook(
+      failedBody,
+      `ts=${ts},v1=${await sign('test-mp-secret', failedRequestId, 'authorized_payment_lifecycle_failed', ts)};x-request-id=${failedRequestId}`,
+    );
+    const approved = await mercadopagoProvider.verifyWebhook(
+      approvedBody,
+      `ts=${ts},v1=${await sign('test-mp-secret', approvedRequestId, 'authorized_payment_lifecycle_approved', ts)};x-request-id=${approvedRequestId}`,
+    );
+
+    expect(failed).toEqual(
+      expect.objectContaining({
+        type: 'invoice_payment_failed',
+        externalInvoiceId: invoiceId,
+        externalPaymentId: paymentId,
+      }),
+    );
+    expect(approved).toEqual(
+      expect.objectContaining({
+        type: 'invoice_paid',
+        externalInvoiceId: invoiceId,
+        externalPaymentId: paymentId,
+      }),
+    );
+    expect(failed?.externalEventId).not.toBe(approved?.externalEventId);
+  });
+
+  it.each([
+    ['approved', '29.99', 'invoice_paid', 'amountPaid'],
+    ['rejected', 29.99, 'invoice_payment_failed', 'amountDue'],
+  ] as const)(
+    'normalizes USD %s authorized payment amounts into minor units',
+    async (status, rawAmount, type, amountField) => {
+      const dataId = `authorized_payment_usd_${status}`;
+      const requestId = `req_usd_${status}`;
+      const ts = '1720000000';
+      const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+      const body = JSON.stringify({
+        type: 'subscription_authorized_payment',
+        data: { id: dataId },
+      });
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: `invoice_usd_${status}`,
+          preapproval_id: 'pa_usd',
+          external_reference: 'acc_usd',
+          transaction_amount: rawAmount,
+          currency_id: 'USD',
+          date_created: '2026-07-10T00:00:00.000-04:00',
+          payment: { id: `payment_usd_${status}`, status },
+        }),
+      });
+
+      const result = await mercadopagoProvider.verifyWebhook(
+        body,
+        `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+      );
+
+      expect(result).toEqual(
+        expect.objectContaining({ type, currency: 'USD', [amountField]: 2_999 }),
+      );
+    },
+  );
+
+  it.each([
+    ['missing payment', {}],
+    ['null payment', { payment: null }],
+    ['empty payment id', { payment: { id: '', status: 'approved' } }],
+    ['empty payment status', { payment: { id: 'payment_missing_status', status: '' } }],
+  ])('returns null for an authorized payment with %s', async (_description, paymentOverride) => {
+    const dataId = 'authorized_payment_malformed_nested_payment';
+    const requestId = 'req_malformed_nested_payment';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+    const body = JSON.stringify({ type: 'subscription_authorized_payment', data: { id: dataId } });
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'invoice_malformed',
+        preapproval_id: 'pa_malformed',
+        external_reference: 'acc_malformed',
+        transaction_amount: '29900',
+        currency_id: 'CLP',
+        date_created: '2026-07-10T00:00:00.000-04:00',
+        ...paymentOverride,
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
+    ).resolves.toBeNull();
+  });
+
+  it('returns null for an authorized payment with a malformed non-integer amount', async () => {
+    const dataId = 'authorized_payment_invalid_amount';
+    const requestId = 'req_5';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+    const body = JSON.stringify({ type: 'subscription_authorized_payment', data: { id: dataId } });
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 10_005,
+        preapproval_id: 'pa_1',
+        external_reference: 'acc_1',
+        transaction_amount: '299.50',
+        currency_id: 'CLP',
+        date_created: '2026-07-10T00:00:00.000-04:00',
+        payment: { id: 10_006, status: 'approved' },
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
+    ).resolves.toBeNull();
+  });
+
+  it.each([
+    ['negative', '-29.99'],
+    ['negative numeric zero', -0],
+    ['non-numeric', 'twenty-nine'],
+    ['excess USD fraction precision', '29.999'],
+    ['unsafe', '9007199254740992'],
+  ])('returns null for an authorized payment with a %s amount', async (_description, rawAmount) => {
+    const dataId = 'authorized_payment_invalid_currency_aware_amount';
+    const requestId = 'req_invalid_currency_aware_amount';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+    const body = JSON.stringify({ type: 'subscription_authorized_payment', data: { id: dataId } });
+
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'invoice_invalid_currency_aware_amount',
+        preapproval_id: 'pa_invalid_currency_aware_amount',
+        external_reference: 'acc_invalid_currency_aware_amount',
+        transaction_amount: rawAmount,
+        currency_id: 'USD',
+        date_created: '2026-07-10T00:00:00.000-04:00',
+        payment: { id: 'payment_invalid_currency_aware_amount', status: 'approved' },
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
+    ).resolves.toBeNull();
   });
 
   it('should return null for unhandled event types', async () => {
@@ -149,8 +390,8 @@ describe('mercadopagoProvider.verifyWebhook', () => {
 });
 
 describe('mercadopagoProvider.createCheckout', () => {
-  it('should create a preapproval and return its init_point as the checkout url', async () => {
-    getProviderPrice.mockResolvedValue({ externalPriceId: 'plan_test_456' });
+  it('creates a pending CLP preapproval without an associated plan from the resolved provider price', async () => {
+    getProviderPrice.mockResolvedValue({ amount: 29_900, currency: 'CLP', externalPriceId: null });
     fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({
@@ -159,7 +400,7 @@ describe('mercadopagoProvider.createCheckout', () => {
       }),
     });
 
-    const { url } = await mercadopagoProvider.createCheckout({
+    const result = await mercadopagoProvider.createCheckout({
       accountId: 'acc_1',
       customerEmail: 'owner@example.com',
       planSlug: 'pro',
@@ -172,26 +413,59 @@ describe('mercadopagoProvider.createCheckout', () => {
       planSlug: 'pro',
       interval: 'month',
       provider: 'mercadopago',
-      currency: 'USD',
+      currency: 'CLP',
     });
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/preapproval'),
-      expect.objectContaining({
-        method: 'POST',
-        body: expect.stringContaining('"external_reference":"acc_1"'),
-      }),
-    );
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({
-        body: expect.stringContaining('"payer_email":"owner@example.com"'),
-      }),
-    );
-    expect(url).toBe('https://mercadopago.com/subscriptions/pa_new');
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(request.body as string)).toEqual({
+      reason: 'Iroko pro subscription',
+      external_reference: 'acc_1',
+      payer_email: 'owner@example.com',
+      back_url: 'https://app/ok',
+      status: 'pending',
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: 'months',
+        transaction_amount: 29_900,
+        currency_id: 'CLP',
+      },
+    });
+    expect(result).toEqual({
+      url: 'https://mercadopago.com/subscriptions/pa_new',
+      externalSubscriptionId: 'pa_new',
+    });
   });
 
-  it('throws when the catalog mapping has no Mercado Pago external plan id', async () => {
-    getProviderPrice.mockResolvedValue({ externalPriceId: null });
+  it('converts USD catalog minor units while preserving CLP zero-decimal amounts', async () => {
+    getProviderPrice.mockResolvedValue({ amount: 2_999, currency: 'USD', externalPriceId: null });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: 'pa_usd',
+        init_point: 'https://mercadopago.com/subscriptions/pa_usd',
+      }),
+    });
+
+    await mercadopagoProvider.createCheckout({
+      accountId: 'acc_1',
+      customerEmail: 'owner@example.com',
+      planSlug: 'pro',
+      interval: 'month',
+      successUrl: 'https://app/ok',
+      cancelUrl: 'https://app/no',
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(request.body as string).auto_recurring).toEqual({
+      frequency: 1,
+      frequency_type: 'months',
+      transaction_amount: 29.99,
+      currency_id: 'USD',
+    });
+  });
+
+  it('does not issue an HTTP request when the active catalog price is missing', async () => {
+    getProviderPrice.mockRejectedValueOnce(new Error('plan_provider_price_not_configured'));
+
     await expect(
       mercadopagoProvider.createCheckout({
         accountId: 'acc_1',
@@ -201,7 +475,24 @@ describe('mercadopagoProvider.createCheckout', () => {
         successUrl: 'https://app/ok',
         cancelUrl: 'https://app/no',
       }),
-    ).rejects.toThrow('provider_price_external_id_not_configured');
+    ).rejects.toThrow('plan_provider_price_not_configured');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid catalog price before it reaches Mercado Pago', async () => {
+    getProviderPrice.mockResolvedValueOnce({ amount: -1, currency: 'CLP', externalPriceId: null });
+
+    await expect(
+      mercadopagoProvider.createCheckout({
+        accountId: 'acc_1',
+        customerEmail: 'owner@example.com',
+        planSlug: 'pro',
+        interval: 'month',
+        successUrl: 'https://app/ok',
+        cancelUrl: 'https://app/no',
+      }),
+    ).rejects.toThrow('provider_price_invalid');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 
@@ -231,6 +522,20 @@ describe('mercadopagoProvider.cancelSubscription', () => {
         body: expect.stringContaining('"status":"cancelled"'),
       }),
     );
+  });
+
+  it('rejects immediate cancellation when Mercado Pago does not confirm cancelled status', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'pa_1', status: 'authorized' }),
+    });
+
+    await expect(
+      mercadopagoProvider.cancelSubscription?.({
+        externalSubscriptionId: 'pa_1',
+        timing: 'immediate',
+      }),
+    ).rejects.toThrow('mercadopago_cancellation_not_confirmed');
   });
 });
 
