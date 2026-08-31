@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
   maybeSingle: vi.fn(),
   captureServer: vi.fn(),
   notify: vi.fn(async () => {}),
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
   sentryScope: {
     setTag: vi.fn(),
     setContext: vi.fn(),
@@ -37,6 +42,7 @@ vi.mock('../catalog', () => ({
 }));
 vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
 vi.mock('@/lib/notifications', () => ({ notify: mocks.notify }));
+vi.mock('@/lib/logger', () => ({ logger: mocks.logger }));
 
 vi.mock('@sentry/nextjs', () => ({
   withScope: vi.fn((callback: (scope: typeof mocks.sentryScope) => void) => {
@@ -119,6 +125,42 @@ describe('handleProviderWebhook', () => {
       body: { result: 'ignored' },
     });
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('logs receipt and the reduced result without the webhook body or signature', async () => {
+    const mercadopagoEvent = { ...validEvent, provider: 'mercadopago' as const };
+    mocks.verifyWebhook.mockResolvedValue(mercadopagoEvent);
+    mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
+
+    await expect(
+      handleProviderWebhook('mercadopago', '{"email":"never-log-this"}', 'never-log-this', {
+        webhookId: 'notification_1',
+      }),
+    ).resolves.toEqual({ status: 200, body: { result: 'applied' } });
+
+    expect(mocks.logger.info).toHaveBeenNthCalledWith(
+      1,
+      {
+        action: 'billing.webhook.received',
+        component: 'billing',
+        provider: 'mercadopago',
+        webhookId: 'notification_1',
+      },
+      'Billing webhook received',
+    );
+    expect(mocks.logger.info).toHaveBeenNthCalledWith(
+      2,
+      {
+        action: 'billing.webhook.reduced',
+        component: 'billing',
+        provider: 'mercadopago',
+        webhookId: 'notification_1',
+        result: 'applied',
+        eventType: 'subscription_created',
+      },
+      'Billing webhook reduced',
+    );
+    expect(JSON.stringify(mocks.logger.info.mock.calls)).not.toContain('never-log-this');
   });
 
   it('returns 404 when the requested provider is not configured', async () => {
