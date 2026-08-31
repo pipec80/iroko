@@ -75,6 +75,17 @@ const eslintConfig = defineConfig([
   },
 
   // ──────────────────────────────────────────────────────────────
+  // react: seguridad — plugin ya registrado por eslint-config-next.
+  // no-danger bloquea dangerouslySetInnerHTML, el único vector de
+  // XSS de DOM (js/xss-through-dom) que puede aparecer en la app.
+  // ──────────────────────────────────────────────────────────────
+  {
+    rules: {
+      'react/no-danger': 'error',
+    },
+  },
+
+  // ──────────────────────────────────────────────────────────────
   // @typescript-eslint adicional (estricto)
   // ──────────────────────────────────────────────────────────────
   {
