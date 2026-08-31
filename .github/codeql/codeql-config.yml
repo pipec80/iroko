@@ -1,0 +1,20 @@
+# Configuración de CodeQL — alcance del análisis
+#
+# El análisis cubre el código que se ejecuta en producción (app Next.js,
+# edge functions, proxy, scripts). Se excluye `docs/`, que solo contiene
+# documentación y artefactos de diseño generados:
+#
+#   - Handoffs y previews "standalone" (bundles HTML/JS offline que usan
+#     DOMParser / innerHTML sobre su propio template embebido).
+#   - No son autoritativos, no los sirve Next.js y no se despliegan.
+#
+# Solo producen falsos positivos (p. ej. js/xss-through-dom). Si en el
+# futuro se agrega código ejecutable bajo otra ruta no productiva,
+# añadirla aquí.
+#
+# Referenciado desde .github/workflows/codeql.yml (input `config-file`).
+
+name: 'Iroko CodeQL config'
+
+paths-ignore:
+  - 'docs'
