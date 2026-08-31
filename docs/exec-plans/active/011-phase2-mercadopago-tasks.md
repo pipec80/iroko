@@ -26,7 +26,7 @@ or production-certification evidence.
   scheduler in scope. The former DB-only cron and private function were
   retired because they could change local state without calling Mercado Pago.
 - An immediate cancellation calls Mercado Pago first. The returned resource
-  must report `status: 'cancelled'` before Billing Core changes local state.
+  must report `status: 'canceled'` before Billing Core changes local state.
 - Checkout resolves the active `mercadopago` catalog price in `CLP`, sends an
   inline `auto_recurring` amount in provider minor units, and never sends
   `preapproval_plan_id`. CLP is zero-decimal; the conversion remains
@@ -42,6 +42,14 @@ or production-certification evidence.
 - `subscription_authorized_payment` produces invoice/payment events without
   conflating the authorized-payment invoice ID with the nested payment ID or
   payment status.
+- Mercado Pago Webhooks must activate `subscription_preapproval`,
+  `subscription_authorized_payment`, and `payment`. The receiver validates the
+  signed `data.id` URL parameter (including the lower-case manifest rule and
+  omission of the `id:` component when the query parameter is absent), uses the
+  notification envelope `id` as the delivery idempotency key, and fetches the
+  provider resource before a local mutation. A valid generic `payment`
+  notification that has no linked authorized-payment invoice is acknowledged
+  without changing local billing state.
 - All DB mutations remain service-role-only through the bounded provisional
   subscription RPC. Manual migrations and `supabase/schemas/*.sql` mirrors
   remain paired when schema work is required.
@@ -53,6 +61,8 @@ before provider-facing work:
 - Subscriptions overview/retries: https://www.mercadopago.cl/developers/en/reference/online-payments/subscriptions/overview
 - Pending payment without associated plan: https://www.mercadopago.cl/developers/en/docs/subscriptions/integration-configuration/subscription-no-associated-plan/pending-payments
 - Subscription management: https://www.mercadopago.cl/developers/en/docs/subscriptions/subscription-management
+- Subscription Webhooks: https://www.mercadopago.cl/developers/en/docs/subscriptions/additional-content/your-integrations/notifications/webhooks
+- Webhook signing and notification topics: https://www.mercadopago.cl/developers/en/docs/your-integrations/notifications/webhooks
 
 ## Current branch progress
 
@@ -64,8 +74,9 @@ provider or runtime.
       active `mercadopago` catalog price and inline pending preapproval flow;
       it returns the preapproval ID and omits `preapproval_plan_id`. Price amounts
       convert to provider minor units correctly for zero-decimal CLP and
-      two-decimal USD. Preapproval and authorized-payment webhook normalization
-      retain the local-plan path and distinguish invoice from nested payment data.
+      two-decimal USD. Preapproval, authorized-payment, and payment webhook
+      normalization retain the local-plan path and distinguish invoice from
+      nested payment data.
 - [x] **Task 2 — Retire deferred cancellation.** `period_end` is rejected as
       unsupported, the DB-only cancellation cron/private function is retired, and
       no cancellation Edge Function was added. Immediate cancellation validates
@@ -104,7 +115,7 @@ provider or runtime.
       webhook; authorized-payment invoice/payment event; and immediate
       cancellation.
 - [ ] Record provider event IDs and evidence that Mercado Pago itself reports
-      `cancelled` before local cancellation. Webhook delivery, a sandbox payment,
+      `canceled` before local cancellation. Webhook delivery, a sandbox payment,
       a linked-Cloud checkout run, and real-payment evidence remain
       **[NO VERIFICADO]** until captured in approved PR evidence.
 

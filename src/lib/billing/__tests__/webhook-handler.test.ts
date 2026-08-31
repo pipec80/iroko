@@ -97,6 +97,30 @@ describe('handleProviderWebhook', () => {
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 
+  it('returns 500 so Mercado Pago retries when provider resource retrieval fails', async () => {
+    mocks.verifyWebhook.mockRejectedValue(new Error('mercadopago_fetch_failed_503'));
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 500,
+      body: { error: 'provider_verification_failed' },
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('acknowledges a valid provider event that needs no local billing mutation', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      raw: { id: 'notification_1' },
+    });
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 200,
+      body: { result: 'ignored' },
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
   it('returns 404 when the requested provider is not configured', async () => {
     mocks.getPaymentProvider.mockImplementation(() => {
       throw new Error('provider_not_configured');

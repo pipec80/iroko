@@ -8,6 +8,7 @@ import { resolvePlanByExternalPrice } from './catalog';
 import type { SubscriptionCreatedEvent } from './events';
 import { reduceBillingEvent } from './reducer';
 import { getPaymentProvider } from './registry';
+import type { WebhookVerificationContext } from './types';
 
 /**
  * Resolves the account owner's user id for analytics attribution. Webhooks
@@ -116,6 +117,7 @@ export async function handleProviderWebhook(
   providerName: string,
   rawBody: string,
   signature: string,
+  context?: WebhookVerificationContext,
 ): Promise<{ status: number; body: object }> {
   let provider: ReturnType<typeof getPaymentProvider>;
   try {
@@ -123,9 +125,27 @@ export async function handleProviderWebhook(
   } catch {
     return { status: 404, body: { error: 'provider_not_configured' } };
   }
-  const event = await provider.verifyWebhook(rawBody, signature);
+  let event: Awaited<ReturnType<typeof provider.verifyWebhook>>;
+  try {
+    event = await provider.verifyWebhook(rawBody, signature, context);
+  } catch (error) {
+    withScope((scope) => {
+      scope.setTag('billing_provider', provider.name);
+      scope.setTag('billing_operation', 'webhook_verify');
+      captureException(error);
+    });
+    logger.error(
+      { action: 'billing.webhook', provider: provider.name },
+      error instanceof Error ? error.message : 'Provider webhook verification failed',
+    );
+    return { status: 500, body: { error: 'provider_verification_failed' } };
+  }
   if (!event || event.provider !== provider.name) {
     return { status: 400, body: { error: 'invalid_signature' } };
+  }
+
+  if (event.type === 'webhook_acknowledged') {
+    return { status: 200, body: { result: 'ignored' } };
   }
 
   let result: Awaited<ReturnType<typeof reduceBillingEvent>>;
