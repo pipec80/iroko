@@ -929,6 +929,7 @@
     "plan_trial": "{days} dias de teste grátis",
     "plan_subscribe_btn": "Assinar",
     "checkout_redirecting": "Redirecionando para o Mercado Pago…",
+    "checkout_confirming": "Estamos confirmando sua assinatura com o Mercado Pago…",
     "checkout_unavailable": "O checkout está temporariamente indisponível.",
     "plan_free_btn": "Grátis",
     "status_label": "Status",

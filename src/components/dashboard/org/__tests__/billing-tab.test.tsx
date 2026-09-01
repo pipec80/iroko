@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getBillingData: vi.fn(),
@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   cancelSubscription: vi.fn(),
   listInvoices: vi.fn(),
   track: vi.fn(),
+  searchParams: new URLSearchParams(),
 }));
 
 vi.mock('@/app/[locale]/dashboard/billing/actions', () => ({
@@ -19,6 +20,10 @@ vi.mock('@/app/[locale]/dashboard/billing/actions', () => ({
 }));
 
 vi.mock('@/lib/analytics/client', () => ({ track: mocks.track }));
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => mocks.searchParams,
+}));
 
 import { BillingTab } from '../billing-tab';
 import es from '../../../../../messages/es.json';
@@ -73,6 +78,7 @@ function renderBillingTab(role: 'owner' | 'admin' | 'member' | 'viewer' | null) 
 describe('BillingTab — role-awareness', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.searchParams = new URLSearchParams();
     mocks.getBillingData.mockResolvedValue({
       data: { plans: [PLAN_FREE, PLAN_PRO], overview: null },
     });
@@ -135,6 +141,18 @@ describe('BillingTab — role-awareness', () => {
     button.click();
 
     await waitFor(() => expect(screen.getByText('Redirigiendo a Mercado Pago…')).toBeDefined());
+  });
+
+  it('keeps confirming a returned Mercado Pago checkout until the subscription activates', async () => {
+    mocks.searchParams = new URLSearchParams('preapproval_id=preapproval_1');
+
+    renderBillingTab('owner');
+
+    await waitFor(() =>
+      expect(
+        screen.getByText('Estamos confirmando tu suscripción con Mercado Pago…'),
+      ).toBeDefined(),
+    );
   });
 
   it('does not offer a second paid checkout while a paid subscription is active', async () => {

@@ -927,6 +927,7 @@
     "plan_trial": "{days}-day free trial",
     "plan_subscribe_btn": "Subscribe",
     "checkout_redirecting": "Redirecting to Mercado Pago…",
+    "checkout_confirming": "We're confirming your subscription with Mercado Pago…",
     "checkout_unavailable": "Checkout is temporarily unavailable.",
     "plan_free_btn": "Free",
     "status_label": "Status",
