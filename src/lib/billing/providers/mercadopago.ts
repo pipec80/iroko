@@ -301,12 +301,44 @@ function acknowledgedWebhook(
   return { provider: 'mercadopago', type: 'webhook_acknowledged', reason, raw };
 }
 
+/**
+ * Compact, secret-free reason from a Mercado Pago error body. Without it a
+ * failed call is only a status code, which is not diagnosable in production.
+ */
+async function describeProviderError(res: Response): Promise<string> {
+  const parts: string[] = [];
+  try {
+    const body: unknown = await res.json();
+    if (typeof body === 'object' && body !== null) {
+      if ('error' in body && typeof body.error === 'string') parts.push(body.error);
+      if ('message' in body && typeof body.message === 'string') parts.push(body.message);
+      if ('cause' in body && Array.isArray(body.cause)) {
+        for (const item of body.cause) {
+          if (typeof item !== 'object' || item === null) continue;
+          if ('code' in item) parts.push(`code=${String(item.code)}`);
+          if ('description' in item && typeof item.description === 'string') {
+            parts.push(item.description);
+          }
+        }
+      }
+    }
+  } catch {
+    // A non-JSON body leaves the status code as the only available evidence.
+  }
+  return parts.join('|').slice(0, 300);
+}
+
+async function providerError(prefix: string, res: Response): Promise<Error> {
+  const detail = await describeProviderError(res);
+  return new Error(`${prefix}_${res.status}${detail ? `:${detail}` : ''}`);
+}
+
 async function fetchResource<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${env.MERCADOPAGO_ACCESS_TOKEN ?? ''}` },
     signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`mercadopago_fetch_failed_${res.status}`);
+  if (!res.ok) throw await providerError('mercadopago_fetch_failed', res);
   return (await res.json()) as T;
 }
 
@@ -320,7 +352,7 @@ async function postResource<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`mercadopago_post_failed_${res.status}`);
+  if (!res.ok) throw await providerError('mercadopago_post_failed', res);
   return (await res.json()) as T;
 }
 
@@ -334,7 +366,7 @@ async function putResource<T>(path: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`mercadopago_put_failed_${res.status}`);
+  if (!res.ok) throw await providerError('mercadopago_put_failed', res);
   return (await res.json()) as T;
 }
 

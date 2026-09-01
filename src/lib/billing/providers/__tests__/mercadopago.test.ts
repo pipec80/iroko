@@ -831,6 +831,30 @@ describe('mercadopagoProvider.createCheckout', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('surfaces the provider rejection reason so a failed checkout is diagnosable', async () => {
+    getProviderPrice.mockResolvedValue({ amount: 19_990, currency: 'CLP', externalPriceId: null });
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({
+        message: 'Invalid test user email',
+        error: 'bad_request',
+        cause: [{ code: 2198, description: 'Invalid test user email' }],
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.createCheckout({
+        accountId: 'acc_1',
+        customerEmail: 'owner@example.com',
+        planSlug: 'pro',
+        interval: 'month',
+        successUrl: 'https://app/ok',
+        cancelUrl: 'https://app/no',
+      }),
+    ).rejects.toThrow(/^mercadopago_post_failed_400:.*code=2198/);
+  });
+
   it('rejects an invalid catalog price before it reaches Mercado Pago', async () => {
     getProviderPrice.mockResolvedValueOnce({ amount: -1, currency: 'CLP', externalPriceId: null });
 
