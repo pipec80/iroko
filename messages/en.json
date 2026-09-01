@@ -926,6 +926,7 @@
     "plan_current_badge": "Current plan",
     "plan_trial": "{days}-day free trial",
     "plan_subscribe_btn": "Subscribe",
+    "checkout_redirecting": "Redirecting to Mercado Pago…",
     "plan_free_btn": "Free",
     "status_label": "Status",
     "renews_on": "Renews on {date}",

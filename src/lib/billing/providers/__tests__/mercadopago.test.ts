@@ -4,6 +4,7 @@ vi.mock('@/env', () => ({
   env: {
     MERCADOPAGO_ACCESS_TOKEN: 'TEST-token',
     MERCADOPAGO_WEBHOOK_SECRET: 'test-mp-secret',
+    MERCADOPAGO_WEBHOOK_URL: 'https://app.example.com/api/webhooks/mercadopago',
   },
 }));
 
@@ -773,6 +774,7 @@ describe('mercadopagoProvider.createCheckout', () => {
       external_reference: 'acc_1',
       payer_email: 'owner@example.com',
       back_url: 'https://app/ok',
+      notification_url: 'https://app.example.com/api/webhooks/mercadopago',
       status: 'pending',
       auto_recurring: {
         frequency: 1,
@@ -785,6 +787,28 @@ describe('mercadopagoProvider.createCheckout', () => {
       url: 'https://mercadopago.com/subscriptions/pa_new',
       externalSubscriptionId: 'pa_new',
     });
+  });
+
+  it('strips the query string from back_url so the provider return URL stays well formed', async () => {
+    getProviderPrice.mockResolvedValue({ amount: 19_990, currency: 'CLP', externalPriceId: null });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: 'pa_back', init_point: 'https://mp/checkout' }),
+    });
+
+    await mercadopagoProvider.createCheckout({
+      accountId: 'acc_1',
+      customerEmail: 'owner@example.com',
+      planSlug: 'pro',
+      interval: 'month',
+      successUrl: 'https://app.example.com/es/dashboard/billing?status=success',
+      cancelUrl: 'https://app.example.com/es/dashboard/billing?status=cancelled',
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(request.body as string).back_url).toBe(
+      'https://app.example.com/es/dashboard/billing',
+    );
   });
 
   it('converts USD catalog minor units while preserving CLP zero-decimal amounts', async () => {

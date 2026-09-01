@@ -142,6 +142,22 @@ function toMercadoPagoTransactionAmount(amount: number, currency: string): numbe
   return currency === 'CLP' ? amount : amount / 100;
 }
 
+/**
+ * Mercado Pago appends `?preapproval_id=...` to the return URL instead of `&`,
+ * so a back_url carrying its own query string comes back malformed
+ * (`?status=success?preapproval_id=...`). Only the path survives.
+ */
+function toProviderBackUrl(successUrl: string): string {
+  try {
+    const url = new URL(successUrl);
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return successUrl;
+  }
+}
+
 function isValidProviderPrice(price: { amount: number; currency: string }): boolean {
   return (
     Number.isSafeInteger(price.amount) && price.amount >= 0 && /^[A-Z]{3}$/.test(price.currency)
@@ -404,7 +420,8 @@ export const mercadopagoProvider: PaymentProvider = {
       reason: `Iroko ${params.planSlug} subscription`,
       external_reference: params.accountId,
       payer_email: params.customerEmail,
-      back_url: params.successUrl,
+      back_url: toProviderBackUrl(params.successUrl),
+      notification_url: env.MERCADOPAGO_WEBHOOK_URL,
       status: 'pending',
       auto_recurring: {
         frequency: 1,

@@ -928,6 +928,7 @@
     "plan_current_badge": "Plano atual",
     "plan_trial": "{days} dias de teste grátis",
     "plan_subscribe_btn": "Assinar",
+    "checkout_redirecting": "Redirecionando para o Mercado Pago…",
     "plan_free_btn": "Grátis",
     "status_label": "Status",
     "renews_on": "Renova em {date}",

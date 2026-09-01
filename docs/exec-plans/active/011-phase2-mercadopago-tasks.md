@@ -133,6 +133,14 @@ provider or runtime.
       `canceled` before local cancellation. Webhook delivery, a sandbox payment,
       a linked-Cloud checkout run, and real-payment evidence remain
       **[NO VERIFICADO]** until captured in approved PR evidence.
+- [ ] The 2026-09-01 sandbox attempt proved that checkout persists the selected
+      local `incomplete` row, but it did not reach activation: the preapproval
+      request lacked its required subscription `notification_url`, and the
+      Preview token could not read the resource created for the test seller.
+      The adapter now requires and sends `MERCADOPAGO_WEBHOOK_URL`; repeat the
+      lifecycle only after Preview uses the production access token and webhook
+      signature secret of the test-seller application. This remains
+      **[NO VERIFICADO]** certification evidence, not a successful sandbox run.
 - [ ] Before production enablement, prevent concurrent or repeated pending
       checkouts from creating multiple remote preapprovals for one account.
       This needs a durable database reservation/lock and remains outside the

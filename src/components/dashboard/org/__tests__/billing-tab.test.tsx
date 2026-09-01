@@ -115,6 +115,16 @@ describe('BillingTab — role-awareness', () => {
     await waitFor(() => expect(screen.getByText(es.Billing.checkout_error)).toBeDefined());
   });
 
+  it('shows a redirecting message while a checkout is being created', async () => {
+    mocks.startCheckout.mockReturnValue(new Promise(() => {}));
+    renderBillingTab('owner');
+    const button = await waitFor(() => screen.getByTestId('subscribe-pro'));
+
+    button.click();
+
+    await waitFor(() => expect(screen.getByText('Redirigiendo a Mercado Pago…')).toBeDefined());
+  });
+
   it('does not offer a second paid checkout while a paid subscription is active', async () => {
     mocks.getBillingData.mockResolvedValue({
       data: { plans: [PLAN_FREE, PLAN_PRO], overview: ACTIVE_PRO_OVERVIEW },

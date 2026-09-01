@@ -930,6 +930,7 @@
     "plan_current_badge": "Plan actuel",
     "plan_trial": "{days} jours d'essai gratuit",
     "plan_subscribe_btn": "S'abonner",
+    "checkout_redirecting": "Redirection vers Mercado Pago…",
     "plan_free_btn": "Gratuit",
     "status_label": "Statut",
     "renews_on": "Se renouvelle le {date}",

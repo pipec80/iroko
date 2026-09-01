@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 
 import {
@@ -162,6 +163,7 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
               price={formatPrice(plan)}
               onSubscribe={() => checkout.mutate({ slug: plan.slug, interval })}
               isSubscribing={checkout.isPending}
+              isProcessing={checkout.isPending && checkout.variables?.slug === plan.slug}
               canManage={canManage}
               isCheckoutBlocked={hasBlockingPaidSubscription}
             />
@@ -182,6 +184,7 @@ function PlanCard({
   price,
   onSubscribe,
   isSubscribing,
+  isProcessing,
   canManage,
   isCheckoutBlocked,
 }: {
@@ -190,6 +193,7 @@ function PlanCard({
   price: string;
   onSubscribe: () => void;
   isSubscribing: boolean;
+  isProcessing: boolean;
   canManage: boolean;
   isCheckoutBlocked: boolean;
 }) {
@@ -223,8 +227,14 @@ function PlanCard({
         disabled={isCurrent || isFree || isSubscribing || !canManage || isCheckoutBlocked}
         onClick={onSubscribe}
         data-testid={`subscribe-${plan.slug}`}
-        className={cn('w-full justify-center', isCurrent || isFree ? 'btn-outline' : 'btn-iron')}>
-        {isCurrent ?
+        className={cn(
+          'w-full items-center justify-center gap-2',
+          isCurrent || isFree ? 'btn-outline' : 'btn-iron',
+        )}>
+        {isProcessing && <Loader2 aria-hidden className="size-4 animate-spin" />}
+        {isProcessing ?
+          t('checkout_redirecting')
+        : isCurrent ?
           t('plan_current_badge')
         : isFree ?
           t('plan_free_btn')

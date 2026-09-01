@@ -102,7 +102,9 @@ export function buildCspHeader(isDev: boolean, isPreview: boolean, supabaseUrl: 
     ]
       .filter(Boolean)
       .join(' '),
-    "frame-src 'self' https://challenges.cloudflare.com",
+    ["frame-src 'self'", 'https://challenges.cloudflare.com', vercelLiveOrigin]
+      .filter(Boolean)
+      .join(' '),
     "worker-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
