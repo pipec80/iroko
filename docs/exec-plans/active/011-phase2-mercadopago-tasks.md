@@ -95,6 +95,11 @@ provider or runtime.
       window, non-monthly checkout is rejected before any provider call, and a
       linked payment/invoice status divergence emits a safe warning instead of
       being indistinguishable from an unrelated payment acknowledgement.
+      Non-terminal nested payment states are acknowledged without being persisted
+      as failed attempts. A signed but unsupported topic is acknowledged with a
+      warning so Mercado Pago does not retry it indefinitely, while invalid
+      signatures remain rejected. The adapter does not advertise outbound pause
+      support until a real pause operation exists.
 
 ## Remaining certification tasks
 

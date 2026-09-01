@@ -47,7 +47,8 @@ export interface WebhookVerificationContext {
 export interface AcknowledgedWebhook {
   provider: ProviderName;
   type: 'webhook_acknowledged';
-  reason: 'unlinked_payment' | 'payment_status_divergence';
+  reason:
+    'unlinked_payment' | 'payment_pending' | 'payment_status_divergence' | 'unsupported_topic';
   raw: unknown;
 }
 

@@ -155,6 +155,33 @@ describe('handleProviderWebhook', () => {
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 
+  it('warns and returns 200 for a signed but unsupported Mercado Pago topic', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      reason: 'unsupported_topic',
+      raw: { type: 'subscription_preapproval_plan', data: { id: 'plan_1' } },
+    });
+
+    await expect(
+      handleProviderWebhook('mercadopago', '{}', 'sig', {
+        webhookId: 'notification_unsupported',
+      }),
+    ).resolves.toEqual({ status: 200, body: { result: 'ignored' } });
+
+    expect(mocks.logger.warn).toHaveBeenCalledWith(
+      {
+        action: 'billing.webhook.unsupported_topic',
+        component: 'billing',
+        provider: 'mercadopago',
+        webhookId: 'notification_unsupported',
+        reason: 'unsupported_topic',
+      },
+      'Billing webhook topic is not supported',
+    );
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
   it('logs receipt and the reduced result without the webhook body or signature', async () => {
     const mercadopagoEvent = { ...validEvent, provider: 'mercadopago' as const };
     mocks.verifyWebhook.mockResolvedValue(mercadopagoEvent);

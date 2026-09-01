@@ -169,6 +169,15 @@ export async function handleProviderWebhook(
         },
         'Billing webhook requires reconciliation',
       );
+    } else if (event.reason === 'unsupported_topic') {
+      logger.warn(
+        {
+          ...logContext,
+          action: 'billing.webhook.unsupported_topic',
+          reason: event.reason,
+        },
+        'Billing webhook topic is not supported',
+      );
     } else {
       logger.info(
         {

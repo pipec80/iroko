@@ -409,7 +409,7 @@ describe('billing actions', () => {
         cancelAtPeriodEnd: false,
         updatePaymentMethod: false,
         changePlan: false,
-        pauseSubscription: true,
+        pauseSubscription: false,
       },
     });
     mocks.rpc.mockImplementation((fn: string) => {

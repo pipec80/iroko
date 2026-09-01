@@ -442,6 +442,47 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     );
   });
 
+  it.each(['pending', 'in_process', 'in_mediation', 'authorized'])(
+    'acknowledges a non-terminal %s authorized payment without recording a failure',
+    async (status) => {
+      const dataId = `authorized_payment_${status}`;
+      const requestId = `req_${status}`;
+      const ts = '1720000000';
+      const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+      const body = JSON.stringify({
+        type: 'subscription_authorized_payment',
+        data: { id: dataId },
+      });
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: `invoice_${status}`,
+          preapproval_id: 'pa_pending_lifecycle',
+          external_reference: 'acc_pending_lifecycle',
+          transaction_amount: '29900',
+          currency_id: 'CLP',
+          date_created: '2026-07-09T00:00:00.000-04:00',
+          payment: {
+            id: `payment_${status}`,
+            status,
+            status_detail: `${status}_detail`,
+          },
+        }),
+      });
+
+      await expect(
+        mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          provider: 'mercadopago',
+          type: 'webhook_acknowledged',
+          reason: 'payment_pending',
+        }),
+      );
+    },
+  );
+
   it('uses distinct lifecycle external event ids when an authorized payment changes from rejected to approved', async () => {
     const invoiceId = 'authorized_payment_lifecycle';
     const paymentId = 'payment_lifecycle';
@@ -642,6 +683,24 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     const result = await mercadopagoProvider.verifyWebhook(body, 'ts=1,v1=x;x-request-id=y');
     expect(result).toBeNull();
   });
+
+  it('acknowledges an unhandled event type after its signature is verified', async () => {
+    const dataId = 'unsupported_resource';
+    const requestId = 'req_unsupported';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+    const body = JSON.stringify({ type: 'unsupported_topic', data: { id: dataId } });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
+    ).resolves.toEqual({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      reason: 'unsupported_topic',
+      raw: { type: 'unsupported_topic', data: { id: dataId } },
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });
 
 describe('mercadopagoProvider.createCheckout', () => {
@@ -810,11 +869,12 @@ describe('mercadopagoProvider.cancelSubscription', () => {
 });
 
 describe('mercadopagoProvider.capabilities', () => {
-  it('does not advertise unsupported billing portal or deferred cancellation', () => {
+  it('does not advertise unsupported billing portal, deferred cancellation, or pause', () => {
     expect(mercadopagoProvider.capabilities).toMatchObject({
       customerPortal: false,
       cancelImmediately: true,
       cancelAtPeriodEnd: false,
+      pauseSubscription: false,
     });
     expect(mercadopagoProvider.createPortalSession).toBeUndefined();
   });

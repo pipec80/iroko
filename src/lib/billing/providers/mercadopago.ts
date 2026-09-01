@@ -13,6 +13,12 @@ import type {
 
 const API_BASE = 'https://api.mercadopago.com';
 const RESOURCE_FETCH_TIMEOUT_MS = 10_000;
+const NON_TERMINAL_PAYMENT_STATUSES = new Set([
+  'pending',
+  'in_process',
+  'in_mediation',
+  'authorized',
+]);
 
 interface WebhookBody {
   id?: unknown;
@@ -218,7 +224,7 @@ function webhookIdentifiers(
 function normalizeAuthorizedPaymentEvent(
   payment: AuthorizedPaymentResource,
   externalEventId: string,
-): NormalizedBillingEvent | null {
+): NormalizedBillingEvent | AcknowledgedWebhook | null {
   const invoiceId = normalizeExternalId(payment.id);
   const subscriptionId = normalizeExternalId(payment.preapproval_id);
   const paymentId = normalizeExternalId(payment.payment.id);
@@ -238,7 +244,10 @@ function normalizeAuthorizedPaymentEvent(
   if (payment.transaction_amount !== undefined && amount === null) return null;
   if (typeof payment.date_created !== 'string') return null;
 
-  if (payment.payment.status !== 'approved') {
+  if (NON_TERMINAL_PAYMENT_STATUSES.has(payment.payment.status)) {
+    return acknowledgedWebhook('payment_pending', payment);
+  }
+  if (payment.payment.status === 'rejected') {
     return {
       provider: 'mercadopago',
       externalEventId,
@@ -256,6 +265,9 @@ function normalizeAuthorizedPaymentEvent(
       attemptedAt: payment.date_created,
       raw: payment,
     };
+  }
+  if (payment.payment.status !== 'approved') {
+    return acknowledgedWebhook('payment_status_divergence', payment);
   }
   if (amount === null || currency === undefined) return null;
   return {
@@ -324,7 +336,7 @@ export const mercadopagoProvider: PaymentProvider = {
     cancelAtPeriodEnd: false,
     updatePaymentMethod: false,
     changePlan: false,
-    pauseSubscription: true,
+    pauseSubscription: false,
   },
 
   async createCheckout(
@@ -489,6 +501,6 @@ export const mercadopagoProvider: PaymentProvider = {
       );
     }
 
-    return null;
+    return acknowledgedWebhook('unsupported_topic', body);
   },
 };
