@@ -92,6 +92,7 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
   const plans = data.plans.filter((p) => p.interval === interval || p.slug === 'free');
   const hasAnnualPlans = data.plans.some((plan) => plan.interval === 'year');
   const overview = data.overview;
+  const checkoutAvailable = data.checkoutAvailable ?? true;
   const hasBlockingPaidSubscription = Boolean(
     overview &&
     overview.planSlug !== 'free' &&
@@ -123,6 +124,14 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
           className="rounded-lg px-3 py-2 text-[13px] font-medium"
           style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
           {t('checkout_error')}
+        </p>
+      )}
+      {!checkoutAvailable && (
+        <p
+          role="status"
+          className="rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)' }}>
+          {t('checkout_unavailable')}
         </p>
       )}
       <section>
@@ -165,7 +174,7 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
               isSubscribing={checkout.isPending}
               isProcessing={checkout.isPending && checkout.variables?.slug === plan.slug}
               canManage={canManage}
-              isCheckoutBlocked={hasBlockingPaidSubscription}
+              isCheckoutBlocked={hasBlockingPaidSubscription || !checkoutAvailable}
             />
           ))}
         </div>

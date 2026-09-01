@@ -102,6 +102,18 @@ describe('BillingTab — role-awareness', () => {
     expect(button).toHaveProperty('disabled', false);
   });
 
+  it('keeps the catalog visible but disables checkout when the provider is unavailable', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: { plans: [PLAN_FREE, PLAN_PRO], overview: null, checkoutAvailable: false },
+    });
+
+    renderBillingTab('owner');
+
+    const button = await waitFor(() => screen.getByTestId('subscribe-pro'));
+    expect(button).toHaveProperty('disabled', true);
+    expect(screen.getByText(es.Billing.checkout_unavailable)).toBeDefined();
+  });
+
   it('should render the checkout error instead of failing silently', async () => {
     // Antes, un not_authorized (el backend ya valida owner/admin) quedaba solo
     // en checkout.error sin que ningún JSX lo renderizara — el fallo
