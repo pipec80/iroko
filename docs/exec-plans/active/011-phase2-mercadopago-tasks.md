@@ -100,6 +100,11 @@ provider or runtime.
       warning so Mercado Pago does not retry it indefinitely, while invalid
       signatures remain rejected. The adapter does not advertise outbound pause
       support until a real pause operation exists.
+- [x] **Replay tolerance and outbound timeouts.** Signature verification rejects
+      webhooks whose `ts` falls outside a five-minute window (accepting the
+      seconds and milliseconds scales the official docs mix), and the outbound
+      checkout/cancellation calls share the same bounded ten-second timeout as
+      resource reads.
 
 ## Remaining certification tasks
 

@@ -13,6 +13,7 @@ import type {
 
 const API_BASE = 'https://api.mercadopago.com';
 const RESOURCE_FETCH_TIMEOUT_MS = 10_000;
+const WEBHOOK_TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000;
 const NON_TERMINAL_PAYMENT_STATUSES = new Set([
   'pending',
   'in_process',
@@ -180,6 +181,14 @@ async function verifyManifest(signature: string, dataId?: string): Promise<boole
   const v1 = parts.v1;
   if (!ts || !v1) return false;
 
+  // La doc oficial describe `ts` como milisegundos pero su propio ejemplo usa
+  // segundos; se aceptan ambas escalas dentro de la ventana de tolerancia.
+  const tsNumber = Number(ts);
+  if (!Number.isFinite(tsNumber)) return false;
+  const withinTolerance = (candidateMs: number): boolean =>
+    Math.abs(Date.now() - candidateMs) <= WEBHOOK_TIMESTAMP_TOLERANCE_MS;
+  if (!withinTolerance(tsNumber) && !withinTolerance(tsNumber * 1000)) return false;
+
   const manifest =
     [
       ...(dataId ? [`id:${dataId.toLowerCase()}`] : []),
@@ -309,6 +318,7 @@ async function postResource<T>(path: string, body: unknown): Promise<T> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`mercadopago_post_failed_${res.status}`);
   return (await res.json()) as T;
@@ -322,6 +332,7 @@ async function putResource<T>(path: string, body: unknown): Promise<T> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`mercadopago_put_failed_${res.status}`);
   return (await res.json()) as T;

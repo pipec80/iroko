@@ -1,4 +1,4 @@
-import { afterEach, describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
 vi.mock('@/env', () => ({
   env: {
@@ -10,7 +10,16 @@ vi.mock('@/env', () => ({
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
 
-afterEach(() => fetchMock.mockReset());
+// Las firmas de estos tests usan ts fijo '1720000000' (segundos); se congela
+// solo Date para que la ventana de tolerancia anti-replay lo acepte.
+beforeEach(() => {
+  vi.useFakeTimers({ now: 1_720_000_000_000, toFake: ['Date'] });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  fetchMock.mockReset();
+});
 
 const { getProviderPrice } = vi.hoisted(() => ({ getProviderPrice: vi.fn() }));
 vi.mock('../../catalog', () => ({ getProviderPrice }));
@@ -54,6 +63,19 @@ describe('mercadopagoProvider.verifyWebhook', () => {
       'ts=1720000000,v1=deadbeef;x-request-id=req_1',
     );
     expect(result).toBeNull();
+  });
+
+  it('rejects a correctly signed webhook whose timestamp is outside the replay tolerance window', async () => {
+    const dataId = 'pa_replay';
+    const requestId = 'req_replay';
+    const staleTs = '1719999000';
+    const v1 = await sign('test-mp-secret', requestId, dataId, staleTs);
+    const body = JSON.stringify({ type: 'subscription_preapproval', data: { id: dataId } });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(body, `ts=${staleTs},v1=${v1};x-request-id=${requestId}`),
+    ).resolves.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('should enrich subscription_preapproval events with a GET to /preapproval/{id}', async () => {
@@ -745,6 +767,7 @@ describe('mercadopagoProvider.createCheckout', () => {
       currency: 'CLP',
     });
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(request.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.parse(request.body as string)).toEqual({
       reason: 'Iroko pro subscription',
       external_reference: 'acc_1',
@@ -849,6 +872,7 @@ describe('mercadopagoProvider.cancelSubscription', () => {
       expect.objectContaining({
         method: 'PUT',
         body: expect.stringContaining('"status":"canceled"'),
+        signal: expect.any(AbortSignal),
       }),
     );
   });
