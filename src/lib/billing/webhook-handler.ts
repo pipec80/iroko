@@ -160,10 +160,25 @@ export async function handleProviderWebhook(
   }
 
   if (event.type === 'webhook_acknowledged') {
-    logger.info(
-      { ...logContext, action: 'billing.webhook.acknowledged' },
-      'Billing webhook acknowledged without a local mutation',
-    );
+    if (event.reason === 'payment_status_divergence') {
+      logger.warn(
+        {
+          ...logContext,
+          action: 'billing.webhook.divergence',
+          reason: event.reason,
+        },
+        'Billing webhook requires reconciliation',
+      );
+    } else {
+      logger.info(
+        {
+          ...logContext,
+          action: 'billing.webhook.acknowledged',
+          reason: event.reason,
+        },
+        'Billing webhook acknowledged without a local mutation',
+      );
+    }
     return { status: 200, body: { result: 'ignored' } };
   }
 

@@ -117,6 +117,7 @@ describe('handleProviderWebhook', () => {
     mocks.verifyWebhook.mockResolvedValue({
       provider: 'mercadopago',
       type: 'webhook_acknowledged',
+      reason: 'unlinked_payment',
       raw: { id: 'notification_1' },
     });
 
@@ -124,6 +125,33 @@ describe('handleProviderWebhook', () => {
       status: 200,
       body: { result: 'ignored' },
     });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('warns when Mercado Pago reports a linked payment status divergence', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      reason: 'payment_status_divergence',
+      raw: { id: 'notification_divergence' },
+    });
+
+    await expect(
+      handleProviderWebhook('mercadopago', '{}', 'sig', {
+        webhookId: 'notification_divergence',
+      }),
+    ).resolves.toEqual({ status: 200, body: { result: 'ignored' } });
+
+    expect(mocks.logger.warn).toHaveBeenCalledWith(
+      {
+        action: 'billing.webhook.divergence',
+        component: 'billing',
+        provider: 'mercadopago',
+        webhookId: 'notification_divergence',
+        reason: 'payment_status_divergence',
+      },
+      'Billing webhook requires reconciliation',
+    );
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 

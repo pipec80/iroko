@@ -12,6 +12,7 @@ import type {
 } from '../types';
 
 const API_BASE = 'https://api.mercadopago.com';
+const RESOURCE_FETCH_TIMEOUT_MS = 10_000;
 
 interface WebhookBody {
   id?: unknown;
@@ -272,13 +273,17 @@ function normalizeAuthorizedPaymentEvent(
   };
 }
 
-function acknowledgedWebhook(raw: unknown): AcknowledgedWebhook {
-  return { provider: 'mercadopago', type: 'webhook_acknowledged', raw };
+function acknowledgedWebhook(
+  reason: AcknowledgedWebhook['reason'],
+  raw: unknown,
+): AcknowledgedWebhook {
+  return { provider: 'mercadopago', type: 'webhook_acknowledged', reason, raw };
 }
 
 async function fetchResource<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${env.MERCADOPAGO_ACCESS_TOKEN ?? ''}` },
+    signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`mercadopago_fetch_failed_${res.status}`);
   return (await res.json()) as T;
@@ -325,6 +330,9 @@ export const mercadopagoProvider: PaymentProvider = {
   async createCheckout(
     params: CheckoutParams,
   ): Promise<{ url: string; externalSubscriptionId: string }> {
+    if (params.interval !== 'month') {
+      throw new Error('billing_interval_not_supported:mercadopago');
+    }
     const providerPrice = await getProviderPrice({
       planSlug: params.planSlug,
       interval: params.interval,
@@ -457,10 +465,13 @@ export const mercadopagoProvider: PaymentProvider = {
           )
         : undefined;
       if (!invoice) {
-        return acknowledgedWebhook({ notification: body, payment: providerPayment });
+        return acknowledgedWebhook('unlinked_payment', {
+          notification: body,
+          payment: providerPayment,
+        });
       }
       if (invoice.payment.status !== providerPayment.status) {
-        return acknowledgedWebhook({
+        return acknowledgedWebhook('payment_status_divergence', {
           notification: body,
           payment: providerPayment,
           authorizedPayment: invoice,

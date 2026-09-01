@@ -268,11 +268,75 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     ).resolves.toEqual({
       provider: 'mercadopago',
       type: 'webhook_acknowledged',
+      reason: 'unlinked_payment',
       raw: {
         notification: { type: 'payment', data: { id: paymentId } },
         payment: { id: paymentId, status: 'approved' },
       },
     });
+  });
+
+  it('marks a linked payment status divergence for actionable observability', async () => {
+    const paymentId = 'payment_refunded';
+    const requestId = 'req_payment_refunded';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, paymentId, ts);
+    const body = JSON.stringify({ type: 'payment', data: { id: paymentId } });
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: paymentId, status: 'refunded' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [
+            {
+              id: 'invoice_refunded',
+              preapproval_id: 'pa_refunded',
+              external_reference: 'acc_refunded',
+              transaction_amount: '19990',
+              currency_id: 'CLP',
+              date_created: '2026-08-31T00:00:00.000-04:00',
+              payment: { id: paymentId, status: 'approved' },
+            },
+          ],
+        }),
+      });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`, {
+        dataId: paymentId,
+        webhookId: 'notification_payment_refunded',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        provider: 'mercadopago',
+        type: 'webhook_acknowledged',
+        reason: 'payment_status_divergence',
+      }),
+    );
+  });
+
+  it('adds a bounded timeout to provider resource fetches', async () => {
+    const dataId = 'pa_timeout';
+    const requestId = 'req_timeout';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ id: dataId, status: 'pending', external_reference: 'acc_timeout' }),
+    });
+
+    await mercadopagoProvider.verifyWebhook(
+      JSON.stringify({ type: 'subscription_preapproval', data: { id: dataId } }),
+      `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining(`/preapproval/${dataId}`),
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
   });
 
   it('rejects a webhook whose signed query data id does not match the body', async () => {
@@ -581,6 +645,21 @@ describe('mercadopagoProvider.verifyWebhook', () => {
 });
 
 describe('mercadopagoProvider.createCheckout', () => {
+  it('rejects non-monthly intervals before resolving a catalog price', async () => {
+    await expect(
+      mercadopagoProvider.createCheckout({
+        accountId: 'acc_1',
+        customerEmail: 'owner@example.com',
+        planSlug: 'pro',
+        interval: 'year',
+        successUrl: 'https://app/ok',
+        cancelUrl: 'https://app/no',
+      }),
+    ).rejects.toThrow('billing_interval_not_supported:mercadopago');
+    expect(getProviderPrice).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('creates a pending CLP preapproval without an associated plan from the resolved provider price', async () => {
     getProviderPrice.mockResolvedValue({ amount: 29_900, currency: 'CLP', externalPriceId: null });
     fetchMock.mockResolvedValue({

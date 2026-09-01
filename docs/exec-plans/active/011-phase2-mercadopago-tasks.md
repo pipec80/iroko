@@ -90,6 +90,11 @@ provider or runtime.
       Mercado Pago `CLP` provider-price catalog maps Free / Plus / Pro to `0` /
       `19.990` / `102.990` monthly. The checkout surface displays zero-decimal CLP
       correctly and does not offer a yearly Mercado Pago flow.
+- [x] **Sandbox webhook hardening.** Provider resource reads use a bounded
+      ten-second timeout so the receiver can fail within Mercado Pago's delivery
+      window, non-monthly checkout is rejected before any provider call, and a
+      linked payment/invoice status divergence emits a safe warning instead of
+      being indistinguishable from an unrelated payment acknowledgement.
 
 ## Remaining certification tasks
 
@@ -118,6 +123,13 @@ provider or runtime.
       `canceled` before local cancellation. Webhook delivery, a sandbox payment,
       a linked-Cloud checkout run, and real-payment evidence remain
       **[NO VERIFICADO]** until captured in approved PR evidence.
+- [ ] Before production enablement, prevent concurrent or repeated pending
+      checkouts from creating multiple remote preapprovals for one account.
+      This needs a durable database reservation/lock and remains outside the
+      no-migration sandbox hardening change.
+- [ ] Before production enablement, normalize refunds and chargebacks (or
+      persist a durable reconciliation anomaly). The current divergence warning
+      is operational evidence, not a financial state transition.
 
 ## Completion criteria for Phase 2
 
