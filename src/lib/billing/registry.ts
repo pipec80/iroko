@@ -16,6 +16,7 @@ type ProviderCredentialEnvironment = {
   STRIPE_WEBHOOK_SECRET?: string;
   MERCADOPAGO_ACCESS_TOKEN?: string;
   MERCADOPAGO_WEBHOOK_SECRET?: string;
+  MERCADOPAGO_WEBHOOK_URL?: string;
 };
 
 /** Returns whether a provider has both the API and webhook credentials it needs. */
@@ -27,7 +28,11 @@ export function hasProviderCredentials(
     return Boolean(credentials.STRIPE_SECRET_KEY && credentials.STRIPE_WEBHOOK_SECRET);
   }
 
-  return Boolean(credentials.MERCADOPAGO_ACCESS_TOKEN && credentials.MERCADOPAGO_WEBHOOK_SECRET);
+  return Boolean(
+    credentials.MERCADOPAGO_ACCESS_TOKEN &&
+    credentials.MERCADOPAGO_WEBHOOK_SECRET &&
+    credentials.MERCADOPAGO_WEBHOOK_URL,
+  );
 }
 
 registry.set(mockProvider.name, mockProvider);

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 
 // The rest of mercadopago.test.ts computes its expected signature with the
 // SAME crypto.subtle HMAC call verifyManifest() uses internally — a bug in
@@ -32,6 +32,16 @@ vi.mock('@/lib/supabase/server', () => ({ createClient: vi.fn() }));
 vi.mock('../../webhook-handler', () => ({ handleProviderWebhook: vi.fn() }));
 
 import { mercadopagoProvider } from '../mercadopago';
+
+// El vector usa ts fijo en milisegundos; se congela solo Date para que la
+// ventana de tolerancia anti-replay lo acepte sin recalcular el hex.
+beforeEach(() => {
+  vi.useFakeTimers({ now: Number(FIXTURE_TS), toFake: ['Date'] });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('mercadopagoProvider.verifyWebhook — fixed HMAC vector', () => {
   it('accepts a signature matching the hand-computed hex for the exact manifest', async () => {

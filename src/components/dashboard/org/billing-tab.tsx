@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 
 import {
   cancelSubscription,
@@ -44,6 +46,7 @@ function toDisplayAmount(amount: number, currency: string): number {
 export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRole | null }) {
   const t = useTranslations('Billing');
   const locale = useLocale();
+  const preapprovalId = useSearchParams().get('preapproval_id');
   const [interval, setInterval] = useState<Interval>('month');
   const canManage = canManageBilling(currentUserRole);
 
@@ -54,6 +57,10 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
       if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
       return result.data;
     },
+    // Mercado Pago returns before its asynchronous subscription webhook is
+    // delivered. Keep polling only for this callback and only while no active
+    // overview exists; the provider webhook remains the state authority.
+    refetchInterval: (query) => (preapprovalId && !query.state.data?.overview ? 3_000 : false),
     retry: false,
   });
 
@@ -91,6 +98,8 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
   const plans = data.plans.filter((p) => p.interval === interval || p.slug === 'free');
   const hasAnnualPlans = data.plans.some((plan) => plan.interval === 'year');
   const overview = data.overview;
+  const checkoutAvailable = data.checkoutAvailable ?? true;
+  const isAwaitingCheckoutConfirmation = Boolean(preapprovalId && !overview);
   const hasBlockingPaidSubscription = Boolean(
     overview &&
     overview.planSlug !== 'free' &&
@@ -122,6 +131,23 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
           className="rounded-lg px-3 py-2 text-[13px] font-medium"
           style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
           {t('checkout_error')}
+        </p>
+      )}
+      {isAwaitingCheckoutConfirmation && (
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: 'var(--color-info-wash)', color: 'var(--color-info)' }}>
+          <Loader2 aria-hidden className="size-4 animate-spin" />
+          {t('checkout_confirming')}
+        </p>
+      )}
+      {!checkoutAvailable && (
+        <p
+          role="status"
+          className="rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)' }}>
+          {t('checkout_unavailable')}
         </p>
       )}
       <section>
@@ -162,8 +188,11 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
               price={formatPrice(plan)}
               onSubscribe={() => checkout.mutate({ slug: plan.slug, interval })}
               isSubscribing={checkout.isPending}
+              isProcessing={checkout.isPending && checkout.variables?.slug === plan.slug}
               canManage={canManage}
-              isCheckoutBlocked={hasBlockingPaidSubscription}
+              isCheckoutBlocked={
+                hasBlockingPaidSubscription || !checkoutAvailable || isAwaitingCheckoutConfirmation
+              }
             />
           ))}
         </div>
@@ -182,6 +211,7 @@ function PlanCard({
   price,
   onSubscribe,
   isSubscribing,
+  isProcessing,
   canManage,
   isCheckoutBlocked,
 }: {
@@ -190,6 +220,7 @@ function PlanCard({
   price: string;
   onSubscribe: () => void;
   isSubscribing: boolean;
+  isProcessing: boolean;
   canManage: boolean;
   isCheckoutBlocked: boolean;
 }) {
@@ -223,8 +254,14 @@ function PlanCard({
         disabled={isCurrent || isFree || isSubscribing || !canManage || isCheckoutBlocked}
         onClick={onSubscribe}
         data-testid={`subscribe-${plan.slug}`}
-        className={cn('w-full justify-center', isCurrent || isFree ? 'btn-outline' : 'btn-iron')}>
-        {isCurrent ?
+        className={cn(
+          'w-full items-center justify-center gap-2',
+          isCurrent || isFree ? 'btn-outline' : 'btn-iron',
+        )}>
+        {isProcessing && <Loader2 aria-hidden className="size-4 animate-spin" />}
+        {isProcessing ?
+          t('checkout_redirecting')
+        : isCurrent ?
           t('plan_current_badge')
         : isFree ?
           t('plan_free_btn')
