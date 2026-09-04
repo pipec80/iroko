@@ -8,6 +8,7 @@ import { resolvePlanByExternalPrice } from './catalog';
 import type { SubscriptionCreatedEvent } from './events';
 import { reduceBillingEvent } from './reducer';
 import { getPaymentProvider } from './registry';
+import type { WebhookVerificationContext } from './types';
 
 /**
  * Resolves the account owner's user id for analytics attribution. Webhooks
@@ -108,6 +109,18 @@ function captureBillingException(
   });
 }
 
+/** Produces safe delivery metadata; raw bodies and signatures must never reach logs. */
+function webhookLogContext(
+  provider: string,
+  context: WebhookVerificationContext | undefined,
+): { component: 'billing'; provider: string; webhookId?: string } {
+  return {
+    component: 'billing',
+    provider,
+    ...(context?.webhookId ? { webhookId: context.webhookId } : {}),
+  };
+}
+
 /**
  * Verifies and reduces a provider webhook. Providers produce the typed event;
  * the reducer owns the only persistence boundary and its idempotency key.
@@ -116,6 +129,7 @@ export async function handleProviderWebhook(
   providerName: string,
   rawBody: string,
   signature: string,
+  context?: WebhookVerificationContext,
 ): Promise<{ status: number; body: object }> {
   let provider: ReturnType<typeof getPaymentProvider>;
   try {
@@ -123,9 +137,58 @@ export async function handleProviderWebhook(
   } catch {
     return { status: 404, body: { error: 'provider_not_configured' } };
   }
-  const event = await provider.verifyWebhook(rawBody, signature);
+  const logContext = webhookLogContext(provider.name, context);
+  logger.info({ ...logContext, action: 'billing.webhook.received' }, 'Billing webhook received');
+  let event: Awaited<ReturnType<typeof provider.verifyWebhook>>;
+  try {
+    event = await provider.verifyWebhook(rawBody, signature, context);
+  } catch (error) {
+    withScope((scope) => {
+      scope.setTag('billing_provider', provider.name);
+      scope.setTag('billing_operation', 'webhook_verify');
+      captureException(error);
+    });
+    logger.error(
+      { ...logContext, action: 'billing.webhook.verify_failed' },
+      error instanceof Error ? error.message : 'Provider webhook verification failed',
+    );
+    return { status: 500, body: { error: 'provider_verification_failed' } };
+  }
   if (!event || event.provider !== provider.name) {
+    logger.warn({ ...logContext, action: 'billing.webhook.rejected' }, 'Billing webhook rejected');
     return { status: 400, body: { error: 'invalid_signature' } };
+  }
+
+  if (event.type === 'webhook_acknowledged') {
+    if (event.reason === 'payment_status_divergence') {
+      logger.warn(
+        {
+          ...logContext,
+          action: 'billing.webhook.divergence',
+          reason: event.reason,
+        },
+        'Billing webhook requires reconciliation',
+      );
+    } else if (event.reason === 'unsupported_topic') {
+      logger.warn(
+        {
+          ...logContext,
+          action: 'billing.webhook.unsupported_topic',
+          reason: event.reason,
+        },
+        'Billing webhook topic is not supported',
+      );
+    } else {
+      logger.info(
+        {
+          ...logContext,
+          action: 'billing.webhook.acknowledged',
+          reason: event.reason,
+        },
+        'Billing webhook acknowledged without a local mutation',
+      );
+    }
+    return { status: 200, body: { result: 'ignored' } };
   }
 
   let result: Awaited<ReturnType<typeof reduceBillingEvent>>;
@@ -134,7 +197,7 @@ export async function handleProviderWebhook(
   } catch (error) {
     captureBillingException(error, event);
     logger.error(
-      { action: 'billing.webhook', provider: provider.name },
+      { ...logContext, action: 'billing.webhook.reduce_failed', eventType: event.type },
       error instanceof Error ? error.message : 'Billing reducer failed',
     );
     return { status: 500, body: { error: 'internal_error' } };
@@ -143,6 +206,16 @@ export async function handleProviderWebhook(
   if (result.status === 'applied' && event.type === 'subscription_created') {
     await reportSubscriptionActivated(event);
   }
+
+  logger.info(
+    {
+      ...logContext,
+      action: 'billing.webhook.reduced',
+      eventType: event.type,
+      result: result.status,
+    },
+    'Billing webhook reduced',
+  );
 
   return { status: 200, body: { result: result.status } };
 }

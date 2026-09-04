@@ -8,6 +8,11 @@ const mocks = vi.hoisted(() => ({
   maybeSingle: vi.fn(),
   captureServer: vi.fn(),
   notify: vi.fn(async () => {}),
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
   sentryScope: {
     setTag: vi.fn(),
     setContext: vi.fn(),
@@ -37,6 +42,7 @@ vi.mock('../catalog', () => ({
 }));
 vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
 vi.mock('@/lib/notifications', () => ({ notify: mocks.notify }));
+vi.mock('@/lib/logger', () => ({ logger: mocks.logger }));
 
 vi.mock('@sentry/nextjs', () => ({
   withScope: vi.fn((callback: (scope: typeof mocks.sentryScope) => void) => {
@@ -95,6 +101,121 @@ describe('handleProviderWebhook', () => {
 
     expect(result.status).toBe(400);
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('returns 500 so Mercado Pago retries when provider resource retrieval fails', async () => {
+    mocks.verifyWebhook.mockRejectedValue(new Error('mercadopago_fetch_failed_503'));
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 500,
+      body: { error: 'provider_verification_failed' },
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('acknowledges a valid provider event that needs no local billing mutation', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      reason: 'unlinked_payment',
+      raw: { id: 'notification_1' },
+    });
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 200,
+      body: { result: 'ignored' },
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('warns when Mercado Pago reports a linked payment status divergence', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      reason: 'payment_status_divergence',
+      raw: { id: 'notification_divergence' },
+    });
+
+    await expect(
+      handleProviderWebhook('mercadopago', '{}', 'sig', {
+        webhookId: 'notification_divergence',
+      }),
+    ).resolves.toEqual({ status: 200, body: { result: 'ignored' } });
+
+    expect(mocks.logger.warn).toHaveBeenCalledWith(
+      {
+        action: 'billing.webhook.divergence',
+        component: 'billing',
+        provider: 'mercadopago',
+        webhookId: 'notification_divergence',
+        reason: 'payment_status_divergence',
+      },
+      'Billing webhook requires reconciliation',
+    );
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('warns and returns 200 for a signed but unsupported Mercado Pago topic', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      reason: 'unsupported_topic',
+      raw: { type: 'subscription_preapproval_plan', data: { id: 'plan_1' } },
+    });
+
+    await expect(
+      handleProviderWebhook('mercadopago', '{}', 'sig', {
+        webhookId: 'notification_unsupported',
+      }),
+    ).resolves.toEqual({ status: 200, body: { result: 'ignored' } });
+
+    expect(mocks.logger.warn).toHaveBeenCalledWith(
+      {
+        action: 'billing.webhook.unsupported_topic',
+        component: 'billing',
+        provider: 'mercadopago',
+        webhookId: 'notification_unsupported',
+        reason: 'unsupported_topic',
+      },
+      'Billing webhook topic is not supported',
+    );
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('logs receipt and the reduced result without the webhook body or signature', async () => {
+    const mercadopagoEvent = { ...validEvent, provider: 'mercadopago' as const };
+    mocks.verifyWebhook.mockResolvedValue(mercadopagoEvent);
+    mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
+
+    await expect(
+      handleProviderWebhook('mercadopago', '{"email":"never-log-this"}', 'never-log-this', {
+        webhookId: 'notification_1',
+      }),
+    ).resolves.toEqual({ status: 200, body: { result: 'applied' } });
+
+    expect(mocks.logger.info).toHaveBeenNthCalledWith(
+      1,
+      {
+        action: 'billing.webhook.received',
+        component: 'billing',
+        provider: 'mercadopago',
+        webhookId: 'notification_1',
+      },
+      'Billing webhook received',
+    );
+    expect(mocks.logger.info).toHaveBeenNthCalledWith(
+      2,
+      {
+        action: 'billing.webhook.reduced',
+        component: 'billing',
+        provider: 'mercadopago',
+        webhookId: 'notification_1',
+        result: 'applied',
+        eventType: 'subscription_created',
+      },
+      'Billing webhook reduced',
+    );
+    expect(JSON.stringify(mocks.logger.info.mock.calls)).not.toContain('never-log-this');
   });
 
   it('returns 404 when the requested provider is not configured', async () => {

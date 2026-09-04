@@ -3,17 +3,28 @@ import { env } from '@/env';
 import { getProviderPrice } from '../catalog';
 import type { NormalizedBillingEvent } from '../events';
 import type {
+  AcknowledgedWebhook,
   CancelSubscriptionParams,
   CheckoutParams,
   PaymentProvider,
   SubscriptionStatus,
+  WebhookVerificationContext,
 } from '../types';
 
 const API_BASE = 'https://api.mercadopago.com';
+const RESOURCE_FETCH_TIMEOUT_MS = 10_000;
+const WEBHOOK_TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000;
+const NON_TERMINAL_PAYMENT_STATUSES = new Set([
+  'pending',
+  'in_process',
+  'in_mediation',
+  'authorized',
+]);
 
 interface WebhookBody {
-  type: string;
-  data: { id: string };
+  id?: unknown;
+  type: unknown;
+  data: { id: unknown };
 }
 
 interface PreapprovalResource {
@@ -36,6 +47,15 @@ interface AuthorizedPaymentResource {
     status: string;
     status_detail?: unknown;
   };
+}
+
+interface PaymentResource {
+  id?: unknown;
+  status?: unknown;
+}
+
+interface AuthorizedPaymentSearchResponse {
+  results?: unknown;
 }
 
 function normalizeExternalId(value: unknown): string | null {
@@ -83,12 +103,59 @@ function isAuthorizedPaymentResource(value: unknown): value is AuthorizedPayment
   );
 }
 
+function isPaymentResource(value: unknown): value is PaymentResource {
+  if (typeof value !== 'object' || value === null) return false;
+  return (
+    'id' in value &&
+    'status' in value &&
+    normalizeExternalId(value.id) !== null &&
+    typeof value.status === 'string' &&
+    value.status.trim().length > 0
+  );
+}
+
+function isWebhookBody(value: unknown): value is WebhookBody {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    typeof value.type === 'string' &&
+    value.type.length > 0 &&
+    'data' in value &&
+    typeof value.data === 'object' &&
+    value.data !== null &&
+    'id' in value.data &&
+    normalizeExternalId(value.data.id) !== null
+  );
+}
+
 function authorizedPaymentEventId(invoiceId: string, paymentId: string, status: string): string {
   return `authorized_payment:${encodeURIComponent(invoiceId)}:${encodeURIComponent(paymentId)}:${encodeURIComponent(status)}`;
 }
 
+function webhookEventId(context: WebhookVerificationContext | undefined, fallback: string): string {
+  const notificationId = normalizeExternalId(context?.webhookId);
+  return notificationId ? `mercadopago:webhook:${notificationId}` : fallback;
+}
+
 function toMercadoPagoTransactionAmount(amount: number, currency: string): number {
   return currency === 'CLP' ? amount : amount / 100;
+}
+
+/**
+ * Mercado Pago appends `?preapproval_id=...` to the return URL instead of `&`,
+ * so a back_url carrying its own query string comes back malformed
+ * (`?status=success?preapproval_id=...`). Only the path survives.
+ */
+function toProviderBackUrl(successUrl: string): string {
+  try {
+    const url = new URL(successUrl);
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return successUrl;
+  }
 }
 
 function isValidProviderPrice(price: { amount: number; currency: string }): boolean {
@@ -97,7 +164,7 @@ function isValidProviderPrice(price: { amount: number; currency: string }): bool
   );
 }
 
-/** MercadoPago no distingue 'authorized'/'cancelled' 1:1 con SubscriptionStatus
+/** MercadoPago no distingue 'authorized'/'canceled' 1:1 con SubscriptionStatus
  * — mapea los estados de Preapproval al enum interno. */
 function mapPreapprovalStatus(status: string): SubscriptionStatus {
   switch (status) {
@@ -105,7 +172,7 @@ function mapPreapprovalStatus(status: string): SubscriptionStatus {
       return 'active';
     case 'paused':
       return 'paused';
-    case 'cancelled':
+    case 'canceled':
       return 'canceled';
     case 'pending':
       return 'incomplete';
@@ -118,7 +185,7 @@ function mapPreapprovalStatus(status: string): SubscriptionStatus {
  * x-request-id llega en su propio header — route.ts los concatena con ';'
  * antes de llamar acá. split('=') sobre "ts=123,v1=abc" partiría en 3 en vez
  * de 2, por eso se usa indexOf para el primer '=' de cada segmento. */
-async function verifyManifest(signature: string, dataId: string): Promise<boolean> {
+async function verifyManifest(signature: string, dataId?: string): Promise<boolean> {
   const parts: Record<string, string> = {};
   for (const segment of signature.split(/[,;]/)) {
     const eq = segment.indexOf('=');
@@ -128,9 +195,22 @@ async function verifyManifest(signature: string, dataId: string): Promise<boolea
   const ts = parts.ts;
   const requestId = parts['x-request-id'];
   const v1 = parts.v1;
-  if (!ts || !requestId || !v1) return false;
+  if (!ts || !v1) return false;
 
-  const manifest = `id:${dataId};request-id:${requestId};ts:${ts};`;
+  // La doc oficial describe `ts` como milisegundos pero su propio ejemplo usa
+  // segundos; se aceptan ambas escalas dentro de la ventana de tolerancia.
+  const tsNumber = Number(ts);
+  if (!Number.isFinite(tsNumber)) return false;
+  const withinTolerance = (candidateMs: number): boolean =>
+    Math.abs(Date.now() - candidateMs) <= WEBHOOK_TIMESTAMP_TOLERANCE_MS;
+  if (!withinTolerance(tsNumber) && !withinTolerance(tsNumber * 1000)) return false;
+
+  const manifest =
+    [
+      ...(dataId ? [`id:${dataId.toLowerCase()}`] : []),
+      ...(requestId ? [`request-id:${requestId}`] : []),
+      `ts:${ts}`,
+    ].join(';') + ';';
   const key = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(env.MERCADOPAGO_WEBHOOK_SECRET ?? ''),
@@ -142,14 +222,139 @@ async function verifyManifest(signature: string, dataId: string): Promise<boolea
   const computed = Array.from(new Uint8Array(sig))
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
-  return computed === v1;
+  if (computed.length !== v1.length) return false;
+  let difference = 0;
+  for (let index = 0; index < computed.length; index += 1) {
+    difference |= computed.charCodeAt(index) ^ v1.charCodeAt(index);
+  }
+  return difference === 0;
+}
+
+function webhookIdentifiers(
+  body: WebhookBody,
+  context: WebhookVerificationContext | undefined,
+): { resourceId: string; signatureDataId?: string } | null {
+  const bodyDataId = normalizeExternalId(body.data.id);
+  if (!bodyDataId) return null;
+
+  if (context === undefined) {
+    return { resourceId: bodyDataId, signatureDataId: bodyDataId };
+  }
+  if (context.dataId === undefined) return { resourceId: bodyDataId };
+  const queryDataId = normalizeExternalId(context.dataId);
+  if (!queryDataId || queryDataId !== bodyDataId) return null;
+  return { resourceId: queryDataId, signatureDataId: queryDataId };
+}
+
+function normalizeAuthorizedPaymentEvent(
+  payment: AuthorizedPaymentResource,
+  externalEventId: string,
+): NormalizedBillingEvent | AcknowledgedWebhook | null {
+  const invoiceId = normalizeExternalId(payment.id);
+  const subscriptionId = normalizeExternalId(payment.preapproval_id);
+  const paymentId = normalizeExternalId(payment.payment.id);
+  const accountId =
+    typeof payment.external_reference === 'string' && payment.external_reference.trim().length > 0 ?
+      payment.external_reference
+    : null;
+  if (!accountId || !invoiceId || !subscriptionId || !paymentId) return null;
+
+  const currency =
+    payment.currency_id === undefined ? undefined : normalizeCurrency(payment.currency_id);
+  if (currency === null) return null;
+  const amount =
+    payment.transaction_amount === undefined || currency === undefined ?
+      null
+    : normalizeAmount(payment.transaction_amount, currency);
+  if (payment.transaction_amount !== undefined && amount === null) return null;
+  if (typeof payment.date_created !== 'string') return null;
+
+  if (NON_TERMINAL_PAYMENT_STATUSES.has(payment.payment.status)) {
+    return acknowledgedWebhook('payment_pending', payment);
+  }
+  if (payment.payment.status === 'rejected') {
+    return {
+      provider: 'mercadopago',
+      externalEventId,
+      type: 'invoice_payment_failed',
+      accountId,
+      externalSubscriptionId: subscriptionId,
+      externalInvoiceId: invoiceId,
+      externalPaymentId: paymentId,
+      ...(amount === null ? {} : { amountDue: amount }),
+      ...(currency === undefined ? {} : { currency }),
+      failureCode:
+        typeof payment.payment.status_detail === 'string' ?
+          payment.payment.status_detail
+        : undefined,
+      attemptedAt: payment.date_created,
+      raw: payment,
+    };
+  }
+  if (payment.payment.status !== 'approved') {
+    return acknowledgedWebhook('payment_status_divergence', payment);
+  }
+  if (amount === null || currency === undefined) return null;
+  return {
+    provider: 'mercadopago',
+    externalEventId,
+    type: 'invoice_paid',
+    accountId,
+    externalSubscriptionId: subscriptionId,
+    externalInvoiceId: invoiceId,
+    externalPaymentId: paymentId,
+    amountPaid: amount,
+    currency,
+    paidAt: payment.date_created,
+    raw: payment,
+  };
+}
+
+function acknowledgedWebhook(
+  reason: AcknowledgedWebhook['reason'],
+  raw: unknown,
+): AcknowledgedWebhook {
+  return { provider: 'mercadopago', type: 'webhook_acknowledged', reason, raw };
+}
+
+/**
+ * Compact, secret-free reason from a Mercado Pago error body. Without it a
+ * failed call is only a status code, which is not diagnosable in production.
+ */
+async function describeProviderError(res: Response): Promise<string> {
+  const parts: string[] = [];
+  try {
+    const body: unknown = await res.json();
+    if (typeof body === 'object' && body !== null) {
+      if ('error' in body && typeof body.error === 'string') parts.push(body.error);
+      if ('message' in body && typeof body.message === 'string') parts.push(body.message);
+      if ('cause' in body && Array.isArray(body.cause)) {
+        for (const item of body.cause) {
+          if (typeof item !== 'object' || item === null) continue;
+          if ('code' in item) parts.push(`code=${String(item.code)}`);
+          if ('description' in item && typeof item.description === 'string') {
+            parts.push(item.description);
+          }
+        }
+      }
+    }
+  } catch {
+    // A non-JSON body leaves the status code as the only available evidence.
+  }
+  return parts.join('|').slice(0, 300);
+}
+
+async function providerError(prefix: string, res: Response): Promise<Error> {
+  const detail = await describeProviderError(res);
+  return new Error(`${prefix}_${res.status}${detail ? `:${detail}` : ''}`);
 }
 
 async function fetchResource<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { Authorization: `Bearer ${env.MERCADOPAGO_ACCESS_TOKEN ?? ''}` },
+    signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`mercadopago_fetch_failed_${res.status}`);
+  if (!res.ok) throw await providerError('mercadopago_fetch_failed', res);
   return (await res.json()) as T;
 }
 
@@ -161,8 +366,9 @@ async function postResource<T>(path: string, body: unknown): Promise<T> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`mercadopago_post_failed_${res.status}`);
+  if (!res.ok) throw await providerError('mercadopago_post_failed', res);
   return (await res.json()) as T;
 }
 
@@ -174,8 +380,9 @@ async function putResource<T>(path: string, body: unknown): Promise<T> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(RESOURCE_FETCH_TIMEOUT_MS),
   });
-  if (!res.ok) throw new Error(`mercadopago_put_failed_${res.status}`);
+  if (!res.ok) throw await providerError('mercadopago_put_failed', res);
   return (await res.json()) as T;
 }
 
@@ -188,12 +395,15 @@ export const mercadopagoProvider: PaymentProvider = {
     cancelAtPeriodEnd: false,
     updatePaymentMethod: false,
     changePlan: false,
-    pauseSubscription: true,
+    pauseSubscription: false,
   },
 
   async createCheckout(
     params: CheckoutParams,
   ): Promise<{ url: string; externalSubscriptionId: string }> {
+    if (params.interval !== 'month') {
+      throw new Error('billing_interval_not_supported:mercadopago');
+    }
     const providerPrice = await getProviderPrice({
       planSlug: params.planSlug,
       interval: params.interval,
@@ -210,7 +420,8 @@ export const mercadopagoProvider: PaymentProvider = {
       reason: `Iroko ${params.planSlug} subscription`,
       external_reference: params.accountId,
       payer_email: params.customerEmail,
-      back_url: params.successUrl,
+      back_url: toProviderBackUrl(params.successUrl),
+      notification_url: env.MERCADOPAGO_WEBHOOK_URL,
       status: 'pending',
       auto_recurring: {
         frequency: 1,
@@ -230,32 +441,43 @@ export const mercadopagoProvider: PaymentProvider = {
       throw new Error('billing_capability_not_supported:cancelAtPeriodEnd');
     }
     const preapproval = await putResource<{ status: string }>(
-      `/preapproval/${params.externalSubscriptionId}`,
-      { status: 'cancelled' },
+      `/preapproval/${encodeURIComponent(params.externalSubscriptionId)}`,
+      { status: 'canceled' },
     );
-    if (preapproval.status !== 'cancelled') {
+    if (preapproval.status !== 'canceled') {
       throw new Error('mercadopago_cancellation_not_confirmed');
     }
   },
 
-  async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedBillingEvent | null> {
-    let body: WebhookBody;
+  async verifyWebhook(
+    rawBody: string,
+    signature: string,
+    context?: WebhookVerificationContext,
+  ): Promise<NormalizedBillingEvent | AcknowledgedWebhook | null> {
+    let parsedBody: unknown;
     try {
-      body = JSON.parse(rawBody) as WebhookBody;
+      parsedBody = JSON.parse(rawBody) as unknown;
     } catch {
       return null;
     }
-    if (!body.data?.id) return null;
-    if (!(await verifyManifest(signature, body.data.id))) return null;
+    if (!isWebhookBody(parsedBody)) return null;
+    const body = parsedBody;
+    const identifiers = webhookIdentifiers(body, context);
+    if (!identifiers || !(await verifyManifest(signature, identifiers.signatureDataId)))
+      return null;
+    const { resourceId: dataId } = identifiers;
 
     if (body.type === 'subscription_preapproval') {
-      const preapproval = await fetchResource<PreapprovalResource>(`/preapproval/${body.data.id}`);
+      const preapproval = await fetchResource<PreapprovalResource>(
+        `/preapproval/${encodeURIComponent(dataId)}`,
+      );
       if (!preapproval.external_reference) return null;
       const status = mapPreapprovalStatus(preapproval.status);
+      const externalEventId = webhookEventId(context, `${preapproval.id}_${preapproval.status}`);
       if (status === 'canceled') {
         return {
           provider: 'mercadopago',
-          externalEventId: `${preapproval.id}_${preapproval.status}`,
+          externalEventId,
           type: 'subscription_canceled',
           accountId: preapproval.external_reference,
           externalSubscriptionId: preapproval.id,
@@ -266,7 +488,7 @@ export const mercadopagoProvider: PaymentProvider = {
       }
       return {
         provider: 'mercadopago',
-        externalEventId: `${preapproval.id}_${preapproval.status}`,
+        externalEventId,
         type: 'subscription_updated',
         accountId: preapproval.external_reference,
         status,
@@ -279,65 +501,66 @@ export const mercadopagoProvider: PaymentProvider = {
     }
 
     if (body.type === 'subscription_authorized_payment') {
-      const payment = await fetchResource<unknown>(`/authorized_payments/${body.data.id}`);
+      const payment = await fetchResource<unknown>(
+        `/authorized_payments/${encodeURIComponent(dataId)}`,
+      );
       if (!isAuthorizedPaymentResource(payment)) return null;
       const invoiceId = normalizeExternalId(payment.id);
-      const subscriptionId = normalizeExternalId(payment.preapproval_id);
-      const paymentId = normalizeExternalId(payment.payment?.id);
-      const accountId =
-        (
-          typeof payment.external_reference === 'string' &&
-          payment.external_reference.trim().length > 0
-        ) ?
-          payment.external_reference
-        : null;
-      if (!accountId || !invoiceId || !subscriptionId || !paymentId) return null;
-
-      const currency =
-        payment.currency_id === undefined ? undefined : normalizeCurrency(payment.currency_id);
-      if (currency === null) return null;
-      const amount =
-        payment.transaction_amount === undefined || currency === undefined ?
-          null
-        : normalizeAmount(payment.transaction_amount, currency);
-      if (payment.transaction_amount !== undefined && amount === null) return null;
-      if (typeof payment.date_created !== 'string') return null;
-
-      if (payment.payment.status !== 'approved') {
-        return {
-          provider: 'mercadopago',
-          externalEventId: authorizedPaymentEventId(invoiceId, paymentId, payment.payment.status),
-          type: 'invoice_payment_failed',
-          accountId,
-          externalSubscriptionId: subscriptionId,
-          externalInvoiceId: invoiceId,
-          externalPaymentId: paymentId,
-          ...(amount === null ? {} : { amountDue: amount }),
-          ...(currency === undefined ? {} : { currency }),
-          failureCode:
-            typeof payment.payment.status_detail === 'string' ?
-              payment.payment.status_detail
-            : undefined,
-          attemptedAt: payment.date_created,
-          raw: payment,
-        };
-      }
-      if (amount === null || currency === undefined) return null;
-      return {
-        provider: 'mercadopago',
-        externalEventId: authorizedPaymentEventId(invoiceId, paymentId, payment.payment.status),
-        type: 'invoice_paid',
-        accountId,
-        externalSubscriptionId: subscriptionId,
-        externalInvoiceId: invoiceId,
-        externalPaymentId: paymentId,
-        amountPaid: amount,
-        currency,
-        paidAt: payment.date_created,
-        raw: payment,
-      };
+      const paymentId = normalizeExternalId(payment.payment.id);
+      if (!invoiceId || !paymentId) return null;
+      return normalizeAuthorizedPaymentEvent(
+        payment,
+        webhookEventId(
+          context,
+          authorizedPaymentEventId(invoiceId, paymentId, payment.payment.status),
+        ),
+      );
     }
 
-    return null;
+    if (body.type === 'payment') {
+      const providerPayment = await fetchResource<unknown>(
+        `/v1/payments/${encodeURIComponent(dataId)}`,
+      );
+      if (!isPaymentResource(providerPayment)) return null;
+      const providerPaymentId = normalizeExternalId(providerPayment.id);
+      if (!providerPaymentId || providerPaymentId !== dataId) return null;
+
+      const invoices = await fetchResource<AuthorizedPaymentSearchResponse>(
+        `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
+      );
+      const invoice =
+        Array.isArray(invoices.results) ?
+          invoices.results.find(
+            (candidate): candidate is AuthorizedPaymentResource =>
+              isAuthorizedPaymentResource(candidate) &&
+              normalizeExternalId(candidate.payment.id) === providerPaymentId,
+          )
+        : undefined;
+      if (!invoice) {
+        return acknowledgedWebhook('unlinked_payment', {
+          notification: body,
+          payment: providerPayment,
+        });
+      }
+      if (invoice.payment.status !== providerPayment.status) {
+        return acknowledgedWebhook('payment_status_divergence', {
+          notification: body,
+          payment: providerPayment,
+          authorizedPayment: invoice,
+        });
+      }
+
+      const invoiceId = normalizeExternalId(invoice.id);
+      if (!invoiceId) return null;
+      return normalizeAuthorizedPaymentEvent(
+        invoice,
+        webhookEventId(
+          context,
+          authorizedPaymentEventId(invoiceId, providerPaymentId, invoice.payment.status),
+        ),
+      );
+    }
+
+    return acknowledgedWebhook('unsupported_topic', body);
   },
 };
