@@ -26,7 +26,7 @@ or production-certification evidence.
   scheduler in scope. The former DB-only cron and private function were
   retired because they could change local state without calling Mercado Pago.
 - An immediate cancellation calls Mercado Pago first. The returned resource
-  must report `status: 'cancelled'` before Billing Core changes local state.
+  must report `status: 'canceled'` before Billing Core changes local state.
 - Checkout resolves the active `mercadopago` catalog price in `CLP`, sends an
   inline `auto_recurring` amount in provider minor units, and never sends
   `preapproval_plan_id`. CLP is zero-decimal; the conversion remains
@@ -42,6 +42,14 @@ or production-certification evidence.
 - `subscription_authorized_payment` produces invoice/payment events without
   conflating the authorized-payment invoice ID with the nested payment ID or
   payment status.
+- Mercado Pago Webhooks must activate `subscription_preapproval`,
+  `subscription_authorized_payment`, and `payment`. The receiver validates the
+  signed `data.id` URL parameter (including the lower-case manifest rule and
+  omission of the `id:` component when the query parameter is absent), uses the
+  notification envelope `id` as the delivery idempotency key, and fetches the
+  provider resource before a local mutation. A valid generic `payment`
+  notification that has no linked authorized-payment invoice is acknowledged
+  without changing local billing state.
 - All DB mutations remain service-role-only through the bounded provisional
   subscription RPC. Manual migrations and `supabase/schemas/*.sql` mirrors
   remain paired when schema work is required.
@@ -53,6 +61,8 @@ before provider-facing work:
 - Subscriptions overview/retries: https://www.mercadopago.cl/developers/en/reference/online-payments/subscriptions/overview
 - Pending payment without associated plan: https://www.mercadopago.cl/developers/en/docs/subscriptions/integration-configuration/subscription-no-associated-plan/pending-payments
 - Subscription management: https://www.mercadopago.cl/developers/en/docs/subscriptions/subscription-management
+- Subscription Webhooks: https://www.mercadopago.cl/developers/en/docs/subscriptions/additional-content/your-integrations/notifications/webhooks
+- Webhook signing and notification topics: https://www.mercadopago.cl/developers/en/docs/your-integrations/notifications/webhooks
 
 ## Current branch progress
 
@@ -64,8 +74,9 @@ provider or runtime.
       active `mercadopago` catalog price and inline pending preapproval flow;
       it returns the preapproval ID and omits `preapproval_plan_id`. Price amounts
       convert to provider minor units correctly for zero-decimal CLP and
-      two-decimal USD. Preapproval and authorized-payment webhook normalization
-      retain the local-plan path and distinguish invoice from nested payment data.
+      two-decimal USD. Preapproval, authorized-payment, and payment webhook
+      normalization retain the local-plan path and distinguish invoice from
+      nested payment data.
 - [x] **Task 2 — Retire deferred cancellation.** `period_end` is rejected as
       unsupported, the DB-only cancellation cron/private function is retired, and
       no cancellation Edge Function was added. Immediate cancellation validates
@@ -79,6 +90,21 @@ provider or runtime.
       Mercado Pago `CLP` provider-price catalog maps Free / Plus / Pro to `0` /
       `19.990` / `102.990` monthly. The checkout surface displays zero-decimal CLP
       correctly and does not offer a yearly Mercado Pago flow.
+- [x] **Sandbox webhook hardening.** Provider resource reads use a bounded
+      ten-second timeout so the receiver can fail within Mercado Pago's delivery
+      window, non-monthly checkout is rejected before any provider call, and a
+      linked payment/invoice status divergence emits a safe warning instead of
+      being indistinguishable from an unrelated payment acknowledgement.
+      Non-terminal nested payment states are acknowledged without being persisted
+      as failed attempts. A signed but unsupported topic is acknowledged with a
+      warning so Mercado Pago does not retry it indefinitely, while invalid
+      signatures remain rejected. The adapter does not advertise outbound pause
+      support until a real pause operation exists.
+- [x] **Replay tolerance and outbound timeouts.** Signature verification rejects
+      webhooks whose `ts` falls outside a five-minute window (accepting the
+      seconds and milliseconds scales the official docs mix), and the outbound
+      checkout/cancellation calls share the same bounded ten-second timeout as
+      resource reads.
 
 ## Remaining certification tasks
 
@@ -104,9 +130,24 @@ provider or runtime.
       webhook; authorized-payment invoice/payment event; and immediate
       cancellation.
 - [ ] Record provider event IDs and evidence that Mercado Pago itself reports
-      `cancelled` before local cancellation. Webhook delivery, a sandbox payment,
+      `canceled` before local cancellation. Webhook delivery, a sandbox payment,
       a linked-Cloud checkout run, and real-payment evidence remain
       **[NO VERIFICADO]** until captured in approved PR evidence.
+- [ ] The 2026-09-01 sandbox attempt proved that checkout persists the selected
+      local `incomplete` row, but it did not reach activation: the preapproval
+      request lacked its required subscription `notification_url`, and the
+      Preview token could not read the resource created for the test seller.
+      The adapter now requires and sends `MERCADOPAGO_WEBHOOK_URL`; repeat the
+      lifecycle only after Preview uses the production access token and webhook
+      signature secret of the test-seller application. This remains
+      **[NO VERIFICADO]** certification evidence, not a successful sandbox run.
+- [ ] Before production enablement, prevent concurrent or repeated pending
+      checkouts from creating multiple remote preapprovals for one account.
+      This needs a durable database reservation/lock and remains outside the
+      no-migration sandbox hardening change.
+- [ ] Before production enablement, normalize refunds and chargebacks (or
+      persist a durable reconciliation anomaly). The current divergence warning
+      is operational evidence, not a financial state transition.
 
 ## Completion criteria for Phase 2
 

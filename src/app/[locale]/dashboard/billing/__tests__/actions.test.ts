@@ -409,7 +409,7 @@ describe('billing actions', () => {
         cancelAtPeriodEnd: false,
         updatePaymentMethod: false,
         changePlan: false,
-        pauseSubscription: true,
+        pauseSubscription: false,
       },
     });
     mocks.rpc.mockImplementation((fn: string) => {
@@ -517,6 +517,41 @@ describe('billing actions', () => {
         limits: { api_keys_max: 100 },
       },
     ]);
+  });
+
+  it('keeps the billing catalog available when the default provider is not configured', async () => {
+    mocks.getPaymentProvider.mockImplementation(() => {
+      throw new Error('provider_not_configured');
+    });
+    mocks.rpc.mockImplementation((fn: string) => {
+      if (fn === 'get_active_plans') {
+        return Promise.resolve({
+          data: [
+            {
+              slug: 'free',
+              name: 'Free',
+              description: 'Para empezar',
+              interval: 'month',
+              price: 0,
+              currency: 'USD',
+              trial_days: 0,
+              features: {},
+              limits: {},
+            },
+          ],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: null });
+    });
+
+    const res = await getBillingData();
+
+    expect(res.data).toMatchObject({
+      checkoutAvailable: false,
+      plans: [expect.objectContaining({ slug: 'free' })],
+      overview: null,
+    });
   });
 
   it('getBillingData returns null overview when the member is not admin', async () => {

@@ -264,7 +264,11 @@ export const cancelSubscription = withServerAction(async function cancelSubscrip
 
 /** Planes activos + suscripción vigente (overview null si no es owner/admin). */
 export const getBillingData = withServerAction(async function getBillingData(): Promise<
-  ActionResult<{ plans: PlanRow[]; overview: BillingOverview | null }>
+  ActionResult<{
+    plans: PlanRow[];
+    overview: BillingOverview | null;
+    checkoutAvailable: boolean;
+  }>
 > {
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
@@ -284,9 +288,17 @@ export const getBillingData = withServerAction(async function getBillingData(): 
     features: (p.features ?? {}) as Record<string, boolean>,
     limits: (p.limits ?? {}) as Record<string, number>,
   }));
-  const paymentProvider = getPaymentProvider();
+  let paymentProvider: ReturnType<typeof getPaymentProvider> | null = null;
+  try {
+    paymentProvider = getPaymentProvider();
+  } catch {
+    // A missing checkout configuration must not hide the account's catalog or
+    // billing state. The client uses this flag to disable checkout explicitly.
+  }
+  const shouldUseMercadoPagoCatalog =
+    paymentProvider?.name === 'mercadopago' || env.BILLING_DEFAULT_PROVIDER === 'mercadopago';
   const mappedPlans: PlanRow[] =
-    paymentProvider.name === 'mercadopago' ?
+    shouldUseMercadoPagoCatalog ?
       (
         await Promise.all(
           basePlans
@@ -327,7 +339,13 @@ export const getBillingData = withServerAction(async function getBillingData(): 
         capabilities: getProviderCapabilities(o.provider),
       }
     : null;
-  return { data: { plans: mappedPlans, overview: mappedOverview } };
+  return {
+    data: {
+      plans: mappedPlans,
+      overview: mappedOverview,
+      checkoutAvailable: paymentProvider !== null,
+    },
+  };
 });
 
 /** Historial de facturas paginado por keyset (null si no es owner/admin). */

@@ -102,13 +102,15 @@ describe('buildCspHeader', () => {
 
   // AUD-018: the Vercel Live feedback widget script (only injected on preview
   // deployments) was blocked by CSP, generating a report per page load.
-  it('should allow vercel.live in script-src and connect-src on preview (isPreview=true)', () => {
+  it('should allow vercel.live in script-src, connect-src, and frame-src on preview', () => {
     const csp = buildCspHeader(false, true, CLOUD_SUPABASE_URL);
     const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'));
     const connectSrc = csp.split('; ').find((d) => d.startsWith('connect-src'));
+    const frameSrc = csp.split('; ').find((d) => d.startsWith('frame-src'));
 
     expect(scriptSrc).toContain('https://vercel.live');
     expect(connectSrc).toContain('https://vercel.live');
+    expect(frameSrc).toContain('https://vercel.live');
   });
 
   it('should still allow vercel.live in dev regardless of isPreview (dev already allows https:)', () => {
