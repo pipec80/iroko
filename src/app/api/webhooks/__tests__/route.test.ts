@@ -8,8 +8,12 @@ vi.mock('@/lib/billing/webhook-handler', () => ({
 
 import { POST } from '../[provider]/route';
 
-function makeRequest(headers: Record<string, string>, body = '{}') {
-  return new Request('http://localhost/api/webhooks/x', {
+function makeRequest(
+  headers: Record<string, string>,
+  body = '{}',
+  url = 'http://localhost/api/webhooks/x',
+) {
+  return new Request(url, {
     method: 'POST',
     headers,
     body,
@@ -25,15 +29,23 @@ describe('POST /api/webhooks/[provider]', () => {
     expect(mocks.handleProviderWebhook).toHaveBeenCalledWith('stripe', '{}', 'sig_stripe');
   });
 
-  it('should combine x-signature and x-request-id for the mercadopago provider', async () => {
+  it('should pass signed query and notification ids for the mercadopago provider', async () => {
     mocks.handleProviderWebhook.mockResolvedValue({ status: 200, body: { result: 'applied' } });
-    await POST(makeRequest({ 'x-signature': 'sig_mp', 'x-request-id': 'req_1' }), {
-      params: Promise.resolve({ provider: 'mercadopago' }),
-    });
+    await POST(
+      makeRequest(
+        { 'x-signature': 'sig_mp', 'x-request-id': 'req_1' },
+        '{"id":123,"type":"subscription_preapproval","data":{"id":"PA_1"}}',
+        'http://localhost/api/webhooks/mercadopago?data.id=PA_1',
+      ),
+      {
+        params: Promise.resolve({ provider: 'mercadopago' }),
+      },
+    );
     expect(mocks.handleProviderWebhook).toHaveBeenCalledWith(
       'mercadopago',
-      '{}',
+      '{"id":123,"type":"subscription_preapproval","data":{"id":"PA_1"}}',
       'sig_mp;x-request-id=req_1',
+      { dataId: 'PA_1', webhookId: '123' },
     );
   });
 

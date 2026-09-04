@@ -8,6 +8,7 @@ vi.mock('@/env', () => ({
     STRIPE_WEBHOOK_SECRET: 'whsec_test_x',
     MERCADOPAGO_ACCESS_TOKEN: 'TEST-token',
     MERCADOPAGO_WEBHOOK_SECRET: 'mp_webhook_test',
+    MERCADOPAGO_WEBHOOK_URL: 'https://app.example.com/api/webhooks/mercadopago',
     LOG_LEVEL: 'silent',
   },
 }));
@@ -50,7 +51,7 @@ describe('payment provider registry', () => {
     expect(availableProviders()).toContain('stripe');
   });
 
-  it('should register mercadopago only when its API and webhook secrets are set', () => {
+  it('should register mercadopago only when its API credentials and delivery URL are set', () => {
     expect(availableProviders()).toContain('mercadopago');
   });
 
@@ -62,6 +63,12 @@ describe('payment provider registry', () => {
     ).toBe(false);
     expect(
       hasProviderCredentials('mercadopago', {
+        MERCADOPAGO_WEBHOOK_SECRET: 'mp_webhook_test',
+      }),
+    ).toBe(false);
+    expect(
+      hasProviderCredentials('mercadopago', {
+        MERCADOPAGO_ACCESS_TOKEN: 'TEST-token',
         MERCADOPAGO_WEBHOOK_SECRET: 'mp_webhook_test',
       }),
     ).toBe(false);
