@@ -11,6 +11,27 @@
 > Paddle and Lemon Squeezy as their own phases merge. It can start with
 > Mercado Pago-only coverage and does not need to wait for all providers.
 
+## Mercado Pago reliability slice (approved 2026-09-09)
+
+Implementation starts with Mercado Pago immediately after the two Phase 2
+reliability PRs; Stripe, Paddle, and Lemon Squeezy do not block it. This slice
+adds durable payment recovery, deduplicated financial anomalies, CAS-protected
+subscription reconciliation, and an operator runbook.
+
+For this slice, the scheduling decision is settled: `pg_cron` invokes a stable
+internal Vercel route running on Node, authenticated by
+`X-Billing-Worker-Secret`. Node owns Supabase admin access, the existing
+reducer, Sentry, and PostHog; no reducer logic is copied to Deno. Recovery runs
+every five minutes, reconciliation hourly, with batches of 20, a 45-second
+invocation budget, at most five concurrent provider calls, and 10-second fetch
+timeouts. Cron activation, Vault values, Cloud migrations, deployment, and
+provider certification remain separately authorized rollout operations.
+
+The detailed reliability implementation plan supersedes Task 4's earlier
+open-ended Edge Function/Vercel Cron choice for this Mercado Pago slice. The
+historical task text remains below as planning evidence for the wider
+provider-neutral phase.
+
 **Goal:** Webhooks are the primary source of truth; this phase adds the
 safety net for when they are delayed, duplicated, or missed entirely — a
 scheduled worker that compares PSP state against Iroko state and either

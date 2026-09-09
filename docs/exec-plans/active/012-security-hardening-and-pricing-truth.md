@@ -11,6 +11,15 @@
   catálogo (P1-2). No corrige comportamiento roto (eso es P0) ni aumenta
   vendibilidad directamente (eso es Fase D).
 
+## Boundary with Mercado Pago reliability
+
+The Mercado Pago reliability work does **not** implement this plan's pricing
+rename or source-of-truth migration. It preserves the current Free/Plus/Pro
+labels, CLP amounts, and durable `free` / `pro` / `scale` slugs; its only
+catalogue presentation change is returning `trialDays: 0` for Mercado Pago.
+Any slug, price, or broader catalogue change remains owned and separately
+reviewed by this plan.
+
 ## Objective
 
 Cerrar deuda de seguridad de bajo riesgo/alto ruido (grants sobrantes, SSRF,

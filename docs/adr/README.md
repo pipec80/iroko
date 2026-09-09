@@ -14,6 +14,10 @@ and be lost to future sessions.
 
 Filename convention: `NNNN-short-title.md`, numbered sequentially.
 
+- [0003 — Mercado Pago reliability boundaries](0003-mercadopago-reliability-boundaries.md)
+  — **Accepted**, 2026-09-09. Durable checkout coordination and recovery through
+  the existing billing reducer; not implementation or runtime evidence.
+
 Use `Proposed`, `Accepted`, `Superseded`, or `Deprecated` as the status. Do not
 rewrite an accepted decision to hide a change in direction: add a new ADR and
 link both records. Update this index whenever an ADR is added or changes
