@@ -292,6 +292,10 @@ describe('mercadopagoProvider.verifyWebhook', () => {
       provider: 'mercadopago',
       type: 'webhook_acknowledged',
       reason: 'unlinked_payment',
+      externalEventId: 'mercadopago:webhook:notification_not_subscription',
+      resourceType: 'payment',
+      resourceId: paymentId,
+      observedStatus: 'approved',
       raw: {
         notification: { type: 'payment', data: { id: paymentId } },
         payment: { id: paymentId, status: 'approved' },
@@ -337,6 +341,10 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         provider: 'mercadopago',
         type: 'webhook_acknowledged',
         reason: 'payment_status_divergence',
+        externalEventId: 'mercadopago:webhook:notification_payment_refunded',
+        resourceType: 'payment',
+        resourceId: paymentId,
+        observedStatus: 'refunded',
       }),
     );
   });
@@ -720,9 +728,77 @@ describe('mercadopagoProvider.verifyWebhook', () => {
       provider: 'mercadopago',
       type: 'webhook_acknowledged',
       reason: 'unsupported_topic',
+      externalEventId: `mercadopago:unknown:${dataId}`,
+      resourceType: 'unknown',
+      resourceId: dataId,
       raw: { type: 'unsupported_topic', data: { id: dataId } },
     });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('mercadopagoProvider.recoverResource', () => {
+  it('converges a previously unlinked payment using the same event normalizer', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'pay_recovery', status: 'approved' }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [
+            {
+              id: 'invoice_recovery',
+              preapproval_id: 'pa_recovery',
+              external_reference: 'intent_recovery',
+              transaction_amount: '19990',
+              currency_id: 'CLP',
+              date_created: '2026-09-09T10:00:00Z',
+              date_approved: '2026-09-09T10:01:00Z',
+              payment: { id: 'pay_recovery', status: 'approved' },
+            },
+          ],
+        }),
+      });
+
+    await expect(
+      mercadopagoProvider.recoverResource?.({
+        resourceType: 'payment',
+        resourceId: 'pay_recovery',
+      }),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        kind: 'event',
+        event: expect.objectContaining({ type: 'invoice_paid', paidAt: '2026-09-09T10:01:00Z' }),
+      }),
+    );
+  });
+
+  it('keeps an unindexed payment pending instead of guessing that it is unrelated', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'pay_delayed', status: 'approved' }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+
+    await expect(
+      mercadopagoProvider.recoverResource?.({ resourceType: 'payment', resourceId: 'pay_delayed' }),
+    ).resolves.toEqual({ kind: 'pending' });
+  });
+
+  it('classifies refunds for manual review without producing an access event', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ id: 'pay_refund', status: 'refunded' }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+
+    await expect(
+      mercadopagoProvider.recoverResource?.({ resourceType: 'payment', resourceId: 'pay_refund' }),
+    ).resolves.toEqual({ kind: 'anomaly', anomalyType: 'refund', observedStatus: 'refunded' });
   });
 });
 

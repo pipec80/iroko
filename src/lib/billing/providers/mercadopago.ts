@@ -7,6 +7,7 @@ import type {
   CancelSubscriptionParams,
   CheckoutParams,
   PaymentProvider,
+  ProviderRecoveryResult,
   SubscriptionStatus,
   WebhookVerificationContext,
 } from '../types';
@@ -33,6 +34,7 @@ interface PreapprovalResource {
   external_reference: string;
   next_payment_date?: string;
   date_created?: string;
+  last_modified?: string;
 }
 
 interface AuthorizedPaymentResource {
@@ -42,6 +44,7 @@ interface AuthorizedPaymentResource {
   transaction_amount?: unknown;
   currency_id?: unknown;
   date_created?: unknown;
+  date_approved?: unknown;
   payment: {
     id: string | number;
     status: string;
@@ -50,8 +53,8 @@ interface AuthorizedPaymentResource {
 }
 
 interface PaymentResource {
-  id?: unknown;
-  status?: unknown;
+  id: string | number;
+  status: string;
 }
 
 interface AuthorizedPaymentSearchResponse {
@@ -268,9 +271,18 @@ function normalizeAuthorizedPaymentEvent(
     : normalizeAmount(payment.transaction_amount, currency);
   if (payment.transaction_amount !== undefined && amount === null) return null;
   if (typeof payment.date_created !== 'string') return null;
+  const approvedAt =
+    typeof payment.date_approved === 'string' ? payment.date_approved : payment.date_created;
 
   if (NON_TERMINAL_PAYMENT_STATUSES.has(payment.payment.status)) {
-    return acknowledgedWebhook('payment_pending', payment);
+    return acknowledgedWebhook({
+      reason: 'payment_pending',
+      raw: payment,
+      externalEventId,
+      resourceType: 'payment',
+      resourceId: paymentId,
+      observedStatus: payment.payment.status,
+    });
   }
   if (payment.payment.status === 'rejected') {
     return {
@@ -292,7 +304,14 @@ function normalizeAuthorizedPaymentEvent(
     };
   }
   if (payment.payment.status !== 'approved') {
-    return acknowledgedWebhook('payment_status_divergence', payment);
+    return acknowledgedWebhook({
+      reason: 'payment_status_divergence',
+      raw: payment,
+      externalEventId,
+      resourceType: 'payment',
+      resourceId: paymentId,
+      observedStatus: payment.payment.status,
+    });
   }
   if (amount === null || currency === undefined) return null;
   return {
@@ -305,16 +324,27 @@ function normalizeAuthorizedPaymentEvent(
     externalPaymentId: paymentId,
     amountPaid: amount,
     currency,
-    paidAt: payment.date_created,
+    paidAt: approvedAt,
     raw: payment,
   };
 }
 
 function acknowledgedWebhook(
-  reason: AcknowledgedWebhook['reason'],
-  raw: unknown,
+  input: Omit<AcknowledgedWebhook, 'provider' | 'type'>,
 ): AcknowledgedWebhook {
-  return { provider: 'mercadopago', type: 'webhook_acknowledged', reason, raw };
+  return { provider: 'mercadopago', type: 'webhook_acknowledged', ...input };
+}
+
+function anomalyTypeForPaymentStatus(status: string): ProviderRecoveryResult | null {
+  if (status === 'refunded')
+    return { kind: 'anomaly', anomalyType: 'refund', observedStatus: status };
+  if (status === 'charged_back') {
+    return { kind: 'anomaly', anomalyType: 'chargeback', observedStatus: status };
+  }
+  if (status === 'in_mediation') {
+    return { kind: 'anomaly', anomalyType: 'mediation', observedStatus: status };
+  }
+  return null;
 }
 
 /**
@@ -481,7 +511,7 @@ export const mercadopagoProvider: PaymentProvider = {
           type: 'subscription_canceled',
           accountId: preapproval.external_reference,
           externalSubscriptionId: preapproval.id,
-          canceledAt: preapproval.date_created,
+          canceledAt: preapproval.last_modified,
           accessUntil: preapproval.next_payment_date,
           raw: preapproval,
         };
@@ -518,16 +548,16 @@ export const mercadopagoProvider: PaymentProvider = {
     }
 
     if (body.type === 'payment') {
-      const providerPayment = await fetchResource<unknown>(
-        `/v1/payments/${encodeURIComponent(dataId)}`,
-      );
+      const [providerPayment, invoices] = await Promise.all([
+        fetchResource<unknown>(`/v1/payments/${encodeURIComponent(dataId)}`),
+        fetchResource<AuthorizedPaymentSearchResponse>(
+          `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
+        ),
+      ]);
       if (!isPaymentResource(providerPayment)) return null;
       const providerPaymentId = normalizeExternalId(providerPayment.id);
       if (!providerPaymentId || providerPaymentId !== dataId) return null;
 
-      const invoices = await fetchResource<AuthorizedPaymentSearchResponse>(
-        `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
-      );
       const invoice =
         Array.isArray(invoices.results) ?
           invoices.results.find(
@@ -537,16 +567,23 @@ export const mercadopagoProvider: PaymentProvider = {
           )
         : undefined;
       if (!invoice) {
-        return acknowledgedWebhook('unlinked_payment', {
-          notification: body,
-          payment: providerPayment,
+        return acknowledgedWebhook({
+          reason: 'unlinked_payment',
+          externalEventId: webhookEventId(context, `mercadopago:payment:${dataId}`),
+          resourceType: 'payment',
+          resourceId: dataId,
+          observedStatus: providerPayment.status,
+          raw: { notification: body, payment: providerPayment },
         });
       }
       if (invoice.payment.status !== providerPayment.status) {
-        return acknowledgedWebhook('payment_status_divergence', {
-          notification: body,
-          payment: providerPayment,
-          authorizedPayment: invoice,
+        return acknowledgedWebhook({
+          reason: 'payment_status_divergence',
+          externalEventId: webhookEventId(context, `mercadopago:payment:${dataId}`),
+          resourceType: 'payment',
+          resourceId: dataId,
+          observedStatus: providerPayment.status,
+          raw: { notification: body, payment: providerPayment, authorizedPayment: invoice },
         });
       }
 
@@ -561,6 +598,54 @@ export const mercadopagoProvider: PaymentProvider = {
       );
     }
 
-    return acknowledgedWebhook('unsupported_topic', body);
+    return acknowledgedWebhook({
+      reason: 'unsupported_topic',
+      externalEventId: webhookEventId(context, `mercadopago:unknown:${dataId}`),
+      resourceType: 'unknown',
+      resourceId: dataId,
+      raw: body,
+    });
+  },
+
+  async recoverResource(input): Promise<ProviderRecoveryResult> {
+    const dataId = input.resourceId;
+    const [providerPayment, invoices] = await Promise.all([
+      fetchResource<unknown>(`/v1/payments/${encodeURIComponent(dataId)}`),
+      fetchResource<AuthorizedPaymentSearchResponse>(
+        `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
+      ),
+    ]);
+    if (!isPaymentResource(providerPayment) || normalizeExternalId(providerPayment.id) !== dataId) {
+      return { kind: 'unrelated' };
+    }
+    const adverse = anomalyTypeForPaymentStatus(providerPayment.status);
+    if (adverse) return adverse;
+    const invoice =
+      Array.isArray(invoices.results) ?
+        invoices.results.find(
+          (candidate): candidate is AuthorizedPaymentResource =>
+            isAuthorizedPaymentResource(candidate) &&
+            normalizeExternalId(candidate.payment.id) === dataId,
+        )
+      : undefined;
+    // Absence from the authorized-payment search is not proof that an approved
+    // payment is unrelated: Mercado Pago's indexes can converge after delivery.
+    if (!invoice) return { kind: 'pending' };
+    if (invoice.payment.status !== providerPayment.status) {
+      return {
+        kind: 'anomaly',
+        anomalyType: 'status_divergence',
+        observedStatus: providerPayment.status,
+      };
+    }
+    const invoiceId = normalizeExternalId(invoice.id);
+    if (!invoiceId) return { kind: 'unrelated' };
+    const event = normalizeAuthorizedPaymentEvent(
+      invoice,
+      authorizedPaymentEventId(invoiceId, dataId, invoice.payment.status),
+    );
+    if (!event) return { kind: 'unrelated' };
+    if (event.type === 'webhook_acknowledged') return { kind: 'pending' };
+    return { kind: 'event', event };
   },
 };

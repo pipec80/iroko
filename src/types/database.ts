@@ -221,6 +221,88 @@ export type Database = {
           },
         ]
       }
+      financial_anomalies: {
+        Row: {
+          account_id: string | null
+          anomaly_type: string
+          created_at: string
+          external_resource_id: string
+          first_seen_at: string
+          id: string
+          invoice_id: string | null
+          last_seen_at: string
+          observed_status: string | null
+          occurrence_count: number
+          payment_id: string | null
+          provider: string
+          resolution_code: string | null
+          resolved_at: string | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          anomaly_type: string
+          created_at?: string
+          external_resource_id: string
+          first_seen_at?: string
+          id?: string
+          invoice_id?: string | null
+          last_seen_at?: string
+          observed_status?: string | null
+          occurrence_count?: number
+          payment_id?: string | null
+          provider: string
+          resolution_code?: string | null
+          resolved_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          anomaly_type?: string
+          created_at?: string
+          external_resource_id?: string
+          first_seen_at?: string
+          id?: string
+          invoice_id?: string | null
+          last_seen_at?: string
+          observed_status?: string | null
+          occurrence_count?: number
+          payment_id?: string | null
+          provider?: string
+          resolution_code?: string | null
+          resolved_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_anomalies_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_anomalies_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payment_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_anomalies_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invoice_line_items: {
         Row: {
           amount: number
@@ -559,6 +641,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      recovery_jobs: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          external_event_id: string
+          id: string
+          last_error_code: string | null
+          locked_at: string | null
+          next_attempt_at: string
+          provider: string
+          reason: string
+          resolution: string | null
+          resource_id: string
+          resource_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          external_event_id: string
+          id?: string
+          last_error_code?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          provider: string
+          reason: string
+          resolution?: string | null
+          resource_id: string
+          resource_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          external_event_id?: string
+          id?: string
+          last_error_code?: string | null
+          locked_at?: string | null
+          next_attempt_at?: string
+          provider?: string
+          reason?: string
+          resolution?: string | null
+          resource_id?: string
+          resource_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       subscription_items: {
         Row: {
@@ -1767,6 +1900,28 @@ export type Database = {
         Returns: undefined
       }
       check_request: { Args: never; Returns: undefined }
+      claim_billing_recovery_jobs: {
+        Args: { p_batch_size: number; p_visibility_seconds: number }
+        Returns: {
+          attempt_count: number
+          id: string
+          provider: string
+          reason: string
+          resource_id: string
+          resource_type: string
+        }[]
+      }
+      complete_billing_recovery_job: {
+        Args: {
+          p_job_id: string
+          p_last_error_code?: string
+          p_outcome: string
+        }
+        Returns: {
+          anomaly_created: boolean
+          status: string
+        }[]
+      }
       complete_onboarding: { Args: never; Returns: undefined }
       consume_recovery_code: { Args: { p_code: string }; Returns: boolean }
       count_unused_recovery_codes: { Args: never; Returns: number }
@@ -1807,6 +1962,16 @@ export type Database = {
       end_impersonation_session: {
         Args: { p_reason?: string; p_session_id: string }
         Returns: undefined
+      }
+      enqueue_billing_recovery_job: {
+        Args: {
+          p_external_event_id: string
+          p_provider: string
+          p_reason: string
+          p_resource_id: string
+          p_resource_type: string
+        }
+        Returns: string
       }
       export_my_data: { Args: never; Returns: Json }
       generate_recovery_codes: { Args: never; Returns: string[] }
@@ -2225,6 +2390,17 @@ export type Database = {
           p_url: string
         }
         Returns: undefined
+      }
+      upsert_billing_financial_anomaly: {
+        Args: {
+          p_account_id?: string
+          p_anomaly_type: string
+          p_external_resource_id: string
+          p_observed_status?: string
+          p_provider: string
+          p_subscription_id?: string
+        }
+        Returns: string
       }
       verify_api_key: { Args: { p_key_hash: string }; Returns: string }
     }

@@ -56,8 +56,26 @@ export interface AcknowledgedWebhook {
   type: 'webhook_acknowledged';
   reason:
     'unlinked_payment' | 'payment_pending' | 'payment_status_divergence' | 'unsupported_topic';
+  externalEventId: string;
+  resourceType: 'payment' | 'subscription' | 'unknown';
+  resourceId: string;
+  observedStatus?: string;
   raw: unknown;
 }
+
+export type BillingAnomalyType =
+  'refund' | 'chargeback' | 'mediation' | 'status_divergence' | 'unresolved_payment';
+
+export interface ProviderRecoveryInput {
+  resourceType: 'payment';
+  resourceId: string;
+}
+
+export type ProviderRecoveryResult =
+  | { kind: 'event'; event: NormalizedBillingEvent }
+  | { kind: 'pending' }
+  | { kind: 'unrelated' }
+  | { kind: 'anomaly'; anomalyType: BillingAnomalyType; observedStatus?: string };
 
 export type ProviderWebhookResult = NormalizedBillingEvent | AcknowledgedWebhook;
 
@@ -72,4 +90,5 @@ export interface PaymentProvider {
     signature: string,
     context?: WebhookVerificationContext,
   ): Promise<ProviderWebhookResult | null>;
+  recoverResource?(input: ProviderRecoveryInput): Promise<ProviderRecoveryResult>;
 }
