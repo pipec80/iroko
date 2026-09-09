@@ -103,6 +103,56 @@ export type Database = {
   }
   billing: {
     Tables: {
+      checkout_intents: {
+        Row: {
+          account_id: string
+          checkout_url: string | null
+          created_at: string
+          external_subscription_id: string | null
+          failure_code: string | null
+          id: string
+          lease_expires_at: string | null
+          plan_id: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          checkout_url?: string | null
+          created_at?: string
+          external_subscription_id?: string | null
+          failure_code?: string | null
+          id?: string
+          lease_expires_at?: string | null
+          plan_id: string
+          provider: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          checkout_url?: string | null
+          created_at?: string
+          external_subscription_id?: string | null
+          failure_code?: string | null
+          id?: string
+          lease_expires_at?: string | null
+          plan_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkout_intents_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           account_id: string
@@ -1675,6 +1725,14 @@ export type Database = {
         }
         Returns: string
       }
+      attach_billing_checkout_remote: {
+        Args: {
+          p_checkout_url: string
+          p_external_subscription_id: string
+          p_intent_id: string
+        }
+        Returns: string
+      }
       begin_impersonation_session: {
         Args: { p_reason: string; p_target_user_id: string }
         Returns: {
@@ -2015,6 +2073,14 @@ export type Database = {
           url: string
         }[]
       }
+      mark_billing_checkout_failed: {
+        Args: {
+          p_failure_code: string
+          p_intent_id: string
+          p_outcome_unknown: boolean
+        }
+        Returns: string
+      }
       mark_notifications_read: { Args: { p_ids: string[] }; Returns: undefined }
       publish_announcement: {
         Args: {
@@ -2057,6 +2123,24 @@ export type Database = {
         Returns: undefined
       }
       request_account_deletion: { Args: never; Returns: undefined }
+      reserve_billing_checkout: {
+        Args: { p_account_id: string; p_plan_id: string; p_provider: string }
+        Returns: {
+          action: string
+          intent_id: string
+          url: string
+        }[]
+      }
+      resolve_billing_checkout_reference: {
+        Args: {
+          p_external_reference: string
+          p_external_subscription_id: string
+        }
+        Returns: {
+          account_id: string
+          checkout_intent_id: string
+        }[]
+      }
       resolve_billing_plan_by_external_price: {
         Args: { p_external_price_id: string; p_provider: string }
         Returns: {

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   resolvePlanByExternalPrice: vi.fn(),
   getPaymentProvider: vi.fn(),
   verifyWebhook: vi.fn(),
+  adminRpc: vi.fn(),
   maybeSingle: vi.fn(),
   captureServer: vi.fn(),
   notify: vi.fn(async () => {}),
@@ -22,6 +23,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => ({
+    rpc: mocks.adminRpc,
     from: vi.fn(() => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
@@ -91,6 +93,10 @@ describe('handleProviderWebhook', () => {
       planId: 'plan-pro-month',
       planSlug: 'pro',
       interval: 'month',
+    });
+    mocks.adminRpc.mockResolvedValue({
+      data: [{ account_id: 'a1', checkout_intent_id: null }],
+      error: null,
     });
   });
 
@@ -216,6 +222,70 @@ describe('handleProviderWebhook', () => {
       'Billing webhook reduced',
     );
     expect(JSON.stringify(mocks.logger.info.mock.calls)).not.toContain('never-log-this');
+  });
+
+  it('resolves a Mercado Pago intent reference before reducing the event', async () => {
+    const event = {
+      ...validEvent,
+      provider: 'mercadopago' as const,
+      accountId: '00000000-0000-0000-0000-00000000a111',
+      externalSubscriptionId: 'preapproval-123',
+    };
+    mocks.verifyWebhook.mockResolvedValue(event);
+    mocks.adminRpc.mockResolvedValue({
+      data: [
+        {
+          account_id: '00000000-0000-0000-0000-00000000a001',
+          checkout_intent_id: '00000000-0000-0000-0000-00000000a111',
+        },
+      ],
+      error: null,
+    });
+    mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 200,
+      body: { result: 'applied' },
+    });
+    expect(mocks.adminRpc).toHaveBeenCalledWith('resolve_billing_checkout_reference', {
+      p_external_reference: '00000000-0000-0000-0000-00000000a111',
+      p_external_subscription_id: 'preapproval-123',
+    });
+    expect(mocks.reduceBillingEvent).toHaveBeenCalledWith({
+      ...event,
+      accountId: '00000000-0000-0000-0000-00000000a001',
+    });
+  });
+
+  it('rejects an uncorrelated historical Mercado Pago reference without mutation', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      ...validEvent,
+      provider: 'mercadopago',
+      accountId: '00000000-0000-0000-0000-00000000a999',
+      externalSubscriptionId: 'foreign-preapproval',
+    });
+    mocks.adminRpc.mockResolvedValue({ data: [], error: null });
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 500,
+      body: { error: 'billing_correlation_failed' },
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('returns a retriable 500 when durable correlation is unavailable', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      ...validEvent,
+      provider: 'mercadopago',
+      accountId: '00000000-0000-0000-0000-00000000a111',
+    });
+    mocks.adminRpc.mockRejectedValue(new Error('database unavailable'));
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 500,
+      body: { error: 'billing_correlation_failed' },
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 
   it('returns 404 when the requested provider is not configured', async () => {

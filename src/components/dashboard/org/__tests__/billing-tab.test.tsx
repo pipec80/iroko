@@ -176,6 +176,24 @@ describe('BillingTab — role-awareness', () => {
     await waitFor(() => expect(screen.getByText('Redirigiendo a Mercado Pago…')).toBeDefined());
   });
 
+  it.each([
+    ['processing', 'El checkout ya se está procesando. Vuelve a comprobar en unos instantes.'],
+    [
+      'needs_review',
+      'No pudimos confirmar si Mercado Pago creó el checkout. No vuelvas a intentarlo; revisaremos el estado.',
+    ],
+  ] as const)('shows the durable %s checkout state without redirecting', async (kind, message) => {
+    mocks.startCheckout.mockResolvedValue({ data: { kind, intentId: 'intent-123' } });
+    renderBillingTab('owner');
+    const button = await waitFor(() => screen.getByTestId('subscribe-pro'));
+
+    fireEvent.click(button);
+
+    await waitFor(() => expect(screen.getByText(message)).toBeDefined());
+    expect(window.location.pathname).not.toContain('mercadopago');
+    expect(button).toHaveProperty('disabled', true);
+  });
+
   it('keeps confirming a returned Mercado Pago checkout until the subscription activates', async () => {
     mocks.searchParams = new URLSearchParams('preapproval_id=preapproval_1');
 

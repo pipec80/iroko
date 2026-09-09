@@ -418,7 +418,7 @@ export const mercadopagoProvider: PaymentProvider = {
     // se ignora deliberadamente en este adapter (documentado en el spec, §4).
     const preapproval = await postResource<{ id: string; init_point: string }>('/preapproval', {
       reason: `Iroko ${params.planSlug} subscription`,
-      external_reference: params.accountId,
+      external_reference: params.externalReference ?? params.accountId,
       payer_email: params.customerEmail,
       back_url: toProviderBackUrl(params.successUrl),
       notification_url: env.MERCADOPAGO_WEBHOOK_URL,

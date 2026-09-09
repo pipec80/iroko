@@ -931,6 +931,8 @@
     "plan_trial": "{days} jours d'essai gratuit",
     "plan_subscribe_btn": "S'abonner",
     "checkout_redirecting": "Redirection vers Mercado Pago…",
+    "checkout_processing": "Le paiement est déjà en cours de traitement. Vérifiez à nouveau dans quelques instants.",
+    "checkout_needs_review": "Nous n’avons pas pu confirmer si Mercado Pago a créé le paiement. Ne réessayez pas ; nous vérifierons son état.",
     "checkout_confirming": "Nous confirmons votre abonnement avec Mercado Pago…",
     "checkout_confirmation_timeout": "La confirmation prend plus de temps que prévu.",
     "checkout_confirmation_retry": "Vérifier à nouveau",

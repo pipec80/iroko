@@ -10,6 +10,7 @@ import { cancelBillingSubscription, startBillingCheckout } from '@/lib/billing/s
 import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
 import type { NormalizedBillingEvent } from '@/lib/billing/events';
 import type { SubscriptionStatus } from '@/lib/billing/types';
+import type { CheckoutStartResult } from '@/lib/billing/types';
 import { handleProviderWebhook } from '@/lib/billing/webhook-handler';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
@@ -112,7 +113,7 @@ interface MockCheckoutToken {
 export const startCheckout = withServerAction(async function startCheckout(input: {
   planSlug: string;
   interval: string;
-}): Promise<ActionResult<{ url: string }>> {
+}): Promise<ActionResult<CheckoutStartResult>> {
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return { data: null, error: 'validation_error' };
 
@@ -131,16 +132,16 @@ export const startCheckout = withServerAction(async function startCheckout(input
     return { data: null, error: 'not_authenticated' };
   }
 
-  let url: string;
+  let checkout: CheckoutStartResult;
   try {
-    ({ url } = await startBillingCheckout({
+    checkout = await startBillingCheckout({
       accountId,
       customerEmail,
       planSlug: parsed.data.planSlug,
       interval: parsed.data.interval,
       successUrl: `${env.SITE_URL}/es/dashboard/billing?status=success`,
       cancelUrl: `${env.SITE_URL}/es/dashboard/billing?status=cancelled`,
-    }));
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'checkout_failed';
     if (message === 'not_authorized' || message === 'active_paid_subscription_exists') {
@@ -159,7 +160,7 @@ export const startCheckout = withServerAction(async function startCheckout(input
     });
   }
 
-  return { data: { url } };
+  return { data: checkout };
 });
 
 /** Confirma el pago simulado: firma el evento y lo entrega al webhook real. */
