@@ -1809,6 +1809,14 @@ export type Database = {
           trial_days: number
         }[]
       }
+      get_billing_checkout_confirmation: {
+        Args: { p_account_id: string; p_external_subscription_id: string }
+        Returns: {
+          external_subscription_id: string
+          state: string
+          status: Database["billing"]["Enums"]["subscription_status"]
+        }[]
+      }
       get_billing_overview: {
         Args: { p_account_id: string }
         Returns: {

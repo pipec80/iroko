@@ -1,6 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { BillingTab } from '@/components/dashboard/org/billing-tab';
-import { getActiveAccountRole } from '@/lib/active-account';
+import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
 
 import type { Metadata } from 'next';
 
@@ -18,7 +18,11 @@ export default async function BillingPage({ params }: { params: Promise<{ locale
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, role] = await Promise.all([getTranslations('Billing'), getActiveAccountRole()]);
+  const [t, role, accountId] = await Promise.all([
+    getTranslations('Billing'),
+    getActiveAccountRole(),
+    getActiveAccountId(),
+  ]);
 
   return (
     <div className="animate-in fade-in space-y-6 duration-700">
@@ -28,7 +32,7 @@ export default async function BillingPage({ params }: { params: Promise<{ locale
         <p className="text-muted-foreground mt-1 text-[15px]">{t('page_description')}</p>
       </header>
 
-      <BillingTab currentUserRole={role} />
+      {accountId && <BillingTab currentUserRole={role} accountId={accountId} />}
     </div>
   );
 }

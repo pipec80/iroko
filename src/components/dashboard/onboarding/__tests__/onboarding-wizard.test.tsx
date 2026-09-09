@@ -20,6 +20,16 @@ vi.mock('@/app/[locale]/dashboard/team/actions', () => ({
   inviteMembers: vi.fn(),
 }));
 
+vi.mock('@/components/dashboard/team/invite-form', () => ({
+  InviteForm: ({ secondaryButton }: { secondaryButton: React.ReactNode }) => secondaryButton,
+}));
+
+vi.mock('@/components/dashboard/org/billing-tab', () => ({
+  BillingTab: ({ accountId }: { accountId?: string }) => (
+    <div data-testid="billing-account">{accountId}</div>
+  ),
+}));
+
 vi.mock('@/app/[locale]/dashboard/billing/actions', () => ({
   getBillingData: vi.fn(),
   listInvoices: vi.fn(),
@@ -52,6 +62,7 @@ const messages = {
     next: 'Siguiente',
     back: 'Atrás',
     skip_setup: 'Omitir configuración',
+    invite_later: 'Invitar más tarde',
   },
 };
 
@@ -92,7 +103,7 @@ describe('OnboardingWizard', () => {
   });
 
   it('advancing to step 2 shows Back, which returns to step 1', async () => {
-    mocks.confirmOrgName.mockResolvedValue({ success: true });
+    mocks.confirmOrgName.mockResolvedValue({ success: true, accountId: 'account-new' });
     renderWithIntl(<OnboardingWizard initialOrgName="Mi Empresa" />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
@@ -100,5 +111,18 @@ describe('OnboardingWizard', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Atrás' }));
     expect(screen.getByText('Paso 1 de 4')).toBeDefined();
+  });
+
+  it('passes the newly active team account to the billing step', async () => {
+    mocks.confirmOrgName.mockResolvedValue({ success: true, accountId: 'account-new' });
+    renderWithIntl(<OnboardingWizard initialOrgName="Mi Empresa" />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+    await waitFor(() => expect(screen.getByText('Invitar más tarde')).toBeDefined());
+    fireEvent.click(screen.getByRole('button', { name: 'Invitar más tarde' }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('billing-account').textContent).toBe('account-new'),
+    );
   });
 });

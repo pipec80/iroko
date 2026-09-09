@@ -16,7 +16,7 @@ export function StepOrg({
   onNext,
 }: {
   initialName: string | null;
-  onNext: () => void;
+  onNext: (accountId: string) => void;
 }) {
   const t = useTranslations('Onboarding');
   const inputId = useId();
@@ -24,7 +24,7 @@ export function StepOrg({
   const [state, submit, isPending] = useActionState(
     async (_prev: { error?: string }, formData: FormData) => {
       const result = await confirmOrgName(String(formData.get('name') ?? ''));
-      if (result.success) onNext();
+      if (result.success && result.accountId) onNext(result.accountId);
       return result;
     },
     {},

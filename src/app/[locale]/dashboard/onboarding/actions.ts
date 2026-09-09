@@ -32,7 +32,7 @@ export const getOnboardingOrg = withServerAction(async function getOnboardingOrg
 
 export const confirmOrgName = withServerAction(async function confirmOrgName(
   name: string,
-): Promise<{ error?: string; success?: boolean }> {
+): Promise<{ error?: string; success?: boolean; accountId?: string }> {
   const parsed = orgNameSchema.safeParse({ name });
   if (!parsed.success) return { error: 'invalid_name' };
 
@@ -53,7 +53,7 @@ export const confirmOrgName = withServerAction(async function confirmOrgName(
   // fallaría con team_limit_reached.
   const isRename = activeAccount?.type === 'team';
 
-  const { error } =
+  const { data: createdAccountId, error } =
     isRename ?
       // authenticated no tiene GRANT UPDATE directo sobre accounts (grants
       // hardening) — pasa por RPC SECURITY DEFINER, igual que set_account_logo.
@@ -69,6 +69,15 @@ export const confirmOrgName = withServerAction(async function confirmOrgName(
       'confirmOrgName failed',
     );
     return { error: error.message ?? 'update_failed' };
+  }
+
+  const confirmedAccountId = isRename ? accountId : createdAccountId;
+  if (typeof confirmedAccountId !== 'string') {
+    logger.error(
+      { action: 'onboarding.confirm_org_name', isRename },
+      'confirmOrgName returned no account id',
+    );
+    return { error: 'update_failed' };
   }
 
   // create_team deja el team nuevo como cuenta activa en profiles, pero el JWT
@@ -91,11 +100,11 @@ export const confirmOrgName = withServerAction(async function confirmOrgName(
       event: 'onboarding_step_completed',
       properties: { step: 'org_name' },
       distinctId: userId,
-      accountId,
+      accountId: confirmedAccountId,
     });
   }
 
-  return { success: true };
+  return { success: true, accountId: confirmedAccountId };
 });
 
 export const completeOnboarding = withServerAction(async function completeOnboarding(): Promise<{

@@ -53,6 +53,7 @@ import {
   startCheckout,
   confirmMockCheckout,
   cancelSubscription,
+  getCheckoutConfirmation,
   getBillingData,
   listInvoices,
 } from '../actions';
@@ -501,7 +502,7 @@ describe('billing actions', () => {
         interval: 'month',
         price: 19_990,
         currency: 'CLP',
-        trialDays: 14,
+        trialDays: 0,
         features: { webhooks_enabled: true },
         limits: { api_keys_max: 20 },
       },
@@ -512,7 +513,7 @@ describe('billing actions', () => {
         interval: 'month',
         price: 102_990,
         currency: 'CLP',
-        trialDays: 14,
+        trialDays: 0,
         features: { priority_support: true },
         limits: { api_keys_max: 100 },
       },
@@ -554,13 +555,56 @@ describe('billing actions', () => {
     });
   });
 
-  it('getBillingData returns null overview when the member is not admin', async () => {
+  it('getBillingData preserves the catalog for a read-only role rejected with 42501', async () => {
     mocks.rpc.mockImplementation((fn: string) => {
-      if (fn === 'get_active_plans') return Promise.resolve({ data: [], error: null });
-      return Promise.resolve({ data: null, error: { message: 'not_authorized' } });
+      if (fn === 'get_active_plans') {
+        return Promise.resolve({
+          data: [
+            {
+              slug: 'free',
+              name: 'Free',
+              description: null,
+              interval: 'month',
+              price: 0,
+              currency: 'USD',
+              trial_days: 0,
+              features: {},
+              limits: {},
+            },
+          ],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: null, error: { code: '42501', message: 'not_authorized' } });
     });
     const res = await getBillingData();
+    expect(res.error).toBeUndefined();
+    expect(res.data?.plans).toHaveLength(1);
     expect(res.data?.overview).toBeNull();
+  });
+
+  it('getBillingData returns fetch_failed when the catalog query fails', async () => {
+    mocks.rpc.mockImplementation((fn: string) =>
+      fn === 'get_active_plans' ?
+        Promise.resolve({ data: null, error: { code: 'XX000', message: 'catalog_down' } })
+      : Promise.resolve({ data: null, error: null }),
+    );
+
+    const res = await getBillingData();
+
+    expect(res).toEqual({ data: null, error: 'fetch_failed' });
+  });
+
+  it('getBillingData returns fetch_failed when the billing overview query fails unexpectedly', async () => {
+    mocks.rpc.mockImplementation((fn: string) =>
+      fn === 'get_active_plans' ?
+        Promise.resolve({ data: [], error: null })
+      : Promise.resolve({ data: null, error: { code: 'XX000', message: 'overview_down' } }),
+    );
+
+    const res = await getBillingData();
+
+    expect(res).toEqual({ data: null, error: 'fetch_failed' });
   });
 
   it('getBillingData returns no_account when there is no active account', async () => {
@@ -568,6 +612,79 @@ describe('billing actions', () => {
     const res = await getBillingData();
     expect(res.error).toBe('no_account');
     expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('getCheckoutConfirmation returns the exact pending Mercado Pago subscription', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          state: 'pending',
+          external_subscription_id: 'preapproval-123',
+          status: 'incomplete',
+        },
+      ],
+      error: null,
+    });
+
+    const res = await getCheckoutConfirmation({ externalSubscriptionId: 'preapproval-123' });
+
+    expect(mocks.rpc).toHaveBeenCalledWith('get_billing_checkout_confirmation', {
+      p_account_id: 'a1',
+      p_external_subscription_id: 'preapproval-123',
+    });
+    expect(res.data).toEqual({
+      state: 'pending',
+      externalSubscriptionId: 'preapproval-123',
+      status: 'incomplete',
+    });
+  });
+
+  it('getCheckoutConfirmation preserves not_found for an id outside the active account', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          state: 'not_found',
+          external_subscription_id: 'preapproval-other',
+          status: null,
+        },
+      ],
+      error: null,
+    });
+
+    const res = await getCheckoutConfirmation({ externalSubscriptionId: 'preapproval-other' });
+
+    expect(res.data).toEqual({
+      state: 'not_found',
+      externalSubscriptionId: 'preapproval-other',
+      status: null,
+    });
+  });
+
+  it('getCheckoutConfirmation rejects an empty external id before querying', async () => {
+    const res = await getCheckoutConfirmation({ externalSubscriptionId: '   ' });
+
+    expect(res).toEqual({ data: null, error: 'validation_error' });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('getCheckoutConfirmation requires an active account', async () => {
+    mocks.getActiveAccountId.mockResolvedValue(null);
+
+    const res = await getCheckoutConfirmation({ externalSubscriptionId: 'preapproval-123' });
+
+    expect(res).toEqual({ data: null, error: 'no_account' });
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it('getCheckoutConfirmation maps unexpected database errors to fetch_failed', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: null,
+      error: { code: 'XX000', message: 'database unavailable' },
+    });
+
+    const res = await getCheckoutConfirmation({ externalSubscriptionId: 'preapproval-123' });
+
+    expect(res).toEqual({ data: null, error: 'fetch_failed' });
   });
 
   it('listInvoices maps the RPC rows and computes the next cursor', async () => {

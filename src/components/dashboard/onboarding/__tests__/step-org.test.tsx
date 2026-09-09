@@ -36,13 +36,13 @@ describe('StepOrg', () => {
   });
 
   it('calls onNext after successfully confirming the name', async () => {
-    mocks.confirmOrgName.mockResolvedValue({ success: true });
+    mocks.confirmOrgName.mockResolvedValue({ success: true, accountId: 'account-new' });
     const onNext = vi.fn();
     renderWithIntl(<StepOrg initialName="Mi Empresa" onNext={onNext} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
 
-    await waitFor(() => expect(onNext).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onNext).toHaveBeenCalledWith('account-new'));
     expect(mocks.confirmOrgName).toHaveBeenCalledWith('Mi Empresa');
   });
 

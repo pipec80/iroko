@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useInfiniteQuery, useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 
 import {
   cancelSubscription,
+  getCheckoutConfirmation,
   getBillingData,
   listInvoices,
   startCheckout,
@@ -15,6 +16,7 @@ import {
   type PlanRow,
 } from '@/app/[locale]/dashboard/billing/actions';
 import { PlanViewedTracker } from '@/components/analytics/plan-viewed-tracker';
+import { useRouter } from '@/i18n/routing';
 import { logClient } from '@/lib/logger-client';
 import { canManageBilling, type MembershipRole } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
@@ -43,24 +45,46 @@ function toDisplayAmount(amount: number, currency: string): number {
   return currency === 'CLP' ? amount : amount / 100;
 }
 
-export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRole | null }) {
+export function BillingTab({
+  currentUserRole,
+  accountId,
+}: {
+  currentUserRole: MembershipRole | null;
+  accountId: string;
+}) {
   const t = useTranslations('Billing');
   const locale = useLocale();
-  const preapprovalId = useSearchParams().get('preapproval_id');
+  const searchParams = useSearchParams();
+  const preapprovalId = searchParams.get('preapproval_id');
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const checkoutInFlight = useRef(false);
   const [interval, setInterval] = useState<Interval>('month');
+  const [confirmationRun, setConfirmationRun] = useState(0);
+  const [confirmationAttempts, setConfirmationAttempts] = useState(0);
   const canManage = canManageBilling(currentUserRole);
 
   const { data, isPending, error } = useQuery({
-    queryKey: ['billing', 'data'],
+    queryKey: ['billing', 'data', accountId],
     queryFn: async () => {
       const result = await getBillingData();
       if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
       return result.data;
     },
-    // Mercado Pago returns before its asynchronous subscription webhook is
-    // delivered. Keep polling only for this callback and only while no active
-    // overview exists; the provider webhook remains the state authority.
-    refetchInterval: (query) => (preapprovalId && !query.state.data?.overview ? 3_000 : false),
+    retry: false,
+  });
+
+  const confirmation = useQuery({
+    queryKey: ['billing', 'checkout-confirmation', accountId, preapprovalId, confirmationRun],
+    queryFn: async () => {
+      const result = await getCheckoutConfirmation({ externalSubscriptionId: preapprovalId ?? '' });
+      if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
+      setConfirmationAttempts((attempts) => attempts + 1);
+      return result.data;
+    },
+    enabled: Boolean(preapprovalId),
+    refetchInterval: (query) =>
+      query.state.data?.state === 'pending' && query.state.dataUpdateCount < 20 ? 3_000 : false,
     retry: false,
   });
 
@@ -73,6 +97,9 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
     onSuccess: (result) => {
       window.location.href = result.url;
     },
+    onSettled: () => {
+      checkoutInFlight.current = false;
+    },
     // Sin esto un not_authorized (el backend ya valida owner/admin) quedaba
     // solo en checkout.error, que nada en este componente renderizaba — el
     // fallo desaparecía en silencio.
@@ -83,6 +110,26 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
       );
     },
   });
+
+  useEffect(() => {
+    if (confirmation.data?.state !== 'confirmed') return;
+
+    void queryClient.invalidateQueries({ queryKey: ['billing', 'data', accountId] });
+    void queryClient.invalidateQueries({ queryKey: ['billing', 'invoices', accountId] });
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete('preapproval_id');
+    const suffix = nextParams.toString();
+    router.replace(suffix ? `/dashboard/billing?${suffix}` : '/dashboard/billing', {
+      scroll: false,
+    });
+  }, [accountId, confirmation.data?.state, queryClient, router, searchParams]);
+
+  const beginCheckout = (plan: { slug: string; interval: Interval }) => {
+    if (checkoutInFlight.current) return;
+    checkoutInFlight.current = true;
+    checkout.mutate(plan);
+  };
 
   if (isPending) {
     return <p className="text-muted-foreground text-[13px]">{t('billing_loading')}</p>;
@@ -99,7 +146,14 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
   const hasAnnualPlans = data.plans.some((plan) => plan.interval === 'year');
   const overview = data.overview;
   const checkoutAvailable = data.checkoutAvailable ?? true;
-  const isAwaitingCheckoutConfirmation = Boolean(preapprovalId && !overview);
+  const isCheckoutConfirmationTimedOut = Boolean(
+    preapprovalId && confirmation.data?.state === 'pending' && confirmationAttempts >= 20,
+  );
+  const isAwaitingCheckoutConfirmation = Boolean(
+    preapprovalId &&
+    !isCheckoutConfirmationTimedOut &&
+    (confirmation.isPending || confirmation.data?.state === 'pending'),
+  );
   const hasBlockingPaidSubscription = Boolean(
     overview &&
     overview.planSlug !== 'free' &&
@@ -140,6 +194,39 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
           style={{ background: 'var(--color-info-wash)', color: 'var(--color-info)' }}>
           <Loader2 aria-hidden className="size-4 animate-spin" />
           {t('checkout_confirming')}
+        </p>
+      )}
+      {isCheckoutConfirmationTimedOut && (
+        <div
+          role="status"
+          className="rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: 'var(--color-warning-wash)', color: 'var(--color-warning)' }}>
+          <p>{t('checkout_confirmation_timeout')}</p>
+          <button
+            type="button"
+            className="mt-2 font-semibold underline underline-offset-2"
+            onClick={() => {
+              setConfirmationAttempts(0);
+              setConfirmationRun((run) => run + 1);
+            }}>
+            {t('checkout_confirmation_retry')}
+          </button>
+        </div>
+      )}
+      {confirmation.data?.state === 'failed' && (
+        <p
+          role="alert"
+          className="rounded-lg px-3 py-2 text-[13px] font-medium"
+          style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
+          {t('checkout_confirmation_failed')}
+        </p>
+      )}
+      {confirmation.data?.state === 'not_found' && (
+        <p
+          role="status"
+          className="rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: 'var(--surface-2)', color: 'var(--text-secondary)' }}>
+          {t('checkout_confirmation_not_found')}
         </p>
       )}
       {!checkoutAvailable && (
@@ -186,12 +273,15 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
               plan={plan}
               isCurrent={overview?.planSlug === plan.slug}
               price={formatPrice(plan)}
-              onSubscribe={() => checkout.mutate({ slug: plan.slug, interval })}
+              onSubscribe={() => beginCheckout({ slug: plan.slug, interval })}
               isSubscribing={checkout.isPending}
               isProcessing={checkout.isPending && checkout.variables?.slug === plan.slug}
               canManage={canManage}
               isCheckoutBlocked={
-                hasBlockingPaidSubscription || !checkoutAvailable || isAwaitingCheckoutConfirmation
+                hasBlockingPaidSubscription ||
+                !checkoutAvailable ||
+                isAwaitingCheckoutConfirmation ||
+                Boolean(preapprovalId)
               }
             />
           ))}
@@ -200,7 +290,7 @@ export function BillingTab({ currentUserRole }: { currentUserRole: MembershipRol
 
       {overview && <SubscriptionStatusPanel overview={overview} formatDate={formatDate} />}
 
-      {overview && <InvoiceHistory />}
+      {overview && <InvoiceHistory accountId={accountId} />}
     </div>
   );
 }
@@ -346,13 +436,13 @@ function SubscriptionStatusPanel({
   );
 }
 
-function InvoiceHistory() {
+function InvoiceHistory({ accountId }: { accountId: string }) {
   const t = useTranslations('Billing');
   const locale = useLocale();
 
   const { data, isPending, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ['billing', 'invoices'],
+      queryKey: ['billing', 'invoices', accountId],
       queryFn: async ({ pageParam }) => {
         const result = await listInvoices({ cursor: pageParam ?? undefined });
         if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
