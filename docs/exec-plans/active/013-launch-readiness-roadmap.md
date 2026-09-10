@@ -10,7 +10,12 @@
 - Depende de: Plan 010 cerró el 2026-08-26; Plan 011 sigue siendo bloqueante.
   **No lanzar con "billing completamente resuelto" en ningún copy de D-4
   hasta que Plan 011 esté cerrado** — riesgo ya señalado en la sesión de
-  auditoría.
+  auditoría. Ítems abiertos concretos que bloquean "billing resuelto" para
+  Mercado Pago (identificados en el QA del 2026-09-10): el worker de
+  reconciliación/recovery no está agendado en Cloud
+  (`011-phase6-reconciliation-tasks.md`, Task 4) y no hay estado `past_due` /
+  UX de dunning para Mercado Pago (`011-phase2-mercadopago-tasks.md`,
+  "Deferred provider-coverage gaps").
 - Orden interno: D-1 → D-2 → D-3 → D-4 → D-5 → D-6 → lanzamiento. D-3
   (licenciamiento) tiene una restricción de timing dura: ver Nota de squash
   de migraciones abajo.

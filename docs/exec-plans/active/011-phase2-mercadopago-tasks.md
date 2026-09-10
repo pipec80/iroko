@@ -170,6 +170,57 @@ provider or runtime.
 - [ ] Before production enablement, normalize refunds and chargebacks (or
       persist a durable reconciliation anomaly). The current divergence warning
       is operational evidence, not a financial state transition.
+- [x] **2026-09-10 sandbox lifecycle (informal, not yet PR evidence):** run
+      against production `project-a89lv.vercel.app` with the test-seller
+      application in `MERCADOPAGO_*` (Production scope) reached activation and
+      cancellation end to end — `billing.subscriptions` `active` → `canceled`,
+      `checkout_intents` `confirmed`, invoice `paid`, events `invoice_paid` +
+      `subscription_updated` + `subscription_canceled`. Fixed in the same pass:
+      Mercado Pago returns the cancelled preapproval as `cancelled` (double L)
+      and the adapter only matched `canceled`, so cancellations landed on
+      `incomplete` with no `subscription_canceled` event (PR #179). The 4
+      Phase 2/6 billing migrations (`20260909*`) were also missing from linked
+      Cloud and had to be pushed manually — CI/CD does not apply migrations.
+      This still needs to be re-run and captured as approved PR evidence with
+      a linked-Cloud checkout, but it is no longer an unverified attempt.
+
+## Deferred provider-coverage gaps (identified 2026-09-10)
+
+Mercado Pago uses the "subscription with pending payment, no associated plan"
+model (`createCheckout` sends `status: 'pending'` + `init_point`). The core
+lifecycle works; these are known simplifications, not bugs. Sequence them into
+Phase 2 (adapter) or Phase 6 (state model) before Mercado Pago production
+enablement — several are also tracked as launch concerns in
+[`013-launch-readiness-roadmap.md`](013-launch-readiness-roadmap.md).
+
+- [ ] **No `past_due` for Mercado Pago.** `applyEvent` treats
+      `invoice_payment_failed` (and `invoice_paid`) as no-ops on subscription
+      status by design — `preapproval.status` is the single source of truth for
+      the lifecycle, invoices are a separate ledger. Consequence: during Mercado
+      Pago's retry window (4 retries / ~10 days, auto-cancel after 3 failed
+      instalments) the subscription stays `active` and the dashboard shows no
+      "payment failed, update your method" state; Iroko only learns of the
+      failure when the final `subscription_canceled` arrives. A grace-period /
+      dunning UX needs a **separate `payment_health` signal**, not a change to
+      the status state machine. The `past_due` / `unpaid` enum values are
+      currently unreachable for Mercado Pago.
+- [ ] **`incomplete` never expires.** A subscriber who creates the preapproval
+      but never completes payment leaves a permanent `incomplete` row (Stripe
+      has `incomplete_expired`). Needs a sweep, ideally in the reconciliation
+      worker.
+- [ ] **`paused` is inbound-only.** `mapPreapprovalStatus` maps `paused` →
+      `paused` (received if a subscriber pauses in Mercado Pago's UI), but
+      `capabilities.pauseSubscription` is `false` and there is no
+      `pauseSubscription()` or reactivation initiated from Iroko.
+- [ ] **No plan change / amount change.** `capabilities.changePlan` is `false`;
+      `PUT /preapproval/{id}` with `auto_recurring.transaction_amount` is not
+      wired. Blocks upgrade/downgrade across paid tiers for Mercado Pago.
+- [ ] **No payment-method management from Iroko.** `updatePaymentMethod` and
+      `customerPortal` are `false`. Subscribers change their card on Mercado
+      Pago's hosted page (works), but Iroko surfaces no link or portal for it.
+- Free trials are intentionally out of scope for Mercado Pago
+  (`011-mercadopago-reliability-roadmap.md`); `trialing` is unreachable for
+  this provider by decision, not omission.
 
 ## Completion criteria for Phase 2
 
