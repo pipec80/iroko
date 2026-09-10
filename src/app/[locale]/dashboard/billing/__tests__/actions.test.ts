@@ -83,10 +83,15 @@ describe('billing actions', () => {
 
   it('startCheckout returns the provider checkout url and captures checkout_started', async () => {
     mocks.createCheckout.mockResolvedValue({
+      kind: 'redirect',
       url: 'http://localhost:3000/es/billing/mock-checkout?data=x',
+      intentId: 'mock-intent',
     });
     const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
-    expect(res.data?.url).toContain('/billing/mock-checkout');
+    expect(res.data).toMatchObject({
+      kind: 'redirect',
+      url: expect.stringContaining('/billing/mock-checkout'),
+    });
     expect(mocks.createCheckout).toHaveBeenCalledWith(
       expect.objectContaining({
         accountId: 'a1',
@@ -130,11 +135,27 @@ describe('billing actions', () => {
 
   it('startCheckout succeeds when the caller is admin', async () => {
     mocks.createCheckout.mockResolvedValue({
+      kind: 'redirect',
       url: 'http://localhost:3000/es/billing/mock-checkout?data=x',
+      intentId: 'mock-intent',
     });
     const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
-    expect(res.data?.url).toContain('/billing/mock-checkout');
+    expect(res.data).toMatchObject({
+      kind: 'redirect',
+      url: expect.stringContaining('/billing/mock-checkout'),
+    });
   });
+
+  it.each(['processing', 'needs_review'] as const)(
+    'startCheckout returns the durable %s state without a redirect URL',
+    async (kind) => {
+      mocks.createCheckout.mockResolvedValue({ kind, intentId: 'intent-123' });
+
+      const res = await startCheckout({ planSlug: 'pro', interval: 'month' });
+
+      expect(res).toEqual({ data: { kind, intentId: 'intent-123' } });
+    },
+  );
 
   it('startCheckout returns not_authorized when the caller is a member', async () => {
     mocks.createCheckout.mockRejectedValue(new Error('not_authorized'));

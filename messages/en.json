@@ -927,6 +927,8 @@
     "plan_trial": "{days}-day free trial",
     "plan_subscribe_btn": "Subscribe",
     "checkout_redirecting": "Redirecting to Mercado Pago…",
+    "checkout_processing": "Checkout is already being processed. Check again in a few moments.",
+    "checkout_needs_review": "We could not confirm whether Mercado Pago created the checkout. Do not retry; we will review its status.",
     "checkout_confirming": "We're confirming your subscription with Mercado Pago…",
     "checkout_confirmation_timeout": "Confirmation is taking longer than expected.",
     "checkout_confirmation_retry": "Check again",

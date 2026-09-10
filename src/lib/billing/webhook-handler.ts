@@ -6,6 +6,7 @@ import { captureException, withScope } from '@sentry/nextjs';
 
 import { resolvePlanByExternalPrice } from './catalog';
 import type { SubscriptionCreatedEvent } from './events';
+import type { NormalizedBillingEvent } from './events';
 import { reduceBillingEvent } from './reducer';
 import { getPaymentProvider } from './registry';
 import type { WebhookVerificationContext } from './types';
@@ -121,6 +122,25 @@ function webhookLogContext(
   };
 }
 
+/** Resolves intent-based references and validates legacy account references. */
+async function resolveMercadoPagoAccount(
+  event: NormalizedBillingEvent,
+): Promise<NormalizedBillingEvent | null> {
+  if (event.provider !== 'mercadopago') return event;
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc('resolve_billing_checkout_reference', {
+      p_external_reference: event.accountId,
+      p_external_subscription_id: event.externalSubscriptionId,
+    });
+    const accountId = data?.[0]?.account_id;
+    if (error || !accountId) return null;
+    return { ...event, accountId };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Verifies and reduces a provider webhook. Providers produce the typed event;
  * the reducer owns the only persistence boundary and its idempotency key.
@@ -190,6 +210,16 @@ export async function handleProviderWebhook(
     }
     return { status: 200, body: { result: 'ignored' } };
   }
+
+  const correlatedEvent = await resolveMercadoPagoAccount(event);
+  if (!correlatedEvent) {
+    logger.error(
+      { ...logContext, action: 'billing.webhook.correlation_failed', eventType: event.type },
+      'Billing webhook could not be correlated safely',
+    );
+    return { status: 500, body: { error: 'billing_correlation_failed' } };
+  }
+  event = correlatedEvent;
 
   let result: Awaited<ReturnType<typeof reduceBillingEvent>>;
   try {

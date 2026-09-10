@@ -76,7 +76,9 @@ describe('BillingService', () => {
     mocks.createCheckout.mockResolvedValue({ url: 'https://checkout.example.com' });
 
     await expect(startBillingCheckout(input)).resolves.toEqual({
+      kind: 'redirect',
       url: 'https://checkout.example.com',
+      intentId: expect.any(String),
     });
     expect(mocks.createCheckout).toHaveBeenCalledWith(input);
   });
@@ -90,7 +92,7 @@ describe('BillingService', () => {
     expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 
-  it('persists the Mercado Pago preapproval with the selected catalog plan before returning checkout', async () => {
+  it('reserves before creating and atomically attaches the Mercado Pago preapproval', async () => {
     mocks.getPaymentProvider.mockReturnValue({
       name: 'mercadopago',
       capabilities: {
@@ -118,10 +120,20 @@ describe('BillingService', () => {
       amount: 29_900,
       currency: 'CLP',
     });
+    mocks.adminRpc.mockImplementation((fn: string) => {
+      if (fn === 'reserve_billing_checkout') {
+        return Promise.resolve({
+          data: [{ action: 'create', intent_id: 'intent-123', url: null }],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: 'applied', error: null });
+    });
 
     await expect(startBillingCheckout({ ...input, provider: 'mercadopago' })).resolves.toEqual({
+      kind: 'redirect',
       url: 'https://www.mercadopago.com/checkout',
-      externalSubscriptionId: 'preapproval-123',
+      intentId: 'intent-123',
     });
 
     expect(mocks.getProviderPrice).toHaveBeenCalledWith({
@@ -130,28 +142,192 @@ describe('BillingService', () => {
       provider: 'mercadopago',
       currency: 'CLP',
     });
-    expect(mocks.adminRpc).toHaveBeenCalledWith('create_billing_provisional_subscription', {
+    expect(mocks.adminRpc).toHaveBeenCalledWith('reserve_billing_checkout', {
       p_account_id: 'account-1',
       p_plan_id: 'plan-123',
-      p_external_preapproval_id: 'preapproval-123',
+      p_provider: 'mercadopago',
     });
-    expect(mocks.adminRpc.mock.invocationCallOrder[0]).toBeGreaterThan(
-      mocks.createCheckout.mock.invocationCallOrder[0] ?? 0,
+    expect(mocks.createCheckout).toHaveBeenCalledWith({
+      ...input,
+      provider: 'mercadopago',
+      externalReference: 'intent-123',
+    });
+    expect(mocks.adminRpc).toHaveBeenCalledWith('attach_billing_checkout_remote', {
+      p_intent_id: 'intent-123',
+      p_external_subscription_id: 'preapproval-123',
+      p_checkout_url: 'https://www.mercadopago.com/checkout',
+    });
+    expect(mocks.adminRpc.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.createCheckout.mock.invocationCallOrder[0] ?? Number.MAX_SAFE_INTEGER,
     );
+  });
+
+  it('resumes a pending Mercado Pago intent without a second remote POST', async () => {
+    mocks.getPaymentProvider.mockReturnValue({
+      name: 'mercadopago',
+      capabilities: {},
+      createCheckout: mocks.createCheckout,
+    });
+    mocks.getProviderPrice.mockResolvedValue({ planId: 'plan-123' });
+    mocks.adminRpc.mockResolvedValue({
+      data: [
+        {
+          action: 'resume',
+          intent_id: 'intent-123',
+          url: 'https://www.mercadopago.com/resume',
+        },
+      ],
+      error: null,
+    });
+
+    await expect(startBillingCheckout({ ...input, provider: 'mercadopago' })).resolves.toEqual({
+      kind: 'redirect',
+      url: 'https://www.mercadopago.com/resume',
+      intentId: 'intent-123',
+    });
+    expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it.each(['processing', 'needs_review'] as const)(
+    'returns %s without invoking Mercado Pago',
+    async (action) => {
+      mocks.getPaymentProvider.mockReturnValue({
+        name: 'mercadopago',
+        capabilities: {},
+        createCheckout: mocks.createCheckout,
+      });
+      mocks.getProviderPrice.mockResolvedValue({ planId: 'plan-123' });
+      mocks.adminRpc.mockResolvedValue({
+        data: [{ action, intent_id: 'intent-123', url: null }],
+        error: null,
+      });
+
+      await expect(startBillingCheckout({ ...input, provider: 'mercadopago' })).resolves.toEqual({
+        kind: action,
+        intentId: 'intent-123',
+      });
+      expect(mocks.createCheckout).not.toHaveBeenCalled();
+    },
+  );
+
+  it('allows only the reservation winner to call Mercado Pago concurrently', async () => {
+    mocks.getPaymentProvider.mockReturnValue({
+      name: 'mercadopago',
+      capabilities: {},
+      createCheckout: mocks.createCheckout,
+    });
+    mocks.getProviderPrice.mockResolvedValue({ planId: 'plan-123' });
+    let reservations = 0;
+    mocks.adminRpc.mockImplementation((fn: string) => {
+      if (fn === 'reserve_billing_checkout') {
+        reservations += 1;
+        return Promise.resolve({
+          data: [
+            {
+              action: reservations === 1 ? 'create' : 'processing',
+              intent_id: 'intent-shared',
+              url: null,
+            },
+          ],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: 'attached', error: null });
+    });
+    mocks.createCheckout.mockResolvedValue({
+      url: 'https://www.mercadopago.com/checkout',
+      externalSubscriptionId: 'preapproval-shared',
+    });
+
+    const results = await Promise.all([
+      startBillingCheckout({ ...input, provider: 'mercadopago' }),
+      startBillingCheckout({ ...input, provider: 'mercadopago' }),
+    ]);
+
+    expect(mocks.createCheckout).toHaveBeenCalledTimes(1);
+    expect(results).toContainEqual({
+      kind: 'processing',
+      intentId: 'intent-shared',
+    });
+    expect(results).toContainEqual({
+      kind: 'redirect',
+      intentId: 'intent-shared',
+      url: 'https://www.mercadopago.com/checkout',
+    });
+  });
+
+  it('marks a deterministic provider rejection failed', async () => {
+    mocks.getPaymentProvider.mockReturnValue({
+      name: 'mercadopago',
+      capabilities: {},
+      createCheckout: mocks.createCheckout,
+    });
+    mocks.getProviderPrice.mockResolvedValue({ planId: 'plan-123' });
+    mocks.adminRpc
+      .mockResolvedValueOnce({
+        data: [{ action: 'create', intent_id: 'intent-123', url: null }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: 'failed', error: null });
+    mocks.createCheckout.mockRejectedValue(new Error('mercadopago_post_failed_400:bad request'));
+
+    await expect(startBillingCheckout({ ...input, provider: 'mercadopago' })).rejects.toThrow(
+      'mercadopago_post_failed_400',
+    );
+    expect(mocks.adminRpc).toHaveBeenLastCalledWith('mark_billing_checkout_failed', {
+      p_intent_id: 'intent-123',
+      p_failure_code: 'provider_rejected',
+      p_outcome_unknown: false,
+    });
+  });
+
+  it.each([
+    new DOMException('timed out', 'TimeoutError'),
+    new TypeError('fetch failed'),
+    new Error('mercadopago_post_failed_503:unavailable'),
+    new SyntaxError('truncated successful response'),
+  ])('keeps an unknown remote outcome for review without retrying', async (remoteError) => {
+    mocks.getPaymentProvider.mockReturnValue({
+      name: 'mercadopago',
+      capabilities: {},
+      createCheckout: mocks.createCheckout,
+      cancelSubscription: mocks.cancelSubscription,
+    });
+    mocks.getProviderPrice.mockResolvedValue({ planId: 'plan-123' });
+    mocks.adminRpc
+      .mockResolvedValueOnce({
+        data: [{ action: 'create', intent_id: 'intent-123', url: null }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: 'needs_review', error: null });
+    mocks.createCheckout.mockRejectedValue(remoteError);
+
+    await expect(startBillingCheckout({ ...input, provider: 'mercadopago' })).resolves.toEqual({
+      kind: 'needs_review',
+      intentId: 'intent-123',
+    });
+    expect(mocks.adminRpc).toHaveBeenLastCalledWith('mark_billing_checkout_failed', {
+      p_intent_id: 'intent-123',
+      p_failure_code: 'provider_outcome_unknown',
+      p_outcome_unknown: true,
+    });
+    expect(mocks.cancelSubscription).not.toHaveBeenCalled();
   });
 
   it('retains checkout behavior when a provider returns no subscription identifier', async () => {
     mocks.createCheckout.mockResolvedValue({ url: 'https://checkout.example.com' });
 
     await expect(startBillingCheckout(input)).resolves.toEqual({
+      kind: 'redirect',
       url: 'https://checkout.example.com',
+      intentId: expect.any(String),
     });
 
     expect(mocks.getProviderPrice).not.toHaveBeenCalled();
     expect(mocks.adminRpc).not.toHaveBeenCalled();
   });
 
-  it('immediately cancels a Mercado Pago preapproval when provisional persistence fails', async () => {
+  it('keeps a known remote preapproval recoverable when local attach fails', async () => {
     mocks.getPaymentProvider.mockReturnValue({
       name: 'mercadopago',
       capabilities: {
@@ -179,67 +355,25 @@ describe('BillingService', () => {
       amount: 29_900,
       currency: 'CLP',
     });
-    mocks.adminRpc.mockResolvedValue({
-      data: null,
-      error: { code: 'provisional_write_failed' },
+    mocks.adminRpc
+      .mockResolvedValueOnce({
+        data: [{ action: 'create', intent_id: 'intent-123', url: null }],
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: { code: 'attach_write_failed' } })
+      .mockResolvedValueOnce({ data: 'needs_review', error: null });
+
+    await expect(startBillingCheckout({ ...input, provider: 'mercadopago' })).resolves.toEqual({
+      kind: 'needs_review',
+      intentId: 'intent-123',
     });
 
-    await expect(startBillingCheckout({ ...input, provider: 'mercadopago' })).rejects.toThrow(
-      'billing_provisional_subscription_failed:provisional_write_failed',
-    );
-
-    expect(mocks.cancelSubscription).toHaveBeenCalledWith({
-      externalSubscriptionId: 'preapproval-123',
-      timing: 'immediate',
+    expect(mocks.adminRpc).toHaveBeenLastCalledWith('mark_billing_checkout_failed', {
+      p_intent_id: 'intent-123',
+      p_failure_code: 'remote_created_local_attach_failed',
+      p_outcome_unknown: true,
     });
-  });
-
-  it('preserves the persistence failure when Mercado Pago compensation also fails', async () => {
-    mocks.getPaymentProvider.mockReturnValue({
-      name: 'mercadopago',
-      capabilities: {
-        customerPortal: false,
-        cancelImmediately: true,
-        cancelAtPeriodEnd: false,
-        updatePaymentMethod: false,
-        changePlan: false,
-        pauseSubscription: true,
-      },
-      createCheckout: mocks.createCheckout,
-      cancelSubscription: mocks.cancelSubscription,
-    });
-    mocks.createCheckout.mockResolvedValue({
-      url: 'https://www.mercadopago.com/checkout',
-      externalSubscriptionId: 'preapproval-123',
-    });
-    mocks.getProviderPrice.mockResolvedValue({
-      id: 'provider-price-1',
-      planId: 'plan-123',
-      planSlug: 'pro',
-      interval: 'month',
-      provider: 'mercadopago',
-      externalPriceId: null,
-      amount: 29_900,
-      currency: 'CLP',
-    });
-    mocks.adminRpc.mockResolvedValue({
-      data: null,
-      error: { code: 'provisional_write_failed' },
-    });
-    mocks.cancelSubscription.mockRejectedValue(new Error('mercadopago_cancel_failed'));
-
-    await expect(startBillingCheckout({ ...input, provider: 'mercadopago' })).rejects.toThrow(
-      'billing_provisional_subscription_failed:provisional_write_failed',
-    );
-
-    expect(mocks.loggerError).toHaveBeenCalledTimes(2);
-    expect(mocks.loggerError).toHaveBeenLastCalledWith(
-      {
-        action: 'billing.provisional_subscription_compensation_failed',
-        component: 'BillingService',
-      },
-      'Mercado Pago provisional subscription compensation failed',
-    );
+    expect(mocks.cancelSubscription).not.toHaveBeenCalled();
   });
 
   it('rejects cancellation when there is no provider subscription to cancel', async () => {

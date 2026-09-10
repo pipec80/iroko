@@ -759,6 +759,7 @@ describe('mercadopagoProvider.createCheckout', () => {
       interval: 'month',
       successUrl: 'https://app/ok',
       cancelUrl: 'https://app/no',
+      externalReference: 'intent_123',
     });
 
     expect(getProviderPrice).toHaveBeenCalledWith({
@@ -771,7 +772,7 @@ describe('mercadopagoProvider.createCheckout', () => {
     expect(request.signal).toBeInstanceOf(AbortSignal);
     expect(JSON.parse(request.body as string)).toEqual({
       reason: 'Iroko pro subscription',
-      external_reference: 'acc_1',
+      external_reference: 'intent_123',
       payer_email: 'owner@example.com',
       back_url: 'https://app/ok',
       notification_url: 'https://app.example.com/api/webhooks/mercadopago',

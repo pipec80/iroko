@@ -15,6 +15,8 @@ export interface CheckoutParams {
   interval: PlanInterval;
   successUrl: string;
   cancelUrl: string;
+  /** Durable local correlation id when checkout creation is coordinated. */
+  externalReference?: string;
 }
 
 export interface CheckoutResult {
@@ -22,6 +24,11 @@ export interface CheckoutResult {
   externalCheckoutId?: string;
   externalSubscriptionId?: string;
 }
+
+export type CheckoutStartResult =
+  | { kind: 'redirect'; url: string; intentId: string }
+  | { kind: 'processing'; intentId: string }
+  | { kind: 'needs_review'; intentId: string };
 
 export interface PortalParams {
   externalCustomerId: string;

@@ -95,7 +95,7 @@ export function BillingTab({
       return result.data;
     },
     onSuccess: (result) => {
-      window.location.href = result.url;
+      if (result.kind === 'redirect') window.location.href = result.url;
     },
     onSettled: () => {
       checkoutInFlight.current = false;
@@ -185,6 +185,22 @@ export function BillingTab({
           className="rounded-lg px-3 py-2 text-[13px] font-medium"
           style={{ background: 'var(--color-poppy-wash)', color: 'var(--color-poppy)' }}>
           {t('checkout_error')}
+        </p>
+      )}
+      {checkout.data?.kind === 'processing' && (
+        <p
+          role="status"
+          className="rounded-lg px-3 py-2 text-[13px]"
+          style={{ background: 'var(--color-info-wash)', color: 'var(--color-info)' }}>
+          {t('checkout_processing')}
+        </p>
+      )}
+      {checkout.data?.kind === 'needs_review' && (
+        <p
+          role="alert"
+          className="rounded-lg px-3 py-2 text-[13px] font-medium"
+          style={{ background: 'var(--color-warning-wash)', color: 'var(--color-warning)' }}>
+          {t('checkout_needs_review')}
         </p>
       )}
       {isAwaitingCheckoutConfirmation && (
@@ -281,7 +297,9 @@ export function BillingTab({
                 hasBlockingPaidSubscription ||
                 !checkoutAvailable ||
                 isAwaitingCheckoutConfirmation ||
-                Boolean(preapprovalId)
+                Boolean(preapprovalId) ||
+                checkout.data?.kind === 'processing' ||
+                checkout.data?.kind === 'needs_review'
               }
             />
           ))}

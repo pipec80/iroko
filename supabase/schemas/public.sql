@@ -3585,3 +3585,133 @@ REVOKE ALL ON FUNCTION public.get_billing_checkout_confirmation(uuid, text)
   FROM PUBLIC, anon, service_role;
 GRANT EXECUTE ON FUNCTION public.get_billing_checkout_confirmation(uuid, text)
   TO authenticated;
+
+-- Service-only durable checkout coordination.
+CREATE OR REPLACE FUNCTION public.reserve_billing_checkout(
+  p_account_id uuid, p_plan_id uuid, p_provider text
+) RETURNS TABLE(action text, intent_id uuid, url text)
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+DECLARE
+  v_intent billing.checkout_intents%ROWTYPE;
+  v_provider text := NULLIF(btrim(p_provider), '');
+BEGIN
+  IF v_provider IS NULL THEN RAISE EXCEPTION 'billing_provider_missing'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.accounts WHERE id = p_account_id) THEN
+    RAISE EXCEPTION 'billing_account_not_found';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM billing.plans WHERE id = p_plan_id AND is_active) THEN
+    RAISE EXCEPTION 'billing_plan_not_found';
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_account_id::text || ':' || v_provider, 0));
+  SELECT * INTO v_intent FROM billing.checkout_intents
+  WHERE account_id = p_account_id AND provider = v_provider
+    AND status IN ('reserved', 'pending', 'needs_review')
+  ORDER BY created_at DESC LIMIT 1 FOR UPDATE;
+  IF FOUND THEN
+    IF v_intent.plan_id <> p_plan_id THEN
+      RETURN QUERY SELECT 'needs_review'::text, v_intent.id, NULL::text;
+    ELSIF v_intent.status = 'pending' AND v_intent.checkout_url IS NOT NULL THEN
+      RETURN QUERY SELECT 'resume'::text, v_intent.id, v_intent.checkout_url;
+    ELSIF v_intent.status = 'reserved' AND v_intent.lease_expires_at IS NOT NULL
+      AND v_intent.lease_expires_at > now() THEN
+      RETURN QUERY SELECT 'processing'::text, v_intent.id, NULL::text;
+    ELSE
+      IF v_intent.status = 'reserved' THEN
+        UPDATE billing.checkout_intents SET status = 'needs_review', lease_expires_at = NULL,
+          failure_code = 'creation_lease_expired' WHERE id = v_intent.id;
+      END IF;
+      RETURN QUERY SELECT 'needs_review'::text, v_intent.id, NULL::text;
+    END IF;
+    RETURN;
+  END IF;
+  INSERT INTO billing.checkout_intents (
+    account_id, plan_id, provider, status, lease_expires_at
+  ) VALUES (
+    p_account_id, p_plan_id, v_provider, 'reserved', now() + interval '2 minutes'
+  ) RETURNING * INTO v_intent;
+  RETURN QUERY SELECT 'create'::text, v_intent.id, NULL::text;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.attach_billing_checkout_remote(
+  p_intent_id uuid, p_external_subscription_id text, p_checkout_url text
+) RETURNS text LANGUAGE sql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+  SELECT private.attach_billing_checkout_remote(
+    p_intent_id, p_external_subscription_id, p_checkout_url
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.mark_billing_checkout_failed(
+  p_intent_id uuid, p_failure_code text, p_outcome_unknown boolean
+) RETURNS text LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+DECLARE
+  v_status text;
+BEGIN
+  IF NULLIF(btrim(p_failure_code), '') IS NULL OR char_length(p_failure_code) > 100 THEN
+    RAISE EXCEPTION 'billing_checkout_failure_code_invalid';
+  END IF;
+  UPDATE billing.checkout_intents
+  SET status = CASE WHEN p_outcome_unknown THEN 'needs_review' ELSE 'failed' END,
+    failure_code = btrim(p_failure_code), lease_expires_at = NULL
+  WHERE id = p_intent_id AND status IN ('reserved', 'pending', 'needs_review')
+  RETURNING status INTO v_status;
+  IF v_status IS NULL THEN RAISE EXCEPTION 'billing_checkout_intent_not_open'; END IF;
+  RETURN v_status;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.resolve_billing_checkout_reference(
+  p_external_reference uuid, p_external_subscription_id text
+) RETURNS TABLE(account_id uuid, checkout_intent_id uuid)
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+DECLARE
+  v_intent billing.checkout_intents%ROWTYPE;
+  v_account_id uuid;
+BEGIN
+  IF NULLIF(btrim(p_external_subscription_id), '') IS NULL THEN
+    RAISE EXCEPTION 'billing_required_external_subscription_id_missing';
+  END IF;
+  SELECT * INTO v_intent FROM billing.checkout_intents
+  WHERE id = p_external_reference AND provider = 'mercadopago' FOR UPDATE;
+  IF FOUND THEN
+    IF v_intent.external_subscription_id IS NOT NULL
+      AND v_intent.external_subscription_id <> btrim(p_external_subscription_id) THEN
+      RAISE EXCEPTION 'billing_checkout_remote_identity_mismatch';
+    END IF;
+    IF v_intent.external_subscription_id IS NULL THEN
+      PERFORM private.attach_billing_checkout_remote(v_intent.id, p_external_subscription_id, NULL);
+    END IF;
+    RETURN QUERY SELECT v_intent.account_id, v_intent.id;
+    RETURN;
+  END IF;
+  SELECT customer.account_id INTO v_account_id
+  FROM billing.subscriptions AS subscription
+  INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+  WHERE customer.account_id = p_external_reference
+    AND subscription.provider = 'mercadopago'
+    AND subscription.external_subscription_id = btrim(p_external_subscription_id);
+  IF v_account_id IS NOT NULL THEN RETURN QUERY SELECT v_account_id, NULL::uuid; END IF;
+END;
+$$;
+
+COMMENT ON FUNCTION public.reserve_billing_checkout(uuid, uuid, text) IS
+  'Service-only atomic claim/resume operation. An expired creation lease becomes needs_review and never authorizes another provider POST.';
+COMMENT ON FUNCTION public.attach_billing_checkout_remote(uuid, text, text) IS
+  'Service-only atomic attachment of provider identity, hosted URL and provisional subscription.';
+COMMENT ON FUNCTION public.mark_billing_checkout_failed(uuid, text, boolean) IS
+  'Service-only classification of deterministic failure versus unknown remote outcome.';
+COMMENT ON FUNCTION public.resolve_billing_checkout_reference(uuid, text) IS
+  'Service-only resolver for intent references and exact pre-intent account/subscription pairs.';
+
+REVOKE ALL ON FUNCTION public.reserve_billing_checkout(uuid, uuid, text)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.attach_billing_checkout_remote(uuid, text, text)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.mark_billing_checkout_failed(uuid, text, boolean)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.resolve_billing_checkout_reference(uuid, text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.reserve_billing_checkout(uuid, uuid, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.attach_billing_checkout_remote(uuid, text, text) TO service_role;
+GRANT EXECUTE ON FUNCTION public.mark_billing_checkout_failed(uuid, text, boolean) TO service_role;
+GRANT EXECUTE ON FUNCTION public.resolve_billing_checkout_reference(uuid, text) TO service_role;

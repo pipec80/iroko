@@ -929,6 +929,8 @@
     "plan_trial": "{days} dias de teste grátis",
     "plan_subscribe_btn": "Assinar",
     "checkout_redirecting": "Redirecionando para o Mercado Pago…",
+    "checkout_processing": "O checkout já está sendo processado. Verifique novamente em alguns instantes.",
+    "checkout_needs_review": "Não foi possível confirmar se o Mercado Pago criou o checkout. Não tente novamente; revisaremos o estado.",
     "checkout_confirming": "Estamos confirmando sua assinatura com o Mercado Pago…",
     "checkout_confirmation_timeout": "A confirmação está demorando mais do que o esperado.",
     "checkout_confirmation_retry": "Verificar novamente",
