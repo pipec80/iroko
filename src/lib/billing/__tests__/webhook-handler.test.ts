@@ -124,6 +124,9 @@ describe('handleProviderWebhook', () => {
       provider: 'mercadopago',
       type: 'webhook_acknowledged',
       reason: 'unlinked_payment',
+      externalEventId: 'notification_1',
+      resourceType: 'payment',
+      resourceId: 'payment_1',
       raw: { id: 'notification_1' },
     });
 
@@ -132,6 +135,13 @@ describe('handleProviderWebhook', () => {
       body: { result: 'ignored' },
     });
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+    expect(mocks.adminRpc).toHaveBeenCalledWith('enqueue_billing_recovery_job', {
+      p_external_event_id: 'notification_1',
+      p_provider: 'mercadopago',
+      p_reason: 'unlinked_payment',
+      p_resource_id: 'payment_1',
+      p_resource_type: 'payment',
+    });
   });
 
   it('warns when Mercado Pago reports a linked payment status divergence', async () => {
@@ -139,6 +149,10 @@ describe('handleProviderWebhook', () => {
       provider: 'mercadopago',
       type: 'webhook_acknowledged',
       reason: 'payment_status_divergence',
+      externalEventId: 'notification_divergence',
+      resourceType: 'payment',
+      resourceId: 'payment_divergence',
+      observedStatus: 'refunded',
       raw: { id: 'notification_divergence' },
     });
 
@@ -166,6 +180,9 @@ describe('handleProviderWebhook', () => {
       provider: 'mercadopago',
       type: 'webhook_acknowledged',
       reason: 'unsupported_topic',
+      externalEventId: 'notification_unsupported',
+      resourceType: 'unknown',
+      resourceId: 'plan_1',
       raw: { type: 'subscription_preapproval_plan', data: { id: 'plan_1' } },
     });
 
@@ -186,6 +203,30 @@ describe('handleProviderWebhook', () => {
       'Billing webhook topic is not supported',
     );
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+    expect(mocks.adminRpc).not.toHaveBeenCalledWith(
+      'enqueue_billing_recovery_job',
+      expect.anything(),
+    );
+  });
+
+  it('returns 500 when durable acknowledgement persistence fails', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      reason: 'payment_pending',
+      externalEventId: 'notification_pending',
+      resourceType: 'payment',
+      resourceId: 'payment_pending',
+      observedStatus: 'pending',
+      raw: { secret: 'never-persist' },
+    });
+    mocks.adminRpc.mockResolvedValueOnce({ data: null, error: { code: 'db_failed' } });
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 500,
+      body: { error: 'billing_recovery_persistence_failed' },
+    });
+    expect(JSON.stringify(mocks.adminRpc.mock.calls)).not.toContain('never-persist');
   });
 
   it('logs receipt and the reduced result without the webhook body or signature', async () => {

@@ -10,6 +10,7 @@ import type { NormalizedBillingEvent } from './events';
 import { reduceBillingEvent } from './reducer';
 import { getPaymentProvider } from './registry';
 import type { WebhookVerificationContext } from './types';
+import type { AcknowledgedWebhook, BillingAnomalyType } from './types';
 
 /**
  * Resolves the account owner's user id for analytics attribution. Webhooks
@@ -122,6 +123,36 @@ function webhookLogContext(
   };
 }
 
+function anomalyTypeForAcknowledgement(event: AcknowledgedWebhook): BillingAnomalyType {
+  if (event.observedStatus === 'refunded') return 'refund';
+  if (event.observedStatus === 'charged_back') return 'chargeback';
+  if (event.observedStatus === 'in_mediation') return 'mediation';
+  return 'status_divergence';
+}
+
+/** Persists deferred work without retaining the verified provider payload. */
+async function persistAcknowledgement(event: AcknowledgedWebhook): Promise<boolean> {
+  if (event.reason === 'unsupported_topic') return true;
+  const admin = createAdminClient();
+  const result =
+    event.reason === 'payment_status_divergence' ?
+      await admin.rpc('upsert_billing_financial_anomaly', {
+        p_account_id: undefined,
+        p_anomaly_type: anomalyTypeForAcknowledgement(event),
+        p_external_resource_id: event.resourceId,
+        p_observed_status: event.observedStatus,
+        p_provider: event.provider,
+        p_subscription_id: undefined,
+      })
+    : await admin.rpc('enqueue_billing_recovery_job', {
+        p_external_event_id: event.externalEventId,
+        p_provider: event.provider,
+        p_reason: event.reason,
+        p_resource_id: event.resourceId,
+        p_resource_type: event.resourceType,
+      });
+  return !result.error;
+}
 /** Resolves intent-based references and validates legacy account references. */
 async function resolveMercadoPagoAccount(
   event: NormalizedBillingEvent,
@@ -180,6 +211,13 @@ export async function handleProviderWebhook(
   }
 
   if (event.type === 'webhook_acknowledged') {
+    if (!(await persistAcknowledgement(event))) {
+      logger.error(
+        { ...logContext, action: 'billing.webhook.persistence_failed', reason: event.reason },
+        'Billing webhook durable persistence failed',
+      );
+      return { status: 500, body: { error: 'billing_recovery_persistence_failed' } };
+    }
     if (event.reason === 'payment_status_divergence') {
       logger.warn(
         {

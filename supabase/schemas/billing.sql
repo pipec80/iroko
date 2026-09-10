@@ -1143,3 +1143,60 @@ CREATE TRIGGER sync_billing_checkout_intent
 
 COMMENT ON TABLE billing.checkout_intents IS
   'Durable account/provider reservation for one hosted checkout creation attempt; stores no payer email, token or raw provider payload.';
+
+-- ============================================================================
+-- Durable payment recovery and financial anomaly review
+-- ============================================================================
+
+CREATE TABLE billing.recovery_jobs (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider text NOT NULL CHECK (NULLIF(btrim(provider), '') IS NOT NULL),
+  resource_type text NOT NULL CHECK (resource_type = 'payment'),
+  resource_id text NOT NULL CHECK (NULLIF(btrim(resource_id), '') IS NOT NULL AND char_length(resource_id) <= 255),
+  reason text NOT NULL CHECK (reason IN ('unlinked_payment', 'payment_pending')),
+  external_event_id text NOT NULL CHECK (NULLIF(btrim(external_event_id), '') IS NOT NULL AND char_length(external_event_id) <= 255),
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'resolved', 'exhausted')),
+  attempt_count integer NOT NULL DEFAULT 0 CHECK (attempt_count BETWEEN 0 AND 5),
+  next_attempt_at timestamptz NOT NULL DEFAULT now(), locked_at timestamptz,
+  last_error_code text CHECK (last_error_code IS NULL OR char_length(last_error_code) <= 100),
+  resolution text CHECK (resolution IS NULL OR resolution IN ('event', 'unrelated', 'anomaly')),
+  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (provider, resource_type, resource_id, reason)
+);
+CREATE INDEX recovery_jobs_due_idx ON billing.recovery_jobs(next_attempt_at, created_at)
+  WHERE status IN ('pending','processing');
+
+CREATE TABLE billing.financial_anomalies (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  provider text NOT NULL CHECK (NULLIF(btrim(provider), '') IS NOT NULL),
+  anomaly_type text NOT NULL CHECK (anomaly_type IN ('refund','chargeback','mediation','status_divergence','unresolved_payment')),
+  external_resource_id text NOT NULL CHECK (NULLIF(btrim(external_resource_id), '') IS NOT NULL AND char_length(external_resource_id) <= 255),
+  account_id uuid REFERENCES public.accounts(id) ON DELETE SET NULL,
+  subscription_id uuid REFERENCES billing.subscriptions(id) ON DELETE SET NULL,
+  invoice_id uuid REFERENCES billing.invoices(id) ON DELETE SET NULL,
+  payment_id uuid REFERENCES billing.payment_attempts(id) ON DELETE SET NULL,
+  observed_status text CHECK (observed_status IS NULL OR char_length(observed_status) <= 100),
+  status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','resolved')),
+  occurrence_count integer NOT NULL DEFAULT 1 CHECK (occurrence_count > 0),
+  first_seen_at timestamptz NOT NULL DEFAULT now(), last_seen_at timestamptz NOT NULL DEFAULT now(),
+  resolved_at timestamptz, resolution_code text CHECK (resolution_code IS NULL OR char_length(resolution_code) <= 100),
+  created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX financial_anomalies_open_unique
+  ON billing.financial_anomalies(provider, anomaly_type, external_resource_id) WHERE status='open';
+CREATE INDEX financial_anomalies_account_idx ON billing.financial_anomalies(account_id, last_seen_at DESC);
+CREATE INDEX financial_anomalies_subscription_idx ON billing.financial_anomalies(subscription_id) WHERE subscription_id IS NOT NULL;
+CREATE INDEX financial_anomalies_invoice_idx ON billing.financial_anomalies(invoice_id) WHERE invoice_id IS NOT NULL;
+CREATE INDEX financial_anomalies_payment_idx ON billing.financial_anomalies(payment_id) WHERE payment_id IS NOT NULL;
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON billing.recovery_jobs
+  FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
+CREATE TRIGGER set_updated_at BEFORE UPDATE ON billing.financial_anomalies
+  FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
+ALTER TABLE billing.recovery_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE billing.financial_anomalies ENABLE ROW LEVEL SECURITY;
+CREATE POLICY billing_recovery_jobs_deny_all ON billing.recovery_jobs AS RESTRICTIVE USING(false) WITH CHECK(false);
+CREATE POLICY billing_financial_anomalies_deny_all ON billing.financial_anomalies AS RESTRICTIVE USING(false) WITH CHECK(false);
+REVOKE ALL ON billing.recovery_jobs, billing.financial_anomalies FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON billing.recovery_jobs, billing.financial_anomalies TO service_role;
+COMMENT ON TABLE billing.recovery_jobs IS 'Payload-free durable work for deferred provider payment correlation.';
+COMMENT ON TABLE billing.financial_anomalies IS 'Deduplicated adverse financial observations; never changes subscription access automatically.';
