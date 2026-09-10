@@ -118,7 +118,7 @@
     "react-markdown": "^10.1.0",
     "remark-gfm": "^4.0.1",
     "resend": "^6.22.0",
-    "sharp": "0.35.3",
+    "sharp": "0.35.4",
     "sonner": "^2.0.7",
     "stripe": "^22.3.2",
     "tailwind-merge": "^3.6.0",
