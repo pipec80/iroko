@@ -309,38 +309,55 @@ pnpm typecheck && pnpm lint
 
 ## Task 4: Scheduled execution
 
-**Files:**
+**Implementation status (2026-09-10): code shipped, NOT scheduled in Cloud.**
 
-- Create: `supabase/functions/billing-reconciliation/` (Edge Function) +
-  `supabase/migrations/<timestamp>_billing_reconciliation_cron.sql`
-  (`pg_cron` schedule calling it, same pattern as
-  `process-email-queue`/`cancel-mercadopago-subscriptions` from Phase 2)
+The worker was built as a **Vercel route**, not a Supabase Edge Function
+(migration `20260909190000_billing_reconciliation_worker.sql`):
 
-- [ ] **Step 1: Confirm the existing cron+Edge-Function auth pattern**
-      (service role, whatever header convention `process-email-queue` already
-      established) before writing a new one.
+- `POST /api/internal/billing/worker` (`src/app/api/internal/billing/worker/route.ts`)
+  — `runtime = 'nodejs'`, body `{ "mode": "recovery" | "reconciliation" }`,
+  authenticated by header `x-billing-worker-secret` compared with
+  `env.BILLING_RECONCILIATION_SECRET` via `timingSafeEqual`.
+- `private.invoke_billing_worker(p_mode)` reads two Vault secrets
+  (`billing_worker_url`, `billing_reconciliation_secret`) and `net.http_post`s
+  to `<billing_worker_url>/api/internal/billing/worker`, recording the request
+  id in `private.billing_worker_health`.
+- `public.claim_billing_recovery_jobs` / `complete_billing_recovery_job` and
+  `public.get_billing_reconciliation_candidates` / `apply_billing_reconciliation_snapshot`
+  back the two modes.
 
-- [ ] **Step 2: Implement the scheduled entrypoint calling
-      `reconcileNonTerminalSubscriptions`**
+The QA run on 2026-09-10 verified the webhook + reducer circuit end to end
+(subscribe → `active`, cancel → `canceled`) but left this worker **off** — so
+`billing.recovery_jobs` rows (`reason: unlinked_payment`) accumulate `pending`.
+Impact today is cosmetic (the payment is already linked by later events); the
+worker would only close them as a no-op, and there is no auto-repair of drift
+or missed webhooks until it runs.
 
-- [ ] **Step 3: If choosing Vercel Cron instead** (only with a documented
-      reason — e.g. needing Vercel's execution environment for a provider SDK
-      that doesn't run well in Supabase's Edge runtime): protect the endpoint
-      with `Authorization: Bearer ${CRON_SECRET}`, production only, and
-      **verify the actual Vercel plan/cadence before relying on sub-daily
-      scheduling** (design spec section 12 — Vercel Cron frequency limits
-      differ by plan, confirm current limits rather than assuming).
+### Remaining activation checklist (all writes to Cloud / Vercel — each needs explicit authorization)
 
-- [ ] **Step 4: Verify and commit**
-
-```bash
-pnpm supa:reset
-pnpm supa:test
-pnpm typecheck && pnpm lint
-
-git add supabase/migrations supabase/schemas/billing.sql supabase/functions/billing-reconciliation
-git commit -m "feat: schedule billing reconciliation"
-```
+- [ ] **Step 1: Generate a shared secret** (≥ 32 chars).
+- [ ] **Step 2: Vercel** — set `BILLING_RECONCILIATION_SECRET` = the secret,
+      Production scope, then redeploy production so the route picks it up.
+- [ ] **Step 3: Supabase Vault** — create `billing_reconciliation_secret`
+      (same value) and `billing_worker_url` (= the canonical production URL,
+      currently `https://project-a89lv.vercel.app`).
+- [ ] **Step 4: Vercel Firewall** — add a custom rule bypassing Bot Protection
+      for `/api/internal/billing/` (path prefix → action `bypass`), like
+      `allow-payment-webhooks` for `/api/webhooks/`. Required because
+      `net.http_post` from Postgres is a non-browser client and the project's
+      Bot Protection is in **Challenge** mode → a bare request gets a 429
+      "Vercel Security Checkpoint". The email worker does not need this because
+      it targets a Supabase Edge Function (`/functions/v1/…`), not a Vercel
+      route.
+- [ ] **Step 5: pg_cron** —
+      `select cron.schedule('billing-recovery-worker', '*/5 * * * *', $$select private.invoke_billing_worker('recovery')$$);`
+      and
+      `select cron.schedule('billing-reconciliation-worker', '0 * * * *', $$select private.invoke_billing_worker('reconciliation')$$);`
+      (cadence per `docs/runbooks/billing-reconciliation.md`).
+- [ ] **Step 6: Smoke test** — one manual `invoke_billing_worker('recovery')`,
+      then inspect `private.billing_worker_health` joined with
+      `net._http_response` (status 200, not 429). Confirm the standing
+      `unlinked_payment` job flips to `resolved`.
 
 ---
 
@@ -399,6 +416,12 @@ git commit -m "docs: add billing reconciliation runbook"
 
 ## Completion criteria for Phase 6
 
+- **Task 4 (scheduled execution) is the open item as of 2026-09-10** — the
+  worker route and RPCs exist and the QA circuit passed, but the secret, Vault
+  entries, firewall rule and cron schedules are not in place, so no
+  reconciliation or recovery run has ever executed in Cloud
+  (`private.billing_worker_health` is empty). See the Task 4 activation
+  checklist above.
 - A missed webhook (simulated by manually diverging a test subscription's
   local status from its provider state) is detected by the next
   reconciliation run.
