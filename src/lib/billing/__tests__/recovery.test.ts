@@ -106,4 +106,117 @@ describe('recoverBillingResources', () => {
     expect(mocks.captureException).toHaveBeenCalledTimes(1);
     expect(JSON.stringify(mocks.logger.error.mock.calls)).not.toContain('secret-body');
   });
+
+  it('resolves a payment that the provider proves is unrelated without reducing billing state', async () => {
+    mocks.recoverResource.mockResolvedValue({ kind: 'unrelated' });
+
+    await expect(
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ resolved: 1 }));
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
+      p_job_id: job.id,
+      p_last_error_code: undefined,
+      p_outcome: 'unrelated',
+    });
+  });
+
+  it('releases a still-pending payment for a later retry', async () => {
+    mocks.recoverResource.mockResolvedValue({ kind: 'pending' });
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
+      return { data: [{ status: 'pending', anomaly_created: false }], error: null };
+    });
+
+    await expect(
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ retried: 1, exhausted: 0 }));
+    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
+      p_job_id: job.id,
+      p_last_error_code: 'payment_still_pending',
+      p_outcome: 'pending',
+    });
+  });
+
+  it('alerts when a still-pending payment exhausts its durable retry budget', async () => {
+    mocks.recoverResource.mockResolvedValue({ kind: 'pending' });
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
+      return { data: [{ status: 'exhausted', anomaly_created: true }], error: null };
+    });
+
+    await expect(
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ retried: 0, exhausted: 1 }));
+    expect(mocks.captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips a configured provider that does not implement payment recovery', async () => {
+    mocks.getPaymentProvider.mockReturnValue({});
+
+    await expect(
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ skipped: 1 }));
+    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
+      p_job_id: job.id,
+      p_last_error_code: 'provider_recovery_unsupported',
+      p_outcome: 'unrelated',
+    });
+  });
+
+  it('skips a provider that is not configured for the worker', async () => {
+    mocks.getPaymentProvider.mockImplementation(() => {
+      throw new Error('provider_not_configured');
+    });
+
+    await expect(
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ skipped: 1 }));
+    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
+      p_job_id: job.id,
+      p_last_error_code: 'provider_not_configured',
+      p_outcome: 'unrelated',
+    });
+  });
+
+  it('classifies provider timeouts without persisting the provider error message', async () => {
+    const timeout = new Error('secret provider response');
+    timeout.name = 'TimeoutError';
+    mocks.recoverResource.mockRejectedValue(timeout);
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
+      return { data: [{ status: 'pending', anomaly_created: false }], error: null };
+    });
+
+    await expect(
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ retried: 1 }));
+    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
+      p_job_id: job.id,
+      p_last_error_code: 'provider_timeout',
+      p_outcome: 'error',
+    });
+    expect(JSON.stringify(mocks.rpc.mock.calls)).not.toContain('secret provider response');
+  });
+
+  it('fails closed when claiming durable recovery jobs fails', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'db_unavailable' } });
+
+    await expect(recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 })).rejects.toThrow(
+      'billing_recovery_claim_failed',
+    );
+    expect(mocks.recoverResource).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when SQL returns an invalid job completion result', async () => {
+    mocks.recoverResource.mockResolvedValue({ kind: 'unrelated' });
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
+      return { data: [], error: null };
+    });
+
+    await expect(recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 })).rejects.toThrow(
+      'billing_recovery_completion_failed',
+    );
+  });
 });
