@@ -1,7 +1,9 @@
 # Current State
 
-Last static verification: **2026-08-20**
-Repository baseline inspected: `fe4b90ae59acf1105569b2edf6bfd705b548e6fe`
+Last static verification: **2026-08-20** (documentation audit)
+Last runtime verification: **2026-09-10** (Mercado Pago sandbox circuit, see
+[Runtime verification update](#runtime-verification-update--2026-09-10))
+Repository baseline inspected: `main` @ `9757ad7`
 
 This is the operational entry point for humans and coding agents. It answers
 what Iroko is today, which work is active, and which claims have actually been
@@ -25,8 +27,12 @@ product. Commercialization remains an option, not a present-tense claim.
 - Sentry, Pino, and PostHog provide the current observability foundations.
 - Plan 010 tenant-isolation remediation is completed with regression evidence.
   Billing Platform v2 remains active work: its provider-neutral Core v2 closed
-  through PR #152 on 2026-08-27, while Mercado Pago certification is the next
-  P0 delivery gate. The program is not a completed capability.
+  through PR #152 on 2026-08-27; Mercado Pago (Phase 2) has its checkout →
+  active → paid → cancel circuit **verified against production on 2026-09-10**
+  (PRs #153, #161, #171–175, #179), but formal certification evidence, the
+  reconciliation/recovery worker schedule (Phase 6), and Stripe / Paddle /
+  Lemon Squeezy (Phases 3–5) are not done. The program is not a completed
+  capability.
 
 ## Active work and order
 
@@ -34,15 +40,15 @@ Plan 011 is the remaining P0 behavior plan. Its internal dependency order is
 authoritative; coordinate overlapping database, authorization, and billing
 changes before implementation.
 
-| Order | Work                                                                                                  | Priority | Current meaning                                                          |
-| ----- | ----------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
-| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                   | P0       | Fase 1 Core v2 merged; Mercado Pago is the next LATAM reference provider |
-| 012   | [Security hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Starts after the relevant P0 behavior is stable                          |
-| 013   | [Launch-readiness roadmap](exec-plans/active/013-launch-readiness-roadmap.md)                         | P2       | Commercial-readiness roadmap; not yet decomposed into implementation PRs |
+| Order | Work                                                                                                  | Priority | Current meaning                                                                                                                                                     |
+| ----- | ----------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                   | P0       | Fase 1 (Core v2) closed. Fase 2 (Mercado Pago) circuit verified in prod, certification + Phase 6 worker open. Fases 3–5 (Stripe/Paddle/Lemon) planned, not started. |
+| 012   | [Security hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Not started. Public landing/`/pricing` still uses hard-coded tiers that diverge from `billing.plans`; grants/SSRF/rate-limit/CSP sweep pending.                     |
+| 013   | [Launch-readiness roadmap](exec-plans/active/013-launch-readiness-roadmap.md)                         | P2       | Commercial-readiness roadmap; not yet decomposed into implementation PRs. Gated on Plan 011.                                                                        |
 
-Plan 010 closed on 2026-08-26 through PRs #139, #140, #147 and #149. Its
-final PR passed the full GitHub CI and Vercel Preview after the independent
-toolchain repair in #150. This is implementation and disposable-preview
+Plan 010 closed on 2026-08-26 through PRs #139, #140, #147, #149 and #150
+(the last being the independent toolchain repair). It is filed under
+`exec-plans/completed/`. This is implementation and disposable-preview
 evidence, not a fresh certification of every external provider or Cloud
 runtime.
 
@@ -51,6 +57,39 @@ was not re-certified against a live runtime or cloud environment during this
 documentation pass.
 
 ## Verification boundary
+
+### Runtime verification update — 2026-09-10
+
+A Mercado Pago **sandbox** lifecycle was exercised against the production
+deployment (`project-a89lv.vercel.app`, the canonical domain — not
+`iroko-pipec80-labs.vercel.app`). What this run actually verified:
+
+- Checkout → `billing.subscriptions` `active`, `checkout_intents` `confirmed`,
+  invoice `paid`, events `invoice_paid` + `subscription_updated`.
+- Cancellation → `canceled` with `canceled_at` and a `subscription_canceled`
+  event. This required fixing an adapter bug (Mercado Pago returns the
+  cancelled preapproval as `cancelled`; the code only matched `canceled`, so
+  cancellations previously landed on `incomplete`) — PR #179.
+- The four Phase 2/6 billing migrations (`20260909*`) were missing from linked
+  Cloud and were applied manually with `supabase db push` — **CI/CD does not
+  apply migrations to Cloud**; check `supabase migration list --linked` after
+  every merge that touches `supabase/migrations/`.
+- Deployment protection was moved to "Standard" (production public, previews
+  still behind Vercel Auth) and a firewall rule exempts `/api/webhooks/` from
+  Bot Protection so provider callbacks reach the endpoint.
+
+Still **[NO VERIFICADO]** / not done after this run: formal certification
+evidence captured in a PR; the reconciliation/recovery worker
+(`/api/internal/billing/worker` exists but no secret, Vault entries, firewall
+rule or cron schedule — `private.billing_worker_health` is empty); a
+`past_due` / dunning state for Mercado Pago; consolidation of the two Mercado
+Pago sandbox applications currently in play. See
+[`011-phase2-mercadopago-tasks.md`](exec-plans/active/011-phase2-mercadopago-tasks.md)
+and [`011-phase6-reconciliation-tasks.md`](exec-plans/active/011-phase6-reconciliation-tasks.md).
+
+Merged to `main` since PR #152: #153, #159, #161, #171–180 (Mercado Pago
+reliability slice, dependency updates, the QA fix and its documentation).
+No Stripe / Paddle / Lemon Squeezy adapter work has started.
 
 ### Mercado Pago planning update — 2026-09-09
 
@@ -116,9 +155,10 @@ outcomes:
 | Operational truth          | Dated evidence register exists; current Cloud rows are unverified                        | Re-run runtime/Cloud checks before making current claims                             |
 
 Product or commercial readiness is a separate gate. It additionally requires
-closing Plans 010 and 011, stabilizing the complete test/runtime path, and—if
-commercialization is chosen—finishing installation, licensing, upgrade,
-support and buyer-onboarding work from Plan 013.
+closing Plan 011 (Plan 010 closed 2026-08-26), stabilizing the complete
+test/runtime path, resolving Plan 012 (pricing source of truth, security
+sweep), and—if commercialization is chosen—finishing installation, licensing,
+upgrade, support and buyer-onboarding work from Plan 013.
 
 ## Known documentation and tooling debt
 
