@@ -47,4 +47,41 @@ describe('reconcileNonTerminalSubscriptions', () => {
       reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
     ).resolves.toEqual(expect.objectContaining({ repaired: 0, stale: 1 }));
   });
+
+  it('skips a provider that is not configured for reconciliation', async () => {
+    mocks.getProvider.mockImplementation(() => {
+      throw new Error('provider_not_configured');
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
+    ).resolves.toEqual({ scanned: 1, repaired: 0, stale: 0, anomalous: 0, skipped: 1 });
+    expect(mocks.snapshot).not.toHaveBeenCalled();
+  });
+
+  it('skips a provider that does not expose subscription snapshots', async () => {
+    mocks.getProvider.mockReturnValue({});
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
+    ).resolves.toEqual({ scanned: 1, repaired: 0, stale: 0, anomalous: 0, skipped: 1 });
+    expect(mocks.reduce).not.toHaveBeenCalled();
+  });
+
+  it('records a missing provider resource as an anomaly without mutating the subscription', async () => {
+    mocks.snapshot.mockResolvedValue(null);
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
+    ).resolves.toEqual({ scanned: 1, repaired: 0, stale: 0, anomalous: 1, skipped: 0 });
+    expect(mocks.rpc).toHaveBeenCalledWith('upsert_billing_financial_anomaly', {
+      p_anomaly_type: 'status_divergence',
+      p_external_resource_id: 'pa-1',
+      p_provider: 'mercadopago',
+      p_observed_status: 'resource_not_found',
+      p_account_id: 'account-1',
+      p_subscription_id: undefined,
+    });
+    expect(mocks.reduce).not.toHaveBeenCalled();
+  });
 });
