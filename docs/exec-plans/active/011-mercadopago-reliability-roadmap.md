@@ -35,11 +35,11 @@ Playwright; no new dependency selected.
 
 ## Delivery order and plan ownership
 
-| Delivery | Existing owner | Independently reviewable outcome |
-| --- | --- | --- |
-| A: truthful checkout/dashboard | Phase 2 | No false trial, query errors remain errors, bounded account-correlated confirmation and loading UX |
-| B: checkout coordination | Phase 2 | Concurrent creation is reserved before the API call; known pending checkout is reused; unknown outcomes cannot cause blind recreation |
-| C: resource recovery/anomalies | Phase 6, Mercado Pago slice | Durable deferred work, shared-reducer repairs and deduplicated financial alerts with manual resolution |
+| Delivery                       | Existing owner              | Independently reviewable outcome                                                                                                      |
+| ------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| A: truthful checkout/dashboard | Phase 2                     | No false trial, query errors remain errors, bounded account-correlated confirmation and loading UX                                    |
+| B: checkout coordination       | Phase 2                     | Concurrent creation is reserved before the API call; known pending checkout is reused; unknown outcomes cannot cause blind recreation |
+| C: resource recovery/anomalies | Phase 6, Mercado Pago slice | Durable deferred work, shared-reducer repairs and deduplicated financial alerts with manual resolution                                |
 
 Do not open a new top-level Plan 014 for the same billing work. Extend the
 existing [Phase 2](011-phase2-mercadopago-tasks.md) and
@@ -73,12 +73,12 @@ boundary. Update the Phase 6 operational runbook in that delivery.
 
 ## Review and acceptance matrix
 
-| Scope | Required evidence |
-| --- | --- |
-| A | Trial suppression only for MP; RPC error is not an empty account; other-account return rejected; polling stops at 60 seconds; submit loader; four locales |
-| B | Concurrent calls create one remote attempt; pending intent resumes; timeout remains unknown; account isolation; upgrade with existing incomplete rows |
-| C | Duplicate/out-of-order delivery; deferred correlation succeeds or escalates; outage/retry bounds; refund/dispute anomaly persists with unchanged access; approved/cancellation timestamps use real evidence |
-| Release | Sandbox provider state, local subscription/invoice/event and dashboard agree; duplicate replay has no extra effect; cancellation agrees with paid-through policy |
+| Scope   | Required evidence                                                                                                                                                                                           |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A       | Trial suppression only for MP; RPC error is not an empty account; other-account return rejected; polling stops at 60 seconds; submit loader; four locales                                                   |
+| B       | Concurrent calls create one remote attempt; pending intent resumes; timeout remains unknown; account isolation; upgrade with existing incomplete rows                                                       |
+| C       | Duplicate/out-of-order delivery; deferred correlation succeeds or escalates; outage/retry bounds; refund/dispute anomaly persists with unchanged access; approved/cancellation timestamps use real evidence |
+| Release | Sandbox provider state, local subscription/invoice/event and dashboard agree; duplicate replay has no extra effect; cancellation agrees with paid-through policy                                            |
 
 Run focused regression tests in RED then GREEN. Final code validation includes
 `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test` and `pnpm build`;
