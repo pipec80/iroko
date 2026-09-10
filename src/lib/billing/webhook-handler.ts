@@ -153,7 +153,6 @@ async function persistAcknowledgement(event: AcknowledgedWebhook): Promise<boole
       });
   return !result.error;
 }
-
 /** Resolves intent-based references and validates legacy account references. */
 async function resolveMercadoPagoAccount(
   event: NormalizedBillingEvent,
