@@ -77,6 +77,14 @@ export type ProviderRecoveryResult =
   | { kind: 'unrelated' }
   | { kind: 'anomaly'; anomalyType: BillingAnomalyType; observedStatus?: string };
 
+export interface SubscriptionSnapshot {
+  externalSubscriptionId: string;
+  status: SubscriptionStatus;
+  currentPeriodEnd?: string;
+  cancelAtPeriodEnd: boolean;
+  providerModifiedAt?: string;
+  providerVersion?: string;
+}
 export type ProviderWebhookResult = NormalizedBillingEvent | AcknowledgedWebhook;
 
 export interface PaymentProvider {
@@ -91,4 +99,5 @@ export interface PaymentProvider {
     context?: WebhookVerificationContext,
   ): Promise<ProviderWebhookResult | null>;
   recoverResource?(input: ProviderRecoveryInput): Promise<ProviderRecoveryResult>;
+  getSubscriptionSnapshot?(externalSubscriptionId: string): Promise<SubscriptionSnapshot | null>;
 }

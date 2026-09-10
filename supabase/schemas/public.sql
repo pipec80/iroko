@@ -3825,3 +3825,39 @@ GRANT EXECUTE ON FUNCTION public.enqueue_billing_recovery_job(text,text,text,tex
 GRANT EXECUTE ON FUNCTION public.upsert_billing_financial_anomaly(text,text,text,text,uuid,uuid) TO service_role;
 GRANT EXECUTE ON FUNCTION public.claim_billing_recovery_jobs(integer,integer) TO service_role;
 GRANT EXECUTE ON FUNCTION public.complete_billing_recovery_job(uuid,text,text) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.get_billing_reconciliation_candidates(p_batch_size integer)
+RETURNS TABLE(account_id uuid,provider text,external_subscription_id text,subscription_updated_at timestamptz)
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$ BEGIN
+  IF p_batch_size<1 OR p_batch_size>20 THEN RAISE EXCEPTION 'billing_reconciliation_batch_invalid'; END IF;
+  RETURN QUERY SELECT c.account_id,s.provider,s.external_subscription_id,s.updated_at FROM billing.subscriptions s
+  JOIN billing.customers c ON c.id=s.customer_id WHERE s.status IN ('incomplete','trialing','active','past_due','paused')
+  AND s.external_subscription_id IS NOT NULL ORDER BY s.updated_at,s.id LIMIT p_batch_size;
+END;$$;
+CREATE OR REPLACE FUNCTION public.apply_billing_reconciliation_snapshot(
+  p_provider text,p_external_event_id text,p_account_id uuid,p_external_subscription_id text,p_plan_id uuid,
+  p_status billing.subscription_status,p_current_period_start timestamptz,p_current_period_end timestamptz,
+  p_cancel_at_period_end boolean,p_external_customer_id text,p_payload jsonb,p_expected_subscription_updated_at timestamptz
+) RETURNS text LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$ DECLARE v_updated_at timestamptz; BEGIN
+  SELECT s.updated_at INTO v_updated_at FROM billing.subscriptions s JOIN billing.customers c ON c.id=s.customer_id
+  WHERE c.account_id=p_account_id AND s.provider=p_provider AND s.external_subscription_id=p_external_subscription_id FOR UPDATE OF s;
+  IF NOT FOUND THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
+  IF v_updated_at IS DISTINCT FROM p_expected_subscription_updated_at THEN RETURN 'stale'; END IF;
+  RETURN public.apply_subscription_updated(p_provider,p_external_event_id,p_account_id,p_external_subscription_id,p_plan_id,
+    p_status,p_current_period_start,p_current_period_end,p_cancel_at_period_end,p_external_customer_id,p_payload);
+END;$$;
+CREATE OR REPLACE FUNCTION public.record_billing_worker_result(p_mode text,p_request_id text,p_status_code integer,p_summary jsonb)
+RETURNS text LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$ BEGIN
+  IF p_mode NOT IN ('recovery','reconciliation') OR p_status_code NOT BETWEEN 100 AND 599 OR jsonb_typeof(COALESCE(p_summary,'{}'))<>'object'
+    THEN RAISE EXCEPTION 'billing_worker_result_invalid'; END IF;
+  INSERT INTO private.billing_worker_health(mode,request_id,last_invoked_at,last_completed_at,last_status_code,last_summary)
+  VALUES(p_mode,left(p_request_id,100),now(),now(),p_status_code,COALESCE(p_summary,'{}')) ON CONFLICT(mode) DO UPDATE SET
+    request_id=EXCLUDED.request_id,last_invoked_at=EXCLUDED.last_invoked_at,last_completed_at=EXCLUDED.last_completed_at,
+    last_status_code=EXCLUDED.last_status_code,last_summary=EXCLUDED.last_summary,updated_at=now(); RETURN 'recorded';
+END;$$;
+REVOKE ALL ON FUNCTION public.get_billing_reconciliation_candidates(integer) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.apply_billing_reconciliation_snapshot(text,text,uuid,text,uuid,billing.subscription_status,timestamptz,timestamptz,boolean,text,jsonb,timestamptz) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.record_billing_worker_result(text,text,integer,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.get_billing_reconciliation_candidates(integer) TO service_role;
+GRANT EXECUTE ON FUNCTION public.apply_billing_reconciliation_snapshot(text,text,uuid,text,uuid,billing.subscription_status,timestamptz,timestamptz,boolean,text,jsonb,timestamptz) TO service_role;
+GRANT EXECUTE ON FUNCTION public.record_billing_worker_result(text,text,integer,jsonb) TO service_role;
