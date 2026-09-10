@@ -85,7 +85,6 @@ export interface SubscriptionSnapshot {
   providerModifiedAt?: string;
   providerVersion?: string;
 }
-
 export type ProviderWebhookResult = NormalizedBillingEvent | AcknowledgedWebhook;
 
 export interface PaymentProvider {
