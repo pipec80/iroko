@@ -120,28 +120,34 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     );
   });
 
-  it('maps Mercado Pago canceled preapproval status to subscription_canceled', async () => {
-    const dataId = 'pa_2';
-    const requestId = 'req_2';
-    const ts = '1720000000';
-    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
-    const body = JSON.stringify({ type: 'subscription_preapproval', data: { id: dataId } });
+  // MercadoPago devuelve el preapproval cancelado como `cancelled` (doble L) en
+  // la API real; su documentación a veces escribe `canceled`. Ambas deben mapear
+  // al estado terminal.
+  it.each(['cancelled', 'canceled'])(
+    'maps Mercado Pago "%s" preapproval status to subscription_canceled',
+    async (canceledStatus) => {
+      const dataId = `pa_2_${canceledStatus}`;
+      const requestId = `req_2_${canceledStatus}`;
+      const ts = '1720000000';
+      const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+      const body = JSON.stringify({ type: 'subscription_preapproval', data: { id: dataId } });
 
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        id: dataId,
-        status: 'canceled',
-        external_reference: 'acc_2',
-      }),
-    });
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: dataId,
+          status: canceledStatus,
+          external_reference: 'acc_2',
+        }),
+      });
 
-    const result = await mercadopagoProvider.verifyWebhook(
-      body,
-      `ts=${ts},v1=${v1};x-request-id=${requestId}`,
-    );
-    expect(result?.type).toBe('subscription_canceled');
-  });
+      const result = await mercadopagoProvider.verifyWebhook(
+        body,
+        `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+      );
+      expect(result?.type).toBe('subscription_canceled');
+    },
+  );
 
   it('verifies the lower-cased query data id and uses the notification id for idempotency', async () => {
     const dataId = 'ORD01JQ4S4KY8HWQ6NA5PXB65B3D3';
@@ -983,24 +989,27 @@ describe('mercadopagoProvider.cancelSubscription', () => {
     ).rejects.toThrow('billing_capability_not_supported:cancelAtPeriodEnd');
   });
 
-  it('should cancel immediately via the API when atPeriodEnd is false', async () => {
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({ id: 'pa_1', status: 'canceled' }),
-    });
-    await mercadopagoProvider.cancelSubscription?.({
-      externalSubscriptionId: 'pa_1',
-      timing: 'immediate',
-    });
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/preapproval/pa_1'),
-      expect.objectContaining({
-        method: 'PUT',
-        body: expect.stringContaining('"status":"canceled"'),
-        signal: expect.any(AbortSignal),
-      }),
-    );
-  });
+  it.each(['cancelled', 'canceled'])(
+    'confirms immediate cancellation when Mercado Pago returns "%s"',
+    async (confirmedStatus) => {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'pa_1', status: confirmedStatus }),
+      });
+      await mercadopagoProvider.cancelSubscription?.({
+        externalSubscriptionId: 'pa_1',
+        timing: 'immediate',
+      });
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/preapproval/pa_1'),
+        expect.objectContaining({
+          method: 'PUT',
+          body: expect.stringContaining('"status":"cancelled"'),
+          signal: expect.any(AbortSignal),
+        }),
+      );
+    },
+  );
 
   it('rejects immediate cancellation when Mercado Pago does not confirm canceled status', async () => {
     fetchMock.mockResolvedValue({
