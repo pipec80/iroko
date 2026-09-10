@@ -13,6 +13,7 @@ import type {
 } from './events';
 
 export type BillingReductionResult = { status: 'applied' } | { status: 'duplicate' };
+export type BillingReconciliationReductionResult = BillingReductionResult | { status: 'stale' };
 
 /**
  * The generated Supabase function typings do not express nullable SQL
@@ -78,7 +79,8 @@ async function applyInvoicePaid(event: InvoicePaidEvent): Promise<BillingReducti
 
 async function applySubscriptionUpdated(
   event: SubscriptionUpdatedEvent,
-): Promise<BillingReductionResult> {
+  options?: { expectedSubscriptionUpdatedAt?: string },
+): Promise<BillingReconciliationReductionResult> {
   const resolvedPlan =
     event.externalPriceId ?
       await resolvePlanByExternalPrice({
@@ -87,7 +89,11 @@ async function applySubscriptionUpdated(
       })
     : null;
   const admin = createAdminClient();
-  const { data, error } = await admin.rpc('apply_subscription_updated', {
+  const rpcName =
+    options?.expectedSubscriptionUpdatedAt ?
+      'apply_billing_reconciliation_snapshot'
+    : 'apply_subscription_updated';
+  const rpcArgs = {
     p_provider: event.provider,
     p_external_event_id: event.externalEventId,
     p_account_id: event.accountId,
@@ -99,8 +105,15 @@ async function applySubscriptionUpdated(
     p_cancel_at_period_end: event.cancelAtPeriodEnd,
     p_external_customer_id: nullableRpcText(event.externalCustomerId),
     p_payload: toJsonPayload(event.raw),
-  });
+    ...(options?.expectedSubscriptionUpdatedAt ?
+      {
+        p_expected_subscription_updated_at: options.expectedSubscriptionUpdatedAt,
+      }
+    : {}),
+  };
+  const { data, error } = await admin.rpc(rpcName, rpcArgs);
   if (error) throw new Error(`billing_subscription_updated_failed:${error.code}`);
+  if (data === 'stale') return { status: 'stale' };
   return data === 'duplicate' ? { status: 'duplicate' } : { status: 'applied' };
 }
 
@@ -168,9 +181,10 @@ async function applyPaymentRecovered(
 /** Applies one normalized event through the persistence operation it is allowed to mutate. */
 export async function reduceBillingEvent(
   event: NormalizedBillingEvent,
-): Promise<BillingReductionResult> {
+  options?: { expectedSubscriptionUpdatedAt?: string },
+): Promise<BillingReconciliationReductionResult> {
   if (event.type === 'subscription_created') return applySubscriptionCreated(event);
-  if (event.type === 'subscription_updated') return applySubscriptionUpdated(event);
+  if (event.type === 'subscription_updated') return applySubscriptionUpdated(event, options);
   if (event.type === 'subscription_canceled') return applySubscriptionCanceled(event);
   if (event.type === 'invoice_paid') return applyInvoicePaid(event);
   if (event.type === 'invoice_payment_failed') return applyInvoicePaymentFailed(event);

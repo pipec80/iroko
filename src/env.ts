@@ -59,6 +59,7 @@ export const env = createEnv({
     // Subscriptions require a notification URL per preapproval. This must be
     // reachable by Mercado Pago (including a Preview protection bypass in sandbox).
     MERCADOPAGO_WEBHOOK_URL: z.string().url().optional(),
+    BILLING_RECONCILIATION_SECRET: z.string().min(32).optional(),
     // Injected automatically by Vercel — never set manually. Absent outside Vercel.
     VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
     // Server-side posthog-node client. The real ingest host — never the
@@ -97,6 +98,7 @@ export const env = createEnv({
     MERCADOPAGO_ACCESS_TOKEN: process.env.MERCADOPAGO_ACCESS_TOKEN,
     MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
     MERCADOPAGO_WEBHOOK_URL: process.env.MERCADOPAGO_WEBHOOK_URL,
+    BILLING_RECONCILIATION_SECRET: process.env.BILLING_RECONCILIATION_SECRET,
     VERCEL_ENV: process.env.VERCEL_ENV,
     POSTHOG_HOST: process.env.POSTHOG_HOST ?? 'https://us.i.posthog.com',
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,

@@ -9,6 +9,7 @@ import type {
   PaymentProvider,
   ProviderRecoveryResult,
   SubscriptionStatus,
+  SubscriptionSnapshot,
   WebhookVerificationContext,
 } from '../types';
 
@@ -647,5 +648,24 @@ export const mercadopagoProvider: PaymentProvider = {
     if (!event) return { kind: 'unrelated' };
     if (event.type === 'webhook_acknowledged') return { kind: 'pending' };
     return { kind: 'event', event };
+  },
+
+  async getSubscriptionSnapshot(externalSubscriptionId): Promise<SubscriptionSnapshot | null> {
+    const preapproval = await fetchResource<PreapprovalResource>(
+      `/preapproval/${encodeURIComponent(externalSubscriptionId)}`,
+    );
+    if (preapproval.id !== externalSubscriptionId) return null;
+    return {
+      externalSubscriptionId: preapproval.id,
+      status: mapPreapprovalStatus(preapproval.status),
+      ...(preapproval.next_payment_date ? { currentPeriodEnd: preapproval.next_payment_date } : {}),
+      cancelAtPeriodEnd: false,
+      ...(preapproval.last_modified ?
+        {
+          providerModifiedAt: preapproval.last_modified,
+          providerVersion: preapproval.last_modified,
+        }
+      : {}),
+    };
   },
 };

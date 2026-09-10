@@ -763,4 +763,26 @@ REVOKE ALL ON FUNCTION private.email_worker_health() FROM PUBLIC;
 COMMENT ON FUNCTION private.email_worker_health() IS
   'Estado de la última invocación real del worker (status HTTP, no solo si pg_net encoló el request) más señales de entrega: profundidad de la cola, antigüedad del mensaje más viejo, y mensajes dead-lettered en las últimas 24h. NULL en status_code/error_msg/timed_out = la respuesta de pg_net aún no llegó (normal justo después de invocar) o nunca se guardó un request_id. dead_lettered_recent > 0 significa que el worker corre pero el proveedor de email está rechazando: el status HTTP por sí solo no lo detecta.';
 
+CREATE TABLE private.billing_worker_health (
+  mode text PRIMARY KEY CHECK(mode IN ('recovery','reconciliation')), request_id text,
+  last_invoked_at timestamptz,last_completed_at timestamptz,last_status_code integer CHECK(last_status_code BETWEEN 100 AND 599),
+  last_summary jsonb NOT NULL DEFAULT '{}'::jsonb,last_net_request_id bigint,updated_at timestamptz NOT NULL DEFAULT now()
+);
+REVOKE ALL ON private.billing_worker_health FROM PUBLIC,anon,authenticated,service_role;
+
+CREATE OR REPLACE FUNCTION private.invoke_billing_worker(p_mode text) RETURNS bigint
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
+DECLARE v_url text;v_secret text;v_request_id bigint;
+BEGIN
+  IF p_mode NOT IN ('recovery','reconciliation') THEN RAISE EXCEPTION 'billing_worker_mode_invalid'; END IF;
+  SELECT decrypted_secret INTO v_url FROM vault.decrypted_secrets WHERE name='billing_worker_url';
+  SELECT decrypted_secret INTO v_secret FROM vault.decrypted_secrets WHERE name='billing_reconciliation_secret';
+  IF v_url IS NULL OR v_secret IS NULL THEN RAISE EXCEPTION 'billing_worker_vault_not_configured'; END IF;
+  SELECT net.http_post(url=>rtrim(v_url,'/')||'/api/internal/billing/worker',headers=>jsonb_build_object('Content-Type','application/json','X-Billing-Worker-Secret',v_secret),body=>jsonb_build_object('mode',p_mode),timeout_milliseconds=>45000) INTO v_request_id;
+  INSERT INTO private.billing_worker_health(mode,last_invoked_at,last_net_request_id) VALUES(p_mode,now(),v_request_id)
+  ON CONFLICT(mode) DO UPDATE SET last_invoked_at=now(),last_net_request_id=EXCLUDED.last_net_request_id,updated_at=now();
+  RETURN v_request_id;
+END;$$;
+REVOKE ALL ON FUNCTION private.invoke_billing_worker(text) FROM PUBLIC,anon,authenticated,service_role;
+
 

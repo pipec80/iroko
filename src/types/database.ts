@@ -1761,6 +1761,23 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"]
         }[]
       }
+      apply_billing_reconciliation_snapshot: {
+        Args: {
+          p_account_id: string
+          p_cancel_at_period_end: boolean
+          p_current_period_end: string
+          p_current_period_start: string
+          p_expected_subscription_updated_at: string
+          p_external_customer_id: string
+          p_external_event_id: string
+          p_external_subscription_id: string
+          p_payload: Json
+          p_plan_id: string
+          p_provider: string
+          p_status: Database["billing"]["Enums"]["subscription_status"]
+        }
+        Returns: string
+      }
       apply_invoice_paid: {
         Args: {
           p_account_id: string
@@ -2072,6 +2089,15 @@ export type Database = {
           provider: string
         }[]
       }
+      get_billing_reconciliation_candidates: {
+        Args: { p_batch_size: number }
+        Returns: {
+          account_id: string
+          external_subscription_id: string
+          provider: string
+          subscription_updated_at: string
+        }[]
+      }
       get_email_worker_health: {
         Args: never
         Returns: {
@@ -2269,6 +2295,15 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      record_billing_worker_result: {
+        Args: {
+          p_mode: string
+          p_request_id: string
+          p_status_code: number
+          p_summary: Json
+        }
+        Returns: string
       }
       remove_member: {
         Args: { p_account_id: string; p_user_id: string }
