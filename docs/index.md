@@ -75,6 +75,16 @@ sellability) — see each plan's own ordering rationale.
 | 12    | [Security hardening + pricing source of truth](exec-plans/active/012-security-hardening-and-pricing-truth.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | P1       | Active                            |
 | 13    | [Launch readiness roadmap (Fase D)](exec-plans/active/013-launch-readiness-roadmap.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | P2       | Roadmap — not yet broken into PRs |
 
+### Mercado Pago reliability work
+
+The [Plan 011 reliability roadmap](exec-plans/active/011-mercadopago-reliability-roadmap.md)
+extends Phase 2 and the Mercado Pago slice of Phase 6. Its
+[design supplement](architecture/mercadopago-reliability-design.md) and
+[accepted ADR 0003](adr/0003-mercadopago-reliability-boundaries.md) preserve the
+pending hosted model, remove the unimplemented trial promise, and propose
+durable checkout/recovery coordination. Approval authorizes the sequential
+local implementation; it is not a completion or production-readiness claim.
+
 ## Directory policy
 
 Versioned and safe to publish:

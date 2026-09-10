@@ -6,6 +6,28 @@ PR-4 and depends on merged Fase 1 (`BillingService` + capabilities + UI
 guard), not on Stripe. It is the first provider certification and the **P0
 gate before enabling Mercado Pago in production**.
 
+## Reliability follow-up (approved 2026-09-09)
+
+The completed historical steps below remain evidence and are not rewritten.
+Two sequential follow-up PRs extend this phase under the
+[Mercado Pago reliability roadmap](011-mercadopago-reliability-roadmap.md):
+
+1. **Dashboard and checkout confirmation:** suppress the Mercado Pago trial,
+   distinguish catalogue/overview failures from an empty account, add an
+   owner/admin account-scoped confirmation RPC, and poll the exact returned
+   preapproval for at most 60 seconds. This PR also keys billing data by the
+   active account and preserves accessible per-button loading state.
+2. **Durable checkout coordination:** reserve one account/provider checkout
+   intent before the remote POST, reuse known pending checkout URLs, and move
+   unknown outcomes to operator review instead of blindly recreating them.
+   Reducer transitions and legacy account-UUID external references remain
+   compatible.
+
+Neither follow-up changes prices, catalogue slugs, hosted checkout, the
+no-associated-plan model, access policy, or Cloud state. Their exact contracts,
+RED/GREEN scenarios, SQL permissions, and verification gates are defined in
+the approved reliability implementation plan.
+
 ## Goal
 
 Make Mercado Pago the LATAM reference implementation of Billing Core v2 using

@@ -52,6 +52,25 @@ documentation pass.
 
 ## Verification boundary
 
+### Mercado Pago planning update — 2026-09-09
+
+The [reliability roadmap](exec-plans/active/011-mercadopago-reliability-roadmap.md)
+defines bounded follow-up work inside Plan 011, with a
+[design supplement](architecture/mercadopago-reliability-design.md) and
+[Accepted ADR 0003](adr/0003-mercadopago-reliability-boundaries.md).
+Agreed product scope: no Mercado Pago trial for now; persistent financial
+anomalies with alerts, without automatic access revocation. Prices and plan
+slugs are unchanged.
+
+This planning pass refreshed and inspected `origin/main` at `954e5d5`. It does
+not refresh the platform-wide verification date
+above. Current CI, Cloud, deployment and sandbox health are **[NO VERIFICADO]**.
+No application code or Cloud resources were changed in this documentation pass.
+The accepted design is approved for sequential local implementation; rollout
+and provider operations remain separately authorized work.
+
+### Earlier verification boundary
+
 This document was checked against the repository tree, configuration, and
 versioned plans. The commit-bound CI and Vercel Preview evidence for PR #152 is
 recorded in the operational evidence register. The application runtime, linked
