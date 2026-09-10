@@ -35,7 +35,7 @@ overrides:
   vite: 8.0.16
   '@babel/core': 7.29.6
   browserslist: '>=4.28.7'
-  sharp: 0.35.3
+  sharp: 0.35.4
   # @react-email/ui (solo usado por `email:dev`, preview local) fija next@16.2.6
   # como dependencia directa exacta — nunca sigue el bump del next raíz. Forzar
   # acá para que no quede una segunda instancia vulnerable en el árbol.
