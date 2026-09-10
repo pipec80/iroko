@@ -168,16 +168,22 @@ function isValidProviderPrice(price: { amount: number; currency: string }): bool
   );
 }
 
+/** La API de MercadoPago devuelve el preapproval cancelado como `cancelled`
+ * (doble L), aunque parte de su documentación escribe `canceled`. Se aceptan
+ * ambas grafías para no perder la transición a estado terminal. */
+function isMercadoPagoCanceledStatus(status: string): boolean {
+  return status === 'cancelled' || status === 'canceled';
+}
+
 /** MercadoPago no distingue 'authorized'/'canceled' 1:1 con SubscriptionStatus
  * — mapea los estados de Preapproval al enum interno. */
 function mapPreapprovalStatus(status: string): SubscriptionStatus {
+  if (isMercadoPagoCanceledStatus(status)) return 'canceled';
   switch (status) {
     case 'authorized':
       return 'active';
     case 'paused':
       return 'paused';
-    case 'canceled':
-      return 'canceled';
     case 'pending':
       return 'incomplete';
     default:
@@ -473,9 +479,9 @@ export const mercadopagoProvider: PaymentProvider = {
     }
     const preapproval = await putResource<{ status: string }>(
       `/preapproval/${encodeURIComponent(params.externalSubscriptionId)}`,
-      { status: 'canceled' },
+      { status: 'cancelled' },
     );
-    if (preapproval.status !== 'canceled') {
+    if (!isMercadoPagoCanceledStatus(preapproval.status)) {
       throw new Error('mercadopago_cancellation_not_confirmed');
     }
   },
