@@ -9,6 +9,7 @@ import { getPaymentProvider } from '@/lib/billing/registry';
 import { cancelBillingSubscription, startBillingCheckout } from '@/lib/billing/service';
 import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
 import type { NormalizedBillingEvent } from '@/lib/billing/events';
+import type { SubscriptionStatus } from '@/lib/billing/types';
 import { handleProviderWebhook } from '@/lib/billing/webhook-handler';
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
@@ -16,7 +17,15 @@ import { createClient } from '@/lib/supabase/server';
 import { env } from '@/env';
 import type { ProviderCapabilities } from '@/lib/billing/capabilities';
 
-type ActionResult<T> = { data: T | null; error?: string };
+export type ActionResult<T> = { data: T | null; error?: string };
+
+export type CheckoutConfirmationState = 'pending' | 'confirmed' | 'failed' | 'not_found';
+
+export interface CheckoutConfirmation {
+  state: CheckoutConfirmationState;
+  externalSubscriptionId: string;
+  status: SubscriptionStatus | null;
+}
 
 export interface PlanRow {
   slug: string;
@@ -85,6 +94,10 @@ const invoicesQuerySchema = z.object({
 const checkoutSchema = z.object({
   planSlug: z.enum(['pro', 'scale']),
   interval: z.enum(['month', 'year']),
+});
+
+const checkoutConfirmationSchema = z.object({
+  externalSubscriptionId: z.string().trim().min(1).max(255),
 });
 
 interface MockCheckoutToken {
@@ -273,10 +286,20 @@ export const getBillingData = withServerAction(async function getBillingData(): 
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
   const supabase = await createClient();
-  const [{ data: plans }, { data: overview }] = await Promise.all([
+  const [plansResult, overviewResult] = await Promise.all([
     supabase.rpc('get_active_plans'),
     supabase.rpc('get_billing_overview', { p_account_id: accountId }),
   ]);
+  if (plansResult.error) return { data: null, error: 'fetch_failed' };
+
+  const overviewNotAuthorized =
+    overviewResult.error?.code === '42501' || overviewResult.error?.message === 'not_authorized';
+  if (overviewResult.error && !overviewNotAuthorized) {
+    return { data: null, error: 'fetch_failed' };
+  }
+
+  const plans = plansResult.data;
+  const overview = overviewNotAuthorized ? null : overviewResult.data;
   const basePlans: PlanRow[] = (plans ?? []).map((p) => ({
     slug: p.slug,
     name: p.name,
@@ -315,6 +338,7 @@ export const getBillingData = withServerAction(async function getBillingData(): 
                   ...plan,
                   price: providerPrice.amount,
                   currency: providerPrice.currency,
+                  trialDays: 0,
                 };
               } catch {
                 return null;
@@ -347,6 +371,43 @@ export const getBillingData = withServerAction(async function getBillingData(): 
     },
   };
 });
+
+/** Reads confirmation for one exact Mercado Pago subscription in the active account. */
+export const getCheckoutConfirmation = withServerAction(
+  async function getCheckoutConfirmation(input: {
+    externalSubscriptionId: string;
+  }): Promise<ActionResult<CheckoutConfirmation>> {
+    const parsed = checkoutConfirmationSchema.safeParse(input);
+    if (!parsed.success) return { data: null, error: 'validation_error' };
+
+    const accountId = await getActiveAccountId();
+    if (!accountId) return { data: null, error: 'no_account' };
+
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc('get_billing_checkout_confirmation', {
+      p_account_id: accountId,
+      p_external_subscription_id: parsed.data.externalSubscriptionId,
+    });
+    if (error) {
+      return {
+        data: null,
+        error:
+          error.code === '42501' || error.message === 'not_authorized' ?
+            'not_authorized'
+          : 'fetch_failed',
+      };
+    }
+
+    const row = data?.[0];
+    return {
+      data: {
+        state: (row?.state ?? 'not_found') as CheckoutConfirmationState,
+        externalSubscriptionId: row?.external_subscription_id ?? parsed.data.externalSubscriptionId,
+        status: (row?.status as SubscriptionStatus | null | undefined) ?? null,
+      },
+    };
+  },
+);
 
 /** Historial de facturas paginado por keyset (null si no es owner/admin). */
 export const listInvoices = withServerAction(async function listInvoices(input: {

@@ -19,6 +19,7 @@ const STEP_ICONS = [Building2, Users, Send, PartyPopper];
 export function OnboardingWizard({ initialOrgName }: { initialOrgName: string | null }) {
   const t = useTranslations('Onboarding');
   const [step, setStep] = useState(0);
+  const [billingAccountId, setBillingAccountId] = useState<string | null>(null);
 
   const labels = [
     t('step_org'),
@@ -35,15 +36,21 @@ export function OnboardingWizard({ initialOrgName }: { initialOrgName: string | 
   const StepIcon = STEP_ICONS[step] ?? Building2;
 
   const goNext = () => setStep((s) => s + 1);
+  const confirmOrg = (accountId: string) => {
+    setBillingAccountId(accountId);
+    goNext();
+  };
   const goBack = () => setStep((s) => Math.max(0, s - 1));
   const handleSkip = () => {
     void completeOnboarding();
   };
 
   const renderStep = () => {
-    if (step === 0) return <StepOrg initialName={initialOrgName} onNext={goNext} />;
+    if (step === 0) return <StepOrg initialName={initialOrgName} onNext={confirmOrg} />;
     if (step === 1) return <StepInvite onNext={goNext} />;
-    if (appConfig.features.billing && step === 2) return <StepPlan onNext={goNext} />;
+    if (appConfig.features.billing && step === 2 && billingAccountId) {
+      return <StepPlan accountId={billingAccountId} onNext={goNext} />;
+    }
     return <StepBranding />;
   };
 

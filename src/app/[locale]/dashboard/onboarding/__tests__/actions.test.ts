@@ -99,6 +99,7 @@ describe('confirmOrgName', () => {
           data: [{ account_id: 'acc-1', name: 'Cuenta', type, role: 'owner' }],
           error: null,
         })
+      : fn === 'create_team' ? Promise.resolve({ data: 'acc-new-team', error: null })
       : Promise.resolve({ error: null }),
     );
   }
@@ -129,12 +130,12 @@ describe('confirmOrgName', () => {
 
     expect(mocks.rpc).toHaveBeenCalledWith('create_team', { p_name: 'Mi Empresa' });
     expect(mocks.rpc).not.toHaveBeenCalledWith('rename_account', expect.anything());
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({ success: true, accountId: 'acc-new-team' });
     expect(mocks.captureServer).toHaveBeenCalledWith({
       event: 'onboarding_step_completed',
       properties: { step: 'org_name' },
       distinctId: 'user-1',
-      accountId: 'acc-1',
+      accountId: 'acc-new-team',
     });
   });
 
@@ -159,7 +160,7 @@ describe('confirmOrgName', () => {
     });
     expect(mocks.rpc).not.toHaveBeenCalledWith('create_team', expect.anything());
     expect(mocks.refreshSession).not.toHaveBeenCalled();
-    expect(result).toEqual({ success: true });
+    expect(result).toEqual({ success: true, accountId: 'acc-1' });
   });
 
   it('returns no_active_account when there is no active account', async () => {
