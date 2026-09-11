@@ -502,7 +502,14 @@ BEGIN
   JOIN billing.customers c ON c.id = s.customer_id
   JOIN billing.plans p ON p.id = s.plan_id
   WHERE c.account_id = p_account_id
-    AND s.status IN ('active', 'trialing')
+    AND (
+      s.status IN ('active', 'trialing')
+      OR (
+        s.status = 'canceled'
+        AND s.current_period_end IS NOT NULL
+        AND s.current_period_end > now()
+      )
+    )
   ORDER BY s.created_at DESC
   LIMIT 1;
 
@@ -520,7 +527,7 @@ $$;
 
 ALTER FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") OWNER TO "postgres";
 
-COMMENT ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") IS 'Features+limits+slug del plan efectivo (sub activa → fallback free). Interno, sin check de membership (3H-1.5).';
+COMMENT ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") IS 'Effective plan row, including canceled access through a verified future period end, otherwise falling back to Free.';
 
 REVOKE ALL ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") FROM PUBLIC;
 

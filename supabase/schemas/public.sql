@@ -424,7 +424,7 @@ ALTER FUNCTION "public"."generate_recovery_codes"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") RETURNS TABLE("plan_name" "text", "plan_slug" "text", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "features" "jsonb")
-    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
@@ -438,7 +438,14 @@ BEGIN
     JOIN billing.customers c ON c.id = s.customer_id
     JOIN billing.plans p ON p.id = s.plan_id
     WHERE c.account_id = p_account_id
-      AND s.status IN ('active', 'trialing')
+      AND (
+        s.status IN ('active', 'trialing')
+        OR (
+          s.status = 'canceled'
+          AND s.current_period_end IS NOT NULL
+          AND s.current_period_end > now()
+        )
+      )
     ORDER BY s.created_at DESC
     LIMIT 1;
 END;
@@ -448,7 +455,7 @@ $$;
 ALTER FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") IS 'Returns the current subscription summary for an account the user belongs to. SECURITY DEFINER: reads billing.* (schema not exposed to authenticated). Uses private.user_is_member() for access control.';
+COMMENT ON FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") IS 'Returns the current subscription summary for an account the user belongs to, including canceled access through a verified future period end.';
 
 
 
@@ -492,7 +499,7 @@ COMMENT ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") I
 
 
 CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone, "provider" "text", "external_subscription_id" "text")
-    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
@@ -504,7 +511,14 @@ BEGIN
   JOIN billing.customers c ON c.id = s.customer_id
   JOIN billing.plans p ON p.id = s.plan_id
   WHERE c.account_id = p_account_id
-    AND s.status IN ('active', 'trialing', 'past_due', 'paused')
+    AND (
+      s.status IN ('active', 'trialing')
+      OR (
+        s.status = 'canceled'
+        AND s.current_period_end IS NOT NULL
+        AND s.current_period_end > now()
+      )
+    )
   ORDER BY s.created_at DESC
   LIMIT 1;
 END;
@@ -514,7 +528,62 @@ $$;
 ALTER FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Suscripción vigente de la cuenta para la UI de billing (owner/admin), incluyendo provider + external_subscription_id para poder cancelar contra el adapter real. Vacío si nunca se suscribió.';
+COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Owner/admin billing summary, including provider identity and canceled access through a verified future period end.';
+
+
+CREATE OR REPLACE FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") RETURNS TABLE("state" "text", "last_attempt_at" timestamp with time zone, "last_failure_code" "text")
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  PERFORM private.assert_account_admin(p_account_id);
+
+  RETURN QUERY
+  WITH current_subscription AS (
+    SELECT subscription.id, subscription.provider
+    FROM billing.subscriptions AS subscription
+    INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+    WHERE customer.account_id = p_account_id
+      AND customer.provider = 'mercadopago'
+      AND subscription.provider = 'mercadopago'
+    ORDER BY subscription.created_at DESC,
+             subscription.updated_at DESC,
+             subscription.id DESC
+    LIMIT 1
+  ),
+  latest_attempt AS (
+    SELECT attempt.status, attempt.attempted_at, attempt.failure_code
+    FROM billing.payment_attempts AS attempt
+    INNER JOIN current_subscription AS subscription
+      ON subscription.id = attempt.subscription_id
+     AND subscription.provider = attempt.provider
+    ORDER BY attempt.attempted_at DESC,
+             attempt.created_at DESC,
+             attempt.id DESC
+    LIMIT 1
+  )
+  SELECT
+    CASE latest_attempt.status
+      WHEN 'failed' THEN 'attention_required'::text
+      WHEN 'paid' THEN 'healthy'::text
+      WHEN 'recovered' THEN 'healthy'::text
+      ELSE 'unknown'::text
+    END,
+    latest_attempt.attempted_at,
+    CASE
+      WHEN latest_attempt.status = 'failed' THEN latest_attempt.failure_code
+      ELSE NULL::text
+    END
+  FROM (VALUES (true)) AS singleton(present)
+  LEFT JOIN latest_attempt ON singleton.present;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") IS 'Owner/admin payment-health signal derived from the latest Mercado Pago attempt. Returns exactly one bounded row and never exposes provider metadata or messages.';
 
 
 CREATE OR REPLACE FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") RETURNS "text"
@@ -2069,6 +2138,10 @@ GRANT ALL ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid")
 
 REVOKE ALL ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") TO "authenticated";
+
+
+REVOKE ALL ON FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") TO "authenticated";
 
 
 

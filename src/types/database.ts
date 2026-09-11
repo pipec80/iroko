@@ -2071,6 +2071,14 @@ export type Database = {
           trial_end: string
         }[]
       }
+      get_billing_payment_health: {
+        Args: { p_account_id: string }
+        Returns: {
+          last_attempt_at: string
+          last_failure_code: string
+          state: string
+        }[]
+      }
       get_billing_provider_price: {
         Args: {
           p_currency: string
