@@ -193,7 +193,8 @@ BEGIN
     END,
     latest_attempt.attempted_at,
     CASE
-      WHEN latest_attempt.status = 'failed' THEN latest_attempt.failure_code
+      WHEN latest_attempt.status = 'failed'
+        THEN left(NULLIF(btrim(latest_attempt.failure_code), ''), 100)
       ELSE NULL::text
     END
   FROM (VALUES (true)) AS singleton(present)

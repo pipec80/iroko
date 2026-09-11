@@ -3,7 +3,7 @@
 -- Run with: supabase test db --local supabase/tests/database/39_billing_payment_health_paid_through.test.sql
 
 BEGIN;
-SELECT plan(18);
+SELECT plan(20);
 
 INSERT INTO auth.users (
   id, email, raw_user_meta_data, created_at, updated_at,
@@ -150,12 +150,64 @@ INSERT INTO billing.payment_attempts (
   external_invoice_id, status, amount, currency, attempted_at, metadata, created_at
 )
 VALUES (
+  '00000000-0000-0000-0000-000000003916', 'stripe',
+  '00000000-0000-0000-0000-000000003912',
+  '00000000-0000-0000-0000-000000003913', 'payment-health-cross-provider',
+  'invoice-health-paid-through', 'recovered', 19990, 'CLP',
+  '2026-09-11 11:00:00+00', '{}'::jsonb, '2026-09-11 11:01:00+00'
+);
+
+SET LOCAL role authenticated;
+
+SELECT results_eq(
+  $$ SELECT state, last_failure_code
+     FROM public.get_billing_payment_health('00000000-0000-0000-0000-000000003910') $$,
+  $$ VALUES ('attention_required'::text, 'cc_rejected_other_reason'::text) $$,
+  'newer attempt from another provider cannot replace Mercado Pago health'
+);
+
+RESET role;
+
+INSERT INTO billing.payment_attempts (
+  id, provider, subscription_id, invoice_id, external_payment_id,
+  external_invoice_id, status, amount, currency, failure_code,
+  attempted_at, metadata, created_at
+)
+VALUES (
+  '00000000-0000-0000-0000-000000003917', 'mercadopago',
+  '00000000-0000-0000-0000-000000003912',
+  '00000000-0000-0000-0000-000000003913', 'payment-health-oversized-code',
+  'invoice-health-paid-through', 'failed', 19990, 'CLP',
+  '  ' || repeat('0123456789', 12) || '  ',
+  '2026-09-11 12:00:00+00', '{}'::jsonb, '2026-09-11 12:01:00+00'
+);
+
+SET LOCAL role authenticated;
+
+SELECT results_eq(
+  $$ SELECT state, last_failure_code, char_length(last_failure_code)
+     FROM public.get_billing_payment_health('00000000-0000-0000-0000-000000003910') $$,
+  $$ VALUES (
+       'attention_required'::text,
+       '0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789'::text,
+       100
+     ) $$,
+  'failed payment code is trimmed and capped to the exact public bound'
+);
+
+RESET role;
+
+INSERT INTO billing.payment_attempts (
+  id, provider, subscription_id, invoice_id, external_payment_id,
+  external_invoice_id, status, amount, currency, attempted_at, metadata, created_at
+)
+VALUES (
   '00000000-0000-0000-0000-000000003915', 'mercadopago',
   '00000000-0000-0000-0000-000000003912',
   '00000000-0000-0000-0000-000000003913', 'payment-health-recovered',
   'invoice-health-paid-through', 'recovered', 19990, 'CLP',
-  '2026-09-11 10:00:00+00', '{"raw_provider_payload":"must remain private"}'::jsonb,
-  '2026-09-11 10:02:00+00'
+  '2026-09-11 12:00:00+00', '{"raw_provider_payload":"must remain private"}'::jsonb,
+  '2026-09-11 12:02:00+00'
 );
 
 SET LOCAL role authenticated;
