@@ -1,9 +1,11 @@
 # Plan 012 — Hardening de seguridad + fuente de verdad única para pricing
 
 - Priority: P1
-- Status: Active (abierto 2026-08-19)
+- Status: Pendiente — hardening y pricing; actualización documental 2026-09-11.
 - Baseline: `main` @ `d9e2648`
-- Depende de: nada bloqueante de Plan 011 — puede ejecutarse en paralelo.
+- Orden v1: después de resolver y aceptar el tramo Mercado Pago de Fases 2/6
+  y antes de declarar v1 lista para usuarios reales. No espera a los cuatro
+  proveedores ni a la distribución comercial de Plan 013.
   `requireAccountRole` de Plan 010 ya existe en `main` para cualquier ítem
   que necesite autorización viva.
 - Scope: reducir privilegios/superficie sin cambiar arquitectura (P1-1), y
@@ -17,8 +19,11 @@ The Mercado Pago reliability work does **not** implement this plan's pricing
 rename or source-of-truth migration. It preserves the current Free/Plus/Pro
 labels, CLP amounts, and durable `free` / `pro` / `scale` slugs; its only
 catalogue presentation change is returning `trialDays: 0` for Mercado Pago.
-Any slug, price, or broader catalogue change remains owned and separately
-reviewed by this plan.
+Hardening and pricing source-of-truth remain v1 gates. The historical
+`scale → teams` rename is a separate catalogue migration, not a prerequisite
+for Mercado Pago acceptance or for removing duplicated public pricing.
+Prices/slugs remain unchanged during the MP closeout. See the
+[v1 Chile matrix and order](011-mercadopago-v1-chile-acceptance.md).
 
 ## Objective
 
@@ -27,7 +32,13 @@ rate limiting, CSP, secretos compartidos) y eliminar la triplicidad de
 fuentes de pricing que hoy hace que landing, `/pricing` y `billing.plans`
 puedan divergir silenciosamente.
 
-## Contexto — hallazgos verificados
+## Contexto — hallazgos históricos a revalidar antes de cada PR
+
+Las referencias de la auditoría 2026-08-19 conservan su valor diagnóstico,
+pero no son un inventario actual de líneas, nombres ni datos Cloud. El circuito
+sandbox 2026-09-10 creó suscripción, factura y eventos; queda retirada la
+premisa de una base sin suscripciones. Conteos y dependencias actuales deben
+inspeccionarse antes de migrar; Cloud actual **[NO VERIFICADO]**.
 
 - **Grants SQL sobrantes (parcial, no exhaustivo).** Conteo por archivo en
   `supabase/schemas/`: `private.sql` define funciones `private.*` sin un
@@ -174,48 +185,43 @@ deploy con el CSP nuevo antes de mergear a `main`.
 
 ## PR 5 — `feat/pricing-single-source-of-truth`
 
-**Decisión de nomenclatura (2026-08-19, confirmada por el usuario):** los 3
-planes son **Free / Pro / Teams** — no "Personal/Studio/Custom" ni
-"Free/Pro/Scale". No es solo un cambio de copy: "Teams" describe con
-precisión lo que ese tier ya desbloquea en los entitlements reales
-(`teams_max: 1` en Free, `3` en Pro, `10` en el tier de arriba — la
-diferenciación siempre fue por capacidad de equipos, el nombre "Scale" y
-"Custom" nunca lo comunicaron). Además "Custom" en la landing actual
-implica un tier de "contactar ventas" (CTA a `/contact`, sin precio
-mostrado), pero el plan real detrás (`scale`) es self-serve con precio fijo
-($99/mes, $990/año) — la UI actual miente sobre su propia naturaleza. Se
-resuelve renombrando, no solo mapeando.
+**Pendiente para v1:** conectar landing, `/pricing`, checkout y entitlements
+al catálogo vigente, sin modificar precios ni slugs durante el cierre MP.
+El catálogo chileno mantiene etiquetas Free / Plus / Pro y slugs
+`free` / `pro` / `scale`; no deducir el nombre comercial capitalizando el slug.
 
 **Ejecución.**
 
-1. **Renombrar el slug técnico, no solo el nombre comercial.**
-   Migración `supabase/migrations/<timestamp>_rename_scale_to_teams_plan.sql`:
-   `UPDATE billing.plans SET slug = 'teams' WHERE slug = 'scale';` + espejo
-   en `supabase/schemas/billing.sql` (el seed/dato inicial de planes, si
-   vive ahí). Sin riesgo de migración de datos — `billing.plans` es tabla
-   de catálogo (5 filas fijas), no hay suscripciones reales que referencien
-   el slug viejo (confirmado en vivo: `billing.subscriptions` en 0 filas,
-   ver Plan 011 Contexto).
-2. **Barrer referencias literales a `'scale'` en código.** Al menos
-   `checkoutSchema` en `billing/actions.ts:66`
-   (`z.enum(['pro', 'scale'])` → `z.enum(['pro', 'teams'])`); grep
-   `'scale'` en `src/` y `supabase/` antes de dar el PR por completo — no
-   asumir que es el único lugar.
-3. `src/app/[locale]/(public)/pricing/page.tsx`: eliminar el array
-   `pricingTiers`/`comparison` hardcodeado, reemplazar por
-   `await supabase.rpc('get_active_plans')` (mismo patrón que
-   `getBillingData()`). Con el slug ya renombrado, el nombre técnico y el
-   comercial coinciden — no hace falta un diccionario de traducción
-   `slug → nombre comercial` para este caso; solo capitalización
-   (`free → Free`, `pro → Pro`, `teams → Teams`) vía i18n normal, no un
-   mapeo de negocio separado.
-4. Revisar la landing (`(public)/page.tsx`) por el mismo patrón —
-   confirmado que también referencia "pricing" pero no auditado a fondo en
-   esta pasada.
-5. Test de catálogo: un test (unit o E2E) que falle si `/pricing` renderiza
-   un slug que no existe en `get_active_plans()`.
+1. Releer `catalog.ts`, las RPCs de catálogo, las Server Actions y ambas
+   superficies públicas. Determinar una lectura común que respete proveedor,
+   moneda, intervalo y plan activo, sin filtrar datos privados.
+2. Reemplazar las fuentes hardcodeadas de la landing y `/pricing` por esa
+   fuente común, con i18n coherente. No ofrecer anual MP ni trial; no presentar
+   un tier self-serve con precio fijo como un plan de contactar ventas.
+3. Después de leer `TESTING-PLAN.md`, añadir pruebas de divergencia entre
+   catálogo mostrado y checkout, incluyendo CLP y catálogo no disponible.
+4. Revalidar permisos y completar los checks proporcionales antes de cierre.
 
-**Acceptance criteria.** Landing, `/pricing` y checkout reciben los mismos
-slugs — un cambio de precio en `billing.plans` se refleja en la landing sin
-tocar código de UI. Ningún string `'scale'` sobrevive en `src/`/`supabase/`
-fuera de comentarios históricos (changelog, docs de auditoría).
+**Acceptance criteria.** Un cambio autorizado en el catálogo se refleja en
+landing, `/pricing` y checkout sin editar precios de UI; moneda, intervalo,
+slugs y etiquetas coinciden con la oferta vigente. La fuente única no requiere
+renombrar `scale` ni alterar contratos de suscripciones existentes.
+
+### Migración de nomenclatura separada — `scale → teams`
+
+La decisión histórica del 2026-08-19 proponía Free / Pro / Teams y un rename
+técnico. Se conserva como antecedente de trabajo comercial/de catálogo, pero
+no es la nomenclatura vigente del cierre MP y no se ejecuta dentro de él.
+Revisar alcance y compatibilidad con el catálogo CLP antes de retomarla.
+
+El antiguo argumento «sin riesgo porque subscriptions tiene 0 filas» está
+retirado. El circuito del 2026-09-10 prueba que esa base vacía no puede
+presuponerse. Antes de una migración separada: inventariar referencias,
+provider prices, suscripciones, URLs, eventos y consumidores; definir
+compatibilidad/backfill y reversibilidad; conservar plan IDs y datos; cambiar
+migración/espejo/tipos cuando corresponda y validar en base local desechable
+con datos existentes. Toda escritura linked/Cloud requiere autorización.
+
+Criterio de esa migración futura: ningún consumidor queda con un slug inválido
+y las suscripciones existentes conservan precio, identidad y entitlements.
+No convertir el borrado indiscriminado de strings `scale` en criterio de v1.

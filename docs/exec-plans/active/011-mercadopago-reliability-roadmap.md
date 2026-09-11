@@ -1,6 +1,10 @@
 # Plan 011 — Mercado Pago reliability delivery roadmap
 
-**Status:** Approved delivery roadmap; implementation active in sequential PRs.
+**Status (2026-09-11):** A/B and the recovery/anomaly/worker foundation of C
+are implemented on `main` at `66bc9b2`. Local test records remain historical;
+full internal acceptance and operational rollout are pending. Current Cloud
+evidence is **[NO VERIFICADO]**. See the
+[v1 Chile closure matrix](011-mercadopago-v1-chile-acceptance.md).
 
 **Goal:** Close the Mercado Pago correctness gaps without changing the hosted
 subscription model or duplicating Plan 011's reconciliation work.
@@ -15,7 +19,10 @@ Playwright; no new dependency selected.
 
 ## Global constraints
 
-- No Mercado Pago trial for now; no price or internal-slug changes.
+- Own-use v1 Chile: monthly CLP, hosted pending checkout without an associated
+  plan. Preserve Free/Plus/Pro labels, amounts and `free/pro/scale` slugs.
+- Outside v1: trial, upgrades/downgrades, Iroko-initiated pause and in-app card
+  management; no annual checkout or additional country is accepted here.
 - Financial anomalies are persisted and alerted; no automatic access cut.
 - Follow AGENTS.md and read TESTING-PLAN.md before writing tests.
 - Keep the existing provider/reducer boundary and Plan 011 ownership.
@@ -46,7 +53,12 @@ existing [Phase 2](011-phase2-mercadopago-tasks.md) and
 [Phase 6](011-phase6-reconciliation-tasks.md) rather than maintaining competing
 task lists. Preserve dated evidence and completed steps in those documents.
 
-## Required task-plan handoff
+## Historical task-plan handoff — implementation now present
+
+These preparation requirements describe the approved 2026-09-09 handoff.
+Current code/test references and remaining gaps are in the matrix and Phase
+2/6 status maps. Do not rebuild coordination, recovery or anomalies merely
+because this historical text is prospective.
 
 The approved implementation plan supplies exact
 file ownership, consumed/produced interfaces, runnable RED/GREEN regression
@@ -71,7 +83,7 @@ authentication, batch/time budget and scheduler cadence before enabling a
 schedule; do not copy Next.js services directly into Deno without a reviewed
 boundary. Update the Phase 6 operational runbook in that delivery.
 
-## Review and acceptance matrix
+## Delivery acceptance checklist — extended by v1 matrix
 
 | Scope   | Required evidence                                                                                                                                                                                           |
 | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -80,7 +92,7 @@ boundary. Update the Phase 6 operational runbook in that delivery.
 | C       | Duplicate/out-of-order delivery; deferred correlation succeeds or escalates; outage/retry bounds; refund/dispute anomaly persists with unchanged access; approved/cancellation timestamps use real evidence |
 | Release | Sandbox provider state, local subscription/invoice/event and dashboard agree; duplicate replay has no extra effect; cancellation agrees with paid-through policy                                            |
 
-Run focused regression tests in RED then GREEN. Final code validation includes
+For subsequent code changes, run focused regression tests in RED then GREEN. Final code validation includes
 `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test` and `pnpm build`;
 add relevant Playwright checks for A and `pnpm supa:test` plus generated-type
 verification for SQL changes. A local reset requires a disposable local DB.
@@ -91,6 +103,18 @@ sanitized, dated results only after execution. Passing delivery A does not
 certify B/C or the full provider lifecycle. Do not move Plan 011 to completed
 because Mercado Pago's first slice is done.
 
+## Remaining order
+
+1. Resolve Phase 2/6 code and acceptance gaps: payment-health UX, partial
+   refunds, missed invoice discovery, worker progress/failure handling and
+   paid-through cancellation evidence.
+2. Activate and verify both workers through an explicitly authorized rollout.
+3. Close internal Mercado Pago acceptance with sanitized row-by-row evidence.
+4. Resolve Plan 012 hardening/pricing and operational checks before real users;
+   keep `scale → teams` separate.
+5. Certify Stripe, Paddle and Lemon Squeezy independently.
+6. Prepare commercial distribution under Plan 013 when selling is chosen.
+
 ## Documentation validation
 
 For this documentation package, run:
@@ -98,9 +122,11 @@ For this documentation package, run:
 ```powershell
 pnpm docs:check
 pnpm test:docs-check
+# Run pnpm exec prettier --ignore-path <empty temporary file> --check <touched Markdown paths>.
 git diff --check
 ```
 
-Check formatting on only the touched Markdown files. No application tests or
-Cloud writes are needed to claim that these proposal documents are prepared;
+Check formatting on only the touched Markdown files, using an empty temporary
+ignore file because the default `.prettierignore` excludes `docs/`. No application tests or
+Cloud writes are needed to claim that this planning update is prepared;
 neither application behavior nor runtime health is certified by these checks.

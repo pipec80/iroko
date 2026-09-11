@@ -7,6 +7,24 @@
 
 ---
 
+## Prioridad vigente — v1 propia Chile (2026-09-11)
+
+La [matriz de cierre Mercado Pago](docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md)
+separa implementación, pruebas locales, evidencia en proveedor, pendientes
+operacionales y fuera de v1. No usar los porcentajes o checklists históricos
+inferiores como estado actual de billing.
+
+V1 propia: Chile, CLP mensual y checkout alojado sin plan asociado, conservando
+precios y slugs. Sin trial, upgrade/downgrade, pausa desde Iroko ni tarjetas
+internas. Coordinación durable, recovery y anomalías ya tienen código; el
+circuito sandbox básico observado el 2026-09-10 no cierra aceptación interna.
+
+Orden: gaps MP Fases 2/6 → workers con rollout autorizado → aceptación interna
+MP → hardening/pricing de Plan 012 y checks operacionales antes de usuarios
+reales → Stripe/Paddle/Lemon Squeezy como certificaciones independientes →
+Plan 013 si se decide vender. El rename `scale → teams` queda separado del
+cierre MP. Smoke, observabilidad y seguridad de operación son gates de v1.
+
 ## 0. La Constitución (reglas que gobiernan TODO)
 
 ### Identidad del producto
@@ -221,7 +239,7 @@ y atómicos (feat:/refactor:/chore:/test:). No abras scope fuera de esta fase.
 **Objetivo:** **reventar Supabase.** Meter los módulos que todo dev espera funcionando
 out-of-the-box, cada uno como showcase de una capacidad nativa, todo en free tier.
 
-**Done when:** billing real (Stripe + MercadoPago) con webhooks actualizando estado;
+**Done when histórico de F2 (programa amplio):** billing real (Stripe + MercadoPago) con webhooks actualizando estado;
 email transaccional; notificaciones in-app live por Realtime; webhooks salientes + API keys;
 feature flags; y un patrón de jobs/colas con pg_cron + pgmq + Edge Function. Todo con
 migraciones, tipos regenerados, tests y JSDoc.
@@ -274,7 +292,7 @@ cursor)` `SECURITY DEFINER` que valida que el caller es `owner` o `admin` de esa
 | 4   | 2G · Audit Log Viewer    | ✅ hecho                             | Se coló entre medio (RPC + UI ya listos); no dependía de nada del resto.                                                                                                                                                                                                                   |
 | 5   | 2D · Webhooks + API keys | ✅ hecho                             | Deja el punto de enchufe (`private.emit_webhook_event`) para que 2A emita `subscription.*`.                                                                                                                                                                                                |
 | 6   | 2A · Billing — **core**  | ✅ hecho (2026-07-09)                | `PaymentProvider` + factory registry + `MockProvider` + entitlements + UI real + e2e. Sin proveedor real todavía.                                                                                                                                                                          |
-| 7   | 2A · Billing — providers | ⚠️ legado; recertificación P0 activa | Existen adapters iniciales Stripe + Mercado Pago, pero Billing Platform v2 y la certificación real están pendientes en Plan 011. Paddle y Lemon Squeezy son opciones del roadmap actual.                                                                                                   |
+| 7   | 2A · Billing — providers | ⚠️ legado; recertificación P0 activa | Core v2 y fiabilidad MP implementados; aceptación interna MP y operación pendientes en Fases 2/6. Stripe, Paddle y Lemon Squeezy requieren certificaciones independientes; ver matriz v1 Chile.                                                                                            |
 | 8   | 2F · Jobs / colas        | ✅ hecho (2026-07-13)                | Patrón pgmq + pg_cron + Edge Function: cola `email_queue`, RPC `broadcast_alert_email` (un mensaje por owner de cuenta), worker `process-email-queue` (fetch directo a Resend, sin SDK), cron cada minuto vía pg_net. Sin gate de admin (llega en F3); sin UI (backend puro, per ROADMAP). |
 
 **🤖 Prompt para Claude Code — F2 (ejecutar sub-módulo por sub-módulo, no todo junto):**

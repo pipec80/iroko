@@ -6,31 +6,41 @@
 >
 > Detailed breakdown of **Phase 6** from
 > [`011-billing-correctness.md`](011-billing-correctness.md). Corresponds
-> to PR-8 — depends on PR-4 (Mercado Pago certified, the reference
+> to PR-8 — depends on PR-4 (Mercado Pago contract implemented, the reference
 > `getSubscriptionSnapshot` implementation), then extends to Stripe,
 > Paddle and Lemon Squeezy as their own phases merge. It can start with
 > Mercado Pago-only coverage and does not need to wait for all providers.
 
 ## Mercado Pago reliability slice (approved 2026-09-09)
 
-Implementation starts with Mercado Pago immediately after the two Phase 2
-reliability PRs; Stripe, Paddle, and Lemon Squeezy do not block it. This slice
-adds durable payment recovery, deduplicated financial anomalies, CAS-protected
-subscription reconciliation, and an operator runbook.
+**Implemented on inspected `main` at `66bc9b2` (2026-09-11):** durable
+payment recovery, deduplicated financial anomalies, CAS-protected subscription
+reconciliation, Node worker and operator runbook. Stripe, Paddle and Lemon
+Squeezy do not block this slice. **Acceptance and operations remain open** in
+[MP-08–14 of the v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md).
 
 For this slice, the scheduling decision is settled: `pg_cron` invokes a stable
 internal Vercel route running on Node, authenticated by
 `X-Billing-Worker-Secret`. Node owns Supabase admin access, the existing
-reducer, Sentry, and PostHog; no reducer logic is copied to Deno. Recovery runs
+reducer, Sentry, and PostHog; no reducer logic is copied to Deno. The approved schedule is recovery
 every five minutes, reconciliation hourly, with batches of 20, a 45-second
 invocation budget, at most five concurrent provider calls, and 10-second fetch
 timeouts. Cron activation, Vault values, Cloud migrations, deployment, and
 provider certification remain separately authorized rollout operations.
 
-The detailed reliability implementation plan supersedes Task 4's earlier
-open-ended Edge Function/Vercel Cron choice for this Mercado Pago slice. The
-historical task text remains below as planning evidence for the wider
-provider-neutral phase.
+The implementation supersedes the original Edge Function/Vercel Cron choice
+and illustrative interfaces below. Tasks 1–3/5/6 retain historical
+steps as **planning examples, not a current missing-code list or observed
+RED/GREEN record**. Use this status mapping before any implementation:
+
+| Historical task  | Current replacement and acceptance boundary                                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1 Snapshot       | Implemented in `providers/mercadopago.ts`; HTTP 404 currently throws, unlike the old null-return example. Failure behavior remains MP-14.  |
+| 2 Reconciliation | `reconciliation.ts`, reducer and migration `20260909190000`: CAS, batches of 20, groups of 5. Progress/failure isolation remain open.      |
+| 3 Drift capture  | Persistent `financial_anomalies` and recovery alerts exist; the old blanket Sentry/PostHog claim does not prove every alert path.          |
+| 4 Schedule       | Node route, Vault dispatcher and health RPC implemented; activation and actual results remain pending.                                     |
+| 5 Idempotency    | Vitest recovery/reconciliation and SQL 37/38 cover leases, deduplication and CAS. Complete concurrent/multi-batch acceptance remains open. |
+| 6 Runbook        | `docs/runbooks/billing-reconciliation.md` exists; incident/rollout acceptance remains operational work.                                    |
 
 **Goal:** Webhooks are the primary source of truth; this phase adds the
 safety net for when they are delayed, duplicated, or missed entirely — a
@@ -46,16 +56,15 @@ section 12.
 Same as Phase 1 — SOLID/DRY/KISS/YAGNI, early returns, no
 `any`/`console.log`, manual migrations mirrored in `supabase/schemas/*.sql`,
 `(select auth.uid())`, `SECURITY DEFINER` + `search_path=''` + explicit
-grants, `pnpm typecheck && pnpm lint` before every commit, squash merge,
-fix bugs found in-branch. Existing cron pattern in this project uses
-`pg_cron` + Edge Functions (see `process-email-queue`) — follow that
-precedent rather than introducing Vercel Cron unless there's a specific
-reason Vercel Cron fits this job better (this task defaults to the
-project's existing pattern; switch only with a documented reason).
+grants and proportional validation. Cloud, commit/push/merge and deployment
+operations remain subject to explicit task authorization. The implemented
+Mercado Pago runtime is `pg_cron` → `pg_net` → Node route. The old file map and
+Tasks 1–3/5/6 are preserved historical design, not instructions to create an
+additional worker.
 
 ---
 
-## File map
+## Historical file map — superseded for Mercado Pago
 
 **New**
 
@@ -109,7 +118,7 @@ export interface SubscriptionSnapshot {
 getSubscriptionSnapshot?(externalSubscriptionId: string): Promise<SubscriptionSnapshot | null>;
 ```
 
-- [ ] **Step 1: Test (Mercado Pago as reference)**
+- **Historical step 1: Test (Mercado Pago as reference)**
 
 ```ts
 it('fetches the current subscription state directly from Mercado Pago, not from local cache', async () => {
@@ -139,7 +148,7 @@ it('returns null when the subscription no longer exists at the provider', async 
 });
 ```
 
-- [ ] **Step 2: Implement for Mercado Pago**
+- **Historical step 2: Implement for Mercado Pago**
 
 ```ts
 async getSubscriptionSnapshot(externalSubscriptionId: string): Promise<SubscriptionSnapshot | null> {
@@ -162,7 +171,7 @@ async getSubscriptionSnapshot(externalSubscriptionId: string): Promise<Subscript
 }
 ```
 
-- [ ] **Step 3: Verify and commit**
+- **Historical step 3: Verify and commit**
 
 ```bash
 pnpm test -- src/lib/billing/providers/__tests__/mercadopago.test.ts
@@ -202,7 +211,7 @@ export async function reconcileNonTerminalSubscriptions(input: {
 }): Promise<ReconciliationResult>;
 ```
 
-- [ ] **Step 1: Test**
+- **Historical step 1: Test**
 
 ```ts
 it('scans only non-terminal subscriptions, bounded by batchSize', async () => {
@@ -245,8 +254,8 @@ it('skips subscriptions whose provider has no getSubscriptionSnapshot yet, witho
 });
 ```
 
-- [ ] **Step 2: Implement — define "safe deterministic" precisely, don't
-      leave it to judgment at call time**
+- **Historical step 2: Implement — define "safe deterministic" precisely, don't
+  leave it to judgment at call time**
 
 Safe to repair via the reducer (design spec section 12): `status`
 mismatch, `current_period_end` mismatch, `cancel_at_period_end` mismatch —
@@ -263,7 +272,7 @@ gone (could mean deleted-and-recreated, could mean a data integrity bug —
 a human should look), or any snapshot field the reducer has no defined
 transition for.
 
-- [ ] **Step 3: Verify and commit**
+- **Historical step 3: Verify and commit**
 
 ```bash
 pnpm test -- src/lib/billing/__tests__/reconciliation.test.ts
@@ -281,7 +290,7 @@ git commit -m "feat: add bounded billing reconciliation service"
 
 - Modify: `src/lib/billing/reconciliation.ts`
 
-- [ ] **Step 1: Test**
+- **Historical step 1: Test**
 
 ```ts
 it('emits billing_reconciliation_drift to PostHog with provider and subscription id, no raw payloads', async () => {
@@ -294,11 +303,11 @@ it('captures ambiguous drift to Sentry with low-cardinality tags, no PII', async
 });
 ```
 
-- [ ] **Step 2: Implement using the existing `captureBillingException`
-      helper from Phase 1 (Task 6)** — do not build a second Sentry
-      integration path.
+- **Historical step 2: Implement using the existing `captureBillingException`
+  helper from Phase 1 (Task 6)** — do not build a second Sentry
+  integration path.
 
-- [ ] **Step 3: Verify and commit**
+- **Historical step 3: Verify and commit**
 
 ```bash
 pnpm test -- src/lib/billing/__tests__/reconciliation.test.ts
@@ -326,14 +335,19 @@ The worker was built as a **Vercel route**, not a Supabase Edge Function
   `public.get_billing_reconciliation_candidates` / `apply_billing_reconciliation_snapshot`
   back the two modes.
 
-The QA run on 2026-09-10 verified the webhook + reducer circuit end to end
-(subscribe → `active`, cancel → `canceled`) but left this worker **off** — so
-`billing.recovery_jobs` rows (`reason: unlinked_payment`) accumulate `pending`.
-Impact today is cosmetic (the payment is already linked by later events); the
-worker would only close them as a no-op, and there is no auto-repair of drift
-or missed webhooks until it runs.
+The recorded QA run on 2026-09-10 observed the sandbox webhook/reducer
+circuit but left the worker **off**, with pending `unlinked_payment` jobs.
+Current queue/Cloud state is **[NO VERIFICADO]**. Later events may have linked
+a particular payment, but this does not make all pending jobs cosmetic or
+prove their outcome. Inspect each resource and demonstrate idempotent
+resolution. A running worker still does not discover invoices whose IDs never
+reached Iroko; see the additional gates below.
 
-### Remaining activation checklist (all writes to Cloud / Vercel — each needs explicit authorization)
+### Remaining activation checklist (Cloud / Vercel writes need explicit authorization)
+
+Reinspect current configuration read-only before rollout; missing items below
+are the 2026-09-10 observation, not a fresh inventory. Validate manual
+invocation before enabling schedules, then check both scheduled modes.
 
 - [ ] **Step 1: Generate a shared secret** (≥ 32 chars).
 - [ ] **Step 2: Vercel** — set `BILLING_RECONCILIATION_SECRET` = the secret,
@@ -355,9 +369,11 @@ or missed webhooks until it runs.
       `select cron.schedule('billing-reconciliation-worker', '0 * * * *', $$select private.invoke_billing_worker('reconciliation')$$);`
       (cadence per `docs/runbooks/billing-reconciliation.md`).
 - [ ] **Step 6: Smoke test** — one manual `invoke_billing_worker('recovery')`,
-      then inspect `private.billing_worker_health` joined with
-      `net._http_response` (status 200, not 429). Confirm the standing
-      `unlinked_payment` job flips to `resolved`.
+      and one reconciliation invocation, then inspect `private.billing_worker_health`
+      joined with `net._http_response`. Confirm HTTP success and actual ledger/job
+      outcomes, then scheduled executions of both modes. Include a failed
+      invocation and recovery, multiple batches and replay without extra effects.
+      Cron success or HTTP 200 alone does not close this gate.
 
 ---
 
@@ -367,7 +383,7 @@ or missed webhooks until it runs.
 
 - Modify: `src/lib/billing/__tests__/reconciliation.test.ts`
 
-- [ ] **Step 1: Test**
+- **Historical step 1: Test**
 
 ```ts
 it('running reconciliation twice on the same unchanged state repairs nothing the second time');
@@ -380,7 +396,7 @@ it('two concurrent reconciliation runs do not double-apply the same repair', asy
 });
 ```
 
-- [ ] **Step 2: Verify and commit**
+- **Historical step 2: Verify and commit**
 
 ```bash
 pnpm test -- src/lib/billing/__tests__/reconciliation.test.ts
@@ -395,33 +411,67 @@ pnpm typecheck && pnpm lint
 
 - Create: `docs/runbooks/billing-reconciliation.md`
 
-- [ ] **Step 1: Write, following the existing runbook format**
-      (`docs/runbooks/email-queue.md` is the closest precedent — a scheduled
-      worker with failure modes to diagnose). Cover: provider outage (what
-      reconciliation does when a PSP API is down — does not crash the batch,
-      logs and continues to the next subscription), webhook replay (how to
-      manually re-trigger a specific missed webhook if reconciliation flags
-      drift but can't safely repair it), failed reconciliation run (where to
-      look — Sentry tag `billing_operation: reconciliation_drift`), manual
-      inspection query (a copy-pasteable SQL query against
-      `billing.subscriptions` joined with the provider to spot-check one
-      account).
+- **Historical step 1: Write, following the existing runbook format**
+  (`docs/runbooks/email-queue.md` is the closest precedent — a scheduled
+  worker with failure modes to diagnose). Cover: provider outage (what
+  reconciliation does when a PSP API is down — does not crash the batch,
+  logs and continues to the next subscription), webhook replay (how to
+  manually re-trigger a specific missed webhook if reconciliation flags
+  drift but can't safely repair it), failed reconciliation run (where to
+  look — Sentry tag `billing_operation: reconciliation_drift`), manual
+  inspection query (a copy-pasteable SQL query against
+  `billing.subscriptions` joined with the provider to spot-check one
+  account).
 
-- [ ] **Step 2: Commit**
+- **Historical step 2: Commit**
 
 ```bash
 git add docs/runbooks/billing-reconciliation.md
 git commit -m "docs: add billing reconciliation runbook"
 ```
 
+## Additional v1 Chile code and acceptance gates
+
+These remain in Phase 6, not a new plan. See MP-08–14 in the matrix for
+requirement, official source, code, tests and evidence.
+
+Execute them through
+[`011b`](011b-mercadopago-checkout-resolution.md),
+[`011c`](011c-mercadopago-financial-anomalies.md),
+[`011d`](011d-mercadopago-invoice-discovery-reconciliation.md), then the
+authorized rollout [`011e`](011e-mercadopago-worker-rollout.md) and internal
+acceptance [`011f`](011f-mercadopago-internal-acceptance.md).
+
+- [ ] **Wholly missed invoices (MP-12):** `recoverResource` requires a known
+      payment ID; snapshot reads only preapproval. Define bounded paginated
+      invoice discovery by subscription, durable progress/window, correlation
+      and shared-reducer application. Prove a provider invoice with no local
+      event/job is discovered and applied once.
+- [ ] **Progress between batches (MP-14):** candidate SQL orders by
+      `subscription.updated_at,id LIMIT 20` without a scan cursor. Stable
+      duplicates, skipped providers or failed candidates can keep occupying
+      the head. Demonstrate and resolve starvation with more than 20 rows,
+      unchanged provider versions and interrupted runs.
+- [ ] **Failure isolation (MP-14):** reconciliation calls `Promise.all` with
+      no per-candidate provider-error handling; one rejection fails the
+      invocation. Define continuation/retry policy, sanitized per-item failure
+      evidence and reliable progress. Recovery already has per-job handling;
+      validate lease recovery after timeout/process interruption.
+- [ ] **Ordering and paid-through access (MP-03/05/07):** CAS rejects a local
+      race; it alone does not prove remote version ordering, cancellation
+      timestamps or that `next_payment_date` represents a paid period. Verify
+      late failed/paid events and cancellation/snapshot convergence.
+- [ ] **Anomalies and abandonment (MP-08/09/10):** validate partial refunds
+      separately from status-only classification, actionable alerts and manual
+      resolution, plus safe handling of old/unknown checkouts. Preserve the
+      no-automatic-access-cut policy.
+
 ## Completion criteria for Phase 6
 
-- **Task 4 (scheduled execution) is the open item as of 2026-09-10** — the
-  worker route and RPCs exist and the QA circuit passed, but the secret, Vault
-  entries, firewall rule and cron schedules are not in place, so no
-  reconciliation or recovery run has ever executed in Cloud
-  (`private.billing_worker_health` is empty). See the Task 4 activation
-  checklist above.
+- **Scheduling is one open gate, not the only remaining task.** Close the
+  additional code/acceptance gates and verify both modes under authorized
+  rollout. Empty health is historical evidence from 2026-09-10; current Cloud
+  execution remains **[NO VERIFICADO]**.
 - A missed webhook (simulated by manually diverging a test subscription's
   local status from its provider state) is detected by the next
   reconciliation run.
@@ -429,15 +479,19 @@ git commit -m "docs: add billing reconciliation runbook"
   webhooks use — no parallel write path.
 - Ambiguous drift (price/plan mismatch, subscription gone at provider)
   never guesses — always `billing_reconciliation_drift` + Sentry.
-- Two concurrent runs cannot double-charge or double-repair — proven by
-  the Task 5 concurrency test, not just asserted.
+- Two concurrent runs cannot double-charge or double-repair — demonstrate
+  with implemented regression tests and the MP-11/14 operational evidence;
+  the historical Task 5 examples alone do not prove this.
 - Runbook exists and a person unfamiliar with the code could follow it
   during an incident.
 - `pnpm typecheck && pnpm lint`, relevant Vitest, pgTAP pass.
 
 ## Program-level Definition of Done (all 6 phases)
 
-Once Phase 6 closes, cross back to
+Closing only the Mercado Pago slice does not close the whole phase or
+four-provider program. Each later provider needs its own adapter, catalogue,
+events, capabilities, reconciliation and tests. Once all required provider
+slices close, cross back to
 [`011-billing-correctness.md`](011-billing-correctness.md)'s program-level
 Definition of Done — comprar en cualquiera de los 4 providers converge al
 mismo estado interno, cancelar converge correctamente, y reconciliation

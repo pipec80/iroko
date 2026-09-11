@@ -2,9 +2,12 @@
 
 - Priority: P0
 - Status: Active — Fase 1 cerrada por PR #152 el 2026-08-27. Mercado Pago es
-  ahora la Fase 2 y proveedor de referencia para el lanzamiento LATAM. Las
-  migraciones nuevas no se han aplicado a Supabase Cloud `[NO VERIFICADO]`.
-- Baseline: `main` @ `4a0a3d4`
+  la Fase 2 y referencia de la v1 propia Chile, CLP mensual. Coordinación
+  durable, recovery y anomalías implementados; aceptación interna y operación
+  pendientes. El registro histórico documenta aplicación de migraciones el
+  2026-09-10; paridad actual `[NO VERIFICADO]`.
+- Baseline de Core v2: `main` @ `4a0a3d4`; revisión documental MP: `66bc9b2`
+  (2026-09-11).
 - Depends on: Plan 010 cerró el 2026-08-26; reutilizar
   `requireAccountRole` como la autorización viva ya integrada. No mezclar
   cambios de esta orquestación con esa remediación ya cerrada.
@@ -39,6 +42,36 @@
   migraciones Local↔Cloud, ni una ejecución CI posterior al squash en `main`:
   todos siguen `[NO VERIFICADO]` hasta evidencia específica.
 
+## Cierre v1 Chile y orden vigente (2026-09-11)
+
+La [matriz de certificación interna Mercado Pago](011-mercadopago-v1-chile-acceptance.md)
+es el checklist verificable del cierre de Fases 2/6 para uso propio: checkout
+alojado sin plan asociado, CLP mensual y precios/slugs actuales. Sin trial,
+upgrade/downgrade, pausa iniciada desde Iroko ni gestión de tarjetas interna.
+No se atribuye certificación oficial del proveedor.
+
+Orden: resolver gaps de Fases 2/6 → rollout autorizado y verificación de
+workers → aceptación interna MP → hardening/pricing de Plan 012 y checks
+operacionales de v1 → certificaciones independientes Stripe, Paddle y Lemon
+Squeezy → preparación comercial de Plan 013 cuando se decida vender.
+`scale → teams` queda separado del cierre MP. El programa completo permanece
+abierto aunque se acepte esta v1 limitada a Mercado Pago.
+
+### Handoffs ejecutables del cierre Mercado Pago
+
+El diseño aprobado se implementa y acepta en este orden:
+
+1. [`011a` — salud de pago y acceso pagado](011a-mercadopago-payment-health-paid-through.md);
+2. [`011b` — resolución de checkout abandonado/ambiguo](011b-mercadopago-checkout-resolution.md);
+3. [`011c` — detalle de anomalías financieras](011c-mercadopago-financial-anomalies.md);
+4. [`011d` — descubrimiento de facturas y reconciliación durable](011d-mercadopago-invoice-discovery-reconciliation.md);
+5. [`011e` — rollout autorizado de workers](011e-mercadopago-worker-rollout.md);
+6. [`011f` — aceptación interna v1 Chile](011f-mercadopago-internal-acceptance.md).
+
+Los planes `011a`–`011d` son entregas de código local con TDD. `011e` y `011f`
+son handoffs operacionales: sus mutaciones Cloud/proveedor requieren una
+autorización explícita nueva sobre el entorno y las acciones concretas.
+
 ## Objective
 
 Que los providers de billing (Stripe, Paddle, Lemon Squeezy, MercadoPago,
@@ -49,10 +82,15 @@ proveedor real — no solo en la DB local.
 
 ## Contexto — hallazgos verificados (tres pasadas de auditoría, 2026-08-18/19)
 
+**Evidencia histórica, no inventario actual.** Core v2 y las entregas de
+Fases 2/6 reemplazaron varios mecanismos descritos abajo. No usar esta
+auditoría como checklist de implementación pendiente ni como permiso para
+migrar una base supuestamente vacía.
+
 Todo lo siguiente se verificó leyendo el código fuente exacto y consultando
 Supabase Cloud en vivo — no se acepta ningún hallazgo solo porque "suena
 razonable". El spec y el roadmap (documentos formales, ver arriba)
-coinciden con estos hallazgos en el 100% de los casos verificados; las
+coinciden con estos hallazgos en los casos verificados; las
 únicas correcciones respecto al material fuente están marcadas
 explícitamente abajo.
 
@@ -60,11 +98,10 @@ explícitamente abajo.
 `billing.plans.provider_ids = {}` en los 5 planes (`free/month`,
 `pro/month`, `pro/year`, `scale/month`, `scale/year`); `customers`,
 `subscriptions`, `invoices`, `events`, `invoice_line_items`,
-`payment_methods`, `subscription_items`: **0 filas en las siete**. Ningún
-checkout real puede completarse hoy. Es la mejor noticia posible para este
-plan — cualquier cambio de schema/constraint se hace sin datos reales que
-migrar (aunque el plan de todos modos incluye SQL de backfill válido para
-DBs no vacías — ver Fase 1, Task 3).
+`payment_methods`, `subscription_items`: **0 filas en las siete en aquella consulta**. Esa premisa quedó obsoleta
+tras el circuito sandbox del 2026-09-10, que sí registró suscripción, factura
+y eventos. Cualquier migración futura necesita inspección y preservación de
+datos actuales; el conteo vigente en Cloud es `[NO VERIFICADO]`.
 
 - **BILL-001 — determinístico, no probabilístico.** Ningún adapter
   (`stripe.ts:31-52`, `mercadopago.ts:187-218`) setea `planSlug` en el
@@ -107,8 +144,8 @@ z.string().default('mock')`, sin `.refine()` ni chequeo de `NODE_ENV`.
   marcado como extensión sobre el material fuente.**
 - **`createPortalSession()` — bug confirmado.** `stripe.ts:103-108` pasa
   `customer: params.accountId` (UUID interno) en vez de `cus_...` real —
-  falla 400 en el 100% de los casos reales. Se corrige en la Fase 2
-  (certificación Stripe), no en Core v2 — coherente con el spec.
+  falla 400 en el 100% de los casos reales. Se corrige en la Fase 3
+  (certificación interna Stripe), no en Core v2 — coherente con el spec.
 - **Constraints de unicidad, verificados contra `supabase/schemas/billing.sql`:**
   `customers_account_id_key UNIQUE(account_id)` (global, línea 269),
   `events_external_event_id_key UNIQUE(external_event_id)` (sin
@@ -141,16 +178,15 @@ duplicado palabra por palabra:
 | 5    | Lemon Squeezy                          |    P1     |   Fase 2   | Preserva semántica `cancelled` vs `expired` propia — [`011-phase5-lemon-squeezy-tasks.md`](011-phase5-lemon-squeezy-tasks.md)                                                                                               |
 | 6    | Reconciliation + hardening             |    P1     | Fases 1+2  | Red de seguridad PSP↔DB, inicia con Mercado Pago — [`011-phase6-reconciliation-tasks.md`](011-phase6-reconciliation-tasks.md)                                                                                               |
 
-**PR slicing ejecutable:** PR-1/2/3 se consolidaron como [PR #152](https://github.com/pipec80/iroko/pull/152)
+**Secuencia histórica de PRs (reemplazada para v1 por el orden anterior):** PR-1/2/3 se consolidaron como [PR #152](https://github.com/pipec80/iroko/pull/152)
 (Fase 1) → PR-4 (Mercado Pago) → PR-5 (Stripe, con credenciales de test) →
 PR-6 (Paddle) → PR-7 (Lemon Squeezy) → PR-8 (reconciliation). Los providers
 P1 pueden planificarse después de que la referencia Mercado Pago demuestre el
 contrato, pero no se implementan en paralelo con la certificación P0.
 
-**Paddle y Lemon Squeezy no están pausados** — siguen dentro del mismo
-programa, después de certificar Mercado Pago (Fase 2) como referencia de
-lanzamiento. Stripe ya no bloquea esa secuencia, aunque conserva su propia
-certificación antes de ofrecerse como provider.
+Stripe, Paddle y Lemon Squeezy siguen en el programa, fuera del gate de la
+v1 propia Chile. Cada uno debe demostrar adaptador, catálogo, eventos,
+capacidades y reconciliación antes de ofrecerse como proveedor.
 
 **Decisión declarada sobre Fase 0 (2026-08-19):** el roadmap formal
 describe los 9 tests de regresión (B0.1-B0.9) como un paquete único, todo
@@ -170,7 +206,8 @@ reversible — avisar y se reagrupan.
 
 `billing.provider_prices.amount` (spec, sección 6.1) duplicaba
 `billing.plans.price` sin que estuviera decidido si podían divergir. Con
-solo 3 planes (Free/Pro/Teams, ver decisión de nomenclatura en Plan 012 PR 5) y sin ningún requisito de negocio de precios distintos por proveedor
+solo 3 niveles (la nomenclatura Free/Pro/Teams era la propuesta histórica
+de Plan 012; el catálogo MP vigente conserva Free/Plus/Pro y `free/pro/scale`) y sin ningún requisito de negocio de precios distintos por proveedor
 (no hay impuestos/redondeo declarados como necesidad hoy), no hay YAGNI
 que justifique permitir la divergencia: **`provider_prices.amount` debe
 coincidir con `plans.price` en la moneda base, validado, no solo
@@ -185,8 +222,9 @@ demostrada.
 
 Ambas fases tienen como gate de cierre un E2E real contra sandbox/test-mode
 — no es opcional, es la condición de "listo". El dueño declaró disponibles
-las credenciales de Mercado Pago para Fase 2, pero el sandbox E2E sigue
-`[NO VERIFICADO]` hasta ejecutarlo. Stripe no bloquea el lanzamiento LATAM y
+las credenciales de Mercado Pago para Fase 2. El circuito sandbox básico
+fue observado informalmente el 2026-09-10; la matriz completa y su evidencia
+formal siguen pendientes, con runtime actual `[NO VERIFICADO]`. Stripe no bloquea el lanzamiento LATAM y
 permanece pendiente de sus propias credenciales y certificación.
 
 ## Definition of Done (Fase 1 — cerrado)
@@ -202,7 +240,7 @@ esperadas del webhook; `NODE_ENV=production` + `mock` rechaza arrancar sin
 opt-in explícito; gates existentes (`typecheck`, `lint`, Vitest, pgTAP, DB
 lint) en verde.
 
-## Definition of Done (programa completo)
+## Definition of Done (programa completo; separado de v1 Chile)
 
 Comprar Pro mensual/anual en cualquiera de los 4 providers produce
 exactamente el mismo estado interno y los mismos entitlements; cancelar
