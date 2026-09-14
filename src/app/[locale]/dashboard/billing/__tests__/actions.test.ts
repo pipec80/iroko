@@ -354,7 +354,7 @@ describe('billing actions', () => {
     expect(mocks.cancelSubscription).not.toHaveBeenCalled();
   });
 
-  it('getBillingData maps plans and overview from the RPCs', async () => {
+  it('getBillingData maps plans, overview, and payment health from their RPCs', async () => {
     mocks.rpc.mockImplementation((fn: string) => {
       if (fn === 'get_active_plans') {
         return Promise.resolve({
@@ -374,20 +374,37 @@ describe('billing actions', () => {
           error: null,
         });
       }
-      return Promise.resolve({
-        data: [
-          {
-            plan_slug: 'pro',
-            plan_name: 'Pro',
-            plan_interval: 'month',
-            status: 'active',
-            current_period_end: '2026-08-08T00:00:00Z',
-            cancel_at_period_end: false,
-            trial_end: null,
-          },
-        ],
-        error: null,
-      });
+      if (fn === 'get_billing_overview') {
+        return Promise.resolve({
+          data: [
+            {
+              plan_slug: 'pro',
+              plan_name: 'Pro',
+              plan_interval: 'month',
+              status: 'active',
+              current_period_end: '2026-08-08T00:00:00Z',
+              cancel_at_period_end: false,
+              trial_end: null,
+              provider: 'mock',
+              external_subscription_id: 'mock_sub_a1',
+            },
+          ],
+          error: null,
+        });
+      }
+      if (fn === 'get_billing_payment_health') {
+        return Promise.resolve({
+          data: [
+            {
+              state: 'attention_required',
+              last_attempt_at: '2026-09-11T10:00:00Z',
+              last_failure_code: 'cc_rejected_other_reason',
+            },
+          ],
+          error: null,
+        });
+      }
+      throw new Error(`unexpected RPC: ${fn}`);
     });
     const res = await getBillingData();
     expect(res.data?.plans).toEqual([
@@ -411,6 +428,8 @@ describe('billing actions', () => {
       currentPeriodEnd: '2026-08-08T00:00:00Z',
       cancelAtPeriodEnd: false,
       trialEnd: null,
+      provider: 'mock',
+      externalSubscriptionId: 'mock_sub_a1',
       capabilities: {
         customerPortal: false,
         cancelImmediately: true,
@@ -419,6 +438,15 @@ describe('billing actions', () => {
         changePlan: false,
         pauseSubscription: false,
       },
+    });
+    expect(res.data?.paymentHealth).toEqual({
+      state: 'attention_required',
+      lastAttemptAt: '2026-09-11T10:00:00Z',
+      lastFailureCode: 'cc_rejected_other_reason',
+    });
+    expect(res.data?.overview?.status).toBe('active');
+    expect(mocks.rpc).toHaveBeenCalledWith('get_billing_payment_health', {
+      p_account_id: 'a1',
     });
   });
 
@@ -602,6 +630,11 @@ describe('billing actions', () => {
     expect(res.error).toBeUndefined();
     expect(res.data?.plans).toHaveLength(1);
     expect(res.data?.overview).toBeNull();
+    expect(res.data?.paymentHealth).toEqual({
+      state: 'unknown',
+      lastAttemptAt: null,
+      lastFailureCode: null,
+    });
   });
 
   it('getBillingData returns fetch_failed when the catalog query fails', async () => {
@@ -622,6 +655,21 @@ describe('billing actions', () => {
         Promise.resolve({ data: [], error: null })
       : Promise.resolve({ data: null, error: { code: 'XX000', message: 'overview_down' } }),
     );
+
+    const res = await getBillingData();
+
+    expect(res).toEqual({ data: null, error: 'fetch_failed' });
+  });
+
+  it('getBillingData returns fetch_failed when the payment health query fails unexpectedly', async () => {
+    mocks.rpc.mockImplementation((fn: string) => {
+      if (fn === 'get_active_plans') return Promise.resolve({ data: [], error: null });
+      if (fn === 'get_billing_overview') return Promise.resolve({ data: [], error: null });
+      if (fn === 'get_billing_payment_health') {
+        return Promise.resolve({ data: null, error: { code: 'XX000', message: 'health_down' } });
+      }
+      throw new Error(`unexpected RPC: ${fn}`);
+    });
 
     const res = await getBillingData();
 

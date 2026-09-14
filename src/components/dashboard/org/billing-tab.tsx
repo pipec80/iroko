@@ -16,6 +16,7 @@ import {
   type PlanRow,
 } from '@/app/[locale]/dashboard/billing/actions';
 import { PlanViewedTracker } from '@/components/analytics/plan-viewed-tracker';
+import { BillingPaymentHealthNotice } from '@/components/dashboard/org/billing-payment-health-notice';
 import { useRouter } from '@/i18n/routing';
 import { logClient } from '@/lib/logger-client';
 import { canManageBilling, type MembershipRole } from '@/lib/permissions';
@@ -305,6 +306,8 @@ export function BillingTab({
           ))}
         </div>
       </section>
+
+      <BillingPaymentHealthNotice paymentHealth={data.paymentHealth} />
 
       {overview && <SubscriptionStatusPanel overview={overview} formatDate={formatDate} />}
 
