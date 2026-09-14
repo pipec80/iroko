@@ -751,8 +751,28 @@ BEGIN
   SET customer_id = EXCLUDED.customer_id,
       plan_id = EXCLUDED.plan_id,
       status = EXCLUDED.status,
-      current_period_start = EXCLUDED.current_period_start,
-      current_period_end = EXCLUDED.current_period_end,
+      current_period_start = CASE
+        WHEN EXCLUDED.current_period_start IS NOT NULL
+          AND EXCLUDED.current_period_end IS NOT NULL
+          AND EXCLUDED.current_period_end > EXCLUDED.current_period_start
+          AND (
+            billing.subscriptions.current_period_end IS NULL
+            OR EXCLUDED.current_period_end > billing.subscriptions.current_period_end
+          )
+          THEN EXCLUDED.current_period_start
+        ELSE billing.subscriptions.current_period_start
+      END,
+      current_period_end = CASE
+        WHEN EXCLUDED.current_period_start IS NOT NULL
+          AND EXCLUDED.current_period_end IS NOT NULL
+          AND EXCLUDED.current_period_end > EXCLUDED.current_period_start
+          AND (
+            billing.subscriptions.current_period_end IS NULL
+            OR EXCLUDED.current_period_end > billing.subscriptions.current_period_end
+          )
+          THEN EXCLUDED.current_period_end
+        ELSE billing.subscriptions.current_period_end
+      END,
       cancel_at_period_end = EXCLUDED.cancel_at_period_end;
 
   RETURN 'applied';
@@ -856,6 +876,31 @@ BEGIN
       attempted_at = EXCLUDED.attempted_at,
       metadata = EXCLUDED.metadata;
 
+  UPDATE billing.subscriptions AS subscription
+  SET current_period_start = CASE
+        WHEN p_period_start IS NOT NULL
+          AND p_period_end IS NOT NULL
+          AND p_period_end > p_period_start
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_period_end > subscription.current_period_end
+          )
+          THEN p_period_start
+        ELSE subscription.current_period_start
+      END,
+      current_period_end = CASE
+        WHEN p_period_start IS NOT NULL
+          AND p_period_end IS NOT NULL
+          AND p_period_end > p_period_start
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_period_end > subscription.current_period_end
+          )
+          THEN p_period_end
+        ELSE subscription.current_period_end
+      END
+  WHERE subscription.id = v_subscription_id;
+
   RETURN 'applied';
 END;
 $$;
@@ -864,7 +909,7 @@ $$;
 ALTER FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") IS 'Billing Core v2 narrow reducer: records one paid invoice and payment attempt without mutating subscription state.';
+COMMENT ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") IS 'Billing Core v2 narrow reducer: records one paid invoice and payment attempt, and monotonically advances verified subscription period evidence without changing lifecycle status.';
 
 
 
@@ -3414,12 +3459,32 @@ BEGIN
   IF v_subscription_id IS NULL THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
   IF NOT billing.reserve_provider_event(v_customer_id, 'subscription_updated', p_provider,
     p_external_event_id, p_payload) THEN RETURN 'duplicate'; END IF;
-  UPDATE billing.subscriptions
+  UPDATE billing.subscriptions AS subscription
   SET plan_id = COALESCE(p_plan_id, plan_id), status = p_status,
-      current_period_start = COALESCE(p_current_period_start, current_period_start),
-      current_period_end = COALESCE(p_current_period_end, current_period_end),
+      current_period_start = CASE
+        WHEN p_current_period_start IS NOT NULL
+          AND p_current_period_end IS NOT NULL
+          AND p_current_period_end > p_current_period_start
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_current_period_end > subscription.current_period_end
+          )
+          THEN p_current_period_start
+        ELSE subscription.current_period_start
+      END,
+      current_period_end = CASE
+        WHEN p_current_period_start IS NOT NULL
+          AND p_current_period_end IS NOT NULL
+          AND p_current_period_end > p_current_period_start
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_current_period_end > subscription.current_period_end
+          )
+          THEN p_current_period_end
+        ELSE subscription.current_period_end
+      END,
       cancel_at_period_end = p_cancel_at_period_end
-  WHERE id = v_subscription_id;
+  WHERE subscription.id = v_subscription_id;
   UPDATE billing.customers
   SET external_id = COALESCE(NULLIF(btrim(p_external_customer_id), ''), external_id)
   WHERE id = v_customer_id;
@@ -3446,11 +3511,19 @@ BEGIN
   IF v_subscription_id IS NULL THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
   IF NOT billing.reserve_provider_event(v_customer_id, 'subscription_canceled', p_provider,
     p_external_event_id, p_payload) THEN RETURN 'duplicate'; END IF;
-  UPDATE billing.subscriptions
+  UPDATE billing.subscriptions AS subscription
   SET status = 'canceled', canceled_at = COALESCE(p_canceled_at, now()),
-      current_period_end = COALESCE(p_access_until, current_period_end),
+      current_period_end = CASE
+        WHEN p_access_until IS NOT NULL
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_access_until > subscription.current_period_end
+          )
+          THEN p_access_until
+        ELSE subscription.current_period_end
+      END,
       cancel_at_period_end = false
-  WHERE id = v_subscription_id;
+  WHERE subscription.id = v_subscription_id;
   RETURN 'applied';
 END;
 $$;

@@ -3,7 +3,7 @@
 -- Run with: supabase test db --local supabase/tests/database/39_billing_payment_health_paid_through.test.sql
 
 BEGIN;
-SELECT plan(20);
+SELECT plan(41);
 
 INSERT INTO auth.users (
   id, email, raw_user_meta_data, created_at, updated_at,
@@ -24,7 +24,11 @@ VALUES
   ('00000000-0000-0000-0000-000000003920', 'team', 'Expired Health',
    'expired-health', '00000000-0000-0000-0000-000000003901'),
   ('00000000-0000-0000-0000-000000003930', 'team', 'Unknown Health',
-   'unknown-health', '00000000-0000-0000-0000-000000003901');
+   'unknown-health', '00000000-0000-0000-0000-000000003901'),
+  ('00000000-0000-0000-0000-000000003940', 'team', 'Invoice Period Health',
+   'invoice-period-health', '00000000-0000-0000-0000-000000003901'),
+  ('00000000-0000-0000-0000-000000003950', 'team', 'Past Period Health',
+   'past-period-health', '00000000-0000-0000-0000-000000003901');
 
 INSERT INTO public.accounts_memberships (account_id, user_id, role)
 VALUES
@@ -32,14 +36,20 @@ VALUES
   ('00000000-0000-0000-0000-000000003910', '00000000-0000-0000-0000-000000003902', 'admin'),
   ('00000000-0000-0000-0000-000000003910', '00000000-0000-0000-0000-000000003903', 'member'),
   ('00000000-0000-0000-0000-000000003920', '00000000-0000-0000-0000-000000003901', 'owner'),
-  ('00000000-0000-0000-0000-000000003930', '00000000-0000-0000-0000-000000003901', 'owner');
+  ('00000000-0000-0000-0000-000000003930', '00000000-0000-0000-0000-000000003901', 'owner'),
+  ('00000000-0000-0000-0000-000000003940', '00000000-0000-0000-0000-000000003901', 'owner'),
+  ('00000000-0000-0000-0000-000000003950', '00000000-0000-0000-0000-000000003901', 'owner');
 
 INSERT INTO billing.customers (id, account_id, provider, external_id)
 VALUES
   ('00000000-0000-0000-0000-000000003911', '00000000-0000-0000-0000-000000003910',
    'mercadopago', 'customer-health-paid-through'),
   ('00000000-0000-0000-0000-000000003921', '00000000-0000-0000-0000-000000003920',
-   'mercadopago', 'customer-health-expired');
+   'mercadopago', 'customer-health-expired'),
+  ('00000000-0000-0000-0000-000000003941', '00000000-0000-0000-0000-000000003940',
+   'mercadopago', 'customer-health-invoice-period'),
+  ('00000000-0000-0000-0000-000000003951', '00000000-0000-0000-0000-000000003950',
+   'mercadopago', 'customer-health-past-period');
 
 INSERT INTO billing.subscriptions (
   id, customer_id, plan_id, status, current_period_start, current_period_end,
@@ -57,6 +67,18 @@ VALUES
    (SELECT id FROM billing.plans WHERE slug = 'pro' AND "interval" = 'month'),
    'canceled', NULL, NULL,
    now() - interval '1 day', 'mercadopago', 'preapproval-health-expired',
+   now() - interval '23 days'),
+  ('00000000-0000-0000-0000-000000003942',
+   '00000000-0000-0000-0000-000000003941',
+   (SELECT id FROM billing.plans WHERE slug = 'pro' AND "interval" = 'month'),
+   'active', NULL, NULL,
+   NULL, 'mercadopago', 'preapproval-health-invoice-period',
+   now() - interval '23 days'),
+  ('00000000-0000-0000-0000-000000003952',
+   '00000000-0000-0000-0000-000000003951',
+   (SELECT id FROM billing.plans WHERE slug = 'pro' AND "interval" = 'month'),
+   'canceled', now() - interval '31 days', now() - interval '1 day',
+   now() - interval '2 days', 'mercadopago', 'preapproval-health-past-period',
    now() - interval '23 days');
 
 INSERT INTO billing.invoices (
@@ -85,6 +107,266 @@ VALUES (
   'cc_rejected_other_reason', 'provider detail must remain private',
   '2026-09-11 10:00:00+00', '{"raw_provider_payload":"must remain private"}'::jsonb,
   '2026-09-11 10:01:00+00'
+);
+
+SELECT set_config(
+  'app.health_pro_plan_id',
+  (SELECT id::text FROM billing.plans WHERE slug = 'pro' AND "interval" = 'month'),
+  true
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_invoice_paid(
+    'mercadopago', 'invoice-period-initial-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', 'invoice-period-initial-39',
+    'payment-period-initial-39', 19990, 'CLP',
+    '2099-01-01 00:00:00+00', '2099-02-01 00:00:00+00',
+    '2026-09-14 10:00:00+00', NULL, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'approved invoice applies through the real reducer RPC'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end, status::text
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-01-01 00:00:00+00'::timestamptz,
+       '2099-02-01 00:00:00+00'::timestamptz,
+       'active'::text
+     ) $$,
+  'approved invoice populates the provider-neutral period without changing lifecycle status'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_subscription_canceled(
+    'mercadopago', 'invoice-period-canceled-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', '2026-09-14 11:00:00+00',
+    NULL, '{}'::jsonb
+  ),
+  'applied',
+  'cancellation with absent access evidence applies through the real reducer RPC'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT subscription.status::text, subscription.current_period_end,
+            (SELECT slug FROM private.get_account_plan_row(
+              '00000000-0000-0000-0000-000000003940'))
+     FROM billing.subscriptions AS subscription
+     WHERE subscription.id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       'canceled'::text, '2099-02-01 00:00:00+00'::timestamptz, 'pro'::text
+     ) $$,
+  'canceled subscription retains Pro through the invoice-backed future period'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_invoice_paid(
+    'mercadopago', 'invoice-period-older-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', 'invoice-period-older-39',
+    'payment-period-older-39', 19990, 'CLP',
+    '2098-12-01 00:00:00+00', '2099-01-15 00:00:00+00',
+    '2026-09-14 12:00:00+00', NULL, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'older approved invoice remains an idempotent ledger event'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end, status::text
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-01-01 00:00:00+00'::timestamptz,
+       '2099-02-01 00:00:00+00'::timestamptz,
+       'canceled'::text
+     ) $$,
+  'older approved invoice cannot regress the verified subscription period'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_invoice_paid(
+    'mercadopago', 'invoice-period-newer-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', 'invoice-period-newer-39',
+    'payment-period-newer-39', 19990, 'CLP',
+    '2099-02-01 00:00:00+00', '2099-03-01 00:00:00+00',
+    '2026-09-14 13:00:00+00', NULL, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'newer approved invoice applies as a distinct ledger event'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end, status::text
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-02-01 00:00:00+00'::timestamptz,
+       '2099-03-01 00:00:00+00'::timestamptz,
+       'canceled'::text
+     ) $$,
+  'newer approved invoice advances the period without changing canceled status'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_subscription_updated(
+    'mercadopago', 'invoice-period-update-null-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', NULL, 'canceled',
+    NULL, NULL, false, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'subscription update with absent period evidence still applies lifecycle fields'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end, status::text,
+            cancel_at_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-02-01 00:00:00+00'::timestamptz,
+       '2099-03-01 00:00:00+00'::timestamptz,
+       'canceled'::text, false
+     ) $$,
+  'subscription update with null period cannot erase verified invoice evidence'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_subscription_updated(
+    'mercadopago', 'invoice-period-update-older-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', NULL, 'canceled',
+    '2099-01-15 00:00:00+00', '2099-02-15 00:00:00+00',
+    false, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'subscription update with older provider period remains processable'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-02-01 00:00:00+00'::timestamptz,
+       '2099-03-01 00:00:00+00'::timestamptz
+     ) $$,
+  'older provider snapshot cannot regress stronger verified invoice evidence'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_subscription_updated(
+    'mercadopago', 'invoice-period-update-newer-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', NULL, 'canceled',
+    '2099-03-01 00:00:00+00', '2099-04-01 00:00:00+00',
+    false, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'subscription update with stronger provider period applies normally'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end, status::text
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-03-01 00:00:00+00'::timestamptz,
+       '2099-04-01 00:00:00+00'::timestamptz,
+       'canceled'::text
+     ) $$,
+  'stronger provider snapshot advances the period and preserves lifecycle semantics'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_subscription_created(
+    'mercadopago', 'invoice-period-created-null-39',
+    '00000000-0000-0000-0000-000000003940',
+    current_setting('app.health_pro_plan_id')::uuid,
+    'preapproval-health-invoice-period', 'canceled', NULL, NULL, true,
+    'customer-health-invoice-period', '{}'::jsonb
+  ),
+  'applied',
+  'later subscription-created event with null period remains processable'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end, status::text,
+            cancel_at_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-03-01 00:00:00+00'::timestamptz,
+       '2099-04-01 00:00:00+00'::timestamptz,
+       'canceled'::text, true
+     ) $$,
+  'subscription-created upsert preserves stronger period while applying lifecycle fields'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_subscription_canceled(
+    'mercadopago', 'invoice-period-canceled-shorter-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', '2026-09-14 14:00:00+00',
+    '2099-03-15 00:00:00+00', '{}'::jsonb
+  ),
+  'applied',
+  'cancellation with a shorter provider period remains processable'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end, status::text,
+            cancel_at_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-03-01 00:00:00+00'::timestamptz,
+       '2099-04-01 00:00:00+00'::timestamptz,
+       'canceled'::text, false
+     ) $$,
+  'shorter cancellation evidence cannot regress period and lifecycle fields still apply'
 );
 
 SELECT is(
@@ -267,6 +549,13 @@ SELECT is(
   'canceled subscription without a future verified period falls back to free'
 );
 
+SELECT is(
+  (SELECT slug FROM private.get_account_plan_row(
+    '00000000-0000-0000-0000-000000003950')),
+  'free',
+  'canceled subscription with a past non-null period falls back to free'
+);
+
 SET LOCAL role authenticated;
 
 SELECT is(
@@ -281,6 +570,20 @@ SELECT is(
     '00000000-0000-0000-0000-000000003920')),
   0,
   'billing overview excludes canceled access without a future verified period'
+);
+
+SELECT is(
+  (SELECT count(*)::integer FROM public.get_account_subscription(
+    '00000000-0000-0000-0000-000000003950')),
+  0,
+  'account subscription excludes canceled access with a past verified period'
+);
+
+SELECT is(
+  (SELECT count(*)::integer FROM public.get_billing_overview(
+    '00000000-0000-0000-0000-000000003950')),
+  0,
+  'billing overview excludes canceled access with a past verified period'
 );
 
 SELECT is(
