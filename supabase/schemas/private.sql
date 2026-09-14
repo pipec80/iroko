@@ -851,6 +851,70 @@ END;$$;
 REVOKE ALL ON FUNCTION private.invoke_billing_worker(text) FROM PUBLIC,anon,authenticated,service_role;
 
 
+CREATE TABLE private.billing_checkout_resolution_context (
+  backend_pid integer NOT NULL,
+  transaction_id bigint NOT NULL,
+  intent_id uuid NOT NULL,
+  PRIMARY KEY (backend_pid, transaction_id, intent_id)
+);
+
+REVOKE ALL ON TABLE private.billing_checkout_resolution_context
+  FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION private.guard_billing_checkout_resolution()
+RETURNS trigger
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_authorized boolean := false;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.resolved_at IS NOT NULL
+      OR NEW.resolution_code IS NOT NULL
+      OR NEW.resolved_by IS NOT NULL THEN
+      RAISE EXCEPTION 'billing_checkout_resolution_direct_update_forbidden';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF OLD.resolved_at IS NOT NULL
+    OR OLD.resolution_code IS NOT NULL
+    OR OLD.resolved_by IS NOT NULL THEN
+    IF NEW.resolved_at IS DISTINCT FROM OLD.resolved_at
+      OR NEW.resolution_code IS DISTINCT FROM OLD.resolution_code
+      OR NEW.resolved_by IS DISTINCT FROM OLD.resolved_by
+      OR NEW.status IS DISTINCT FROM OLD.status THEN
+      RAISE EXCEPTION 'billing_checkout_resolution_immutable';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF NEW.resolved_at IS DISTINCT FROM OLD.resolved_at
+    OR NEW.resolution_code IS DISTINCT FROM OLD.resolution_code
+    OR NEW.resolved_by IS DISTINCT FROM OLD.resolved_by THEN
+    DELETE FROM private.billing_checkout_resolution_context
+    WHERE backend_pid = pg_backend_pid()
+      AND transaction_id = txid_current()
+      AND intent_id = NEW.id
+    RETURNING true INTO v_authorized;
+
+    IF NOT COALESCE(v_authorized, false) THEN
+      RAISE EXCEPTION 'billing_checkout_resolution_direct_update_forbidden';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION private.guard_billing_checkout_resolution() OWNER TO postgres;
+REVOKE ALL ON FUNCTION private.guard_billing_checkout_resolution()
+  FROM PUBLIC, anon, authenticated, service_role;
+
+
 CREATE OR REPLACE FUNCTION private.resolve_billing_checkout_intent(
   p_intent_id uuid,
   p_outcome text,
@@ -903,6 +967,16 @@ BEGIN
   ) THEN
     RAISE EXCEPTION 'billing_checkout_intent_not_resolvable';
   END IF;
+
+  INSERT INTO private.billing_checkout_resolution_context (
+    backend_pid,
+    transaction_id,
+    intent_id
+  ) VALUES (
+    pg_backend_pid(),
+    txid_current(),
+    v_intent.id
+  );
 
   UPDATE billing.checkout_intents
   SET status = v_outcome,

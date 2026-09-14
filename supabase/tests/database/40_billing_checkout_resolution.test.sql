@@ -1,6 +1,6 @@
 -- pgTAP: operator resolution for abandoned or ambiguous checkout intents.
 BEGIN;
-SELECT plan(22);
+SELECT plan(28);
 
 SELECT has_column('billing', 'checkout_intents', 'resolved_at', 'checkout intents record resolution time');
 SELECT has_column('billing', 'checkout_intents', 'resolution_code', 'checkout intents record a resolution code');
@@ -10,6 +10,24 @@ SELECT has_function(
   'resolve_billing_checkout_intent',
   ARRAY['uuid', 'text', 'text', 'text'],
   'private operator resolver exists'
+);
+SELECT has_function(
+  'private',
+  'guard_billing_checkout_resolution',
+  ARRAY[]::text[],
+  'resolution audit guard exists'
+);
+SELECT has_trigger(
+  'billing',
+  'checkout_intents',
+  'guard_billing_checkout_resolution',
+  'resolution audit guard is installed'
+);
+SELECT has_trigger(
+  'billing',
+  'checkout_intents',
+  'guard_billing_checkout_resolution_insert',
+  'resolution audit insert guard is installed'
 );
 SELECT ok(
   NOT has_function_privilege(
@@ -26,6 +44,27 @@ SELECT ok(
     'anon',
     'private.resolve_billing_checkout_intent(uuid,text,text,text)',
     'EXECUTE'
+  )
+  AND NOT has_function_privilege(
+    'service_role',
+    'private.guard_billing_checkout_resolution()',
+    'EXECUTE'
+  )
+  AND NOT has_table_privilege(
+    'service_role',
+    'private.billing_checkout_resolution_context',
+    'INSERT'
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM pg_proc AS procedure
+    CROSS JOIN LATERAL aclexplode(
+      COALESCE(procedure.proacl, acldefault('f', procedure.proowner))
+    ) AS privilege
+    WHERE procedure.oid =
+      'private.resolve_billing_checkout_intent(uuid,text,text,text)'::regprocedure
+      AND privilege.grantee = 0
+      AND privilege.privilege_type = 'EXECUTE'
   ),
   'operator resolver has no application grant'
 );
@@ -216,6 +255,43 @@ SELECT results_eq(
      FROM resolution_40_snapshot $$,
   'the original resolution audit remains unchanged'
 );
+
+SET LOCAL role service_role;
+SELECT throws_like(
+  $$ INSERT INTO billing.checkout_intents (
+       id, account_id, plan_id, provider, status,
+       resolved_at, resolution_code, resolved_by
+     ) VALUES (
+       '00000000-0000-0000-0000-000000004098',
+       '00000000-0000-0000-0000-000000004010',
+       (SELECT plan_id FROM billing.checkout_intents
+        WHERE id = '00000000-0000-0000-0000-000000004001'),
+       'mercadopago', 'failed', now(), 'direct_insert', 'service-role'
+     ) $$,
+  '%billing_checkout_resolution_direct_update_forbidden%',
+  'service role cannot insert pre-resolved evidence directly'
+);
+SELECT throws_like(
+  $$ UPDATE billing.checkout_intents
+     SET resolved_at = now(),
+         resolution_code = 'direct_application_write',
+         resolved_by = 'service-role'
+     WHERE id = '00000000-0000-0000-0000-000000004004' $$,
+  '%billing_checkout_resolution_direct_update_forbidden%',
+  'service role cannot set resolution evidence directly'
+);
+SELECT throws_like(
+  $$ UPDATE billing.checkout_intents
+     SET status = 'pending',
+         resolved_at = NULL,
+         resolution_code = NULL,
+         resolved_by = NULL
+     WHERE id = '00000000-0000-0000-0000-000000004001' $$,
+  '%billing_checkout_resolution_immutable%',
+  'service role cannot clear evidence or reopen a resolved intent'
+);
+RESET role;
+
 SELECT throws_like(
   $$ SELECT private.resolve_billing_checkout_intent(
        '00000000-0000-0000-0000-000000004099', 'failed', 'reviewed', 'operator-40') $$,
