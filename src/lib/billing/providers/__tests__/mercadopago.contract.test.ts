@@ -70,6 +70,7 @@ describe('mercadopagoProvider.verifyWebhook — fixed HMAC vector', () => {
       }),
     );
     expect(result).not.toHaveProperty('externalPriceId');
+    expect(result).not.toHaveProperty('currentPeriodEnd');
   });
 
   it('rejects the same fixed hex when any manifest component changes (different data.id)', async () => {
@@ -81,5 +82,28 @@ describe('mercadopagoProvider.verifyWebhook — fixed HMAC vector', () => {
 
     expect(result).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('mercadopagoProvider.getSubscriptionSnapshot', () => {
+  it('does not treat the next scheduled payment as paid-through evidence', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: FIXTURE_DATA_ID,
+        status: 'authorized',
+        next_payment_date: '2026-02-01T00:00:00Z',
+      }),
+    });
+
+    const snapshot = await mercadopagoProvider.getSubscriptionSnapshot?.(FIXTURE_DATA_ID);
+
+    expect(snapshot).toEqual(
+      expect.objectContaining({
+        externalSubscriptionId: FIXTURE_DATA_ID,
+        status: 'active',
+      }),
+    );
+    expect(snapshot).not.toHaveProperty('currentPeriodEnd');
   });
 });

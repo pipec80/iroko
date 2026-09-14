@@ -33,7 +33,6 @@ interface PreapprovalResource {
   id: string;
   status: string;
   external_reference: string;
-  next_payment_date?: string;
   date_created?: string;
   last_modified?: string;
 }
@@ -46,6 +45,7 @@ interface AuthorizedPaymentResource {
   currency_id?: unknown;
   date_created?: unknown;
   date_approved?: unknown;
+  debit_date?: unknown;
   payment: {
     id: string | number;
     status: string;
@@ -91,6 +91,60 @@ function normalizeAmount(value: unknown, currency: string): number | null {
   const scale = 10 ** fractionDigits;
   const minorAmount = whole * scale + Number(fraction.padEnd(fractionDigits, '0'));
   return Number.isSafeInteger(minorAmount) ? minorAmount : null;
+}
+
+function daysInMonth(year: number, month: number): number {
+  if (month === 2) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
+  }
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
+}
+
+function monthlyPaidPeriod(debitDate: unknown): { periodStart: string; periodEnd: string } | null {
+  if (typeof debitDate !== 'string') return null;
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(
+      debitDate,
+    );
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  const offsetHour = match[8] === undefined ? 0 : Number(match[8]);
+  const offsetMinute = match[9] === undefined ? 0 : Number(match[9]);
+  if (
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > daysInMonth(year, month) ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59 ||
+    offsetHour > 23 ||
+    offsetMinute > 59
+  ) {
+    return null;
+  }
+
+  const periodStartDate = new Date(debitDate);
+  if (Number.isNaN(periodStartDate.getTime())) return null;
+
+  const originalDay = periodStartDate.getUTCDate();
+  const periodEndDate = new Date(periodStartDate);
+  periodEndDate.setUTCDate(1);
+  periodEndDate.setUTCMonth(periodEndDate.getUTCMonth() + 1);
+  const targetYear = periodEndDate.getUTCFullYear();
+  const targetMonth = periodEndDate.getUTCMonth() + 1;
+  periodEndDate.setUTCDate(Math.min(originalDay, daysInMonth(targetYear, targetMonth)));
+
+  return {
+    periodStart: periodStartDate.toISOString(),
+    periodEnd: periodEndDate.toISOString(),
+  };
 }
 
 function isAuthorizedPaymentResource(value: unknown): value is AuthorizedPaymentResource {
@@ -321,6 +375,7 @@ function normalizeAuthorizedPaymentEvent(
     });
   }
   if (amount === null || currency === undefined) return null;
+  const paidPeriod = monthlyPaidPeriod(payment.debit_date);
   return {
     provider: 'mercadopago',
     externalEventId,
@@ -331,6 +386,7 @@ function normalizeAuthorizedPaymentEvent(
     externalPaymentId: paymentId,
     amountPaid: amount,
     currency,
+    ...(paidPeriod ?? {}),
     paidAt: approvedAt,
     raw: payment,
   };
@@ -519,7 +575,6 @@ export const mercadopagoProvider: PaymentProvider = {
           accountId: preapproval.external_reference,
           externalSubscriptionId: preapproval.id,
           canceledAt: preapproval.last_modified,
-          accessUntil: preapproval.next_payment_date,
           raw: preapproval,
         };
       }
@@ -530,7 +585,6 @@ export const mercadopagoProvider: PaymentProvider = {
         accountId: preapproval.external_reference,
         status,
         externalSubscriptionId: preapproval.id,
-        currentPeriodEnd: preapproval.next_payment_date,
         // Mercado Pago has no supported period-end cancellation capability.
         cancelAtPeriodEnd: false,
         raw: preapproval,
@@ -664,7 +718,6 @@ export const mercadopagoProvider: PaymentProvider = {
     return {
       externalSubscriptionId: preapproval.id,
       status: mapPreapprovalStatus(preapproval.status),
-      ...(preapproval.next_payment_date ? { currentPeriodEnd: preapproval.next_payment_date } : {}),
       cancelAtPeriodEnd: false,
       ...(preapproval.last_modified ?
         {

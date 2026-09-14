@@ -118,6 +118,7 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         externalSubscriptionId: dataId,
       }),
     );
+    expect(result).not.toHaveProperty('currentPeriodEnd');
   });
 
   // MercadoPago devuelve el preapproval cancelado como `cancelled` (doble L) en
@@ -138,6 +139,7 @@ describe('mercadopagoProvider.verifyWebhook', () => {
           id: dataId,
           status: canceledStatus,
           external_reference: 'acc_2',
+          next_payment_date: '2026-08-08T00:00:00.000-04:00',
         }),
       });
 
@@ -146,6 +148,7 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         `ts=${ts},v1=${v1};x-request-id=${requestId}`,
       );
       expect(result?.type).toBe('subscription_canceled');
+      expect(result).not.toHaveProperty('accessUntil');
     },
   );
 
@@ -409,6 +412,7 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         transaction_amount: '29900',
         currency_id: 'CLP',
         date_created: '2026-07-08T00:00:00.000-04:00',
+        debit_date: '2026-01-31T12:00:00-03:00',
         payment: {
           id: 10_002,
           status: 'approved',
@@ -430,9 +434,51 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         externalPaymentId: '10002',
         amountPaid: 29_900,
         currency: 'CLP',
+        periodStart: '2026-01-31T15:00:00.000Z',
+        periodEnd: '2026-02-28T15:00:00.000Z',
       }),
     );
   });
+
+  it.each([
+    ['missing', undefined],
+    ['invalid', 'not-a-date'],
+  ])(
+    'keeps an approved authorized payment with %s debit_date valid but without a paid period',
+    async (_description, debitDate) => {
+      const dataId = `authorized_payment_${_description}_debit_date`;
+      const requestId = `req_${_description}_debit_date`;
+      const ts = '1720000000';
+      const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+      const body = JSON.stringify({
+        type: 'subscription_authorized_payment',
+        data: { id: dataId },
+      });
+
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: `invoice_${_description}_debit_date`,
+          preapproval_id: 'pa_1',
+          external_reference: 'acc_1',
+          transaction_amount: '29900',
+          currency_id: 'CLP',
+          date_created: '2026-07-08T00:00:00.000-04:00',
+          ...(debitDate === undefined ? {} : { debit_date: debitDate }),
+          payment: { id: `payment_${_description}_debit_date`, status: 'approved' },
+        }),
+      });
+
+      const result = await mercadopagoProvider.verifyWebhook(
+        body,
+        `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+      );
+
+      expect(result).toEqual(expect.objectContaining({ type: 'invoice_paid' }));
+      expect(result).not.toHaveProperty('periodStart');
+      expect(result).not.toHaveProperty('periodEnd');
+    },
+  );
 
   it('normalizes a rejected authorized payment as invoice_payment_failed using its nested failure detail', async () => {
     const dataId = 'authorized_payment_rejected';
