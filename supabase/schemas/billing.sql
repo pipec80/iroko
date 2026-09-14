@@ -987,6 +987,9 @@ CREATE TABLE billing.checkout_intents (
   checkout_url text,
   lease_expires_at timestamptz,
   failure_code text,
+  resolved_at timestamptz,
+  resolution_code text,
+  resolved_by text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT checkout_intents_external_subscription_nonempty
@@ -994,7 +997,20 @@ CREATE TABLE billing.checkout_intents (
   CONSTRAINT checkout_intents_checkout_url_bounded
     CHECK (checkout_url IS NULL OR (char_length(checkout_url) <= 2048 AND checkout_url ~ '^https://')),
   CONSTRAINT checkout_intents_failure_code_bounded
-    CHECK (failure_code IS NULL OR char_length(failure_code) <= 100)
+    CHECK (failure_code IS NULL OR char_length(failure_code) <= 100),
+  CONSTRAINT checkout_intents_resolution_code_bounded CHECK (
+    resolution_code IS NULL OR
+    (NULLIF(btrim(resolution_code), '') IS NOT NULL AND char_length(resolution_code) <= 100)
+  ),
+  CONSTRAINT checkout_intents_resolved_by_bounded CHECK (
+    resolved_by IS NULL OR
+    (NULLIF(btrim(resolved_by), '') IS NOT NULL AND char_length(resolved_by) <= 120)
+  ),
+  CONSTRAINT checkout_intents_resolution_complete CHECK (
+    (resolved_at IS NULL AND resolution_code IS NULL AND resolved_by IS NULL)
+    OR
+    (resolved_at IS NOT NULL AND resolution_code IS NOT NULL AND resolved_by IS NOT NULL)
+  )
 );
 
 CREATE UNIQUE INDEX checkout_intents_open_account_provider_unique

@@ -114,6 +114,9 @@ export type Database = {
           lease_expires_at: string | null
           plan_id: string
           provider: string
+          resolution_code: string | null
+          resolved_at: string | null
+          resolved_by: string | null
           status: string
           updated_at: string
         }
@@ -127,6 +130,9 @@ export type Database = {
           lease_expires_at?: string | null
           plan_id: string
           provider: string
+          resolution_code?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status: string
           updated_at?: string
         }
@@ -140,6 +146,9 @@ export type Database = {
           lease_expires_at?: string | null
           plan_id?: string
           provider?: string
+          resolution_code?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           updated_at?: string
         }
