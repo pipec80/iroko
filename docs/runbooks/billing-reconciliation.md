@@ -94,7 +94,8 @@ LEFT JOIN billing.customers AS customer
 LEFT JOIN billing.subscriptions AS subscription
   ON subscription.customer_id = customer.id
   AND subscription.provider = intent.provider
-  AND subscription.external_subscription_id IS NOT DISTINCT FROM intent.external_subscription_id
+  AND intent.external_subscription_id IS NOT NULL
+  AND subscription.external_subscription_id = intent.external_subscription_id
 WHERE intent.id = :'intent_id'::uuid;
 
 SELECT
@@ -125,7 +126,8 @@ WHERE anomaly.status = 'open'
       JOIN billing.subscriptions AS subscription
         ON subscription.customer_id = customer.id
         AND subscription.provider = intent.provider
-        AND subscription.external_subscription_id IS NOT DISTINCT FROM intent.external_subscription_id
+        AND intent.external_subscription_id IS NOT NULL
+        AND subscription.external_subscription_id = intent.external_subscription_id
       WHERE intent.id = :'intent_id'::uuid
     )
   )
@@ -150,6 +152,7 @@ an approved sanitized case or operator alias; it is stored immutably.
 \set outcome 'failed'
 \set resolution_code 'remote_absent_after_provider_review'
 \set operator_reference 'operator:SANITIZED_CASE_ALIAS'
+\set ON_ERROR_STOP on
 
 BEGIN;
 SELECT *
@@ -166,9 +169,13 @@ COMMIT;
 ```
 
 For decision 3, change only `outcome` to `canceled` and `resolution_code` to
-`remote_terminal_after_provider_review`. If any statement fails, stop; do not
-retry with a different outcome or use direct updates. Record the failure in the
-incident and retain the blocking state until it is reviewed.
+`remote_terminal_after_provider_review`. If any statement fails,
+`ON_ERROR_STOP` stops the sequence: do not run a later `SELECT` or `COMMIT`, do
+not retry with a different outcome, and do not use direct updates. Issue
+`ROLLBACK;` and end the session (`\q`) if `psql` remains connected. If it has
+already exited, do not reconnect to continue this sequence; the connection
+close rolls back its open transaction. Record the failure in the incident and
+retain the blocking state until it is reviewed.
 
 ### Irreversibility and follow-up
 
