@@ -8,7 +8,13 @@ vi.mock('@/lib/supabase/server', () => ({
 
 import { getEntitlements, hasFeature, getLimit, withinLimit } from '../entitlements';
 
-function entitlementRow(over?: Partial<{ features: object; limits: object }>) {
+interface EntitlementRpcRow {
+  plan_slug: string;
+  features: Record<string, boolean>;
+  limits: Record<string, number>;
+}
+
+function entitlementRow(over?: Partial<EntitlementRpcRow>) {
   return [
     {
       plan_slug: 'pro',
@@ -41,6 +47,38 @@ describe('entitlements', () => {
       limits: {},
     });
   });
+
+  it.each([
+    {
+      period: 'future',
+      data: entitlementRow(),
+      expected: {
+        planSlug: 'pro',
+        features: { webhooks_enabled: true },
+        limits: { api_keys_max: 20 },
+      },
+    },
+    {
+      period: 'expired',
+      data: entitlementRow({ plan_slug: 'free', features: {}, limits: {} }),
+      expected: { planSlug: 'free', features: {}, limits: {} },
+    },
+    {
+      period: 'null',
+      data: entitlementRow({ plan_slug: 'free', features: {}, limits: {} }),
+      expected: { planSlug: 'free', features: {}, limits: {} },
+    },
+  ])(
+    'preserves the database entitlement for a canceled subscription with a $period period',
+    async ({ data, expected }) => {
+      mocks.rpc.mockResolvedValue({ data, error: null });
+
+      await expect(getEntitlements('a1')).resolves.toEqual(expected);
+      expect(mocks.rpc).toHaveBeenCalledWith('get_account_entitlements', {
+        p_account_id: 'a1',
+      });
+    },
+  );
 
   it('hasFeature returns true for an enabled feature', async () => {
     mocks.rpc.mockResolvedValue({ data: entitlementRow(), error: null });
