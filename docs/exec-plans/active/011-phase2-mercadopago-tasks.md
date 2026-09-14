@@ -216,8 +216,12 @@ Executable handoffs for this phase are
   intentionally leaves subscription status unchanged for invoice events.
   Define a truthful payment-health signal and a viable hosted-flow next action,
   without inventing `past_due`, grace-period access cuts or card-management UI.
-- **Phases 2/6, MP-08:** operational treatment for abandoned `incomplete` rows
-  and unknown outcomes; a lease or age threshold cannot authorize recreation.
+- **Phases 2/6, MP-08:** el gate local de código/runbook está completo: la
+  migración `20260911110000_billing_checkout_operator_resolution.sql`, el
+  resolver privado auditado e inmutable, SQL 40 y el procedimiento versionado
+  cubren la resolución de filas elegibles. La inspección del proveedor, la
+  ejecución autorizada del procedimiento y la aceptación interna siguen
+  pendientes; un lease o umbral de edad no autoriza recreación.
 - **Phases 2/6, MP-03/07/09/10:** specific evidence for renewal, paid-through
   access at cancellation, refunds/chargebacks/mediation and partial refunds.
 - **Phase 6, MP-11–14:** known-payment recovery, discovery of wholly omitted

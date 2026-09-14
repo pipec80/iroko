@@ -433,7 +433,10 @@ git commit -m "docs: add billing reconciliation runbook"
 ## Additional v1 Chile code and acceptance gates
 
 These remain in Phase 6, not a new plan. See MP-08–14 in the matrix for
-requirement, official source, code, tests and evidence.
+requirement, official source, code, tests and evidence. MP-08 completed its
+local code/runbook gate through `011b`: the immutable resolver and procedure
+are present and locally tested. Provider inspection, target-environment
+execution and internal acceptance remain pending.
 
 Execute them through
 [`011b`](011b-mercadopago-checkout-resolution.md),
@@ -461,10 +464,12 @@ acceptance [`011f`](011f-mercadopago-internal-acceptance.md).
       race; it alone does not prove remote version ordering, cancellation
       timestamps or that `next_payment_date` represents a paid period. Verify
       late failed/paid events and cancellation/snapshot convergence.
-- [ ] **Anomalies and abandonment (MP-08/09/10):** validate partial refunds
-      separately from status-only classification, actionable alerts and manual
-      resolution, plus safe handling of old/unknown checkouts. Preserve the
-      no-automatic-access-cut policy.
+- [ ] **Anomalies and abandonment (MP-08/09/10):** MP-08's local
+      code/runbook gate is complete, but its provider-reviewed, authorized
+      operator execution and internal acceptance remain open. Validate partial
+      refunds separately from status-only classification, actionable alerts and
+      manual resolution, plus safe handling of old/unknown checkouts. Preserve
+      the no-automatic-access-cut policy.
 
 ## Completion criteria for Phase 6
 
