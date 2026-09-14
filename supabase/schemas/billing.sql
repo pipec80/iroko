@@ -1027,8 +1027,7 @@ CREATE INDEX checkout_intents_plan_id_idx
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON billing.checkout_intents
   FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
 CREATE TRIGGER guard_billing_checkout_resolution
-  BEFORE UPDATE OF status, resolved_at, resolution_code, resolved_by
-  ON billing.checkout_intents
+  BEFORE UPDATE ON billing.checkout_intents
   FOR EACH ROW EXECUTE FUNCTION private.guard_billing_checkout_resolution();
 CREATE TRIGGER guard_billing_checkout_resolution_insert
   BEFORE INSERT ON billing.checkout_intents

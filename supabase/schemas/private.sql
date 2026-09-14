@@ -883,13 +883,7 @@ BEGIN
   IF OLD.resolved_at IS NOT NULL
     OR OLD.resolution_code IS NOT NULL
     OR OLD.resolved_by IS NOT NULL THEN
-    IF NEW.resolved_at IS DISTINCT FROM OLD.resolved_at
-      OR NEW.resolution_code IS DISTINCT FROM OLD.resolution_code
-      OR NEW.resolved_by IS DISTINCT FROM OLD.resolved_by
-      OR NEW.status IS DISTINCT FROM OLD.status THEN
-      RAISE EXCEPTION 'billing_checkout_resolution_immutable';
-    END IF;
-    RETURN NEW;
+    RAISE EXCEPTION 'billing_checkout_resolution_immutable';
   END IF;
 
   IF NEW.resolved_at IS DISTINCT FROM OLD.resolved_at

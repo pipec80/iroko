@@ -1,6 +1,6 @@
 -- pgTAP: operator resolution for abandoned or ambiguous checkout intents.
 BEGIN;
-SELECT plan(28);
+SELECT plan(32);
 
 SELECT has_column('billing', 'checkout_intents', 'resolved_at', 'checkout intents record resolution time');
 SELECT has_column('billing', 'checkout_intents', 'resolution_code', 'checkout intents record a resolution code');
@@ -256,7 +256,50 @@ SELECT results_eq(
   'the original resolution audit remains unchanged'
 );
 
+SELECT set_config(
+  'app.resolution_scale_plan_id',
+  (SELECT id::text FROM billing.plans
+   WHERE slug = 'scale' AND "interval" = 'month'),
+  true
+);
+CREATE TEMP TABLE resolution_40_rows_snapshot AS
+SELECT id, account_id, plan_id, provider, external_subscription_id,
+  checkout_url, lease_expires_at, failure_code, created_at, updated_at,
+  status, resolved_at, resolution_code, resolved_by
+FROM billing.checkout_intents
+WHERE id IN (
+  '00000000-0000-0000-0000-000000004001',
+  '00000000-0000-0000-0000-000000004002'
+);
+
 SET LOCAL role service_role;
+SELECT throws_like(
+  $$ UPDATE billing.checkout_intents
+     SET id = '00000000-0000-0000-0000-000000004097',
+         account_id = '00000000-0000-0000-0000-000000004030',
+         plan_id = current_setting('app.resolution_scale_plan_id')::uuid,
+         provider = 'stripe'
+     WHERE id = '00000000-0000-0000-0000-000000004001' $$,
+  '%billing_checkout_resolution_immutable%',
+  'service role cannot reassign resolved core identity fields'
+);
+SELECT throws_like(
+  $$ UPDATE billing.checkout_intents
+     SET external_subscription_id = 'forged-remote-resolution-40',
+         checkout_url = 'https://example.com/forged-resolution'
+     WHERE id = '00000000-0000-0000-0000-000000004002' $$,
+  '%billing_checkout_resolution_immutable%',
+  'service role cannot rewrite resolved provider correlation fields'
+);
+SELECT throws_like(
+  $$ UPDATE billing.checkout_intents
+     SET lease_expires_at = now() + interval '1 day',
+         failure_code = 'rewritten_after_resolution',
+         created_at = now()
+     WHERE id = '00000000-0000-0000-0000-000000004001' $$,
+  '%billing_checkout_resolution_immutable%',
+  'service role cannot rewrite resolved lifecycle evidence'
+);
 SELECT throws_like(
   $$ INSERT INTO billing.checkout_intents (
        id, account_id, plan_id, provider, status,
@@ -291,6 +334,21 @@ SELECT throws_like(
   'service role cannot clear evidence or reopen a resolved intent'
 );
 RESET role;
+
+SELECT results_eq(
+  $$ SELECT id, account_id, plan_id, provider, external_subscription_id,
+       checkout_url, lease_expires_at, failure_code, created_at, updated_at,
+       status, resolved_at, resolution_code, resolved_by
+     FROM billing.checkout_intents
+     WHERE resolved_by = 'operator:resolution-40'
+     ORDER BY id $$,
+  $$ SELECT id, account_id, plan_id, provider, external_subscription_id,
+       checkout_url, lease_expires_at, failure_code, created_at, updated_at,
+       status, resolved_at, resolution_code, resolved_by
+     FROM resolution_40_rows_snapshot
+     ORDER BY id $$,
+  'all resolved checkout identity, correlation, lifecycle, and audit fields remain unchanged'
+);
 
 SELECT throws_like(
   $$ SELECT private.resolve_billing_checkout_intent(

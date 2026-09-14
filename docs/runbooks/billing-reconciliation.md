@@ -57,9 +57,10 @@ second preapproval while the intent is blocking.
    `needs_review`, escalate the incident, and release nothing. Do not run SQL
    that could release the reservation.
 
-If the target is not `needs_review`, or a `pending` target does not have an
-expired non-null lease, stop and investigate. The resolver intentionally
-rejects those rows and any row that already has an external subscription ID.
+Proceed only when the target is `needs_review`, or when it is `pending` with an
+expired non-null lease. Stop and investigate otherwise. The resolver
+intentionally rejects every other state and any row that already has an
+external subscription ID.
 
 ### Read-only preflight and evidence
 
