@@ -532,6 +532,64 @@ COMMENT ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") IS '
 REVOKE ALL ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") FROM PUBLIC;
 
 
+CREATE OR REPLACE FUNCTION private.repair_mercadopago_subscription_periods()
+RETURNS integer
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_repaired_count integer;
+BEGIN
+  WITH ranked_evidence AS (
+    SELECT
+      subscription.id AS subscription_id,
+      invoice.period_start,
+      invoice.period_end,
+      row_number() OVER (
+        PARTITION BY subscription.id
+        ORDER BY invoice.period_end DESC NULLS LAST,
+                 invoice.period_start DESC NULLS LAST,
+                 invoice.paid_at DESC NULLS LAST,
+                 invoice.created_at DESC NULLS LAST,
+                 invoice.id DESC NULLS LAST
+      ) AS evidence_rank
+    FROM billing.subscriptions AS subscription
+    LEFT JOIN billing.invoices AS invoice
+      ON invoice.subscription_id = subscription.id
+     AND invoice.provider = subscription.provider
+     AND invoice.status = 'paid'
+     AND invoice.period_start IS NOT NULL
+     AND invoice.period_end IS NOT NULL
+     AND invoice.period_end > invoice.period_start
+    WHERE subscription.provider = 'mercadopago'
+  )
+  UPDATE billing.subscriptions AS subscription
+  SET current_period_start = evidence.period_start,
+      current_period_end = evidence.period_end
+  FROM ranked_evidence AS evidence
+  WHERE evidence.subscription_id = subscription.id
+    AND evidence.evidence_rank = 1
+    AND (
+      subscription.current_period_start IS DISTINCT FROM evidence.period_start
+      OR subscription.current_period_end IS DISTINCT FROM evidence.period_end
+    );
+
+  GET DIAGNOSTICS v_repaired_count = ROW_COUNT;
+  RETURN v_repaired_count;
+END;
+$$;
+
+ALTER FUNCTION private.repair_mercadopago_subscription_periods() OWNER TO postgres;
+
+COMMENT ON FUNCTION private.repair_mercadopago_subscription_periods() IS
+  'Migration repair that rebuilds Mercado Pago subscription periods from the deterministic greatest complete paid-invoice interval and clears unsupported scheduled-date evidence.';
+
+REVOKE ALL ON FUNCTION private.repair_mercadopago_subscription_periods()
+  FROM PUBLIC, anon, authenticated, service_role;
+
+
 CREATE OR REPLACE FUNCTION "private"."get_account_limit"("p_account_id" "uuid", "p_key" "text") RETURNS integer
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO ''

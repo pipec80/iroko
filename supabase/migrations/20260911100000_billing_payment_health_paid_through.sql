@@ -12,6 +12,65 @@
 -- mutations, while preventing later absent or older provider evidence from
 -- erasing a stronger period already stored on the subscription.
 
+CREATE OR REPLACE FUNCTION private.repair_mercadopago_subscription_periods()
+RETURNS integer
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_repaired_count integer;
+BEGIN
+  WITH ranked_evidence AS (
+    SELECT
+      subscription.id AS subscription_id,
+      invoice.period_start,
+      invoice.period_end,
+      row_number() OVER (
+        PARTITION BY subscription.id
+        ORDER BY invoice.period_end DESC NULLS LAST,
+                 invoice.period_start DESC NULLS LAST,
+                 invoice.paid_at DESC NULLS LAST,
+                 invoice.created_at DESC NULLS LAST,
+                 invoice.id DESC NULLS LAST
+      ) AS evidence_rank
+    FROM billing.subscriptions AS subscription
+    LEFT JOIN billing.invoices AS invoice
+      ON invoice.subscription_id = subscription.id
+     AND invoice.provider = subscription.provider
+     AND invoice.status = 'paid'
+     AND invoice.period_start IS NOT NULL
+     AND invoice.period_end IS NOT NULL
+     AND invoice.period_end > invoice.period_start
+    WHERE subscription.provider = 'mercadopago'
+  )
+  UPDATE billing.subscriptions AS subscription
+  SET current_period_start = evidence.period_start,
+      current_period_end = evidence.period_end
+  FROM ranked_evidence AS evidence
+  WHERE evidence.subscription_id = subscription.id
+    AND evidence.evidence_rank = 1
+    AND (
+      subscription.current_period_start IS DISTINCT FROM evidence.period_start
+      OR subscription.current_period_end IS DISTINCT FROM evidence.period_end
+    );
+
+  GET DIAGNOSTICS v_repaired_count = ROW_COUNT;
+  RETURN v_repaired_count;
+END;
+$$;
+
+COMMENT ON FUNCTION private.repair_mercadopago_subscription_periods() IS
+  'Migration repair that rebuilds Mercado Pago subscription periods from the deterministic greatest complete paid-invoice interval and clears unsupported scheduled-date evidence.';
+
+REVOKE ALL ON FUNCTION private.repair_mercadopago_subscription_periods()
+  FROM PUBLIC, anon, authenticated, service_role;
+
+-- Repair legacy Mercado Pago periods before the monotonic reducers below begin
+-- treating the stored interval as verified truth.
+SELECT private.repair_mercadopago_subscription_periods();
+
 CREATE OR REPLACE FUNCTION public.apply_subscription_created(
   p_provider                 text,
   p_external_event_id        text,
@@ -627,6 +686,10 @@ BEGIN
       ON subscription.id = attempt.subscription_id
      AND subscription.provider = attempt.provider
     ORDER BY attempt.attempted_at DESC,
+             CASE
+               WHEN attempt.status IN ('paid', 'recovered') THEN 1
+               ELSE 0
+             END DESC,
              attempt.created_at DESC,
              attempt.id DESC
     LIMIT 1

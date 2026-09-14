@@ -558,6 +558,10 @@ BEGIN
       ON subscription.id = attempt.subscription_id
      AND subscription.provider = attempt.provider
     ORDER BY attempt.attempted_at DESC,
+             CASE
+               WHEN attempt.status IN ('paid', 'recovered') THEN 1
+               ELSE 0
+             END DESC,
              attempt.created_at DESC,
              attempt.id DESC
     LIMIT 1
