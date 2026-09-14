@@ -62,6 +62,31 @@ two sandbox applications must be resolved by verifying application, seller,
 credentials and webhook coherence for each environment under authorized work.
 No secrets, signed URLs, raw payloads or personal data belong in this register.
 
+### MP-08 abandoned checkout operator record
+
+Create one sanitized record for each authorized provider review. It is evidence
+of that case only and does not certify the provider, Cloud environment, or
+future checkout behavior.
+
+| Field                        | Record                                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| UTC observation time         | `<YYYY-MM-DDTHH:MM:SSZ>`                                                         |
+| Target environment           | `<authorized-environment-alias>`                                                 |
+| Revision or deployment       | `<sanitized-revision-or-deployment-alias>`                                       |
+| Scenario                     | `MP-08 abandoned or ambiguous checkout`                                          |
+| Correlation                  | `account=<alias>; intent=<alias>; remote=<absent-or-alias>`                      |
+| Provider observation         | `<sanitized absence, terminal, or attached-and-converged finding>`               |
+| Decision and local result    | `<attach-and-converge, failed, canceled, or retained-needs_review>`              |
+| Resolution code, if resolved | `remote_absent_after_provider_review` or `remote_terminal_after_provider_review` |
+| Operator and reviewer        | `<sanitized operator/case alias>; <sanitized reviewer alias>`                    |
+| Evidence location            | `<authorized incident or run reference>`                                         |
+
+Never include tokens, email addresses, checkout URLs, raw provider resource
+IDs, or full provider payloads. A remote subscription ID that is found must be
+attached and converged through the existing service/reducer path before any
+local resolution. A `needs_review` result documents escalation; it does not
+release a reservation or authorize another provider POST.
+
 Before v1 real users, additionally verify Plan 012 hardening/pricing, production
 smoke, auth/tenant isolation, email delivery, observability/alerts, migration
 parity and operational recovery. Commercial analytics/onboarding/distribution
