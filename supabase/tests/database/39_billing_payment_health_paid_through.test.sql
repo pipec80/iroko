@@ -3,7 +3,7 @@
 -- Run with: supabase test db --local supabase/tests/database/39_billing_payment_health_paid_through.test.sql
 
 BEGIN;
-SELECT plan(41);
+SELECT plan(51);
 
 INSERT INTO auth.users (
   id, email, raw_user_meta_data, created_at, updated_at,
@@ -227,6 +227,146 @@ SELECT results_eq(
        'canceled'::text
      ) $$,
   'newer approved invoice advances the period without changing canceled status'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_invoice_paid(
+    'mercadopago', 'invoice-period-start-only-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', 'invoice-period-start-only-39',
+    'payment-period-start-only-39', 19990, 'CLP',
+    '2099-03-01 00:00:00+00', NULL,
+    '2026-09-14 13:10:00+00', NULL, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'invoice with only a period start remains processable'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-02-01 00:00:00+00'::timestamptz,
+       '2099-03-01 00:00:00+00'::timestamptz
+     ) $$,
+  'start-only invoice interval cannot change the verified subscription period'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_invoice_paid(
+    'mercadopago', 'invoice-period-end-only-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', 'invoice-period-end-only-39',
+    'payment-period-end-only-39', 19990, 'CLP',
+    NULL, '2099-06-01 00:00:00+00',
+    '2026-09-14 13:20:00+00', NULL, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'invoice with only a period end remains processable'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-02-01 00:00:00+00'::timestamptz,
+       '2099-03-01 00:00:00+00'::timestamptz
+     ) $$,
+  'end-only invoice interval cannot change the verified subscription period'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_invoice_paid(
+    'mercadopago', 'invoice-period-equal-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', 'invoice-period-equal-39',
+    'payment-period-equal-39', 19990, 'CLP',
+    '2099-06-01 00:00:00+00', '2099-06-01 00:00:00+00',
+    '2026-09-14 13:30:00+00', NULL, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'invoice with equal period bounds remains processable'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-02-01 00:00:00+00'::timestamptz,
+       '2099-03-01 00:00:00+00'::timestamptz
+     ) $$,
+  'equal invoice interval bounds cannot change the verified subscription period'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_invoice_paid(
+    'mercadopago', 'invoice-period-reversed-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', 'invoice-period-reversed-39',
+    'payment-period-reversed-39', 19990, 'CLP',
+    '2099-07-01 00:00:00+00', '2099-06-01 00:00:00+00',
+    '2026-09-14 13:40:00+00', NULL, NULL, '{}'::jsonb
+  ),
+  'applied',
+  'invoice with reversed period bounds remains processable'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-02-01 00:00:00+00'::timestamptz,
+       '2099-03-01 00:00:00+00'::timestamptz
+     ) $$,
+  'reversed invoice interval cannot change the verified subscription period'
+);
+
+SET LOCAL role service_role;
+
+SELECT is(
+  public.apply_invoice_paid(
+    'mercadopago', 'invoice-period-newer-39',
+    '00000000-0000-0000-0000-000000003940',
+    'preapproval-health-invoice-period', 'invoice-period-newer-replay-39',
+    'payment-period-newer-replay-39', 19990, 'CLP',
+    '2099-03-01 00:00:00+00', '2099-06-01 00:00:00+00',
+    '2026-09-14 13:50:00+00', NULL, NULL, '{}'::jsonb
+  ),
+  'duplicate',
+  'replayed invoice-paid provider event remains idempotent despite a longer interval'
+);
+
+RESET role;
+
+SELECT results_eq(
+  $$ SELECT current_period_start, current_period_end
+     FROM billing.subscriptions
+     WHERE id = '00000000-0000-0000-0000-000000003942' $$,
+  $$ VALUES (
+       '2099-02-01 00:00:00+00'::timestamptz,
+       '2099-03-01 00:00:00+00'::timestamptz
+     ) $$,
+  'duplicate invoice-paid event cannot advance the verified subscription period'
 );
 
 SET LOCAL role service_role;
