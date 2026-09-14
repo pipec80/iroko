@@ -28,7 +28,7 @@ function entitlementRow(over?: Partial<EntitlementRpcRow>) {
 describe('entitlements', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('should map the RPC row into features and limits', async () => {
+  it('maps the authoritative Pro RPC row into features and limits', async () => {
     mocks.rpc.mockResolvedValue({ data: entitlementRow(), error: null });
     const ent = await getEntitlements('a1');
     expect(ent).toEqual({
@@ -48,37 +48,21 @@ describe('entitlements', () => {
     });
   });
 
-  it.each([
-    {
-      period: 'future',
-      data: entitlementRow(),
-      expected: {
-        planSlug: 'pro',
-        features: { webhooks_enabled: true },
-        limits: { api_keys_max: 20 },
-      },
-    },
-    {
-      period: 'expired',
+  it('maps the authoritative Free RPC row without inferring lifecycle details', async () => {
+    mocks.rpc.mockResolvedValue({
       data: entitlementRow({ plan_slug: 'free', features: {}, limits: {} }),
-      expected: { planSlug: 'free', features: {}, limits: {} },
-    },
-    {
-      period: 'null',
-      data: entitlementRow({ plan_slug: 'free', features: {}, limits: {} }),
-      expected: { planSlug: 'free', features: {}, limits: {} },
-    },
-  ])(
-    'preserves the database entitlement for a canceled subscription with a $period period',
-    async ({ data, expected }) => {
-      mocks.rpc.mockResolvedValue({ data, error: null });
+      error: null,
+    });
 
-      await expect(getEntitlements('a1')).resolves.toEqual(expected);
-      expect(mocks.rpc).toHaveBeenCalledWith('get_account_entitlements', {
-        p_account_id: 'a1',
-      });
-    },
-  );
+    await expect(getEntitlements('a1')).resolves.toEqual({
+      planSlug: 'free',
+      features: {},
+      limits: {},
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith('get_account_entitlements', {
+      p_account_id: 'a1',
+    });
+  });
 
   it('hasFeature returns true for an enabled feature', async () => {
     mocks.rpc.mockResolvedValue({ data: entitlementRow(), error: null });
