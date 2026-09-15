@@ -30,6 +30,26 @@ PostgreSQL/Supabase migrations and pgTAP.
   status, period or entitlements automatically.
 - Iroko does not initiate refunds in v1.
 
+## Execution record
+
+- Task 1 implementation and GREEN verification were committed as `e90b2f7`.
+  The retry inherited tests and production changes already staged, so there is
+  no authentic RED transcript; its RED step remains unchecked.
+- Task 2 RED/GREEN implementation and persistence verification were committed
+  as `16a8e3a`.
+- Task 3's complete local gate and documentation were committed as `496cb26`:
+  pgTAP 509/509, billing Vitest 194/194, typecheck, lint, documentation check
+  and diff check passed.
+- The amount-aware classification is currently exercised by recovery jobs that
+  are already queued. An ordinary linked `payment` webhook can normalize an
+  `approved` authorized payment as `invoice_paid` without scheduling recovery,
+  even when the fetched payment includes a refunded amount. Webhook/discovery
+  anomaly routing and its regression coverage remain a pending code integration
+  gate before operational acceptance.
+- Real provider observations, Cloud state, alert handling and manual resolver
+  execution remain **[NO VERIFICADO]**. No execution record in this plan closes
+  those acceptance gaps.
+
 ---
 
 ### Task 1: Extend the normalized provider anomaly contract
@@ -68,7 +88,7 @@ export interface FinancialAnomalyObservation {
 `ProviderRecoveryResult` uses
 `{ kind: 'anomaly'; observation: FinancialAnomalyObservation }`.
 
-- [ ] **Step 1: Write failing adapter cases**
+- [x] **Step 1: Write failing adapter cases**
 
 Add payment-resource fixtures with `transaction_amount`,
 `transaction_amount_refunded` and `currency_id`. Assert:
@@ -94,6 +114,10 @@ the status proves it, but omit amounts; never guess `partial_refund`.
 
 - [ ] **Step 2: Run provider/recovery tests and observe RED**
 
+No authentic RED transcript is available because the implementation retry
+inherited both tests and production changes already staged. GREEN was observed;
+RED is not claimed retroactively.
+
 Run:
 
 ```bash
@@ -103,7 +127,7 @@ pnpm test src/lib/billing/__tests__/recovery.test.ts
 
 Expected: FAIL because `partial_refund` and `observation` do not exist.
 
-- [ ] **Step 3: Implement strict normalization**
+- [x] **Step 3: Implement strict normalization**
 
 Validate `transaction_amount`, `transaction_amount_refunded` and `currency_id`
 from the fresh `/v1/payments/{id}` response. Classify:
@@ -121,13 +145,13 @@ which includes `transaction_amount_refunded`, and
 [Obtener lista de reembolsos](https://www.mercadopago.cl/developers/es/reference/online-payments/checkout-pro-preferences/get-refunds/get),
 whose entries include refund amount.
 
-- [ ] **Step 4: Adapt recovery without changing access**
+- [x] **Step 4: Adapt recovery without changing access**
 
 In `recovery.ts`, pass the observation's normalized fields to the anomaly RPC.
 Update tests to assert `reduceBillingEvent` is never called for any anomaly and
 that a partial refund increments `anomalous` and `resolved` exactly once.
 
-- [ ] **Step 5: Run focused tests and observe GREEN**
+- [x] **Step 5: Run focused tests and observe GREEN**
 
 Run:
 
@@ -139,7 +163,7 @@ pnpm typecheck
 
 Expected: all commands pass.
 
-- [ ] **Step 6: Commit the typed provider contract**
+- [x] **Step 6: Commit the typed provider contract**
 
 ```bash
 git add src/lib/billing/types.ts src/lib/billing/providers/mercadopago.ts src/lib/billing/providers/__tests__/mercadopago.test.ts src/lib/billing/__tests__/recovery.test.ts src/lib/billing/recovery.ts
@@ -180,7 +204,7 @@ public.upsert_billing_financial_anomaly(
 ) RETURNS uuid
 ```
 
-- [ ] **Step 1: Write failing pgTAP coverage**
+- [x] **Step 1: Write failing pgTAP coverage**
 
 Test `partial_refund` is allowed, normalized amounts persist, repeat upserts
 increase `occurrence_count` while retaining `first_seen_at`, and newer non-null
@@ -188,14 +212,14 @@ amounts replace older normalized amounts. Assert negative amounts, affected
 amount greater than original, malformed currency and client-role execution all
 fail. Assert the linked subscription remains unchanged.
 
-- [ ] **Step 2: Run test 41 and observe RED**
+- [x] **Step 2: Run test 41 and observe RED**
 
 Run:
 `supabase test db --local supabase/tests/database/41_billing_financial_anomaly_detail.test.sql`
 
 Expected: FAIL on the current anomaly check constraint and old RPC signature.
 
-- [ ] **Step 3: Add columns, constraints and atomic upsert**
+- [x] **Step 3: Add columns, constraints and atomic upsert**
 
 Add:
 
@@ -216,7 +240,7 @@ Drop the exact old six-argument function before creating the nine-argument
 replacement so no stale overload remains. Revoke default access and grant the
 replacement to `service_role` only.
 
-- [ ] **Step 4: Update all RPC callers atomically**
+- [x] **Step 4: Update all RPC callers atomically**
 
 Update `recovery.ts`, `reconciliation.ts`, `webhook-handler.ts` and their tests
 to supply the three new optional arguments as `undefined` when unavailable.
@@ -227,7 +251,7 @@ Run: `rg -n "upsert_billing_financial_anomaly" src supabase`
 Expected: every call matches the new nine-argument contract or its generated
 named-argument shape.
 
-- [ ] **Step 5: Regenerate and run GREEN**
+- [x] **Step 5: Regenerate and run GREEN**
 
 Run:
 
@@ -242,7 +266,7 @@ pnpm typecheck
 
 Expected: all commands pass.
 
-- [ ] **Step 6: Commit persistence**
+- [x] **Step 6: Commit persistence**
 
 ```bash
 git add supabase/migrations/20260911120000_billing_financial_anomaly_detail.sql supabase/schemas/billing.sql supabase/schemas/public.sql supabase/tests/database/41_billing_financial_anomaly_detail.test.sql src/types/database.ts src/lib/billing/recovery.ts src/lib/billing/reconciliation.ts src/lib/billing/webhook-handler.ts src/lib/billing/__tests__/recovery.test.ts src/lib/billing/__tests__/reconciliation.test.ts src/lib/billing/__tests__/webhook-handler.test.ts
@@ -261,14 +285,14 @@ git commit -m "feat: persist billing anomaly amounts"
 - Consumes: typed and persisted observations from Tasks 1–2.
 - Produces: operator-readable anomaly evidence; provider scenarios remain open.
 
-- [ ] **Step 1: Extend the anomaly inspection procedure**
+- [x] **Step 1: Extend the anomaly inspection procedure**
 
 Document queries showing anomaly type, bounded amounts, currency,
 occurrence/first/last seen and resolution fields. Explicitly state that the
 operator compares sanitized values with Mercado Pago before calling the
 existing private manual resolver.
 
-- [ ] **Step 2: Run the complete local gate**
+- [x] **Step 2: Run the complete local gate**
 
 Run:
 
@@ -283,13 +307,13 @@ git diff --check
 
 Expected: every command exits 0.
 
-- [ ] **Step 3: Update MP-09 and MP-10 precisely**
+- [x] **Step 3: Update MP-09 and MP-10 precisely**
 
 Record code/test evidence for full refund, partial refund, chargeback and
 mediation. Keep all real provider observations, alert handling and manual
 resolution executions `[NO VERIFICADO]` until the acceptance plan runs.
 
-- [ ] **Step 4: Commit the handoff**
+- [x] **Step 4: Commit the handoff**
 
 ```bash
 git add docs/runbooks/billing-reconciliation.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md
