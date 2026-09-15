@@ -660,6 +660,59 @@ export type Database = {
           },
         ]
       }
+      reconciliation_state: {
+        Row: {
+          created_at: string
+          failure_count: number
+          invoice_watermark: string | null
+          last_completed_at: string | null
+          last_error_code: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          next_scan_at: string
+          scan_cursor: string | null
+          scan_watermark: string | null
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          failure_count?: number
+          invoice_watermark?: string | null
+          last_completed_at?: string | null
+          last_error_code?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          next_scan_at?: string
+          scan_cursor?: string | null
+          scan_watermark?: string | null
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          failure_count?: number
+          invoice_watermark?: string | null
+          last_completed_at?: string | null
+          last_error_code?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          next_scan_at?: string
+          scan_cursor?: string | null
+          scan_watermark?: string | null
+          subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_state_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: true
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recovery_jobs: {
         Row: {
           attempt_count: number
@@ -1935,6 +1988,23 @@ export type Database = {
         Returns: undefined
       }
       check_request: { Args: never; Returns: undefined }
+      claim_billing_reconciliation_candidates: {
+        Args: {
+          p_batch_size: number
+          p_visibility_seconds: number
+          p_worker_id: string
+        }
+        Returns: {
+          account_id: string
+          external_subscription_id: string
+          invoice_watermark: string
+          provider: string
+          scan_cursor: string
+          scan_watermark: string
+          subscription_id: string
+          subscription_updated_at: string
+        }[]
+      }
       claim_billing_recovery_jobs: {
         Args: { p_batch_size: number; p_visibility_seconds: number }
         Returns: {
@@ -1945,6 +2015,17 @@ export type Database = {
           resource_id: string
           resource_type: string
         }[]
+      }
+      complete_billing_reconciliation_candidate: {
+        Args: {
+          p_error_code: string
+          p_next_cursor: string
+          p_outcome: string
+          p_provider_watermark: string
+          p_subscription_id: string
+          p_worker_id: string
+        }
+        Returns: string
       }
       complete_billing_recovery_job: {
         Args: {

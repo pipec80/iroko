@@ -1228,3 +1228,64 @@ REVOKE ALL ON billing.recovery_jobs, billing.financial_anomalies FROM PUBLIC, an
 GRANT SELECT, INSERT, UPDATE ON billing.recovery_jobs, billing.financial_anomalies TO service_role;
 COMMENT ON TABLE billing.recovery_jobs IS 'Payload-free durable work for deferred provider payment correlation.';
 COMMENT ON TABLE billing.financial_anomalies IS 'Deduplicated adverse financial observations; never changes subscription access automatically.';
+
+-- ============================================================================
+-- Durable reconciliation progress
+-- ============================================================================
+
+CREATE TABLE billing.reconciliation_state (
+  subscription_id uuid PRIMARY KEY REFERENCES billing.subscriptions(id),
+  next_scan_at timestamptz NOT NULL DEFAULT now(),
+  lease_owner text,
+  lease_expires_at timestamptz,
+  invoice_watermark timestamptz,
+  scan_cursor text,
+  failure_count integer NOT NULL DEFAULT 0,
+  scan_watermark timestamptz,
+  last_error_code text,
+  last_completed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT reconciliation_state_lease_pair CHECK (
+    (lease_owner IS NULL) = (lease_expires_at IS NULL)
+  ),
+  CONSTRAINT reconciliation_state_lease_owner_bounds CHECK (
+    lease_owner IS NULL
+    OR (NULLIF(btrim(lease_owner), '') IS NOT NULL AND char_length(lease_owner) <= 100)
+  ),
+  CONSTRAINT reconciliation_state_failure_count_bounds CHECK (
+    failure_count BETWEEN 0 AND 10
+  ),
+  CONSTRAINT reconciliation_state_error_code_bounds CHECK (
+    last_error_code IS NULL OR char_length(last_error_code) <= 100
+  )
+);
+CREATE INDEX reconciliation_state_next_scan_idx
+  ON billing.reconciliation_state (next_scan_at, subscription_id);
+CREATE TRIGGER set_updated_at
+  BEFORE UPDATE ON billing.reconciliation_state
+  FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
+ALTER TABLE billing.reconciliation_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY billing_reconciliation_state_deny_all
+  ON billing.reconciliation_state AS RESTRICTIVE USING (false) WITH CHECK (false);
+REVOKE ALL ON billing.reconciliation_state FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON billing.reconciliation_state TO service_role;
+COMMENT ON TABLE billing.reconciliation_state IS
+  'Provider-neutral lease, cursor, watermark, and retry state for one billing subscription.';
+
+CREATE OR REPLACE FUNCTION private.ensure_billing_reconciliation_state()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+BEGIN
+  IF NULLIF(btrim(NEW.external_subscription_id), '') IS NOT NULL THEN
+    INSERT INTO billing.reconciliation_state (subscription_id)
+    VALUES (NEW.id)
+    ON CONFLICT (subscription_id) DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION private.ensure_billing_reconciliation_state()
+  FROM PUBLIC, anon, authenticated, service_role;
+CREATE TRIGGER ensure_billing_reconciliation_state
+  AFTER INSERT OR UPDATE OF external_subscription_id ON billing.subscriptions
+  FOR EACH ROW EXECUTE FUNCTION private.ensure_billing_reconciliation_state();
