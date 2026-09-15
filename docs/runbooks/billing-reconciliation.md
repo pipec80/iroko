@@ -12,17 +12,103 @@ from private.billing_worker_health h
 left join net._http_response r on r.id = h.last_net_request_id;
 
 select status, count(*), min(next_attempt_at) from billing.recovery_jobs group by status;
-select * from billing.financial_anomalies where status = 'open' order by last_seen_at desc;
 select c.account_id, s.provider, s.external_subscription_id, s.status, s.current_period_end, s.updated_at
 from billing.subscriptions s join billing.customers c on c.id=s.customer_id
 where c.account_id = '<account-uuid>';
 ```
 
-Resolve an investigated anomaly only from a privileged SQL session:
+## Financial anomaly investigation and resolution
+
+This procedure does not authorize access to Mercado Pago or a Cloud database,
+and it does not authorize the resolution mutation. Obtain the required access
+and mutation approvals separately. Work in audited sessions and keep raw
+provider responses out of terminals with recording enabled, tickets and this
+repository.
+
+Set the exact anomaly ID in the privileged database session, then inspect only
+the fields needed to correlate and decide the case:
 
 ```sql
-select private.resolve_billing_financial_anomaly('<anomaly-uuid>', 'verified_and_closed');
+\set anomaly_id 'REPLACE_WITH_TARGET_ANOMALY_UUID'
+
+SELECT
+  anomaly.id,
+  anomaly.provider,
+  anomaly.anomaly_type,
+  anomaly.external_resource_id,
+  anomaly.observed_status,
+  anomaly.original_amount,
+  anomaly.affected_amount,
+  anomaly.currency,
+  (
+    (anomaly.original_amount IS NULL OR anomaly.original_amount >= 0)
+    AND (anomaly.affected_amount IS NULL OR anomaly.affected_amount >= 0)
+    AND (
+      anomaly.original_amount IS NULL
+      OR anomaly.affected_amount IS NULL
+      OR anomaly.affected_amount <= anomaly.original_amount
+    )
+  ) AS amounts_are_bounded,
+  anomaly.occurrence_count,
+  anomaly.first_seen_at,
+  anomaly.last_seen_at,
+  anomaly.status,
+  anomaly.resolved_at,
+  anomaly.resolution_code,
+  anomaly.account_id,
+  anomaly.subscription_id,
+  anomaly.invoice_id,
+  anomaly.payment_id
+FROM billing.financial_anomalies AS anomaly
+WHERE anomaly.id = :'anomaly_id'::uuid
+  AND anomaly.provider = 'mercadopago';
 ```
+
+Before resolving, compare the exact `external_resource_id`, status, original
+amount, affected amount and currency from this row with a fresh Mercado Pago
+inspection. A full refund with valid monetary evidence has a positive original
+amount and an affected amount equal to it; a partial refund has
+`0 < affected_amount < original_amount`. A status-proven refund, chargeback or
+mediation may have null amounts when the provider evidence could not be safely
+normalized. Any identity, ownership, status, currency or amount mismatch keeps
+the anomaly open and requires escalation.
+
+Record only the UTC inspection time, environment alias, sanitized anomaly and
+remote-resource aliases, anomaly type, normalized integer amounts and currency,
+occurrence/first/last-seen fields, decision, resolution code and sanitized
+operator reference. Do not record raw external IDs, account or subscription
+UUIDs, payer data, credentials, URLs or full provider payloads.
+
+Only after that comparison and separate authorization, resolve the still-open
+row from the same privileged SQL session. The resolver is manual and does not
+change subscription status, paid period or entitlements.
+
+```sql
+\set resolution_code 'verified_and_closed'
+\set ON_ERROR_STOP on
+
+BEGIN;
+SELECT private.resolve_billing_financial_anomaly(
+  :'anomaly_id'::uuid,
+  :'resolution_code'
+);
+SELECT
+  id,
+  status,
+  occurrence_count,
+  first_seen_at,
+  last_seen_at,
+  resolved_at,
+  resolution_code
+FROM billing.financial_anomalies
+WHERE id = :'anomaly_id'::uuid;
+COMMIT;
+```
+
+If any statement fails, issue `ROLLBACK;`, keep the anomaly open and end the
+session. Do not retry with a different code or update the row directly. A
+committed resolution is audit evidence; correct mistakes through a reviewed
+follow-up rather than rewriting it.
 
 ## Abandoned or ambiguous Mercado Pago checkout
 
