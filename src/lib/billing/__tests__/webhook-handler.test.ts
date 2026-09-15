@@ -172,6 +172,21 @@ describe('handleProviderWebhook', () => {
       },
       'Billing webhook requires reconciliation',
     );
+    const anomalyCall = mocks.adminRpc.mock.calls.find(
+      ([name]) => name === 'upsert_billing_financial_anomaly',
+    );
+    expect(anomalyCall).toBeDefined();
+    expect(anomalyCall?.[1]).toStrictEqual({
+      p_account_id: undefined,
+      p_affected_amount: undefined,
+      p_anomaly_type: 'refund',
+      p_currency: undefined,
+      p_external_resource_id: 'payment_divergence',
+      p_observed_status: 'refunded',
+      p_original_amount: undefined,
+      p_provider: 'mercadopago',
+      p_subscription_id: undefined,
+    });
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 

@@ -138,9 +138,12 @@ async function persistAcknowledgement(event: AcknowledgedWebhook): Promise<boole
     event.reason === 'payment_status_divergence' ?
       await admin.rpc('upsert_billing_financial_anomaly', {
         p_account_id: undefined,
+        p_affected_amount: undefined,
         p_anomaly_type: anomalyTypeForAcknowledgement(event),
+        p_currency: undefined,
         p_external_resource_id: event.resourceId,
         p_observed_status: event.observedStatus,
+        p_original_amount: undefined,
         p_provider: event.provider,
         p_subscription_id: undefined,
       })

@@ -74,9 +74,16 @@ describe('reconcileNonTerminalSubscriptions', () => {
     await expect(
       reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
     ).resolves.toEqual({ scanned: 1, repaired: 0, stale: 0, anomalous: 1, skipped: 0 });
-    expect(mocks.rpc).toHaveBeenCalledWith('upsert_billing_financial_anomaly', {
+    const anomalyCall = mocks.rpc.mock.calls.find(
+      ([name]) => name === 'upsert_billing_financial_anomaly',
+    );
+    expect(anomalyCall).toBeDefined();
+    expect(anomalyCall?.[1]).toStrictEqual({
       p_anomaly_type: 'status_divergence',
+      p_affected_amount: undefined,
+      p_currency: undefined,
       p_external_resource_id: 'pa-1',
+      p_original_amount: undefined,
       p_provider: 'mercadopago',
       p_observed_status: 'resource_not_found',
       p_account_id: 'account-1',

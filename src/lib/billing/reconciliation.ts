@@ -59,7 +59,10 @@ export async function reconcileNonTerminalSubscriptions(input: {
     if (!snapshot || snapshot.externalSubscriptionId !== candidate.external_subscription_id) {
       const { error: anomalyError } = await admin.rpc('upsert_billing_financial_anomaly', {
         p_anomaly_type: 'status_divergence',
+        p_affected_amount: undefined,
+        p_currency: undefined,
         p_external_resource_id: candidate.external_subscription_id,
+        p_original_amount: undefined,
         p_provider: candidate.provider,
         p_observed_status: snapshot ? 'identity_mismatch' : 'resource_not_found',
         p_account_id: candidate.account_id,

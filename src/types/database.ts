@@ -233,8 +233,10 @@ export type Database = {
       financial_anomalies: {
         Row: {
           account_id: string | null
+          affected_amount: number | null
           anomaly_type: string
           created_at: string
+          currency: string | null
           external_resource_id: string
           first_seen_at: string
           id: string
@@ -242,6 +244,7 @@ export type Database = {
           last_seen_at: string
           observed_status: string | null
           occurrence_count: number
+          original_amount: number | null
           payment_id: string | null
           provider: string
           resolution_code: string | null
@@ -252,8 +255,10 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          affected_amount?: number | null
           anomaly_type: string
           created_at?: string
+          currency?: string | null
           external_resource_id: string
           first_seen_at?: string
           id?: string
@@ -261,6 +266,7 @@ export type Database = {
           last_seen_at?: string
           observed_status?: string | null
           occurrence_count?: number
+          original_amount?: number | null
           payment_id?: string | null
           provider: string
           resolution_code?: string | null
@@ -271,8 +277,10 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          affected_amount?: number | null
           anomaly_type?: string
           created_at?: string
+          currency?: string | null
           external_resource_id?: string
           first_seen_at?: string
           id?: string
@@ -280,6 +288,7 @@ export type Database = {
           last_seen_at?: string
           observed_status?: string | null
           occurrence_count?: number
+          original_amount?: number | null
           payment_id?: string | null
           provider?: string
           resolution_code?: string | null
@@ -2446,9 +2455,12 @@ export type Database = {
       upsert_billing_financial_anomaly: {
         Args: {
           p_account_id?: string
+          p_affected_amount?: number
           p_anomaly_type: string
+          p_currency?: string
           p_external_resource_id: string
           p_observed_status?: string
+          p_original_amount?: number
           p_provider: string
           p_subscription_id?: string
         }

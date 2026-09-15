@@ -1191,13 +1191,19 @@ CREATE INDEX recovery_jobs_due_idx ON billing.recovery_jobs(next_attempt_at, cre
 CREATE TABLE billing.financial_anomalies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   provider text NOT NULL CHECK (NULLIF(btrim(provider), '') IS NOT NULL),
-  anomaly_type text NOT NULL CHECK (anomaly_type IN ('refund','chargeback','mediation','status_divergence','unresolved_payment')),
+  anomaly_type text NOT NULL CHECK (anomaly_type IN ('refund','partial_refund','chargeback','mediation','status_divergence','unresolved_payment')),
   external_resource_id text NOT NULL CHECK (NULLIF(btrim(external_resource_id), '') IS NOT NULL AND char_length(external_resource_id) <= 255),
   account_id uuid REFERENCES public.accounts(id) ON DELETE SET NULL,
   subscription_id uuid REFERENCES billing.subscriptions(id) ON DELETE SET NULL,
   invoice_id uuid REFERENCES billing.invoices(id) ON DELETE SET NULL,
   payment_id uuid REFERENCES billing.payment_attempts(id) ON DELETE SET NULL,
   observed_status text CHECK (observed_status IS NULL OR char_length(observed_status) <= 100),
+  original_amount integer CHECK (original_amount IS NULL OR original_amount >= 0),
+  affected_amount integer CHECK (affected_amount IS NULL OR affected_amount >= 0),
+  currency text CHECK (currency IS NULL OR currency ~ '^[A-Z]{3}$'),
+  CONSTRAINT financial_anomaly_amount_bounds CHECK (
+    original_amount IS NULL OR affected_amount IS NULL OR affected_amount <= original_amount
+  ),
   status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','resolved')),
   occurrence_count integer NOT NULL DEFAULT 1 CHECK (occurrence_count > 0),
   first_seen_at timestamptz NOT NULL DEFAULT now(), last_seen_at timestamptz NOT NULL DEFAULT now(),

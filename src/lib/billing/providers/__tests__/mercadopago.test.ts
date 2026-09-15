@@ -898,6 +898,55 @@ describe('mercadopagoProvider.recoverResource', () => {
     });
   });
 
+  it('retains a proven refund but omits unbounded over-refund amounts', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 'pay-over-refund',
+        status: 'refunded',
+        transaction_amount: 19990,
+        transaction_amount_refunded: 20000,
+        currency_id: 'CLP',
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.recoverResource?.({
+        resourceType: 'payment',
+        resourceId: 'pay-over-refund',
+      }),
+    ).resolves.toEqual({
+      kind: 'anomaly',
+      observation: {
+        anomalyType: 'refund',
+        externalResourceId: 'pay-over-refund',
+        observedStatus: 'refunded',
+        currency: 'CLP',
+      },
+    });
+  });
+
+  it('rejects a fresh payment whose returned id does not match the requested resource', async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        id: 'pay-other',
+        status: 'refunded',
+        transaction_amount: 19990,
+        transaction_amount_refunded: 19990,
+        currency_id: 'CLP',
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.recoverResource?.({
+        resourceType: 'payment',
+        resourceId: 'pay-requested',
+      }),
+    ).resolves.toEqual({ kind: 'unrelated' });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it.each([
     ['charged_back', 'chargeback'],
     ['in_mediation', 'mediation'],
@@ -992,6 +1041,26 @@ describe('mercadopagoProvider.recoverResource', () => {
         status: 'approved',
         transaction_amount: '19990',
         transaction_amount_refunded: '5000',
+      },
+    },
+    {
+      name: 'a lowercase currency',
+      payment: {
+        id: 'pay-lowercase-currency',
+        status: 'approved',
+        transaction_amount: '19990',
+        transaction_amount_refunded: '5000',
+        currency_id: 'clp',
+      },
+    },
+    {
+      name: 'a malformed currency',
+      payment: {
+        id: 'pay-malformed-currency',
+        status: 'approved',
+        transaction_amount: '19990',
+        transaction_amount_refunded: '5000',
+        currency_id: 'CLPX',
       },
     },
   ])('never guesses a partial refund from $name', async ({ payment }) => {

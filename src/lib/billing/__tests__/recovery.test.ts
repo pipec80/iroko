@@ -37,13 +37,29 @@ describe('recoverBillingResources', () => {
     vi.clearAllMocks();
     mocks.getPaymentProvider.mockReturnValue({ recoverResource: mocks.recoverResource });
     mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
-    mocks.rpc.mockImplementation((name: string) => {
+    mocks.rpc.mockImplementation((name: string, args?: Record<string, unknown>) => {
       if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
       if (name === 'resolve_billing_checkout_reference') {
         return { data: [{ account_id: 'account-1', checkout_intent_id: null }], error: null };
       }
       if (name === 'complete_billing_recovery_job') {
         return { data: [{ status: 'resolved', anomaly_created: false }], error: null };
+      }
+      if (name === 'upsert_billing_financial_anomaly') {
+        const expectedKeys = [
+          'p_account_id',
+          'p_affected_amount',
+          'p_anomaly_type',
+          'p_currency',
+          'p_external_resource_id',
+          'p_observed_status',
+          'p_original_amount',
+          'p_provider',
+          'p_subscription_id',
+        ];
+        if (JSON.stringify(Object.keys(args ?? {}).sort()) !== JSON.stringify(expectedKeys)) {
+          return { data: null, error: { code: 'rpc_signature_mismatch' } };
+        }
       }
       return { data: 'anomaly-id', error: null };
     });
