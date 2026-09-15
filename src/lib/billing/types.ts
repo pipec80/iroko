@@ -64,7 +64,22 @@ export interface AcknowledgedWebhook {
 }
 
 export type BillingAnomalyType =
-  'refund' | 'chargeback' | 'mediation' | 'status_divergence' | 'unresolved_payment';
+  | 'refund'
+  | 'partial_refund'
+  | 'chargeback'
+  | 'mediation'
+  | 'status_divergence'
+  | 'unresolved_payment';
+
+/** Minimal, normalized financial evidence retained for separate manual review. */
+export interface FinancialAnomalyObservation {
+  anomalyType: BillingAnomalyType;
+  externalResourceId: string;
+  observedStatus?: string;
+  originalAmount?: number;
+  affectedAmount?: number;
+  currency?: string;
+}
 
 export interface ProviderRecoveryInput {
   resourceType: 'payment';
@@ -75,7 +90,7 @@ export type ProviderRecoveryResult =
   | { kind: 'event'; event: NormalizedBillingEvent }
   | { kind: 'pending' }
   | { kind: 'unrelated' }
-  | { kind: 'anomaly'; anomalyType: BillingAnomalyType; observedStatus?: string };
+  | { kind: 'anomaly'; observation: FinancialAnomalyObservation };
 
 export interface SubscriptionSnapshot {
   externalSubscriptionId: string;

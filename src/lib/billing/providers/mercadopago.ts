@@ -4,6 +4,7 @@ import { getProviderPrice } from '../catalog';
 import type { NormalizedBillingEvent } from '../events';
 import type {
   AcknowledgedWebhook,
+  BillingAnomalyType,
   CancelSubscriptionParams,
   CheckoutParams,
   PaymentProvider,
@@ -56,6 +57,9 @@ interface AuthorizedPaymentResource {
 interface PaymentResource {
   id: string | number;
   status: string;
+  transaction_amount?: unknown;
+  transaction_amount_refunded?: unknown;
+  currency_id?: unknown;
 }
 
 interface AuthorizedPaymentSearchResponse {
@@ -398,16 +402,50 @@ function acknowledgedWebhook(
   return { provider: 'mercadopago', type: 'webhook_acknowledged', ...input };
 }
 
-function anomalyTypeForPaymentStatus(status: string): ProviderRecoveryResult | null {
-  if (status === 'refunded')
-    return { kind: 'anomaly', anomalyType: 'refund', observedStatus: status };
-  if (status === 'charged_back') {
-    return { kind: 'anomaly', anomalyType: 'chargeback', observedStatus: status };
+function recoveryAnomalyForPayment(
+  payment: PaymentResource,
+  externalResourceId: string,
+): ProviderRecoveryResult | null {
+  const currency = normalizeCurrency(payment.currency_id);
+  const originalAmount = currency ? normalizeAmount(payment.transaction_amount, currency) : null;
+  const affectedAmount =
+    currency ? normalizeAmount(payment.transaction_amount_refunded, currency) : null;
+  const hasNormalizedAmounts = originalAmount !== null && affectedAmount !== null;
+  const hasBoundedAmounts = hasNormalizedAmounts && affectedAmount <= originalAmount;
+  const monetaryEvidence =
+    hasBoundedAmounts ? { originalAmount, affectedAmount, ...(currency ? { currency } : {}) }
+    : currency ? { currency }
+    : {};
+
+  let anomalyType: BillingAnomalyType;
+  if (
+    hasNormalizedAmounts &&
+    originalAmount > 0 &&
+    affectedAmount > 0 &&
+    affectedAmount < originalAmount
+  ) {
+    anomalyType = 'partial_refund';
+  } else if (hasNormalizedAmounts && originalAmount > 0 && affectedAmount >= originalAmount) {
+    anomalyType = 'refund';
+  } else if (payment.status === 'refunded') {
+    anomalyType = 'refund';
+  } else if (payment.status === 'charged_back') {
+    anomalyType = 'chargeback';
+  } else if (payment.status === 'in_mediation') {
+    anomalyType = 'mediation';
+  } else {
+    return null;
   }
-  if (status === 'in_mediation') {
-    return { kind: 'anomaly', anomalyType: 'mediation', observedStatus: status };
-  }
-  return null;
+
+  return {
+    kind: 'anomaly',
+    observation: {
+      anomalyType,
+      externalResourceId,
+      observedStatus: payment.status,
+      ...monetaryEvidence,
+    },
+  };
 }
 
 /**
@@ -670,17 +708,17 @@ export const mercadopagoProvider: PaymentProvider = {
 
   async recoverResource(input): Promise<ProviderRecoveryResult> {
     const dataId = input.resourceId;
-    const [providerPayment, invoices] = await Promise.all([
-      fetchResource<unknown>(`/v1/payments/${encodeURIComponent(dataId)}`),
-      fetchResource<AuthorizedPaymentSearchResponse>(
-        `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
-      ),
-    ]);
+    const providerPayment = await fetchResource<unknown>(
+      `/v1/payments/${encodeURIComponent(dataId)}`,
+    );
     if (!isPaymentResource(providerPayment) || normalizeExternalId(providerPayment.id) !== dataId) {
       return { kind: 'unrelated' };
     }
-    const adverse = anomalyTypeForPaymentStatus(providerPayment.status);
+    const adverse = recoveryAnomalyForPayment(providerPayment, dataId);
     if (adverse) return adverse;
+    const invoices = await fetchResource<AuthorizedPaymentSearchResponse>(
+      `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
+    );
     const invoice =
       Array.isArray(invoices.results) ?
         invoices.results.find(
@@ -695,8 +733,11 @@ export const mercadopagoProvider: PaymentProvider = {
     if (invoice.payment.status !== providerPayment.status) {
       return {
         kind: 'anomaly',
-        anomalyType: 'status_divergence',
-        observedStatus: providerPayment.status,
+        observation: {
+          anomalyType: 'status_divergence',
+          externalResourceId: dataId,
+          observedStatus: providerPayment.status,
+        },
       };
     }
     const invoiceId = normalizeExternalId(invoice.id);

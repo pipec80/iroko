@@ -840,17 +840,168 @@ describe('mercadopagoProvider.recoverResource', () => {
     ).resolves.toEqual({ kind: 'pending' });
   });
 
-  it('classifies refunds for manual review without producing an access event', async () => {
+  it('classifies a fresh partially refunded payment with normalized CLP evidence', async () => {
     fetchMock
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ id: 'pay_refund', status: 'refunded' }),
+        json: async () => ({
+          id: 'pay-partial',
+          status: 'approved',
+          transaction_amount: '19990',
+          transaction_amount_refunded: '5000',
+          currency_id: 'CLP',
+        }),
       })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
 
     await expect(
-      mercadopagoProvider.recoverResource?.({ resourceType: 'payment', resourceId: 'pay_refund' }),
-    ).resolves.toEqual({ kind: 'anomaly', anomalyType: 'refund', observedStatus: 'refunded' });
+      mercadopagoProvider.recoverResource?.({ resourceType: 'payment', resourceId: 'pay-partial' }),
+    ).resolves.toEqual({
+      kind: 'anomaly',
+      observation: {
+        anomalyType: 'partial_refund',
+        externalResourceId: 'pay-partial',
+        observedStatus: 'approved',
+        originalAmount: 19990,
+        affectedAmount: 5000,
+        currency: 'CLP',
+      },
+    });
+  });
+
+  it('classifies a fully refunded payment from fresh monetary evidence', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'pay-full',
+          status: 'approved',
+          transaction_amount: 19990,
+          transaction_amount_refunded: 19990,
+          currency_id: 'CLP',
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+
+    await expect(
+      mercadopagoProvider.recoverResource?.({ resourceType: 'payment', resourceId: 'pay-full' }),
+    ).resolves.toEqual({
+      kind: 'anomaly',
+      observation: {
+        anomalyType: 'refund',
+        externalResourceId: 'pay-full',
+        observedStatus: 'approved',
+        originalAmount: 19990,
+        affectedAmount: 19990,
+        currency: 'CLP',
+      },
+    });
+  });
+
+  it.each([
+    ['charged_back', 'chargeback'],
+    ['in_mediation', 'mediation'],
+    ['refunded', 'refund'],
+  ] as const)(
+    'retains a proven %s anomaly when monetary evidence is unavailable',
+    async (status, anomalyType) => {
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: `pay-${status}`,
+            status,
+            transaction_amount: '-1',
+            currency_id: 'CLP',
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+
+      await expect(
+        mercadopagoProvider.recoverResource?.({
+          resourceType: 'payment',
+          resourceId: `pay-${status}`,
+        }),
+      ).resolves.toEqual({
+        kind: 'anomaly',
+        observation: {
+          anomalyType,
+          externalResourceId: `pay-${status}`,
+          observedStatus: status,
+          currency: 'CLP',
+        },
+      });
+    },
+  );
+
+  it.each([
+    {
+      name: 'a zero refund amount',
+      payment: {
+        id: 'pay-zero-refund',
+        status: 'approved',
+        transaction_amount: '19990',
+        transaction_amount_refunded: '0',
+        currency_id: 'CLP',
+      },
+    },
+    {
+      name: 'a decimal CLP amount',
+      payment: {
+        id: 'pay-decimal-clp',
+        status: 'approved',
+        transaction_amount: '19990.50',
+        transaction_amount_refunded: '5000',
+        currency_id: 'CLP',
+      },
+    },
+    {
+      name: 'a decimal CLP refunded amount',
+      payment: {
+        id: 'pay-decimal-refund-clp',
+        status: 'approved',
+        transaction_amount: '19990',
+        transaction_amount_refunded: '5000.50',
+        currency_id: 'CLP',
+      },
+    },
+    {
+      name: 'a negative original amount',
+      payment: {
+        id: 'pay-negative-original',
+        status: 'approved',
+        transaction_amount: '-19990',
+        transaction_amount_refunded: '5000',
+        currency_id: 'CLP',
+      },
+    },
+    {
+      name: 'a negative refund amount',
+      payment: {
+        id: 'pay-negative-refund',
+        status: 'approved',
+        transaction_amount: '19990',
+        transaction_amount_refunded: '-5000',
+        currency_id: 'CLP',
+      },
+    },
+    {
+      name: 'a missing currency',
+      payment: {
+        id: 'pay-missing-currency',
+        status: 'approved',
+        transaction_amount: '19990',
+        transaction_amount_refunded: '5000',
+      },
+    },
+  ])('never guesses a partial refund from $name', async ({ payment }) => {
+    fetchMock
+      .mockResolvedValueOnce({ ok: true, json: async () => payment })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+
+    await expect(
+      mercadopagoProvider.recoverResource?.({ resourceType: 'payment', resourceId: payment.id }),
+    ).resolves.toEqual({ kind: 'pending' });
   });
 });
 

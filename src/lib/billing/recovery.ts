@@ -115,14 +115,18 @@ async function processRecoveryJob(
       result.resolved = 1;
     } else if (recovered.kind === 'anomaly') {
       const admin = createAdminClient();
-      const { error } = await admin.rpc('upsert_billing_financial_anomaly', {
+      const anomalyArgs = {
         p_account_id: undefined,
-        p_anomaly_type: recovered.anomalyType,
-        p_external_resource_id: job.resource_id,
-        p_observed_status: recovered.observedStatus,
+        p_anomaly_type: recovered.observation.anomalyType,
+        p_affected_amount: recovered.observation.affectedAmount,
+        p_currency: recovered.observation.currency,
+        p_external_resource_id: recovered.observation.externalResourceId,
+        p_observed_status: recovered.observation.observedStatus,
+        p_original_amount: recovered.observation.originalAmount,
         p_provider: job.provider,
         p_subscription_id: undefined,
-      });
+      };
+      const { error } = await admin.rpc('upsert_billing_financial_anomaly', anomalyArgs);
       if (error) throw new Error('billing_anomaly_persistence_failed');
       await completeJob(job.id, 'anomaly', null);
       result.anomalous = 1;
