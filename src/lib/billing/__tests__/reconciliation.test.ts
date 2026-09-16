@@ -187,6 +187,65 @@ describe('reconcileNonTerminalSubscriptions', () => {
     expect(completionCalls().map(([, args]) => args.p_outcome)).toEqual(['deferred', 'deferred']);
   });
 
+  it('defers candidates when earlier work consumes the budget without starting later provider calls', async () => {
+    const candidates = Array.from({ length: 6 }, (_, index) => ({
+      ...candidate,
+      subscription_id: `subscription-${index + 1}`,
+      external_subscription_id: `pa-${index + 1}`,
+    }));
+    let now = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        { data: candidates, error: null }
+      : { data: 'completed', error: null },
+    );
+    mocks.snapshot.mockImplementation(async (id: string) => {
+      if (id === 'pa-1') now = 50;
+      return {
+        externalSubscriptionId: id,
+        status: 'active',
+        cancelAtPeriodEnd: false,
+        providerVersion: id,
+      };
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 50 }),
+    ).resolves.toEqual(expect.objectContaining({ scanned: 6, deferred: 6 }));
+
+    expect(mocks.snapshot).toHaveBeenCalledTimes(1);
+    expect(mocks.discover).not.toHaveBeenCalled();
+    expect(completionCalls()).toHaveLength(6);
+    expect(completionCalls().map(([, args]) => args.p_outcome)).toEqual(
+      Array.from({ length: 6 }, () => 'deferred'),
+    );
+  });
+
+  it('caps an in-flight snapshot wait at the invocation deadline and defers it', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-12T00:00:00Z'));
+    try {
+      mocks.snapshot.mockImplementation(
+        () =>
+          new Promise<never>(() => {
+            // Intentionally remains pending until the reconciliation deadline wins the race.
+          }),
+      );
+      const work = reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45 });
+
+      await vi.advanceTimersByTimeAsync(45);
+
+      await expect(work).resolves.toEqual(
+        expect.objectContaining({ scanned: 1, deferred: 1, failed: 0 }),
+      );
+      expect(mocks.discover).not.toHaveBeenCalled();
+      expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'deferred' }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('runs snapshot before invoice discovery and reduces every discovered event sequentially', async () => {
     const discovered = [
       {

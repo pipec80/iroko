@@ -27,6 +27,13 @@ type Completion = {
   errorCode?: SafeErrorCode;
 };
 
+class ReconciliationDeadlineExceeded extends Error {
+  constructor() {
+    super('billing_reconciliation_deadline_exceeded');
+    this.name = 'ReconciliationDeadlineExceeded';
+  }
+}
+
 export interface ReconciliationSummary {
   scanned: number;
   repaired: number;
@@ -54,12 +61,43 @@ function providerErrorCode(error: unknown): SafeErrorCode {
     : 'provider_fetch_failed';
 }
 
+function throwIfDeadlineExceeded(deadline: number): void {
+  if (Date.now() >= deadline) throw new ReconciliationDeadlineExceeded();
+}
+
+/**
+ * Bounds a provider read by the invocation deadline. The provider interface
+ * does not expose a cancellation signal, so this caps worker wait time and
+ * lets the durable lease be deferred even if a remote read later settles.
+ */
+async function awaitProviderWithinDeadline<T>(
+  operation: () => Promise<T>,
+  deadline: number,
+): Promise<T> {
+  throwIfDeadlineExceeded(deadline);
+  const remainingMs = deadline - Date.now();
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      operation(),
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => reject(new ReconciliationDeadlineExceeded()), remainingMs);
+      }),
+    ]);
+  } finally {
+    if (timeout) clearTimeout(timeout);
+  }
+}
+
 /** Reconciles one leased batch and durably records each candidate result before returning. */
 export async function reconcileNonTerminalSubscriptions(input: {
   batchSize: number;
   maxDurationMs: number;
 }): Promise<ReconciliationSummary> {
   const startedAt = Date.now();
+  const maxDurationMs =
+    Number.isFinite(input.maxDurationMs) ? Math.max(0, Math.trunc(input.maxDurationMs)) : 0;
+  const deadline = startedAt + maxDurationMs;
   const workerId = randomUUID();
   const admin = createAdminClient();
   const { data, error } = await admin.rpc('claim_billing_reconciliation_candidates', {
@@ -95,6 +133,7 @@ export async function reconcileNonTerminalSubscriptions(input: {
   };
 
   const reconcileCandidate = async (candidate: ClaimedCandidate): Promise<Completion> => {
+    if (Date.now() >= deadline) return { outcome: 'deferred' };
     let provider: ReturnType<typeof getPaymentProvider>;
     try {
       provider = getPaymentProvider(candidate.provider);
@@ -102,17 +141,23 @@ export async function reconcileNonTerminalSubscriptions(input: {
       summary.skipped += 1;
       return { outcome: 'skipped' };
     }
-    if (!provider.getSubscriptionSnapshot) {
+    const getSubscriptionSnapshot = provider.getSubscriptionSnapshot;
+    if (!getSubscriptionSnapshot) {
       summary.skipped += 1;
       return { outcome: 'skipped' };
     }
 
     let snapshot: Awaited<ReturnType<NonNullable<typeof provider.getSubscriptionSnapshot>>>;
     try {
-      snapshot = await provider.getSubscriptionSnapshot(candidate.external_subscription_id);
+      snapshot = await awaitProviderWithinDeadline(
+        () => getSubscriptionSnapshot(candidate.external_subscription_id),
+        deadline,
+      );
     } catch (error) {
+      if (error instanceof ReconciliationDeadlineExceeded) return { outcome: 'deferred' };
       throw { errorCode: providerErrorCode(error) };
     }
+    if (Date.now() >= deadline) return { outcome: 'deferred' };
     if (!snapshot || snapshot.externalSubscriptionId !== candidate.external_subscription_id) {
       const { error: anomalyError } = await admin.rpc('upsert_billing_financial_anomaly', {
         p_anomaly_type: 'status_divergence',
@@ -156,17 +201,24 @@ export async function reconcileNonTerminalSubscriptions(input: {
     }
     if (snapshotResult.status === 'stale') summary.stale += 1;
     else if (snapshotResult.status === 'applied') summary.repaired += 1;
+    if (Date.now() >= deadline) return { outcome: 'deferred' };
 
-    if (!provider.discoverSubscriptionInvoices) return { outcome: 'completed' };
+    const discoverSubscriptionInvoices = provider.discoverSubscriptionInvoices;
+    if (!discoverSubscriptionInvoices) return { outcome: 'completed' };
     let page: Awaited<ReturnType<NonNullable<typeof provider.discoverSubscriptionInvoices>>>;
     try {
-      page = await provider.discoverSubscriptionInvoices({
-        externalSubscriptionId: candidate.external_subscription_id,
-        modifiedSince: modifiedSinceWithOverlap(candidate.invoice_watermark),
-        pageSize: 20,
-        ...(candidate.scan_cursor ? { cursor: candidate.scan_cursor } : {}),
-      });
+      page = await awaitProviderWithinDeadline(
+        () =>
+          discoverSubscriptionInvoices({
+            externalSubscriptionId: candidate.external_subscription_id,
+            modifiedSince: modifiedSinceWithOverlap(candidate.invoice_watermark),
+            pageSize: 20,
+            ...(candidate.scan_cursor ? { cursor: candidate.scan_cursor } : {}),
+          }),
+        deadline,
+      );
     } catch (error) {
+      if (error instanceof ReconciliationDeadlineExceeded) return { outcome: 'deferred' };
       throw { errorCode: providerErrorCode(error) };
     }
     try {
@@ -174,12 +226,18 @@ export async function reconcileNonTerminalSubscriptions(input: {
         const result = await reduceBillingEvent(invoiceEvent);
         if (result.status === 'applied') summary.repaired += 1;
         else if (result.status === 'stale') summary.stale += 1;
+        if (Date.now() >= deadline) {
+          return {
+            outcome: 'deferred',
+            providerWatermark: page.providerWatermark,
+            nextCursor: candidate.scan_cursor,
+          };
+        }
       }
     } catch {
       throw { errorCode: 'reducer_failed' satisfies SafeErrorCode };
     }
     if (page.nextCursor) {
-      summary.deferred += 1;
       return {
         outcome: 'deferred',
         providerWatermark: page.providerWatermark,
@@ -211,11 +269,12 @@ export async function reconcileNonTerminalSubscriptions(input: {
           : 'provider_fetch_failed',
       };
     }
+    if (completion.outcome === 'deferred') summary.deferred += 1;
     await complete(candidate, completion);
   };
 
   for (let index = 0; index < candidates.length; index += 5) {
-    if (Date.now() - startedAt >= input.maxDurationMs) {
+    if (Date.now() >= deadline) {
       for (const candidate of candidates.slice(index)) {
         summary.deferred += 1;
         await complete(candidate, { outcome: 'deferred' });
