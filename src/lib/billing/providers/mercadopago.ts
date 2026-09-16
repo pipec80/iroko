@@ -7,6 +7,8 @@ import type {
   BillingAnomalyType,
   CancelSubscriptionParams,
   CheckoutParams,
+  InvoiceDiscoveryInput,
+  InvoiceDiscoveryPage,
   PaymentProvider,
   ProviderRecoveryResult,
   SubscriptionStatus,
@@ -45,6 +47,7 @@ interface AuthorizedPaymentResource {
   transaction_amount?: unknown;
   currency_id?: unknown;
   date_created?: unknown;
+  last_modified?: unknown;
   date_approved?: unknown;
   debit_date?: unknown;
   payment: {
@@ -64,12 +67,103 @@ interface PaymentResource {
 
 interface AuthorizedPaymentSearchResponse {
   results?: unknown;
+  paging?: unknown;
+}
+
+interface MercadoPagoInvoiceCursor {
+  offset: number;
+}
+
+interface AuthorizedPaymentSearchPaging {
+  offset: number;
+  limit: number;
+  total: number;
 }
 
 function normalizeExternalId(value: unknown): string | null {
   if (typeof value === 'string' && value.trim().length > 0) return value;
   if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return String(value);
   return null;
+}
+
+function providerTimestamp(value: unknown): { value: string; time: number } | null {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  const time = Date.parse(value);
+  return Number.isNaN(time) ? null : { value, time };
+}
+
+function discoveryError(code: string): Error {
+  return new Error(`mercadopago_discovery_${code}`);
+}
+
+function discoveryPageSize(value: number): number {
+  if (!Number.isFinite(value)) throw discoveryError('invalid_page_size');
+  return Math.min(20, Math.max(1, Math.trunc(value)));
+}
+
+function encodeInvoiceCursor(cursor: MercadoPagoInvoiceCursor): string {
+  return Buffer.from(JSON.stringify(cursor)).toString('base64url');
+}
+
+function decodeInvoiceCursor(cursor: string | undefined, pageSize: number): number {
+  if (cursor === undefined) return 0;
+  if (!/^[A-Za-z0-9_-]+$/.test(cursor)) throw discoveryError('invalid_cursor');
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as unknown;
+  } catch {
+    throw discoveryError('invalid_cursor');
+  }
+  const parsedRecord: Record<string, unknown> | null =
+    typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ?
+      (parsed as Record<string, unknown>)
+    : null;
+  const parsedOffset = parsedRecord?.offset;
+  if (
+    !parsedRecord ||
+    Object.keys(parsedRecord).length !== 1 ||
+    typeof parsedOffset !== 'number' ||
+    !Number.isSafeInteger(parsedOffset) ||
+    parsedOffset < 0 ||
+    parsedOffset % pageSize !== 0
+  ) {
+    throw discoveryError('invalid_cursor');
+  }
+  return parsedOffset;
+}
+
+function validatedSearchPaging(
+  value: unknown,
+  requestedOffset: number,
+  requestedLimit: number,
+  resultCount: number,
+): AuthorizedPaymentSearchPaging {
+  const paging: Record<string, unknown> | null =
+    typeof value === 'object' && value !== null && !Array.isArray(value) ?
+      (value as Record<string, unknown>)
+    : null;
+  const offset = paging?.offset;
+  const limit = paging?.limit;
+  const total = paging?.total;
+  if (
+    !paging ||
+    typeof offset !== 'number' ||
+    typeof limit !== 'number' ||
+    typeof total !== 'number' ||
+    !Number.isSafeInteger(offset) ||
+    !Number.isSafeInteger(limit) ||
+    !Number.isSafeInteger(total) ||
+    offset !== requestedOffset ||
+    limit !== requestedLimit ||
+    total < 0 ||
+    resultCount > requestedLimit ||
+    requestedOffset + resultCount > total ||
+    (requestedOffset + resultCount < total && resultCount === 0)
+  ) {
+    throw discoveryError('invalid_paging');
+  }
+  return { offset, limit, total };
 }
 
 function normalizeCurrency(value: unknown): string | null {
@@ -749,6 +843,59 @@ export const mercadopagoProvider: PaymentProvider = {
     if (!event) return { kind: 'unrelated' };
     if (event.type === 'webhook_acknowledged') return { kind: 'pending' };
     return { kind: 'event', event };
+  },
+
+  async discoverSubscriptionInvoices(input: InvoiceDiscoveryInput): Promise<InvoiceDiscoveryPage> {
+    const externalSubscriptionId = normalizeExternalId(input.externalSubscriptionId);
+    const modifiedSince = providerTimestamp(input.modifiedSince);
+    if (!externalSubscriptionId || !modifiedSince) {
+      throw discoveryError('invalid_input');
+    }
+
+    const pageSize = discoveryPageSize(input.pageSize);
+    const offset = decodeInvoiceCursor(input.cursor, pageSize);
+    const searchPath =
+      `/authorized_payments/search?preapproval_id=${encodeURIComponent(externalSubscriptionId)}` +
+      `&limit=${pageSize}&offset=${offset}`;
+    const response = await fetchResource<AuthorizedPaymentSearchResponse>(searchPath);
+    if (!Array.isArray(response.results)) throw discoveryError('invalid_paging');
+    const paging = validatedSearchPaging(
+      response.paging,
+      offset,
+      pageSize,
+      response.results.length,
+    );
+
+    const events: NormalizedBillingEvent[] = [];
+    let providerWatermark: { value: string; time: number } | null = null;
+    for (const candidate of response.results) {
+      if (!isAuthorizedPaymentResource(candidate)) throw discoveryError('invalid_result');
+      if (normalizeExternalId(candidate.preapproval_id) !== externalSubscriptionId) {
+        throw discoveryError('identity_mismatch');
+      }
+
+      const lastModified = providerTimestamp(candidate.last_modified);
+      if (lastModified && (!providerWatermark || lastModified.time > providerWatermark.time)) {
+        providerWatermark = lastModified;
+      }
+      if (lastModified && lastModified.time < modifiedSince.time) continue;
+
+      const invoiceId = normalizeExternalId(candidate.id);
+      const paymentId = normalizeExternalId(candidate.payment.id);
+      if (!invoiceId || !paymentId) continue;
+      const event = normalizeAuthorizedPaymentEvent(
+        candidate,
+        authorizedPaymentEventId(invoiceId, paymentId, candidate.payment.status),
+      );
+      if (event && event.type !== 'webhook_acknowledged') events.push(event);
+    }
+
+    const nextOffset = paging.offset + response.results.length;
+    return {
+      events,
+      nextCursor: nextOffset < paging.total ? encodeInvoiceCursor({ offset: nextOffset }) : null,
+      providerWatermark: providerWatermark?.value ?? null,
+    };
   },
 
   async getSubscriptionSnapshot(externalSubscriptionId): Promise<SubscriptionSnapshot | null> {

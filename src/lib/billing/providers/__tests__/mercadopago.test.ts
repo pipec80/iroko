@@ -1303,3 +1303,163 @@ describe('mercadopagoProvider.capabilities', () => {
     expect(mercadopagoProvider.createPortalSession).toBeUndefined();
   });
 });
+
+describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
+  function authorizedPayment(
+    index: number,
+    status: 'approved' | 'rejected' = 'approved',
+    overrides: Record<string, unknown> = {},
+  ) {
+    return {
+      id: `invoice_${index}`,
+      preapproval_id: 'pa /subscription?',
+      external_reference: 'account_discovery',
+      transaction_amount: '29900',
+      currency_id: 'CLP',
+      date_created: `2026-09-${String((index % 20) + 1).padStart(2, '0')}T10:00:00Z`,
+      last_modified: `2026-09-${String((index % 20) + 1).padStart(2, '0')}T11:00:00Z`,
+      payment: {
+        id: `payment_${index}`,
+        status,
+        ...(status === 'rejected' ? { status_detail: 'cc_rejected' } : {}),
+      },
+      ...overrides,
+    };
+  }
+
+  it('paginates exact preapproval invoices without duplicates and returns a stable watermark', async () => {
+    const firstPage = Array.from({ length: 20 }, (_, index) => authorizedPayment(index));
+    const secondPage = Array.from({ length: 5 }, (_, index) => authorizedPayment(index + 20));
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ paging: { offset: 0, limit: 20, total: 25 }, results: firstPage }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ paging: { offset: 20, limit: 20, total: 25 }, results: secondPage }),
+      });
+
+    const first = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 20,
+    });
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://api.mercadopago.com/authorized_payments/search?preapproval_id=pa%20%2Fsubscription%3F&limit=20&offset=0',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(first).toMatchObject({
+      nextCursor: expect.any(String),
+      providerWatermark: '2026-09-20T11:00:00Z',
+    });
+    expect(first?.events).toHaveLength(20);
+
+    const second = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 20,
+      cursor: first?.nextCursor ?? undefined,
+    });
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://api.mercadopago.com/authorized_payments/search?preapproval_id=pa%20%2Fsubscription%3F&limit=20&offset=20',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(second).toMatchObject({ nextCursor: null, providerWatermark: '2026-09-05T11:00:00Z' });
+    expect(second?.events).toHaveLength(5);
+    expect(
+      new Set(
+        [...(first?.events ?? []), ...(second?.events ?? [])].map((event) => event.externalEventId),
+      ),
+    ).toHaveLength(25);
+  });
+
+  it('rejects a page that includes an invoice from another preapproval', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        paging: { offset: 0, limit: 1, total: 1 },
+        results: [authorizedPayment(1, 'approved', { preapproval_id: 'pa_other' })],
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.discoverSubscriptionInvoices?.({
+        externalSubscriptionId: 'pa /subscription?',
+        modifiedSince: '2026-09-01T00:00:00Z',
+        pageSize: 1,
+      }),
+    ).rejects.toThrow('mercadopago_discovery_identity_mismatch');
+  });
+
+  it.each([
+    ['bad paging total', undefined, { offset: 0, limit: 1, total: '1' }],
+    ['wrong returned offset', undefined, { offset: 1, limit: 1, total: 1 }],
+    ['wrong returned limit', undefined, { offset: 0, limit: 2, total: 1 }],
+    ['cursor with an unknown key', 'eyJvZmZzZXQiOjAsImV4dHJhIjp0cnVlfQ', undefined],
+    ['cursor with a negative offset', 'eyJvZmZzZXQiOi0xfQ', undefined],
+  ] as const)('rejects %s', async (_description, cursor, paging) => {
+    if (paging) {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({ paging, results: [authorizedPayment(1)] }),
+      });
+    }
+
+    await expect(
+      mercadopagoProvider.discoverSubscriptionInvoices?.({
+        externalSubscriptionId: 'pa /subscription?',
+        modifiedSince: '2026-09-01T00:00:00Z',
+        pageSize: 1,
+        ...(cursor ? { cursor } : {}),
+      }),
+    ).rejects.toThrow(/mercadopago_discovery_(invalid_paging|invalid_cursor)/);
+  });
+
+  it('rejects a cursor offset not divisible by the requested page size', async () => {
+    await expect(
+      mercadopagoProvider.discoverSubscriptionInvoices?.({
+        externalSubscriptionId: 'pa /subscription?',
+        modifiedSince: '2026-09-01T00:00:00Z',
+        pageSize: 2,
+        cursor: 'eyJvZmZzZXQiOjF9',
+      }),
+    ).rejects.toThrow('mercadopago_discovery_invalid_cursor');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('filters only valid stale modifications, emits unknown modifications conservatively, and normalizes lifecycle events', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        paging: { offset: 0, limit: 4, total: 4 },
+        results: [
+          authorizedPayment(1, 'approved', { last_modified: '2026-08-31T23:59:59Z' }),
+          authorizedPayment(2, 'approved', { last_modified: 'not-a-date' }),
+          authorizedPayment(3, 'rejected', { last_modified: '2026-09-02T00:00:00Z' }),
+          authorizedPayment(3, 'approved', { last_modified: '2026-09-03T00:00:00Z' }),
+        ],
+      }),
+    });
+
+    const result = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 4,
+    });
+
+    expect(result).toMatchObject({ nextCursor: null, providerWatermark: '2026-09-03T00:00:00Z' });
+    expect(result?.events.map((event) => event.type)).toEqual([
+      'invoice_paid',
+      'invoice_payment_failed',
+      'invoice_paid',
+    ]);
+    expect(result?.events.map((event) => event.externalEventId)).toEqual([
+      'authorized_payment:invoice_2:payment_2:approved',
+      'authorized_payment:invoice_3:payment_3:rejected',
+      'authorized_payment:invoice_3:payment_3:approved',
+    ]);
+  });
+});

@@ -86,6 +86,21 @@ export interface ProviderRecoveryInput {
   resourceId: string;
 }
 
+/** A bounded, opaque page request for invoices belonging to one subscription. */
+export interface InvoiceDiscoveryInput {
+  externalSubscriptionId: string;
+  modifiedSince: string;
+  pageSize: number;
+  cursor?: string;
+}
+
+/** Provider-normalized invoice events plus scan-local paging progress. */
+export interface InvoiceDiscoveryPage {
+  events: NormalizedBillingEvent[];
+  nextCursor: string | null;
+  providerWatermark: string | null;
+}
+
 export type ProviderRecoveryResult =
   | { kind: 'event'; event: NormalizedBillingEvent }
   | { kind: 'pending' }
@@ -114,5 +129,6 @@ export interface PaymentProvider {
     context?: WebhookVerificationContext,
   ): Promise<ProviderWebhookResult | null>;
   recoverResource?(input: ProviderRecoveryInput): Promise<ProviderRecoveryResult>;
+  discoverSubscriptionInvoices?(input: InvoiceDiscoveryInput): Promise<InvoiceDiscoveryPage>;
   getSubscriptionSnapshot?(externalSubscriptionId: string): Promise<SubscriptionSnapshot | null>;
 }
