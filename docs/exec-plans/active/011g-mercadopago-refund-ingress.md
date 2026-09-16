@@ -39,9 +39,20 @@ transaction_amount` after both values normalize as non-negative integer minor
   `transaction_amount_refunded >= transaction_amount > 0`; a provider status
   of `refunded`, `charged_back`, or `in_mediation` remains adverse evidence even
   if amounts are invalid or absent.
+- An over-refund (`transaction_amount_refunded > transaction_amount`) is still
+  classified as `refund`, but its incompatible amount pair is unavailable:
+  never clamp it, never persist either amount, and never silently turn it into
+  a partial refund. The adverse provider status or normalized `refund` type is
+  the only retained evidence in that case.
 - Preserve provider identity: the returned payment ID must equal the signed
   notification `data.id`; the authorized-payment row must carry that same
   nested payment ID and its exact preapproval ID.
+- For a linked `payment` webhook, establish both of those identities first,
+  then inspect the fresh payment for a financial anomaly, and only then take
+  the existing ordinary divergence/normalization path. A fresh `refunded`,
+  `charged_back`, or `in_mediation` payment must therefore win over an
+  otherwise `approved` authorized-payment row. An ordinary state divergence
+  without fresh financial evidence retains its existing non-financial path.
 - Anomaly routing never calls `reduceBillingEvent`, never changes subscription
   status/current period/entitlements, never creates an invoice or payment
   attempt, and never initiates a refund, chargeback, mediation, or provider
@@ -76,6 +87,7 @@ external_resource_id)` remains the deduplication key. Replays increment its
 | `supabase/migrations/20260911140000_billing_financial_anomaly_ingress.sql` | Extends the service-only checkout-reference result with the exact local subscription ID.                   |
 | `supabase/schemas/public.sql`                                              | Human-readable mirror of the changed reference resolver and grants.                                        |
 | `supabase/tests/database/36_billing_checkout_intents.test.sql`             | pgTAP proof that resolver output binds account, intent and subscription without relaxing grants.           |
+| `supabase/tests/database/41_billing_financial_anomaly_detail.test.sql`     | pgTAP proof that the anomaly key distinguishes provider/type/payment and counts same-key replays.          |
 | `src/types/database.ts`                                                    | Generated TypeScript definition for the expanded resolver result.                                          |
 | `src/lib/billing/webhook-handler.ts`                                       | Resolves and persists a typed financial anomaly without entering the reducer.                              |
 | `src/lib/billing/__tests__/webhook-handler.test.ts`                        | Handler-level persistence, replay, no-reducer, no-raw-log, and failed-correlation tests.                   |
@@ -172,12 +184,21 @@ Add separate assertions for:
 1. `transaction_amount_refunded === transaction_amount` producing `refund`;
 2. `status: 'refunded'` with invalid monetary values producing `refund` with
    no invented amounts;
-3. zero refunded amount producing the existing `invoice_paid` event;
-4. decimal CLP, negative amount, missing/malformed currency and mismatched
+3. `transaction_amount_refunded > transaction_amount` producing `refund` with
+   both persisted amount fields absent (no clamping or truncated amount);
+4. three linked fixtures where the authorized-payment row is `approved` but
+   the fresh payment is respectively `refunded`, `charged_back`, and
+   `in_mediation`; each must return its financial anomaly result and never an
+   `invoice_paid` event;
+5. a normal ordinary state-divergence fixture with no fresh refund, chargeback,
+   or mediation evidence; it must retain the existing non-financial divergence
+   behavior rather than being turned into a financial anomaly;
+6. zero refunded amount producing the existing `invoice_paid` event;
+7. decimal CLP, negative amount, missing/malformed currency and mismatched
    payment IDs never producing `partial_refund`;
-5. a linked ordinary `approved` payment with no anomaly retaining its existing
+8. a linked ordinary `approved` payment with no anomaly retaining its existing
    event ID and paid fields; and
-6. recovery still returning `{ kind: 'anomaly', observation }` from the same
+9. recovery still returning `{ kind: 'anomaly', observation }` from the same
    helper for the existing recovery fixtures.
 
 - [ ] **Step 2: Run the adapter tests and observe RED**
@@ -213,13 +234,21 @@ if (hasNormalizedAmounts && originalAmount > 0 && affectedAmount >= originalAmou
 }
 ```
 
+When `affectedAmount > originalAmount`, return that same `refund` type without
+`originalAmount` or `affectedAmount`. Do not cap the affected amount at the
+original amount and do not pass an incompatible pair to the anomaly RPC.
+
 After the `payment` webhook has verified that the fetched payment ID and linked
-authorized-payment nested ID equal `data.id`, call that helper **before**
+authorized-payment nested ID equal `data.id`, call that helper **before both**
+the existing ordinary state-divergence handling and
 `normalizeAuthorizedPaymentEvent`. If it returns an observation, return
 `FinancialAnomalyWebhook` with the signed notification event ID,
 authorized-payment `external_reference`, and exact `preapproval_id`. Do not
-call the normalizer in this branch. Retain the existing unlinked, status
-divergence, invalid-resource, and ordinary-approved behavior.
+call the divergence handler or normalizer in this branch. The test order must
+prove identity failures short-circuit before any classification, while fresh
+`refunded`, `charged_back`, and `in_mediation` evidence wins even if the linked
+authorized-payment row says `approved`. Retain the existing unlinked,
+ordinary-state-divergence, invalid-resource, and ordinary-approved behavior.
 
 Do not add a branch to `subscription_authorized_payment` that guesses a refund:
 that resource does not contain the fresh payment refund field. Its existing
@@ -253,6 +282,7 @@ git commit -m "feat: route Mercado Pago refund webhooks"
 - Create: `supabase/migrations/20260911140000_billing_financial_anomaly_ingress.sql`
 - Modify: `supabase/schemas/public.sql`
 - Modify: `supabase/tests/database/36_billing_checkout_intents.test.sql`
+- Modify: `supabase/tests/database/41_billing_financial_anomaly_detail.test.sql`
 - Regenerate: `src/types/database.ts`
 - Modify: `src/lib/billing/webhook-handler.ts`
 - Test: `src/lib/billing/__tests__/webhook-handler.test.ts`
@@ -301,9 +331,23 @@ select `subscription_id` too. Assert all of the following:
 1. an intent reference returns the same account, checkout intent and the exact
    locally attached Mercado Pago subscription ID;
 2. a legacy account reference returns the exact already-linked subscription;
-3. a foreign preapproval returns no row; and
-4. `anon` and `authenticated` still cannot execute the resolver while only
+3. an intent reference whose exact Mercado Pago preapproval was attached after
+   checkout creation returns that newly attached local subscription ID;
+4. a reference in account A paired with a preapproval belonging to account B
+   returns no row and does not attach or return B's subscription;
+5. a foreign preapproval returns no row; and
+6. there is exactly one resolver with `(uuid, text)` inputs, its result is the
+   expanded three-column table (not the prior two-column contract), and
+   `PUBLIC`, `anon`, and `authenticated` cannot execute it while only
    `service_role` retains execute permission.
+
+In test 41, prove durable replay semantics at database level rather than only
+mock call counts: a Mercado Pago `partial_refund` and `refund` for the same
+payment resource create distinct open anomalies; identical provider/type/payment
+upserts leave one row and increase its occurrence count while preserving
+`first_seen_at`; and an otherwise identical key under a second supported
+provider is separate. Assert the persisted over-refund case has `refund` type
+and null original/affected amounts, never a truncated value.
 
 In the webhook-handler test file, add a verified
 `financial_anomaly_observed` fixture and assert:
@@ -325,8 +369,10 @@ expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
 
 Call the handler twice with the same event and assert the same anomaly identity
 arguments are used twice, no recovery job is enqueued, no raw fixture text is
-present in logs/RPC arguments, and no reducer is called. Make resolver empty
-or error in separate cases and assert HTTP 500, no anomaly RPC and no reducer.
+present in logs/RPC arguments, and no reducer is called. Pair this with the
+test-41 database assertions above: mocked duplicate calls are not evidence of
+deduplication. Make resolver empty or error in separate cases and assert HTTP
+500, no anomaly RPC and no reducer.
 
 - [ ] **Step 2: Run focused tests and observe RED**
 
@@ -343,8 +389,14 @@ correlated nor persisted and currently reaches no dedicated branch.
 
 - [ ] **Step 3: Add the service-only correlation result and handler path**
 
-Create the versioned migration and update the public-schema mirror. Replace
-the resolver's return definition with the three columns above. After it finds
+Create the versioned migration and update the public-schema mirror. The
+migration must first execute
+`DROP FUNCTION IF EXISTS public.resolve_billing_checkout_reference(uuid, text)`
+before recreating it with the expanded return table; PostgreSQL cannot safely
+replace this return shape in place. Restore the function comment, revoke
+default/PUBLIC execution and explicit `anon`/`authenticated` execution, then
+grant execute only to `service_role`. Replace the resolver's return definition
+with the three columns above. After it finds
 or attaches an intent reference, select the `billing.subscriptions.id` joined
 to the resolved account for the exact `provider = 'mercadopago'` and trimmed
 external subscription ID. Apply the same exact lookup on the legacy path.
@@ -381,7 +433,7 @@ invoice/payment/subscription reducer call.
 - [ ] **Step 5: Commit the correlated webhook route**
 
 ```bash
-git add supabase/migrations/20260911140000_billing_financial_anomaly_ingress.sql supabase/schemas/public.sql supabase/tests/database/36_billing_checkout_intents.test.sql src/types/database.ts src/lib/billing/webhook-handler.ts src/lib/billing/__tests__/webhook-handler.test.ts
+git add supabase/migrations/20260911140000_billing_financial_anomaly_ingress.sql supabase/schemas/public.sql supabase/tests/database/36_billing_checkout_intents.test.sql supabase/tests/database/41_billing_financial_anomaly_detail.test.sql src/types/database.ts src/lib/billing/webhook-handler.ts src/lib/billing/__tests__/webhook-handler.test.ts
 git commit -m "feat: persist Mercado Pago refund webhook anomalies"
 ```
 
@@ -429,6 +481,17 @@ remain one `invoice_paid` event with an empty anomaly list. Add a deferred
 fetch fixture for six payment resources and assert no more than five payment
 fetches are active before one settles.
 
+Add three identity/atomicity fixtures for a page with more than one eligible
+candidate: (1) a fetched payment body that is invalid, (2) a valid fetched body
+whose ID differs from the candidate payment ID, and (3) a payment-fetch failure
+after another candidate could otherwise yield an event or anomaly. In all three
+cases assert that discovery returns no partial `events` or
+`financialAnomalies`, does not expose a reduced candidate, and preserves the
+input cursor and watermark for a safe retry. The reconciliation test must map
+each page failure to its existing safe failed/deferred completion outcome, make
+zero anomaly-upsert and reducer calls for that page, and retain the claimed
+cursor/watermark rather than advancing across an unverified page.
+
 In the reconciliation test file, return a page with one partial-refund
 observation and one unrelated ordinary invoice event. Assert the anomaly RPC
 uses the candidate account/subscription and normalized values, `summary.anomalous`
@@ -450,15 +513,21 @@ pnpm test src/lib/billing/__tests__/reconciliation.test.ts
 
 Expected: discovery currently emits an `invoice_paid` event from the authorized
 payment without fetching its payment refund state, and reconciliation has no
-anomaly collection to persist.
+anomaly collection to persist. The new invalid-body, mismatched-ID, and
+multi-candidate fetch-failure cases must also fail until discovery is made
+atomic for a page.
 
 - [ ] **Step 3: Fetch payment evidence in bounded discovery groups**
 
 For each valid, in-window authorized-payment candidate, fetch
 `/v1/payments/{encodeURIComponent(paymentId)}` in groups of at most five.
-Reject the page as a provider identity error if a fetched body is not a valid
-payment resource or its ID differs from the candidate payment ID. Apply the
-shared observation factory before invoice normalization:
+Treat the complete page as unverified if any fetched body is invalid, any body
+ID differs from its candidate payment ID, or any group fetch fails. Discard all
+staged events and anomalies for that page; return a typed provider
+identity/fetch failure which retains the input cursor and watermark. Never emit
+the successes collected before that failure as a partial page. Apply the shared
+observation factory only after every required identity check succeeds, before
+invoice normalization:
 
 ```ts
 const observation = financialAnomalyObservationForPayment(providerPayment, paymentId);
@@ -470,8 +539,10 @@ events.push(normalizeAuthorizedPaymentEvent(/* existing exact values */));
 ```
 
 Preserve the existing exact-preapproval validation, stale-modification filter,
-cursor, and watermark calculation. Do not include an acknowledged result in
-`events`; discovery only returns reducer events and normalized anomalies.
+cursor, and watermark calculation. A successful page can calculate and return
+its next cursor/watermark only after its full group set is verified. Do not
+include an acknowledged result in `events`; discovery only returns reducer
+events and normalized anomalies.
 
 In `reconciliation.ts`, persist `page.financialAnomalies ?? []` before reducing
 `page.events`. On any anomaly persistence error, classify the candidate as
@@ -479,7 +550,9 @@ In `reconciliation.ts`, persist `page.financialAnomalies ?? []` before reducing
 the existing completion protocol, and do not reduce events from that page.
 Increment `summary.anomalous` only after each successful upsert. Existing page
 mocks may omit the optional collection and therefore continue to behave as an
-empty anomaly list.
+empty anomaly list. A typed discovery identity/fetch failure must likewise use
+the existing safe failed/deferred completion protocol, preserve its scan state,
+and make zero anomaly-upsert or reducer calls.
 
 - [ ] **Step 4: Run Task 3 GREEN verification**
 
@@ -584,16 +657,26 @@ git commit -m "docs: record Mercado Pago refund ingress coverage"
 - A signed linked Mercado Pago `payment` webhook with verified partial or full
   refund evidence returns the typed anomaly path, persists the exact
   provider/account/subscription correlation, and makes zero reducer calls.
+- Fresh payment identity is verified before classification; after that,
+  `refunded`, `charged_back`, and `in_mediation` observations take precedence
+  over an otherwise `approved` authorized-payment row. Ordinary divergence with
+  no financial evidence preserves its existing path.
 - A zero/missing/invalid refund amount never fabricates a partial refund;
-  ordinary approved payments retain the existing invoice reduction.
+  ordinary approved payments retain the existing invoice reduction. An
+  over-refund is a `refund` with unavailable amounts, never a clamped or
+  incompatible persisted pair.
 - The anomaly upsert contains only bounded normalized status/amount/currency
-  evidence, deduplicates replays by its existing open-anomaly key, and never
-  logs or stores raw provider data.
+  evidence, deduplicates replays by its existing provider/type/payment
+  open-anomaly key, and never logs or stores raw provider data. Database
+  evidence proves same-key occurrence increments and that partial/full types
+  for one payment remain distinct.
 - A missing/foreign correlation, a resource-ID mismatch, or failed anomaly
   persistence is retriable and performs no access mutation.
 - Discovery performs the same fresh-payment classification in groups no larger
   than five, emits refunds separately from invoice events, preserves cursors and
-  watermarks, and cannot reduce a refunded payment.
+  watermarks, and cannot reduce a refunded payment. An invalid payment body,
+  differing returned ID, or one failed fetch makes the full discovery page safe
+  to retry: it emits no partial events/anomalies and does not advance state.
 - All listed pgTAP, focused Vitest, local type/lint/database, documentation and
   diff checks pass with observed results.
 
