@@ -449,25 +449,28 @@ acceptance [`011f`](011f-mercadopago-internal-acceptance.md).
       discovery paginada y acotada por suscripción conserva cursor/ventana en
       `billing.reconciliation_state`, normaliza eventos para el reducer común
       y el replay local es idempotente. El gate fresco de 011d pasó pgTAP
-      559/559 y billing Vitest 216/216 el 2026-09-16. La omisión real del
-      proveedor y su evidencia sanitizada siguen **[NO VERIFICADO]** hasta
-      011e/011f.
+      559/559 y billing Vitest 216/216 el 2026-09-16. El harness combinado
+      versionado de 25 aliases pasó 1/1: guarda cursor, reclama su lease
+      expirado, compara IDs de invoice/event/payment antes/después y deja el
+      fallo aislado. La omisión real del proveedor y su evidencia sanitizada
+      siguen **[NO VERIFICADO]** hasta 011e/011f.
 - [x] **Progress between batches (MP-14) — código y prueba local:** el claim
       durable ordena `next_scan_at,subscription_id`, limita a 20 y avanza cada
       resultado; pgTAP cubre 25 candidatos, cursor, lease vencido y una segunda
       sesión `SKIP LOCKED`. La ruta y el worker aíslan fallos por candidato,
       limitan grupos a cinco y mantienen el presupuesto de 45 segundos. El
       gate fresco de 011d pasó pgTAP 559/559, billing Vitest 216/216 y route
-      7/7 el 2026-09-16. No constituye observación de múltiples invocaciones
-      Cloud ni una interrupción de proceso real: ambas quedan **[NO
-      VERIFICADO]** para 011e/011f.
+      7/7 el 2026-09-16. El harness combinado de 25 aliases pasó 1/1 sobre el
+      servicio local y su seam determinista. No constituye observación de
+      múltiples invocaciones Cloud ni una interrupción de proceso real: ambas
+      quedan **[NO VERIFICADO]** para 011e/011f.
 - [x] **Failure isolation (MP-14) — código y prueba local:** una falla de
       proveedor se registra con código acotado y backoff sin abandonar los
       candidatos posteriores; el lease vencido vuelve a ser reclamable. El
-      drill combinado local queda especificado en el
-      [runbook](../../runbooks/billing-reconciliation.md#local-only-multi-batch-interruption-drill)
-      pero su ejecución única con las 25 filas y sus aliases aún no está
-      registrada; no atribuirle una ejecución hasta capturar su evidencia.
+      [harness combinado local](../../../src/lib/billing/__tests__/reconciliation-drill.test.ts)
+      de 25 aliases se ejecuta con un comando versionado y pasó 1/1; su seam
+      modela los RPC y el proveedor, por lo que no prueba una interrupción de
+      proceso ni una invocación Cloud reales.
 - [ ] **Ordering and paid-through access (MP-03/05/07):** CAS rejects a local
       race; it alone does not prove remote version ordering, cancellation
       timestamps or that `next_payment_date` represents a paid period. Verify
@@ -494,9 +497,9 @@ acceptance [`011f`](011f-mercadopago-internal-acceptance.md).
   never guesses — always `billing_reconciliation_drift` + Sentry.
 - Dos sesiones locales ya demuestran `SKIP LOCKED`; la demostración de varias
   invocaciones Cloud, interrupción de proceso y replay operacional de MP-14
-  sigue **[NO VERIFICADO]** hasta 011e/011f. El drill local de 25 filas está
-  definido en el runbook y debe ejecutarse con evidencia sanitizada antes de
-  trasladar ese estado a operación.
+  sigue **[NO VERIFICADO]** hasta 011e/011f. El drill local versionado de 25
+  aliases deja evidencia de servicio/seam solamente; no traslada ese estado a
+  operación.
 - Runbook exists and a person unfamiliar with the code could follow it
   during an incident.
 - `pnpm typecheck && pnpm lint`, relevant Vitest, pgTAP pass.

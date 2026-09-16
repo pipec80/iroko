@@ -287,31 +287,37 @@ Pause with `cron.unschedule(jobid)` after recording the current definitions. Rec
 
 This drill is disposable-local evidence for MP-12 and MP-14. It does not
 contact Mercado Pago, invoke a deployed route, create a checkout, or authorize
-Cloud configuration. The procedure requires a test-double provider seam that
-returns deterministic `drill-011d:` invoice, event and payment aliases; do not
-substitute production credentials or provider IDs.
+Cloud configuration. Do not substitute production credentials or provider IDs.
 
-The repository has **not** recorded one combined execution of this drill yet.
-The separate local gates cited below prove its state, cursor, paging and
-failure-isolation components. Record the combined run only after retaining the
-sanitized output described in step 7; until then, Cloud and live-interruption
-evidence remain **[NO VERIFICADO]**.
+The committed deterministic harness is
+`src/lib/billing/__tests__/reconciliation-drill.test.ts`. It runs the real
+`reconcileNonTerminalSubscriptions` service against a local provider/RPC/reducer
+seam. The seam seeds exactly 25 active Mercado Pago aliases
+`drill-011d:subscription:01` through `:25`, claims the first 20, makes `:07`
+fail with `provider_fetch_failed`, persists the page-2 cursor for `:01`,
+expires and reclaims that lease, and then claims `:01` plus `:21`–`:25`.
+It captures invoice, event, and payment aliases before and after replay and
+requires every captured alias to occur once. This is an executable local
+orchestration harness; SQL durability and true second-session locking remain
+covered separately by pgTAP 42.
 
-1. Start from a disposable database: run `pnpm supa:reset`. Seed exactly 25
-   active Mercado Pago fixture subscriptions with external aliases
-   `drill-011d:subscription:01` through `:25`; set their
-   `billing.reconciliation_state.next_scan_at` in the past. Do not run this
-   against a linked or production project.
-2. Configure the local test double so subscriptions 01–20 return one bounded
-   discovery page. It must make subscription 07 return the sanitized failure
-   `provider_fetch_failed`; subscriptions 01–06 and 08–20 each return a
-   deterministic invoice, event and payment alias. The first page for at least
-   one successful subscription must return a non-null cursor such as
-   `drill-011d:cursor:page-2`.
-3. Invoke `reconcileNonTerminalSubscriptions` with `batchSize: 20` and a
-   normal 45-second budget. Assert the summary has `scanned: 20`, one failure
-   and a deferred cursor-bearing candidate. Persist the following local
-   snapshot *after* that first invocation and before any replay:
+Run the committed drill from any supported shell at the repository root:
+
+```bash
+pnpm test src/lib/billing/__tests__/reconciliation-drill.test.ts
+```
+
+It has no Supabase, provider, Cloud, or credential prerequisite. A passing run
+does not prove a deployed route, a real process interruption, or provider
+acceptance; those remain **[NO VERIFICADO]** for 011e/011f.
+
+The following SQL is the diagnostic query contract for a future
+database-backed local drill. It is not a substitute for the committed command
+above and must not be run against a linked or production project. A
+database-backed fixture must first seed the same 25 aliases and retain the
+snapshots before replay.
+
+1. Persist the snapshot after the first invocation and before replay:
 
    ```sql
    CREATE TEMP TABLE drill_011d_ids_before_replay AS
@@ -319,12 +325,12 @@ evidence remain **[NO VERIFICADO]**.
    FROM billing.invoices
    WHERE provider = 'mercadopago'
      AND external_invoice_id LIKE 'drill-011d:%'
-   UNION
+   UNION ALL
    SELECT 'event'::text, external_event_id
    FROM billing.events
    WHERE provider = 'mercadopago'
      AND external_event_id LIKE 'drill-011d:%'
-   UNION
+   UNION ALL
    SELECT 'payment'::text, external_payment_id
    FROM billing.payment_attempts
    WHERE provider = 'mercadopago'
@@ -346,22 +352,10 @@ evidence remain **[NO VERIFICADO]**.
    ORDER BY subscription_id;
    ```
 
-4. Simulate interruption only in that local fixture: do not call completion for
-   the cursor-bearing lease. Set only that row's `lease_expires_at` in the past
-   and `next_scan_at` in the past. Preserve its cursor and watermark. The
-   failed candidate remains an ordinary retry according to its recorded
-   backoff; do not erase its failure state to manufacture progress.
-5. Change the test double to return the final page when it receives
-   `drill-011d:cursor:page-2`, then invoke the worker again. Continue bounded
-   invocations until all 25 fixture state rows have a future `next_scan_at`, no
-   lease owner/expiry, and either a recorded final completion or the expected
-   retained failure/backoff. The second invocation must also take the five rows
-   beyond the first twenty; it must not rely on changing `updated_at` to escape
-   the first page.
-6. Snapshot the IDs after replay and compare them to the saved pre-replay set.
+2. After replay, snapshot IDs and compare them to the saved pre-replay set.
    No aliases from the first invocation may be duplicated or removed by replay;
-   any new alias must be the documented page-2 discovery rather than a repeat
-   of page 1.
+   any addition must be a documented page-2 discovery rather than a repeat of
+   page 1.
 
    ```sql
    CREATE TEMP TABLE drill_011d_ids_after_replay AS
@@ -369,16 +363,21 @@ evidence remain **[NO VERIFICADO]**.
    FROM billing.invoices
    WHERE provider = 'mercadopago'
      AND external_invoice_id LIKE 'drill-011d:%'
-   UNION
+   UNION ALL
    SELECT 'event'::text, external_event_id
    FROM billing.events
    WHERE provider = 'mercadopago'
      AND external_event_id LIKE 'drill-011d:%'
-   UNION
+   UNION ALL
    SELECT 'payment'::text, external_payment_id
    FROM billing.payment_attempts
    WHERE provider = 'mercadopago'
      AND external_payment_id LIKE 'drill-011d:%';
+
+   SELECT kind, count(*) AS rows, count(DISTINCT external_id) AS distinct_ids
+   FROM drill_011d_ids_after_replay
+   GROUP BY kind
+   ORDER BY kind;
 
    SELECT kind, external_id, count(*) AS occurrences
    FROM drill_011d_ids_after_replay
@@ -391,11 +390,15 @@ evidence remain **[NO VERIFICADO]**.
    SELECT kind, external_id
    FROM drill_011d_ids_after_replay;
 
+   WITH drill_011d_additions AS (
+     SELECT kind, external_id
+     FROM drill_011d_ids_after_replay
+     EXCEPT
+     SELECT kind, external_id
+     FROM drill_011d_ids_before_replay
+   )
    SELECT kind, external_id
-   FROM drill_011d_ids_after_replay
-   EXCEPT
-   SELECT kind, external_id
-   FROM drill_011d_ids_before_replay
+   FROM drill_011d_additions
    WHERE external_id NOT LIKE 'drill-011d:invoice:page-2:%'
      AND external_id NOT LIKE 'drill-011d:event:page-2:%'
      AND external_id NOT LIKE 'drill-011d:payment:page-2:%';
@@ -409,18 +412,19 @@ evidence remain **[NO VERIFICADO]**.
      AND state.lease_expires_at IS NULL;
    ```
 
-7. Accept the local drill only when the first query returns no duplicate IDs,
-   both `EXCEPT` queries return zero rows, and `advanced_rows = 25`. Preserve
-   only the UTC time, commit, commands, counts and the `drill-011d:` aliases in
-   the evidence register. A missing or different result is a failed local
-   drill, not a reason to retry provider actions or modify access.
+3. The database-backed diagnostic passes only when the duplicate query and both
+   `EXCEPT` queries return zero rows, each grouped count equals its distinct
+   count, and `advanced_rows = 25`. Preserve only the UTC time, commit,
+   commands, counts and the `drill-011d:` aliases in the evidence register. A
+   missing or different result is a failed local drill, not a reason to retry
+   provider actions or modify access.
 
-The automated base for this procedure is
+The accompanying local gates are
 `supabase/tests/database/42_billing_reconciliation_state.test.sql` (25 rows,
 lease recovery, cursor resume and true second-session `SKIP LOCKED`) and
 `src/lib/billing/__tests__/reconciliation.test.ts` (provider failure isolation,
-deadline, cursor replay and reducer idempotency). Those tests do not replace a
-combined local drill, a Cloud multi-invocation test or provider acceptance.
+deadline, cursor replay and reducer idempotency). Neither substitutes for Cloud
+multi-invocation evidence or provider acceptance.
 
 ## Incidents
 
