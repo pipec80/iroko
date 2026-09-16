@@ -220,6 +220,16 @@ describe('reconcileNonTerminalSubscriptions', () => {
     expect(completionCalls().map(([, args]) => args.p_outcome)).toEqual(
       Array.from({ length: 6 }, () => 'deferred'),
     );
+    const completionCounts = new Map<string, number>();
+    for (const [, args] of completionCalls()) {
+      completionCounts.set(
+        args.p_subscription_id,
+        (completionCounts.get(args.p_subscription_id) ?? 0) + 1,
+      );
+    }
+    expect([...completionCounts.entries()].sort()).toEqual(
+      candidates.map(({ subscription_id }) => [subscription_id, 1]),
+    );
   });
 
   it('caps an in-flight snapshot wait at the invocation deadline and defers it', async () => {
@@ -240,6 +250,73 @@ describe('reconcileNonTerminalSubscriptions', () => {
         expect.objectContaining({ scanned: 1, deferred: 1, failed: 0 }),
       );
       expect(mocks.discover).not.toHaveBeenCalled();
+      expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'deferred' }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('defers an invoice page returned at the deadline before reducing its events', async () => {
+    let now = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    mocks.discover.mockImplementation(async () => {
+      now = 50;
+      return {
+        events: [
+          {
+            type: 'invoice_paid',
+            provider: 'mercadopago',
+            externalEventId: 'invoice-at-deadline',
+            accountId: candidate.account_id,
+          },
+        ],
+        nextCursor: null,
+        providerWatermark: '2026-09-11T12:00:00Z',
+      };
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 50 }),
+    ).resolves.toEqual(expect.objectContaining({ scanned: 1, repaired: 1, deferred: 1 }));
+
+    expect(mocks.reduce).toHaveBeenCalledTimes(1);
+    expect(mocks.reduce).toHaveBeenCalledWith(
+      expect.objectContaining({ externalEventId: 'reconciliation:mercadopago:pa-1:v2' }),
+      { expectedSubscriptionUpdatedAt: candidate.subscription_updated_at },
+    );
+    expect(completionCalls()).toHaveLength(1);
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_outcome: 'deferred',
+        p_provider_watermark: '2026-09-11T12:00:00Z',
+        p_next_cursor: null,
+      }),
+    );
+  });
+
+  it('caps a hanging invoice discovery at the deadline and has no later reducer effect', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-12T00:00:00Z'));
+    try {
+      mocks.discover.mockImplementation(
+        () =>
+          new Promise<never>(() => {
+            // The provider interface has no abort signal; reconciliation must still finish durably.
+          }),
+      );
+      const work = reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45 });
+
+      await vi.advanceTimersByTimeAsync(45);
+
+      await expect(work).resolves.toEqual(
+        expect.objectContaining({ scanned: 1, repaired: 1, deferred: 1, failed: 0 }),
+      );
+      expect(mocks.reduce).toHaveBeenCalledTimes(1);
+      expect(mocks.reduce).toHaveBeenCalledWith(
+        expect.objectContaining({ externalEventId: 'reconciliation:mercadopago:pa-1:v2' }),
+        { expectedSubscriptionUpdatedAt: candidate.subscription_updated_at },
+      );
+      expect(completionCalls()).toHaveLength(1);
       expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'deferred' }));
     } finally {
       vi.useRealTimers();

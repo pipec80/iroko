@@ -193,6 +193,7 @@ export async function reconcileNonTerminalSubscriptions(input: {
     };
     let snapshotResult;
     try {
+      if (Date.now() >= deadline) return { outcome: 'deferred' };
       snapshotResult = await reduceBillingEvent(event, {
         expectedSubscriptionUpdatedAt: candidate.subscription_updated_at,
       });
@@ -221,8 +222,22 @@ export async function reconcileNonTerminalSubscriptions(input: {
       if (error instanceof ReconciliationDeadlineExceeded) return { outcome: 'deferred' };
       throw { errorCode: providerErrorCode(error) };
     }
+    if (Date.now() >= deadline) {
+      return {
+        outcome: 'deferred',
+        providerWatermark: page.providerWatermark,
+        nextCursor: candidate.scan_cursor,
+      };
+    }
     try {
       for (const invoiceEvent of page.events) {
+        if (Date.now() >= deadline) {
+          return {
+            outcome: 'deferred',
+            providerWatermark: page.providerWatermark,
+            nextCursor: candidate.scan_cursor,
+          };
+        }
         const result = await reduceBillingEvent(invoiceEvent);
         if (result.status === 'applied') summary.repaired += 1;
         else if (result.status === 'stale') summary.stale += 1;
