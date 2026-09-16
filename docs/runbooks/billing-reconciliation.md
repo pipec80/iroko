@@ -278,12 +278,15 @@ create a blind second provider POST.
 
 The latest preflight is recorded in the [operational evidence
 register](../quality/operational-evidence.md#billing-worker-rollout-preflight--2026-09-16).
-It found a `READY` stable deployment with a worker-route artifact, but did not
-establish its source SHA; local Supabase was not linked to the intended remote
-project; `BILLING_RECONCILIATION_SECRET` was absent from the inspected Vercel
-Production and Preview environment names; and Vault, cron, health and worker
-URL state remain **[NO VERIFICADO]**. Those facts are blockers, not an
-authorization to repair them.
+It identified one proposed Supabase target, `iroko`
+(`rgrxlygtmvavqzkjyywg`, `us-east-2`), while the CLI still reported
+`linked=false`; the proposed Vercel target is `pipec80-labs/iroko`. The stable
+alias `project-a89lv.vercel.app` is `READY` at
+`dpl_EE7N9eropjg64w4MDYdqx7QSZ93A` with a worker-route artifact, but its source
+SHA was not established. `BILLING_RECONCILIATION_SECRET` was absent from the
+inspected Vercel Production and Preview environment names; Vault, cron, health
+and worker URL state remain **[NO VERIFICADO]**. Those facts are blockers, not
+an authorization to repair them.
 
 Do not send an unauthenticated POST merely to test the route. In this preflight
 that request was not made because a misconfigured route could run a worker.
@@ -291,22 +294,36 @@ Route reachability therefore remains **[NO VERIFICADO]** until an authorized,
 secret-safe rollout step can establish it alongside deployment identity and
 durable effects.
 
-Before a mutation, obtain explicit authorization naming both the Vercel
-production application and linked Supabase project. The approved list must be
-limited to: target linkage/inspection and revision reconciliation; paired
-Vercel/Vault shared-secret creation or rotation; Vault worker-URL creation or
-rotation; a narrow route allowance if needed; recovery activation and
-observation; then reconciliation activation and observation. Do not combine the
-two schedules or use a Preview URL.
+Before a mutation, obtain explicit authorization naming Vercel
+`pipec80-labs/iroko` and Supabase `iroko` (`rgrxlygtmvavqzkjyywg`,
+`us-east-2`). Target identification is already recorded, but mutation remains
+prohibited until that authorization is granted. It must first permit read-only
+migration parity and stable-source inspection. If the stable alias cannot be
+shown to contain verified local SHA `83feceb0724aaf06cc12b7ffce17278874cf43bf`,
+it must expressly permit deploying that SHA to `pipec80-labs/iroko` before
+worker configuration. Only after the parity review may the authorization permit
+the reviewed missing migrations, followed by a re-check of parity.
+
+The remaining approved list must be limited and ordered: create Vercel
+`BILLING_RECONCILIATION_SECRET` (it is absent, so this is a create rather than a
+rotation); inspect the Vault secret name and then create or rotate the paired
+Vault secret according to whether it exists; configure Vault
+`billing_worker_url` for the verified stable URL; add an allowance only for
+`/api/internal/billing/worker` if that exact route is blocked; recovery
+activation and observation; then reconciliation activation and observation. Do
+not combine the two schedules or use a Preview URL.
 
 ### Authorized configuration and schedule
 
 Only after the preceding preflight blockers are resolved and the named mutation
 authorization is granted, use the verified stable production URL (never a
-protected Preview URL). Store `billing_worker_url` and
-`billing_reconciliation_secret` in Vault through an authorized operation; set
-the same secret as `BILLING_RECONCILIATION_SECRET` in Vercel. Verify the route
-through the authorized worker procedure before scheduling.
+protected Preview URL). Complete migration parity review before applying any
+reviewed missing migrations, then verify parity again before configuring the
+worker. Create the absent Vercel `BILLING_RECONCILIATION_SECRET`; inspect the
+Vault secret name first and create or rotate its paired secret only as that
+inspection requires. Then configure `billing_worker_url` in Vault for the
+verified stable URL. Verify the route through the authorized worker procedure
+before scheduling.
 
 ```sql
 select cron.schedule('billing-recovery-worker', '*/5 * * * *', $$select private.invoke_billing_worker('recovery')$$);

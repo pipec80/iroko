@@ -101,34 +101,42 @@ production behavior, or replace the correlated evidence required by Tasks 2–5.
 No secret values, provider payloads, customer data, signed URLs, or raw Cloud
 output are retained here.
 
-| Preflight area           | Observed result                                                                                                                                                                              | Operational meaning                                                                                                                                                                 |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Local checkout           | Clean `feat/mercadopago-v1-implementation` at `83feceb0724aaf06cc12b7ffce17278874cf43bf`, committed `2026-09-16T16:36:39-03:00`.                                                             | This identifies the local candidate only. It does not establish deployed source identity.                                                                                           |
-| Local tooling            | Supabase CLI `2.110.0` and Vercel CLI `59.15.1` are installed. Vercel CLI was authenticated as the sanitized account alias `pipec80`.                                                        | Installation and Vercel authentication do not establish Supabase linkage or authorization to mutate either platform.                                                                |
-| Stable alias             | `project-a89lv.vercel.app` resolved to production deployment `dpl_EE7N9eropjg64w4MDYdqx7QSZ93A`, `READY`, with the worker-route artifact present.                                            | The deployed source SHA was not established. The alias must be reconciled to the reviewed 011a–011d revision before a rollout.                                                      |
-| Migration comparison     | Local migration inventory reaches `20260911130000_billing_reconciliation_state`. `supabase migration list --linked` stopped with `LegacyProjectNotLinkedError`.                              | Linked migration parity is **[NO VERIFICADO]**. Do not apply migrations or schedule workers until the intended linked project is identified and inspected read-only.                |
-| Vercel environment names | Scoped `vercel env ls` showed `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, and `MERCADOPAGO_WEBHOOK_URL` in Production and Preview. `BILLING_RECONCILIATION_SECRET` was absent. | Variable presence says nothing about values, application/seller coherence, deployment ingestion, or webhook behavior. The worker cannot be accepted without a paired shared secret. |
-| Vault, cron and health   | Vault secret names/values, `cron.job`, `private.billing_worker_health`, worker URL, and configuration values were not inspected.                                                             | **[NO VERIFICADO]**. No schedule, net request, health row, ledger/job effect, or worker progress evidence exists from this preflight.                                               |
-| Stable-route preflight   | The unauthenticated `POST {"mode":"recovery"}` was deliberately not sent. Automatic safety review rejected it because a misconfigured route could execute a worker.                          | Route reachability and its expected `401` remain **[NO VERIFICADO]**. Do not use a blind unauthenticated invocation to fill this gap.                                               |
+| Preflight area               | Observed result                                                                                                                                                                                          | Operational meaning                                                                                                                                                                                                                                                                   |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local checkout               | Clean `feat/mercadopago-v1-implementation` at `83feceb0724aaf06cc12b7ffce17278874cf43bf`, committed `2026-09-16T16:36:39-03:00`.                                                                         | This identifies the local candidate only. It does not establish deployed source identity.                                                                                                                                                                                             |
+| Local tooling                | Supabase CLI `2.110.0` and Vercel CLI `59.15.1` are installed. Vercel CLI was authenticated as the sanitized account alias `pipec80`.                                                                    | Installation and Vercel authentication do not establish Supabase linkage or authorization to mutate either platform.                                                                                                                                                                  |
+| Authorized-target candidates | Supabase project listing found exactly one active project: `iroko`, ref `rgrxlygtmvavqzkjyywg`, region `us-east-2`; the CLI reported `linked=false`. Vercel target is team/project `pipec80-labs/iroko`. | These are the only proposed rollout targets. Listing does not establish Supabase migration parity, Vercel deployment source identity, or authorization to mutate either target.                                                                                                       |
+| Stable alias                 | `project-a89lv.vercel.app` resolved to production deployment `dpl_EE7N9eropjg64w4MDYdqx7QSZ93A`, `READY`, with the worker-route artifact present.                                                        | The deployed source SHA was not established. If the stable alias cannot be shown to contain reviewed local SHA `83feceb0724aaf06cc12b7ffce17278874cf43bf`, authorization must explicitly include deployment of that verified SHA to `pipec80-labs/iroko` before worker configuration. |
+| Migration comparison         | Local migration inventory reaches `20260911130000_billing_reconciliation_state`. `supabase migration list --linked` stopped with `LegacyProjectNotLinkedError`.                                          | Linked migration parity for `rgrxlygtmvavqzkjyywg` is **[NO VERIFICADO]**. Do not apply migrations, configure workers, or create schedules until that exact target has been inspected read-only and parity reviewed.                                                                  |
+| Vercel environment names     | Scoped `vercel env ls` showed `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, and `MERCADOPAGO_WEBHOOK_URL` in Production and Preview. `BILLING_RECONCILIATION_SECRET` was absent.             | Variable presence says nothing about values, application/seller coherence, deployment ingestion, or webhook behavior. The worker cannot be accepted without a paired shared secret.                                                                                                   |
+| Vault, cron and health       | Vault secret names/values, `cron.job`, `private.billing_worker_health`, worker URL, and configuration values were not inspected.                                                                         | **[NO VERIFICADO]**. No schedule, net request, health row, ledger/job effect, or worker progress evidence exists from this preflight.                                                                                                                                                 |
+| Stable-route preflight       | The unauthenticated `POST {"mode":"recovery"}` was deliberately not sent. Automatic safety review rejected it because a misconfigured route could execute a worker.                                      | Route reachability and its expected `401` remain **[NO VERIFICADO]**. Do not use a blind unauthenticated invocation to fill this gap.                                                                                                                                                 |
 
 ### Required authorization boundary and proposed mutations
 
 No rollout authorization is granted by this record or by the local coding
-approval. After resolving the read-only blockers above, request one explicit
-authorization that names the target Vercel production application and linked
-Supabase project and permits only the following ordered mutations:
+approval. Target identification is already recorded above, but no mutation may
+begin before a new explicit authorization names **both** Vercel
+`pipec80-labs/iroko` and Supabase `iroko` (`rgrxlygtmvavqzkjyywg`, `us-east-2`).
+That authorization must permit only the following ordered work:
 
-1. Link and inspect the intended Supabase target read-only, then reconcile its
-   migration inventory and the stable deployment's source SHA with the reviewed
-   011a–011d revision.
-2. Create or rotate one shared `BILLING_RECONCILIATION_SECRET` through
-   secret-safe Vercel and Vault interfaces, preserving neither value nor command
-   input in evidence.
-3. Create or rotate Vault `billing_worker_url` for the verified stable URL and
-   verify that the Vercel deployment receives the paired secret.
-4. Add a narrowly scoped internal-route allowance only if the verified route is
-   otherwise blocked; preserve protection for unrelated routes.
-5. After two correlated manual recovery results, create and observe the
+1. Inspect those exact targets read-only: reconcile the Supabase migration
+   inventory and establish the stable deployment's source SHA.
+2. If `project-a89lv.vercel.app` cannot be shown to contain
+   `83feceb0724aaf06cc12b7ffce17278874cf43bf`, deploy that verified SHA to
+   `pipec80-labs/iroko`, then re-establish the stable alias and source identity.
+3. After parity review, apply only the reviewed missing migrations to
+   `rgrxlygtmvavqzkjyywg`; re-inspect parity before any worker configuration.
+4. Create (not rotate) Vercel `BILLING_RECONCILIATION_SECRET` through a
+   secret-safe interface. Inspect the Vault secret name first; only then create
+   or rotate the paired Vault reconciliation secret as its presence requires.
+5. After the preceding secret and parity checks, configure Vault
+   `billing_worker_url` for the verified stable URL and verify the Vercel
+   deployment receives the paired secret.
+6. Add an allowance for exactly `/api/internal/billing/worker` only if that
+   verified route is otherwise blocked; preserve protection for every other
+   route.
+7. After two correlated manual recovery results, create and observe the
    recovery schedule; only then create and observe the reconciliation schedule.
 
 Each subsequent stage must retain its own sanitized HTTP, health and durable
