@@ -187,7 +187,7 @@ function validatedSearchPaging(
     total < 0 ||
     resultCount > requestedLimit ||
     requestedOffset + resultCount > total ||
-    (requestedOffset + resultCount < total && resultCount === 0)
+    (requestedOffset + resultCount < total && resultCount !== requestedLimit)
   ) {
     throw discoveryError('invalid_paging');
   }

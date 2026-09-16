@@ -1430,6 +1430,24 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('rejects an incomplete non-terminal page so it cannot emit an unaligned cursor', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        paging: { offset: 0, limit: 2, total: 3 },
+        results: [authorizedPayment(1)],
+      }),
+    });
+
+    await expect(
+      mercadopagoProvider.discoverSubscriptionInvoices?.({
+        externalSubscriptionId: 'pa /subscription?',
+        modifiedSince: '2026-09-01T00:00:00Z',
+        pageSize: 2,
+      }),
+    ).rejects.toThrow('mercadopago_discovery_invalid_paging');
+  });
+
   it('treats an impossible RFC3339 calendar date as unknown modification evidence', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
@@ -1447,6 +1465,28 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
 
     expect(result).toMatchObject({ providerWatermark: null });
     expect(result?.events).toHaveLength(1);
+  });
+
+  it('emits invalid RFC3339 clock and offset values conservatively without advancing the watermark', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        paging: { offset: 0, limit: 2, total: 2 },
+        results: [
+          authorizedPayment(8, 'approved', { last_modified: '2026-09-02T24:00:00Z' }),
+          authorizedPayment(9, 'approved', { last_modified: '2026-09-02T00:00:00+24:00' }),
+        ],
+      }),
+    });
+
+    const result = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 2,
+    });
+
+    expect(result).toMatchObject({ providerWatermark: null });
+    expect(result?.events).toHaveLength(2);
   });
 
   it('advances to the next page after a fully stale page so it can emit a later invoice', async () => {
