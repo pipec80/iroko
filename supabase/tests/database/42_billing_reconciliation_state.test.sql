@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(47);
+SELECT plan(49);
 
 SELECT has_table(
   'billing',
@@ -634,11 +634,37 @@ SELECT ok(
 UPDATE billing.reconciliation_state
 SET scan_cursor = 'obsolete-terminal-cursor',
   scan_watermark = '2026-09-14T12:00:00Z',
-  last_error_code = 'obsolete_terminal_error'
+  last_error_code = 'obsolete_terminal_error',
+  failure_count = 3
 WHERE subscription_id = '00000000-0000-0000-0000-000000004236';
 UPDATE billing.subscriptions
 SET status = 'canceled'
 WHERE id = '00000000-0000-0000-0000-000000004236';
+SELECT ok(
+  (
+    SELECT lease_owner = 'worker-42-a'
+      AND lease_expires_at > now()
+      AND scan_cursor = 'obsolete-terminal-cursor'
+      AND scan_watermark = '2026-09-14T12:00:00Z'
+      AND last_error_code = 'obsolete_terminal_error'
+      AND failure_count = 3
+    FROM billing.reconciliation_state
+    WHERE subscription_id = '00000000-0000-0000-0000-000000004236'
+  ),
+  'a terminal transition preserves an active worker lease until its owner completes it'
+);
+SELECT is(
+  public.complete_billing_reconciliation_candidate(
+    '00000000-0000-0000-0000-000000004236',
+    'worker-42-a',
+    'skipped',
+    NULL,
+    NULL,
+    NULL
+  ),
+  'skipped',
+  'the active worker explicitly completes terminal reconciliation as skipped'
+);
 SELECT ok(
   (
     SELECT next_scan_at BETWEEN now() + interval '5 hours 59 minutes 59 seconds'
@@ -648,10 +674,12 @@ SELECT ok(
       AND scan_cursor IS NULL
       AND scan_watermark IS NULL
       AND last_error_code IS NULL
+      AND failure_count = 0
+      AND last_completed_at IS NOT NULL
     FROM billing.reconciliation_state
     WHERE subscription_id = '00000000-0000-0000-0000-000000004236'
   ),
-  'terminal transitions retain history, clear active work, and schedule skipped state'
+  'skipped completion clears terminal active work and schedules the next scan in six hours'
 );
 
 CREATE EXTENSION IF NOT EXISTS dblink WITH SCHEMA extensions;

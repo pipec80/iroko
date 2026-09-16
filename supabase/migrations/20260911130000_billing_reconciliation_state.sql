@@ -63,11 +63,26 @@ BEGIN
     IF NEW.status IN ('canceled', 'unpaid') THEN
       UPDATE billing.reconciliation_state
       SET next_scan_at = now() + interval '6 hours',
-        lease_owner = NULL,
-        lease_expires_at = NULL,
-        scan_cursor = NULL,
-        scan_watermark = NULL,
-        last_error_code = NULL
+        lease_owner = CASE
+          WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL
+          ELSE lease_owner
+        END,
+        lease_expires_at = CASE
+          WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL
+          ELSE lease_expires_at
+        END,
+        scan_cursor = CASE
+          WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL
+          ELSE scan_cursor
+        END,
+        scan_watermark = CASE
+          WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL
+          ELSE scan_watermark
+        END,
+        last_error_code = CASE
+          WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL
+          ELSE last_error_code
+        END
       WHERE subscription_id = NEW.id;
     END IF;
   END IF;
@@ -271,7 +286,11 @@ BEGIN
     SET next_scan_at = now() + interval '6 hours',
       lease_owner = NULL,
       lease_expires_at = NULL,
-      last_error_code = v_error_code
+      scan_cursor = NULL,
+      failure_count = 0,
+      scan_watermark = NULL,
+      last_error_code = NULL,
+      last_completed_at = now()
     WHERE subscription_id = p_subscription_id;
   END IF;
 

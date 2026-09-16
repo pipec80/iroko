@@ -4138,7 +4138,8 @@ BEGIN
   ELSE
     UPDATE billing.reconciliation_state
     SET next_scan_at = now() + interval '6 hours', lease_owner = NULL, lease_expires_at = NULL,
-      last_error_code = v_error_code
+      scan_cursor = NULL, failure_count = 0, scan_watermark = NULL, last_error_code = NULL,
+      last_completed_at = now()
     WHERE subscription_id = p_subscription_id;
   END IF;
   RETURN p_outcome;

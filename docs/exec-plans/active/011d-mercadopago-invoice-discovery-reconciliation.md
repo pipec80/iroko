@@ -41,6 +41,43 @@ Mercado Pago REST API, Vitest, Next.js internal route.
 
 ---
 
+## Local execution record — 2026-09-16
+
+Every checkbox below records completed local work from the corresponding task
+commit and implementer report. It does not certify a provider, Cloud worker,
+or internal Mercado Pago acceptance.
+
+- Task 1: durable state and claim protocol: `826f050` and review fix
+  `103e175`; pgTAP 42 and 38 passed after the disposable reset.
+- Task 2: Mercado Pago authorized-payment pagination: `e6f99b5`,
+  `74d540e`, and `921b070`; provider tests and typecheck passed in the task
+  report.
+- Task 3: bounded, resumable worker execution: `a51c2b`, `da59422`, and
+  `03209e2`; focused reconciliation and worker-route tests passed in the task
+  report.
+- Task 4: local interruption drill and handoff: `f345026` and `2dd7eef`;
+  the focused drill passed and the recorded local gate included 42 pgTAP files,
+  559 tests, 217 billing Vitest tests, typecheck, lint, docs checks and diff
+  checks.
+
+Final terminal-lease correction evidence:
+
+- RED: the new worker test showed a canceled snapshot still ran invoice
+  discovery; pgTAP showed its status trigger cleared the active owner and the
+  subsequent `skipped` completion failed with
+  `billing_reconciliation_lease_not_owned`.
+- GREEN: the worker now completes a terminal snapshot as `skipped` without
+  invoice discovery. The trigger preserves an unexpired lease, and its owner
+  clears cursor, watermark, failure/error state and schedules the next scan at
+  six hours through the completion RPC. Fresh focused results: reconciliation
+  Vitest 13/13, pgTAP 42 49/49, and pgTAP 38 18/18.
+
+Provider omission, real process interruption, deployed worker execution,
+multi-invocation Cloud progress and internal acceptance remain
+**[NO VERIFICADO]** for 011e/011f.
+
+---
+
 ### Task 1: Build the durable reconciliation claim protocol
 
 **Files:**
@@ -78,7 +115,7 @@ public.complete_billing_reconciliation_candidate(
 ) RETURNS text
 ```
 
-- [ ] **Step 1: Write failing pgTAP coverage**
+- [x] **Step 1: Write failing pgTAP coverage**
 
 Create 25 eligible subscriptions plus unsupported, terminal and missing-remote
 fixtures. Assert:
@@ -114,14 +151,14 @@ SELECT throws_like(
 );
 ```
 
-- [ ] **Step 2: Run test 42 and observe RED**
+- [x] **Step 2: Run test 42 and observe RED**
 
 Run:
 `supabase test db --local supabase/tests/database/42_billing_reconciliation_state.test.sql`
 
 Expected: FAIL because the state table and claim/complete RPCs do not exist.
 
-- [ ] **Step 3: Implement table creation and backfill**
+- [x] **Step 3: Implement table creation and backfill**
 
 Create `billing.reconciliation_state` with `subscription_id` as its primary
 key/FK, `next_scan_at`, `lease_owner`, `lease_expires_at`,
@@ -135,7 +172,7 @@ Backfill every subscription with a non-empty external subscription ID. Add an
 state row once. Never delete reconciliation history when a subscription becomes
 terminal; completion schedules terminal rows far forward as `skipped`.
 
-- [ ] **Step 4: Implement claim and completion semantics**
+- [x] **Step 4: Implement claim and completion semantics**
 
 Claim validates batch `1..20`, visibility `30..1800` seconds and worker ID
 length `1..100`, then uses a CTE with:
@@ -156,7 +193,7 @@ characters. Drop the obsolete
 move in Task 3; until then keep it inside this migration only if the local reset
 requires staged compatibility.
 
-- [ ] **Step 5: Regenerate and observe GREEN**
+- [x] **Step 5: Regenerate and observe GREEN**
 
 Run:
 
@@ -170,7 +207,7 @@ supabase test db --local supabase/tests/database/38_billing_reconciliation_worke
 Expected: test 42 passes. Test 38 may remain RED only on its obsolete scan-RPC
 assertion; update that assertion in Task 3 when the caller is replaced.
 
-- [ ] **Step 6: Commit durable state**
+- [x] **Step 6: Commit durable state**
 
 ```bash
 git add supabase/migrations/20260911130000_billing_reconciliation_state.sql supabase/schemas/billing.sql supabase/schemas/public.sql supabase/tests/database/42_billing_reconciliation_state.test.sql src/types/database.ts
@@ -207,7 +244,7 @@ export interface InvoiceDiscoveryPage {
 and optional
 `PaymentProvider.discoverSubscriptionInvoices(input): Promise<InvoiceDiscoveryPage>`.
 
-- [ ] **Step 1: Write failing pagination and identity tests**
+- [x] **Step 1: Write failing pagination and identity tests**
 
 Mock `/authorized_payments/search` pages and assert the request includes only
 the exact encoded `preapproval_id`, bounded `limit` and parsed local `offset`.
@@ -235,13 +272,13 @@ type MercadoPagoInvoiceCursor = { offset: number };
 Encode/decode it as base64url JSON and reject unknown keys, negative offsets or
 offsets not divisible by the requested page size.
 
-- [ ] **Step 2: Run provider tests and observe RED**
+- [x] **Step 2: Run provider tests and observe RED**
 
 Run: `pnpm test src/lib/billing/providers/__tests__/mercadopago.test.ts`
 
 Expected: FAIL because invoice discovery is absent.
 
-- [ ] **Step 3: Implement bounded discovery**
+- [x] **Step 3: Implement bounded discovery**
 
 Clamp `pageSize` to `1..20`. Build the request exactly from validated values:
 
@@ -262,7 +299,7 @@ The official reference to recheck is
 [Buscar en facturas](https://www.mercadopago.cl/developers/es/reference/online-payments/subscriptions/authorized-payment-search/get),
 which documents `preapproval_id` and offset/limit paging.
 
-- [ ] **Step 4: Run provider tests and observe GREEN**
+- [x] **Step 4: Run provider tests and observe GREEN**
 
 Run:
 
@@ -273,7 +310,7 @@ pnpm typecheck
 
 Expected: tests and typecheck pass.
 
-- [ ] **Step 5: Commit provider discovery**
+- [x] **Step 5: Commit provider discovery**
 
 ```bash
 git add src/lib/billing/types.ts src/lib/billing/providers/mercadopago.ts src/lib/billing/providers/__tests__/mercadopago.test.ts
@@ -309,7 +346,7 @@ export interface ReconciliationSummary {
 }
 ```
 
-- [ ] **Step 1: Write failing service cases**
+- [x] **Step 1: Write failing service cases**
 
 Replace the candidate mock with claimed rows including `subscription_id`,
 watermark and cursor. Assert:
@@ -329,7 +366,7 @@ watermark and cursor. Assert:
 - completion-RPC failure surfaces as invocation failure because durable state is
   unknown.
 
-- [ ] **Step 2: Run focused reconciliation tests and observe RED**
+- [x] **Step 2: Run focused reconciliation tests and observe RED**
 
 Run:
 
@@ -341,7 +378,7 @@ pnpm test src/app/api/internal/billing/worker/__tests__/route.test.ts
 Expected: FAIL because current `Promise.all` rejects the whole group and no
 claim completion/cursor protocol exists.
 
-- [ ] **Step 3: Implement one-candidate error boundaries**
+- [x] **Step 3: Implement one-candidate error boundaries**
 
 Generate a worker ID with `crypto.randomUUID()`, claim up to 20 rows, and process
 groups of five. Each candidate owns a `try/catch/finally` path that calls the
@@ -355,7 +392,7 @@ scan) and the current cursor. Apply every event sequentially for that
 subscription to preserve provider ordering. Store an intermediate cursor as
 `deferred`; complete only after `nextCursor === null`.
 
-- [ ] **Step 4: Update SQL/route contracts and remove the old scan**
+- [x] **Step 4: Update SQL/route contracts and remove the old scan**
 
 Update test 38 to assert the new service-only claim/complete RPCs and remove its
 expectation for `get_billing_reconciliation_candidates`. Amend the migration
@@ -363,7 +400,7 @@ and schema mirror to drop the old RPC after the replacement exists. Extend the
 route response tests to include `failed` and `deferred` counts and to retain the
 same authenticated `mode: 'reconciliation'` contract.
 
-- [ ] **Step 5: Run focused TypeScript and database GREEN**
+- [x] **Step 5: Run focused TypeScript and database GREEN**
 
 Run:
 
@@ -377,7 +414,7 @@ pnpm typecheck
 
 Expected: all commands pass.
 
-- [ ] **Step 6: Commit worker resilience**
+- [x] **Step 6: Commit worker resilience**
 
 ```bash
 git add src/lib/billing/reconciliation.ts src/lib/billing/__tests__/reconciliation.test.ts src/app/api/internal/billing/worker/__tests__/route.test.ts supabase/tests/database/38_billing_reconciliation_worker.test.sql supabase/migrations/20260911130000_billing_reconciliation_state.sql supabase/schemas/public.sql
@@ -397,7 +434,7 @@ git commit -m "feat: make billing reconciliation resumable"
 - Consumes: Tasks 1–3.
 - Produces: local code/test evidence for MP-12 and MP-14.
 
-- [ ] **Step 1: Add the local interruption drill**
+- [x] **Step 1: Add the local interruption drill**
 
 Document a disposable-local procedure that seeds 25 subscriptions, makes one
 provider candidate fail, stops after a stored intermediate cursor, expires its
@@ -405,7 +442,7 @@ lease, invokes the worker again and verifies all 25 state rows move forward.
 The evidence query must compare distinct local invoice/event/payment IDs before
 and after replay.
 
-- [ ] **Step 2: Run the complete local gate**
+- [x] **Step 2: Run the complete local gate**
 
 Run:
 
@@ -426,13 +463,13 @@ git diff --check
 Expected: all commands exit 0 after a disposable reset/start. Record the exact
 test counts and generated-type diff.
 
-- [ ] **Step 3: Update Phase 6 and matrix status**
+- [x] **Step 3: Update Phase 6 and matrix status**
 
 Mark the code portions of MP-12/14 implemented and locally tested only with the
 fresh commands. Leave real provider omission, multi-invocation Cloud progress
 and interruption recovery `[NO VERIFICADO]` for plans 011e/011f.
 
-- [ ] **Step 4: Commit the verified handoff**
+- [x] **Step 4: Commit the verified handoff**
 
 ```bash
 git add docs/runbooks/billing-reconciliation.md docs/exec-plans/active/011-phase6-reconciliation-tasks.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md

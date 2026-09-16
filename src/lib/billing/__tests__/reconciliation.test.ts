@@ -372,6 +372,39 @@ describe('reconcileNonTerminalSubscriptions', () => {
     expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'completed' }));
   });
 
+  it('skips invoice discovery and completes once when a fresh snapshot is terminal', async () => {
+    mocks.snapshot.mockResolvedValue({
+      externalSubscriptionId: candidate.external_subscription_id,
+      status: 'canceled',
+      cancelAtPeriodEnd: false,
+      providerVersion: 'terminal-v1',
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(
+      expect.objectContaining({ repaired: 1, skipped: 1, failed: 0, deferred: 0 }),
+    );
+
+    expect(mocks.reduce).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalEventId: 'reconciliation:mercadopago:pa-1:terminal-v1',
+        status: 'canceled',
+      }),
+      { expectedSubscriptionUpdatedAt: candidate.subscription_updated_at },
+    );
+    expect(mocks.discover).not.toHaveBeenCalled();
+    expect(completionCalls()).toHaveLength(1);
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_subscription_id: candidate.subscription_id,
+        p_outcome: 'skipped',
+        p_next_cursor: null,
+        p_provider_watermark: null,
+      }),
+    );
+  });
+
   it('persists an intermediate cursor as deferred and resumes from it without advancing final state', async () => {
     mocks.discover.mockResolvedValue({
       events: [],

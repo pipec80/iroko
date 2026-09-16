@@ -202,6 +202,10 @@ export async function reconcileNonTerminalSubscriptions(input: {
     }
     if (snapshotResult.status === 'stale') summary.stale += 1;
     else if (snapshotResult.status === 'applied') summary.repaired += 1;
+    if (snapshot.status === 'canceled' || snapshot.status === 'unpaid') {
+      summary.skipped += 1;
+      return { outcome: 'skipped' };
+    }
     if (Date.now() >= deadline) return { outcome: 'deferred' };
 
     const discoverSubscriptionInvoices = provider.discoverSubscriptionInvoices;
