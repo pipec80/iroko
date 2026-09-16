@@ -1,6 +1,7 @@
 # Operational Evidence Register
 
-Last updated: **2026-09-11** (documentation/code inspection; no fresh Cloud run)
+Last updated: **2026-09-16** (read-only billing-worker rollout preflight; no
+Cloud mutation or worker invocation)
 
 This register prevents historical green checks from being read as present-day
 operational truth. GitHub Actions and provider consoles remain the primary live
@@ -28,7 +29,7 @@ the rule that determines when it expires.
 
 | Capability                       | Environment                                    | Latest inspected evidence                                                                                                                                                                                                                                  | Verified at (UTC)     | Validity                         | Status                                                               |
 | -------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | -------------------------------- | -------------------------------------------------------------------- |
-| Documentation checker            | Documentation worktree based on `66bc9b2`      | `pnpm docs:check`: 82 Markdown files; `pnpm test:docs-check`: 4/4. Run with process-local `pnpm_config_verify_deps_before_run=false` and outside sandbox after Git/Node spawn EPERM.                                                                       | 2026-09-11            | Commit/worktree-bound            | CURRENT for this documentary surface only                            |
+| Documentation checker            | 011e Task 1 documentation worktree             | `pnpm docs:check`: 88 Markdown files; `pnpm test:docs-check`: 4/4; Prettier and `git diff --check` passed for the two changed documents. The two pnpm checks ran outside the sandbox after its Git/Node spawn `EPERM`.                                     | 2026-09-16            | Commit/worktree-bound            | CURRENT for this documentary surface only                            |
 | Production smoke                 | Vercel production                              | Latest `Nightly Monitoring / Production Smoke Tests` run not inspected in this pass                                                                                                                                                                        | —                     | 48 hours                         | **[NO VERIFICADO]**                                                  |
 | Email worker                     | Linked Supabase                                | Latest `Nightly Monitoring / Email Worker Health` result not inspected in this pass                                                                                                                                                                        | —                     | 48 hours                         | **[NO VERIFICADO]**                                                  |
 | Database advisors                | CI local database rebuilt from migrations      | Latest `Nightly Monitoring / Database Advisors` result not inspected in this pass                                                                                                                                                                          | —                     | 48 hours                         | **[NO VERIFICADO]**                                                  |
@@ -36,7 +37,7 @@ the rule that determines when it expires.
 | Full CI and preview build        | GitHub Actions + Vercel Preview                | [PR #152](https://github.com/pipec80/iroko/pull/152) head `b396aa4` passed Quality, CodeQL, Documentation, Security, Gitleaks, Unit, Database Types/Tests, Edge Function, Chromium/WebKit E2E, Build and Vercel Preview; it was squash-merged as `4a0a3d4` | 2026-08-27            | Commit-bound                     | CURRENT for PR head; separate `main` run **[NO VERIFICADO]**         |
 | Mercado Pago basic circuit       | Test-seller sandbox via production deployment  | Historical informal 2026-09-10 record: checkout → active → first invoice paid → cancel, with adapter fix #179. Formal sanitized evidence is still pending; this is not real-money production acceptance.                                                   | 2026-09-10 (recorded) | Change-bound                     | Historical partial provider observation; current **[NO VERIFICADO]** |
 | Mercado Pago v1 Chile acceptance | Monthly CLP, hosted pending/no associated plan | [MP-01–15 matrix](../exec-plans/active/011-mercadopago-v1-chile-acceptance.md): renewal, failure/recovery, cancellation access, partial refunds, abandoned/unknown checkout and complete invoice discovery remain open.                                    | —                     | Scenario + change-bound          | Internal certification pending; **[NO VERIFICADO]**                  |
-| Billing workers                  | Supabase scheduler/Vault → Vercel Node         | Route, RPCs, recovery/anomalies and CAS implemented at `66bc9b2`; last record 2026-09-10 reports no secret/Vault/firewall/cron and empty health. No current runtime inspection.                                                                            | 2026-09-10 (recorded) | 48 hours + configuration changes | Pending operational rollout; current **[NO VERIFICADO]**             |
+| Billing workers                  | Supabase scheduler/Vault → Vercel Node         | Read-only preflight found the stable alias and worker-route artifact, but did not establish its source SHA, linked Supabase migration state, Vault/cron/health state, route reachability, or shared-secret configuration. No worker was invoked.           | 2026-09-16            | 48 hours + configuration changes | Pending operational rollout; current **[NO VERIFICADO]**             |
 | Other billing providers          | Stripe, Paddle, Lemon Squeezy                  | Independent adapter/catalogue/events/capabilities/reconciliation/test acceptance still required; MP acceptance does not cover them.                                                                                                                        | —                     | Provider + change-bound          | **[NO VERIFICADO]**                                                  |
 
 ## Mercado Pago closeout evidence contract — 2026-09-11
@@ -92,25 +93,65 @@ smoke, auth/tenant isolation, email delivery, observability/alerts, migration
 parity and operational recovery. Commercial analytics/onboarding/distribution
 in Plan 013 can follow later; necessary security and operation cannot.
 
-## Local documentation validation — 2026-09-11
+## Billing worker rollout preflight — 2026-09-16
 
-Results: documentation checker passed for 82 Markdown files; checker tests
-passed 4/4; Prettier passed on all 12 changed Markdown files; `git diff --check`
-passed. These results cover the documentation worktree only.
+This is a read-only preflight for Plan 011e Task 1. It records only the facts
+inspected on 2026-09-16; it does not authorize a rollout, establish current
+production behavior, or replace the correlated evidence required by Tasks 2–5.
+No secret values, provider payloads, customer data, signed URLs, or raw Cloud
+output are retained here.
+
+| Preflight area           | Observed result                                                                                                                                                                              | Operational meaning                                                                                                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local checkout           | Clean `feat/mercadopago-v1-implementation` at `83feceb0724aaf06cc12b7ffce17278874cf43bf`, committed `2026-09-16T16:36:39-03:00`.                                                             | This identifies the local candidate only. It does not establish deployed source identity.                                                                                           |
+| Local tooling            | Supabase CLI `2.110.0` and Vercel CLI `59.15.1` are installed. Vercel CLI was authenticated as the sanitized account alias `pipec80`.                                                        | Installation and Vercel authentication do not establish Supabase linkage or authorization to mutate either platform.                                                                |
+| Stable alias             | `project-a89lv.vercel.app` resolved to production deployment `dpl_EE7N9eropjg64w4MDYdqx7QSZ93A`, `READY`, with the worker-route artifact present.                                            | The deployed source SHA was not established. The alias must be reconciled to the reviewed 011a–011d revision before a rollout.                                                      |
+| Migration comparison     | Local migration inventory reaches `20260911130000_billing_reconciliation_state`. `supabase migration list --linked` stopped with `LegacyProjectNotLinkedError`.                              | Linked migration parity is **[NO VERIFICADO]**. Do not apply migrations or schedule workers until the intended linked project is identified and inspected read-only.                |
+| Vercel environment names | Scoped `vercel env ls` showed `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, and `MERCADOPAGO_WEBHOOK_URL` in Production and Preview. `BILLING_RECONCILIATION_SECRET` was absent. | Variable presence says nothing about values, application/seller coherence, deployment ingestion, or webhook behavior. The worker cannot be accepted without a paired shared secret. |
+| Vault, cron and health   | Vault secret names/values, `cron.job`, `private.billing_worker_health`, worker URL, and configuration values were not inspected.                                                             | **[NO VERIFICADO]**. No schedule, net request, health row, ledger/job effect, or worker progress evidence exists from this preflight.                                               |
+| Stable-route preflight   | The unauthenticated `POST {"mode":"recovery"}` was deliberately not sent. Automatic safety review rejected it because a misconfigured route could execute a worker.                          | Route reachability and its expected `401` remain **[NO VERIFICADO]**. Do not use a blind unauthenticated invocation to fill this gap.                                               |
+
+### Required authorization boundary and proposed mutations
+
+No rollout authorization is granted by this record or by the local coding
+approval. After resolving the read-only blockers above, request one explicit
+authorization that names the target Vercel production application and linked
+Supabase project and permits only the following ordered mutations:
+
+1. Link and inspect the intended Supabase target read-only, then reconcile its
+   migration inventory and the stable deployment's source SHA with the reviewed
+   011a–011d revision.
+2. Create or rotate one shared `BILLING_RECONCILIATION_SECRET` through
+   secret-safe Vercel and Vault interfaces, preserving neither value nor command
+   input in evidence.
+3. Create or rotate Vault `billing_worker_url` for the verified stable URL and
+   verify that the Vercel deployment receives the paired secret.
+4. Add a narrowly scoped internal-route allowance only if the verified route is
+   otherwise blocked; preserve protection for unrelated routes.
+5. After two correlated manual recovery results, create and observe the
+   recovery schedule; only then create and observe the reconciliation schedule.
+
+Each subsequent stage must retain its own sanitized HTTP, health and durable
+ledger/job or reconciliation-state evidence. A successful cron record alone is
+not acceptance evidence. If any identity, secret-pair, route, migration or
+durable-effect check disagrees, stop before scheduling and preserve the durable
+state for investigation.
+
+## Local documentation validation — 2026-09-16
+
+Results: documentation checker passed for 88 Markdown files; checker tests
+passed 4/4; Prettier passed for the two changed Markdown files; and
+`git diff --check` passed. These results cover the preflight documentation
+worktree only.
 
 Commands: `pnpm docs:check`, `pnpm test:docs-check`,
-`pnpm exec prettier --ignore-path <empty temporary ignore file> --write <modified Markdown files>`,
-`pnpm exec prettier --ignore-path <empty temporary ignore file> --check <modified Markdown files>` and `git diff --check`.
-The temporary empty ignore file makes Prettier actually inspect `docs/`,
-which the repository's normal `.prettierignore` excludes. The explicit file
-list contains only the 12 Markdown documents in this delivery.
-For this run pnpm uses `$env:pnpm_config_verify_deps_before_run = 'false'`
-only in the invoking process: its default pre-script dependency sync aborted
-with `ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY`. The next sandboxed attempt
-hit `spawnSync git EPERM` / `spawn EPERM`; the documentation scripts passed
-outside the sandbox. No dependency install was completed, and no dependency
-or package-manager configuration is changed by this documentation delivery.
-Application tests, build and Cloud checks are not part of this validation.
+`pnpm exec prettier --ignore-path NUL --write docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md`,
+`pnpm exec prettier --ignore-path NUL --check docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md`,
+and `git diff --check`. The two pnpm commands first failed inside the sandbox
+because Node could not spawn Git (`EPERM`), then passed outside it. No dependency
+install was completed, and no dependency or package-manager configuration was
+changed. Application tests, build and Cloud checks are not part of this
+validation.
 
 ## Historical evidence
 

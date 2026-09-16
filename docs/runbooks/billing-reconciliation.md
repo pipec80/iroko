@@ -274,14 +274,54 @@ create a blind second provider POST.
 
 ## Configure and schedule
 
-Use the stable production URL (never a protected Preview URL). Store `billing_worker_url` and `billing_reconciliation_secret` in Vault through an authorized operation; set the same secret as `BILLING_RECONCILIATION_SECRET` in Vercel. Verify the route manually before scheduling.
+### 011e read-only rollout preflight — 2026-09-16
+
+The latest preflight is recorded in the [operational evidence
+register](../quality/operational-evidence.md#billing-worker-rollout-preflight--2026-09-16).
+It found a `READY` stable deployment with a worker-route artifact, but did not
+establish its source SHA; local Supabase was not linked to the intended remote
+project; `BILLING_RECONCILIATION_SECRET` was absent from the inspected Vercel
+Production and Preview environment names; and Vault, cron, health and worker
+URL state remain **[NO VERIFICADO]**. Those facts are blockers, not an
+authorization to repair them.
+
+Do not send an unauthenticated POST merely to test the route. In this preflight
+that request was not made because a misconfigured route could run a worker.
+Route reachability therefore remains **[NO VERIFICADO]** until an authorized,
+secret-safe rollout step can establish it alongside deployment identity and
+durable effects.
+
+Before a mutation, obtain explicit authorization naming both the Vercel
+production application and linked Supabase project. The approved list must be
+limited to: target linkage/inspection and revision reconciliation; paired
+Vercel/Vault shared-secret creation or rotation; Vault worker-URL creation or
+rotation; a narrow route allowance if needed; recovery activation and
+observation; then reconciliation activation and observation. Do not combine the
+two schedules or use a Preview URL.
+
+### Authorized configuration and schedule
+
+Only after the preceding preflight blockers are resolved and the named mutation
+authorization is granted, use the verified stable production URL (never a
+protected Preview URL). Store `billing_worker_url` and
+`billing_reconciliation_secret` in Vault through an authorized operation; set
+the same secret as `BILLING_RECONCILIATION_SECRET` in Vercel. Verify the route
+through the authorized worker procedure before scheduling.
 
 ```sql
 select cron.schedule('billing-recovery-worker', '*/5 * * * *', $$select private.invoke_billing_worker('recovery')$$);
 select cron.schedule('billing-reconciliation-worker', '0 * * * *', $$select private.invoke_billing_worker('reconciliation')$$);
 ```
 
-Pause with `cron.unschedule(jobid)` after recording the current definitions. Recreate them with the statements above after the incident is resolved. To rotate the secret, update Vercel and Vault in one maintenance window, verify a manual invocation, then inspect health.
+Activate recovery first and observe two correlated manual results before
+creating its schedule. Observe two scheduled recovery results before activating
+reconciliation. For each invocation correlate HTTP response, worker health and
+ledger/job or reconciliation-state effects; cron success alone is insufficient.
+
+Pause with `cron.unschedule(jobid)` after recording the current definitions.
+Recreate them with the statements above after the incident is resolved. To
+rotate the secret, update Vercel and Vault in one maintenance window, verify a
+manual invocation, then inspect health.
 
 ## Local-only multi-batch interruption drill
 
