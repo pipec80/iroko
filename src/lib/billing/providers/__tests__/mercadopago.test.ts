@@ -1430,6 +1430,93 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('treats an impossible RFC3339 calendar date as unknown modification evidence', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        paging: { offset: 0, limit: 1, total: 1 },
+        results: [authorizedPayment(4, 'approved', { last_modified: '2026-02-30T11:00:00Z' })],
+      }),
+    });
+
+    const result = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 1,
+    });
+
+    expect(result).toMatchObject({ providerWatermark: null });
+    expect(result?.events).toHaveLength(1);
+  });
+
+  it('advances to the next page after a fully stale page so it can emit a later invoice', async () => {
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          paging: { offset: 0, limit: 2, total: 3 },
+          results: [
+            authorizedPayment(5, 'approved', { last_modified: '2026-08-30T00:00:00Z' }),
+            authorizedPayment(6, 'approved', { last_modified: '2026-08-31T00:00:00Z' }),
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          paging: { offset: 2, limit: 2, total: 3 },
+          results: [authorizedPayment(7, 'approved', { last_modified: '2026-09-02T00:00:00Z' })],
+        }),
+      });
+
+    const first = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 2,
+    });
+    expect(first).toMatchObject({ events: [], nextCursor: expect.any(String) });
+
+    const second = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 2,
+      cursor: first?.nextCursor ?? undefined,
+    });
+
+    expect(fetchMock).toHaveBeenLastCalledWith(
+      'https://api.mercadopago.com/authorized_payments/search?preapproval_id=pa%20%2Fsubscription%3F&limit=2&offset=2',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+    expect(
+      second?.events.map((event) =>
+        event.type === 'invoice_paid' || event.type === 'invoice_payment_failed' ?
+          event.externalInvoiceId
+        : undefined,
+      ),
+    ).toEqual(['invoice_7']);
+  });
+
+  it.each([
+    [0, 1],
+    [100, 20],
+  ])('clamps requested page size %d to provider limit %d', async (pageSize, expectedLimit) => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({ paging: { offset: 0, limit: expectedLimit, total: 0 }, results: [] }),
+    });
+
+    await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://api.mercadopago.com/authorized_payments/search?preapproval_id=pa%20%2Fsubscription%3F&limit=${expectedLimit}&offset=0`,
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    );
+  });
+
   it('filters only valid stale modifications, emits unknown modifications conservatively, and normalizes lifecycle events', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
