@@ -2196,15 +2196,6 @@ export type Database = {
           provider: string
         }[]
       }
-      get_billing_reconciliation_candidates: {
-        Args: { p_batch_size: number }
-        Returns: {
-          account_id: string
-          external_subscription_id: string
-          provider: string
-          subscription_updated_at: string
-        }[]
-      }
       get_email_worker_health: {
         Args: never
         Returns: {

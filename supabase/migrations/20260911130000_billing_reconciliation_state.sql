@@ -279,6 +279,8 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.get_billing_reconciliation_candidates(integer);
+
 REVOKE ALL ON FUNCTION public.claim_billing_reconciliation_candidates(integer, integer, text)
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.complete_billing_reconciliation_candidate(
