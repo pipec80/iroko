@@ -283,6 +283,145 @@ select cron.schedule('billing-reconciliation-worker', '0 * * * *', $$select priv
 
 Pause with `cron.unschedule(jobid)` after recording the current definitions. Recreate them with the statements above after the incident is resolved. To rotate the secret, update Vercel and Vault in one maintenance window, verify a manual invocation, then inspect health.
 
+## Local-only multi-batch interruption drill
+
+This drill is disposable-local evidence for MP-12 and MP-14. It does not
+contact Mercado Pago, invoke a deployed route, create a checkout, or authorize
+Cloud configuration. The procedure requires a test-double provider seam that
+returns deterministic `drill-011d:` invoice, event and payment aliases; do not
+substitute production credentials or provider IDs.
+
+The repository has **not** recorded one combined execution of this drill yet.
+The separate local gates cited below prove its state, cursor, paging and
+failure-isolation components. Record the combined run only after retaining the
+sanitized output described in step 7; until then, Cloud and live-interruption
+evidence remain **[NO VERIFICADO]**.
+
+1. Start from a disposable database: run `pnpm supa:reset`. Seed exactly 25
+   active Mercado Pago fixture subscriptions with external aliases
+   `drill-011d:subscription:01` through `:25`; set their
+   `billing.reconciliation_state.next_scan_at` in the past. Do not run this
+   against a linked or production project.
+2. Configure the local test double so subscriptions 01–20 return one bounded
+   discovery page. It must make subscription 07 return the sanitized failure
+   `provider_fetch_failed`; subscriptions 01–06 and 08–20 each return a
+   deterministic invoice, event and payment alias. The first page for at least
+   one successful subscription must return a non-null cursor such as
+   `drill-011d:cursor:page-2`.
+3. Invoke `reconcileNonTerminalSubscriptions` with `batchSize: 20` and a
+   normal 45-second budget. Assert the summary has `scanned: 20`, one failure
+   and a deferred cursor-bearing candidate. Persist the following local
+   snapshot *after* that first invocation and before any replay:
+
+   ```sql
+   CREATE TEMP TABLE drill_011d_ids_before_replay AS
+   SELECT 'invoice'::text AS kind, external_invoice_id AS external_id
+   FROM billing.invoices
+   WHERE provider = 'mercadopago'
+     AND external_invoice_id LIKE 'drill-011d:%'
+   UNION
+   SELECT 'event'::text, external_event_id
+   FROM billing.events
+   WHERE provider = 'mercadopago'
+     AND external_event_id LIKE 'drill-011d:%'
+   UNION
+   SELECT 'payment'::text, external_payment_id
+   FROM billing.payment_attempts
+   WHERE provider = 'mercadopago'
+     AND external_payment_id LIKE 'drill-011d:%';
+
+   SELECT kind, count(*) AS rows, count(DISTINCT external_id) AS distinct_ids
+   FROM drill_011d_ids_before_replay
+   GROUP BY kind
+   ORDER BY kind;
+
+   SELECT subscription_id, scan_cursor, scan_watermark, lease_owner, lease_expires_at,
+          failure_count, last_error_code, next_scan_at
+   FROM billing.reconciliation_state
+   WHERE subscription_id IN (
+     SELECT id
+     FROM billing.subscriptions
+     WHERE external_subscription_id LIKE 'drill-011d:subscription:%'
+   )
+   ORDER BY subscription_id;
+   ```
+
+4. Simulate interruption only in that local fixture: do not call completion for
+   the cursor-bearing lease. Set only that row's `lease_expires_at` in the past
+   and `next_scan_at` in the past. Preserve its cursor and watermark. The
+   failed candidate remains an ordinary retry according to its recorded
+   backoff; do not erase its failure state to manufacture progress.
+5. Change the test double to return the final page when it receives
+   `drill-011d:cursor:page-2`, then invoke the worker again. Continue bounded
+   invocations until all 25 fixture state rows have a future `next_scan_at`, no
+   lease owner/expiry, and either a recorded final completion or the expected
+   retained failure/backoff. The second invocation must also take the five rows
+   beyond the first twenty; it must not rely on changing `updated_at` to escape
+   the first page.
+6. Snapshot the IDs after replay and compare them to the saved pre-replay set.
+   No aliases from the first invocation may be duplicated or removed by replay;
+   any new alias must be the documented page-2 discovery rather than a repeat
+   of page 1.
+
+   ```sql
+   CREATE TEMP TABLE drill_011d_ids_after_replay AS
+   SELECT 'invoice'::text AS kind, external_invoice_id AS external_id
+   FROM billing.invoices
+   WHERE provider = 'mercadopago'
+     AND external_invoice_id LIKE 'drill-011d:%'
+   UNION
+   SELECT 'event'::text, external_event_id
+   FROM billing.events
+   WHERE provider = 'mercadopago'
+     AND external_event_id LIKE 'drill-011d:%'
+   UNION
+   SELECT 'payment'::text, external_payment_id
+   FROM billing.payment_attempts
+   WHERE provider = 'mercadopago'
+     AND external_payment_id LIKE 'drill-011d:%';
+
+   SELECT kind, external_id, count(*) AS occurrences
+   FROM drill_011d_ids_after_replay
+   GROUP BY kind, external_id
+   HAVING count(*) <> 1;
+
+   SELECT kind, external_id
+   FROM drill_011d_ids_before_replay
+   EXCEPT
+   SELECT kind, external_id
+   FROM drill_011d_ids_after_replay;
+
+   SELECT kind, external_id
+   FROM drill_011d_ids_after_replay
+   EXCEPT
+   SELECT kind, external_id
+   FROM drill_011d_ids_before_replay
+   WHERE external_id NOT LIKE 'drill-011d:invoice:page-2:%'
+     AND external_id NOT LIKE 'drill-011d:event:page-2:%'
+     AND external_id NOT LIKE 'drill-011d:payment:page-2:%';
+
+   SELECT count(*) AS advanced_rows
+   FROM billing.reconciliation_state AS state
+   JOIN billing.subscriptions AS subscription ON subscription.id = state.subscription_id
+   WHERE subscription.external_subscription_id LIKE 'drill-011d:subscription:%'
+     AND state.next_scan_at > now()
+     AND state.lease_owner IS NULL
+     AND state.lease_expires_at IS NULL;
+   ```
+
+7. Accept the local drill only when the first query returns no duplicate IDs,
+   both `EXCEPT` queries return zero rows, and `advanced_rows = 25`. Preserve
+   only the UTC time, commit, commands, counts and the `drill-011d:` aliases in
+   the evidence register. A missing or different result is a failed local
+   drill, not a reason to retry provider actions or modify access.
+
+The automated base for this procedure is
+`supabase/tests/database/42_billing_reconciliation_state.test.sql` (25 rows,
+lease recovery, cursor resume and true second-session `SKIP LOCKED`) and
+`src/lib/billing/__tests__/reconciliation.test.ts` (provider failure isolation,
+deadline, cursor replay and reducer idempotency). Those tests do not replace a
+combined local drill, a Cloud multi-invocation test or provider acceptance.
+
 ## Incidents
 
 - Mercado Pago outage: pause both schedules if retries would amplify the outage; do not delete jobs. Resume recovery first.

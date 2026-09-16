@@ -445,21 +445,29 @@ Execute them through
 authorized rollout [`011e`](011e-mercadopago-worker-rollout.md) and internal
 acceptance [`011f`](011f-mercadopago-internal-acceptance.md).
 
-- [ ] **Wholly missed invoices (MP-12):** `recoverResource` requires a known
-      payment ID; snapshot reads only preapproval. Define bounded paginated
-      invoice discovery by subscription, durable progress/window, correlation
-      and shared-reducer application. Prove a provider invoice with no local
-      event/job is discovered and applied once.
-- [ ] **Progress between batches (MP-14):** candidate SQL orders by
-      `subscription.updated_at,id LIMIT 20` without a scan cursor. Stable
-      duplicates, skipped providers or failed candidates can keep occupying
-      the head. Demonstrate and resolve starvation with more than 20 rows,
-      unchanged provider versions and interrupted runs.
-- [ ] **Failure isolation (MP-14):** reconciliation calls `Promise.all` with
-      no per-candidate provider-error handling; one rejection fails the
-      invocation. Define continuation/retry policy, sanitized per-item failure
-      evidence and reliable progress. Recovery already has per-job handling;
-      validate lease recovery after timeout/process interruption.
+- [x] **Wholly missed invoices (MP-12) — código y prueba local:** la
+      discovery paginada y acotada por suscripción conserva cursor/ventana en
+      `billing.reconciliation_state`, normaliza eventos para el reducer común
+      y el replay local es idempotente. El gate fresco de 011d pasó pgTAP
+      559/559 y billing Vitest 216/216 el 2026-09-16. La omisión real del
+      proveedor y su evidencia sanitizada siguen **[NO VERIFICADO]** hasta
+      011e/011f.
+- [x] **Progress between batches (MP-14) — código y prueba local:** el claim
+      durable ordena `next_scan_at,subscription_id`, limita a 20 y avanza cada
+      resultado; pgTAP cubre 25 candidatos, cursor, lease vencido y una segunda
+      sesión `SKIP LOCKED`. La ruta y el worker aíslan fallos por candidato,
+      limitan grupos a cinco y mantienen el presupuesto de 45 segundos. El
+      gate fresco de 011d pasó pgTAP 559/559, billing Vitest 216/216 y route
+      7/7 el 2026-09-16. No constituye observación de múltiples invocaciones
+      Cloud ni una interrupción de proceso real: ambas quedan **[NO
+      VERIFICADO]** para 011e/011f.
+- [x] **Failure isolation (MP-14) — código y prueba local:** una falla de
+      proveedor se registra con código acotado y backoff sin abandonar los
+      candidatos posteriores; el lease vencido vuelve a ser reclamable. El
+      drill combinado local queda especificado en el
+      [runbook](../../runbooks/billing-reconciliation.md#local-only-multi-batch-interruption-drill)
+      pero su ejecución única con las 25 filas y sus aliases aún no está
+      registrada; no atribuirle una ejecución hasta capturar su evidencia.
 - [ ] **Ordering and paid-through access (MP-03/05/07):** CAS rejects a local
       race; it alone does not prove remote version ordering, cancellation
       timestamps or that `next_payment_date` represents a paid period. Verify
@@ -477,16 +485,18 @@ acceptance [`011f`](011f-mercadopago-internal-acceptance.md).
   additional code/acceptance gates and verify both modes under authorized
   rollout. Empty health is historical evidence from 2026-09-10; current Cloud
   execution remains **[NO VERIFICADO]**.
-- A missed webhook (simulated by manually diverging a test subscription's
-  local status from its provider state) is detected by the next
-  reconciliation run.
+- La detección local de una invoice sin webhook conocido y su replay ya tienen
+  código y pruebas; observar una omisión real del proveedor y su convergencia
+  sigue **[NO VERIFICADO]** hasta 011e/011f.
 - Safe drift (status/period/cancel flag) repairs through the same reducer
   webhooks use — no parallel write path.
 - Ambiguous drift (price/plan mismatch, subscription gone at provider)
   never guesses — always `billing_reconciliation_drift` + Sentry.
-- Two concurrent runs cannot double-charge or double-repair — demonstrate
-  with implemented regression tests and the MP-11/14 operational evidence;
-  the historical Task 5 examples alone do not prove this.
+- Dos sesiones locales ya demuestran `SKIP LOCKED`; la demostración de varias
+  invocaciones Cloud, interrupción de proceso y replay operacional de MP-14
+  sigue **[NO VERIFICADO]** hasta 011e/011f. El drill local de 25 filas está
+  definido en el runbook y debe ejecutarse con evidencia sanitizada antes de
+  trasladar ese estado a operación.
 - Runbook exists and a person unfamiliar with the code could follow it
   during an incident.
 - `pnpm typecheck && pnpm lint`, relevant Vitest, pgTAP pass.
