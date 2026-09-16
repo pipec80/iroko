@@ -1,6 +1,6 @@
 BEGIN;
 
-SELECT plan(44);
+SELECT plan(47);
 
 SELECT has_table(
   'billing',
@@ -264,8 +264,8 @@ SELECT throws_ok(
 );
 
 CREATE TEMP TABLE claim_42_first ON COMMIT DROP AS
-SELECT *
-FROM public.claim_billing_reconciliation_candidates(20, 900, 'worker-42-a');
+SELECT row_number() OVER () AS claim_ordinal, claimed.*
+FROM public.claim_billing_reconciliation_candidates(20, 900, 'worker-42-a') AS claimed;
 CREATE TEMP TABLE claim_42_second ON COMMIT DROP AS
 SELECT *
 FROM public.claim_billing_reconciliation_candidates(20, 900, 'worker-42-b');
@@ -281,7 +281,7 @@ SELECT is(
   'a claim contains unique subscriptions'
 );
 SELECT is(
-  (SELECT array_agg(subscription_id ORDER BY subscription_id) FROM claim_42_first),
+  (SELECT array_agg(subscription_id ORDER BY claim_ordinal) FROM claim_42_first),
   (
     SELECT array_agg(
       (
@@ -292,7 +292,7 @@ SELECT is(
     )
     FROM generate_series(1, 20) AS fixtures(fixture_number)
   ),
-  'identical due times are claimed in subscription UUID order'
+  'the returned ordinal follows subscription UUID order for identical due times'
 );
 SELECT is(
   (SELECT count(*) FROM claim_42_second),
@@ -513,6 +513,21 @@ SELECT ok(
 UPDATE billing.reconciliation_state
 SET failure_count = 3
 WHERE subscription_id = '00000000-0000-0000-0000-000000004234';
+SELECT throws_ok(
+  $$
+    SELECT public.complete_billing_reconciliation_candidate(
+      '00000000-0000-0000-0000-000000004234',
+      'worker-42-a',
+      'failed',
+      NULL,
+      NULL,
+      NULL
+    )
+  $$,
+  'P0001',
+  'billing_reconciliation_error_code_required',
+  'failed completion rejects a null error code'
+);
 SELECT is(
   public.complete_billing_reconciliation_candidate(
     '00000000-0000-0000-0000-000000004234',
@@ -543,6 +558,21 @@ UPDATE billing.reconciliation_state
 SET failure_count = 10,
   next_scan_at = now() - interval '1 second'
 WHERE subscription_id = '00000000-0000-0000-0000-000000004235';
+SELECT throws_ok(
+  $$
+    SELECT public.complete_billing_reconciliation_candidate(
+      '00000000-0000-0000-0000-000000004235',
+      'worker-42-a',
+      'failed',
+      NULL,
+      NULL,
+      '   '
+    )
+  $$,
+  'P0001',
+  'billing_reconciliation_error_code_required',
+  'failed completion rejects a blank error code'
+);
 SELECT is(
   public.complete_billing_reconciliation_candidate(
     '00000000-0000-0000-0000-000000004235',
@@ -601,18 +631,175 @@ SELECT ok(
   'skipped candidates move six hours forward'
 );
 
+UPDATE billing.reconciliation_state
+SET scan_cursor = 'obsolete-terminal-cursor',
+  scan_watermark = '2026-09-14T12:00:00Z',
+  last_error_code = 'obsolete_terminal_error'
+WHERE subscription_id = '00000000-0000-0000-0000-000000004236';
 UPDATE billing.subscriptions
 SET status = 'canceled'
 WHERE id = '00000000-0000-0000-0000-000000004236';
-SELECT is(
+SELECT ok(
   (
-    SELECT count(*)
+    SELECT next_scan_at BETWEEN now() + interval '5 hours 59 minutes 59 seconds'
+        AND now() + interval '6 hours 1 second'
+      AND lease_owner IS NULL
+      AND lease_expires_at IS NULL
+      AND scan_cursor IS NULL
+      AND scan_watermark IS NULL
+      AND last_error_code IS NULL
     FROM billing.reconciliation_state
     WHERE subscription_id = '00000000-0000-0000-0000-000000004236'
   ),
-  1::bigint,
-  'terminal transitions never delete reconciliation history'
+  'terminal transitions retain history, clear active work, and schedule skipped state'
 );
+
+CREATE EXTENSION IF NOT EXISTS dblink WITH SCHEMA extensions;
+DO $setup$
+BEGIN
+  PERFORM extensions.dblink_connect(
+    'reconciliation-lock-42',
+    'host=host.docker.internal port=54322 dbname=postgres user=postgres password=postgres'
+  );
+  PERFORM extensions.dblink_connect(
+    'reconciliation-claim-42',
+    'host=host.docker.internal port=54322 dbname=postgres user=postgres password=postgres'
+  );
+  PERFORM extensions.dblink_exec(
+    'reconciliation-lock-42',
+    $remote$
+      INSERT INTO auth.users(
+        id,email,raw_user_meta_data,created_at,updated_at,confirmation_token,
+        email_confirmed_at,recovery_token,aud,role
+      ) VALUES (
+        '00000000-0000-0000-0000-000000004393',
+        'reconciliation-contention-4393@example.com','{}',now(),now(),'',now(),'',
+        'authenticated','authenticated'
+      ) ON CONFLICT (id) DO NOTHING
+    $remote$
+  );
+  PERFORM extensions.dblink_exec(
+    'reconciliation-lock-42',
+    $remote$
+      INSERT INTO billing.customers(id,account_id,provider)
+      VALUES (
+        '00000000-0000-0000-0000-000000004394',
+        '00000000-0000-0000-0000-000000004393','mercadopago'
+      ) ON CONFLICT DO NOTHING
+    $remote$
+  );
+  PERFORM extensions.dblink_exec(
+    'reconciliation-lock-42',
+    $remote$
+      INSERT INTO billing.subscriptions(
+        id,customer_id,plan_id,status,provider,external_subscription_id
+      ) VALUES
+      (
+        '00000000-0000-0000-0000-000000004395',
+        '00000000-0000-0000-0000-000000004394',
+        (SELECT id FROM billing.plans WHERE slug='pro' AND "interval"='month'),
+        'active','mercadopago','pa-contention-42-a'
+      ),
+      (
+        '00000000-0000-0000-0000-000000004396',
+        '00000000-0000-0000-0000-000000004394',
+        (SELECT id FROM billing.plans WHERE slug='pro' AND "interval"='month'),
+        'active','mercadopago','pa-contention-42-b'
+      ) ON CONFLICT DO NOTHING
+    $remote$
+  );
+  PERFORM extensions.dblink_exec(
+    'reconciliation-lock-42',
+    $remote$
+      UPDATE billing.reconciliation_state
+      SET next_scan_at='1900-01-01T00:00:00Z',lease_owner=NULL,lease_expires_at=NULL
+      WHERE subscription_id IN (
+        '00000000-0000-0000-0000-000000004395',
+        '00000000-0000-0000-0000-000000004396'
+      )
+    $remote$
+  );
+  PERFORM extensions.dblink_exec('reconciliation-lock-42', 'BEGIN');
+END;
+$setup$;
+
+CREATE TEMP TABLE contention_lock_42 ON COMMIT DROP AS
+SELECT locked.subscription_id
+FROM extensions.dblink(
+  'reconciliation-lock-42',
+  $remote$
+    SELECT subscription_id::text
+    FROM billing.reconciliation_state
+    WHERE subscription_id='00000000-0000-0000-0000-000000004395'
+    FOR UPDATE
+  $remote$
+) AS locked(subscription_id text);
+
+SELECT results_eq(
+  $query$
+    SELECT claimed.subscription_id::uuid
+    FROM extensions.dblink(
+      'reconciliation-claim-42',
+      $remote$
+        SELECT subscription_id::text
+        FROM public.claim_billing_reconciliation_candidates(
+          1,30,'worker-42-concurrent'
+        )
+      $remote$
+    ) AS claimed(subscription_id text)
+  $query$,
+  $$VALUES ('00000000-0000-0000-0000-000000004396'::uuid)$$,
+  'a second session skips the concurrently locked first due row'
+);
+
+DO $cleanup$
+BEGIN
+  PERFORM extensions.dblink_exec('reconciliation-lock-42', 'ROLLBACK');
+  PERFORM extensions.dblink_disconnect('reconciliation-lock-42');
+  PERFORM extensions.dblink_exec(
+    'reconciliation-claim-42',
+    $remote$
+      DELETE FROM billing.reconciliation_state
+      WHERE subscription_id IN (
+        '00000000-0000-0000-0000-000000004395',
+        '00000000-0000-0000-0000-000000004396'
+      )
+    $remote$
+  );
+  PERFORM extensions.dblink_exec(
+    'reconciliation-claim-42',
+    $remote$
+      DELETE FROM billing.subscriptions
+      WHERE id IN (
+        '00000000-0000-0000-0000-000000004395',
+        '00000000-0000-0000-0000-000000004396'
+      )
+    $remote$
+  );
+  PERFORM extensions.dblink_exec(
+    'reconciliation-claim-42',
+    $remote$
+      DELETE FROM billing.customers
+      WHERE id='00000000-0000-0000-0000-000000004394'
+    $remote$
+  );
+  PERFORM extensions.dblink_exec(
+    'reconciliation-claim-42',
+    $remote$
+      DELETE FROM public.accounts
+      WHERE id='00000000-0000-0000-0000-000000004393'
+    $remote$
+  );
+  PERFORM extensions.dblink_exec(
+    'reconciliation-claim-42',
+    $remote$
+      DELETE FROM auth.users
+      WHERE id='00000000-0000-0000-0000-000000004393'
+    $remote$
+  );
+  PERFORM extensions.dblink_disconnect('reconciliation-claim-42');
+END;
+$cleanup$;
 
 SELECT throws_ok(
   $$

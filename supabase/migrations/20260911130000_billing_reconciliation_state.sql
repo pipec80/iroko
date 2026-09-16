@@ -59,6 +59,17 @@ BEGIN
     INSERT INTO billing.reconciliation_state (subscription_id)
     VALUES (NEW.id)
     ON CONFLICT (subscription_id) DO NOTHING;
+
+    IF NEW.status IN ('canceled', 'unpaid') THEN
+      UPDATE billing.reconciliation_state
+      SET next_scan_at = now() + interval '6 hours',
+        lease_owner = NULL,
+        lease_expires_at = NULL,
+        scan_cursor = NULL,
+        scan_watermark = NULL,
+        last_error_code = NULL
+      WHERE subscription_id = NEW.id;
+    END IF;
   END IF;
 
   RETURN NEW;
@@ -69,11 +80,15 @@ REVOKE ALL ON FUNCTION private.ensure_billing_reconciliation_state()
   FROM PUBLIC, anon, authenticated, service_role;
 
 CREATE TRIGGER ensure_billing_reconciliation_state
-  AFTER INSERT OR UPDATE OF external_subscription_id ON billing.subscriptions
+  AFTER INSERT OR UPDATE OF external_subscription_id, status ON billing.subscriptions
   FOR EACH ROW EXECUTE FUNCTION private.ensure_billing_reconciliation_state();
 
-INSERT INTO billing.reconciliation_state (subscription_id)
-SELECT subscription.id
+INSERT INTO billing.reconciliation_state (subscription_id, next_scan_at)
+SELECT subscription.id,
+  CASE
+    WHEN subscription.status IN ('canceled', 'unpaid') THEN now() + interval '6 hours'
+    ELSE now()
+  END
 FROM billing.subscriptions AS subscription
 WHERE NULLIF(btrim(subscription.external_subscription_id), '') IS NOT NULL
 ON CONFLICT (subscription_id) DO NOTHING;
@@ -187,6 +202,9 @@ BEGIN
   END IF;
   IF NULLIF(v_worker_id, '') IS NULL OR char_length(v_worker_id) > 100 THEN
     RAISE EXCEPTION 'billing_reconciliation_worker_invalid';
+  END IF;
+  IF p_outcome = 'failed' AND NULLIF(btrim(p_error_code), '') IS NULL THEN
+    RAISE EXCEPTION 'billing_reconciliation_error_code_required';
   END IF;
 
   SELECT state.*

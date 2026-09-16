@@ -4106,6 +4106,9 @@ BEGIN
   IF NULLIF(v_worker_id, '') IS NULL OR char_length(v_worker_id) > 100 THEN
     RAISE EXCEPTION 'billing_reconciliation_worker_invalid';
   END IF;
+  IF p_outcome = 'failed' AND NULLIF(btrim(p_error_code), '') IS NULL THEN
+    RAISE EXCEPTION 'billing_reconciliation_error_code_required';
+  END IF;
   SELECT state.* INTO v_state
   FROM billing.reconciliation_state AS state
   WHERE state.subscription_id = p_subscription_id
