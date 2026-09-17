@@ -459,6 +459,154 @@ describe('reconcileNonTerminalSubscriptions', () => {
     expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'completed' }));
   });
 
+  it('persists discovered anomalies before unrelated invoices without reducing the refunded payment', async () => {
+    mocks.discover.mockResolvedValue({
+      events: [
+        {
+          type: 'invoice_paid',
+          provider: 'mercadopago',
+          externalEventId: 'invoice-ordinary',
+          accountId: candidate.account_id,
+        },
+      ],
+      financialAnomalies: [
+        {
+          anomalyType: 'partial_refund',
+          externalResourceId: 'payment-discovery-partial',
+          observedStatus: 'approved',
+          originalAmount: 19_990,
+          affectedAmount: 5_000,
+          currency: 'CLP',
+        },
+      ],
+      nextCursor: null,
+      providerWatermark: '2026-09-12T12:00:00Z',
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ anomalous: 1, repaired: 2 }));
+
+    expect(mocks.rpc).toHaveBeenCalledWith('upsert_billing_financial_anomaly', {
+      p_provider: candidate.provider,
+      p_anomaly_type: 'partial_refund',
+      p_external_resource_id: 'payment-discovery-partial',
+      p_observed_status: 'approved',
+      p_account_id: candidate.account_id,
+      p_subscription_id: candidate.subscription_id,
+      p_original_amount: 19_990,
+      p_affected_amount: 5_000,
+      p_currency: 'CLP',
+    });
+    expect(mocks.reduce).toHaveBeenCalledWith(
+      expect.objectContaining({ externalEventId: 'invoice-ordinary' }),
+    );
+    expect(mocks.reduce).not.toHaveBeenCalledWith(
+      expect.objectContaining({ externalPaymentId: 'payment-discovery-partial' }),
+    );
+  });
+
+  it('fails an anomaly page without reducing its invoices when anomaly persistence fails', async () => {
+    mocks.discover.mockResolvedValue({
+      events: [{ type: 'invoice_paid', provider: 'mercadopago', externalEventId: 'invoice-later' }],
+      financialAnomalies: [
+        { anomalyType: 'refund', externalResourceId: 'payment-refund', observedStatus: 'refunded' },
+      ],
+      nextCursor: 'page-2',
+      providerWatermark: '2026-09-12T12:00:00Z',
+    });
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_reconciliation_candidates')
+        return { data: [candidate], error: null };
+      if (name === 'upsert_billing_financial_anomaly')
+        return { data: null, error: { code: 'db_down' } };
+      return { data: 'completed', error: null };
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ failed: 1, anomalous: 0 }));
+    expect(mocks.reduce).toHaveBeenCalledTimes(1);
+    expect(mocks.reduce).not.toHaveBeenCalledWith(
+      expect.objectContaining({ externalEventId: 'invoice-later' }),
+    );
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({ p_outcome: 'failed', p_error_code: 'anomaly_persistence_failed' }),
+    );
+  });
+
+  it('fails a rejected discovery page without advancing its durable cursor or watermark', async () => {
+    const resumableCandidate = {
+      ...candidate,
+      scan_cursor: 'cursor-before-page',
+      scan_watermark: '2026-09-10T12:00:00Z',
+    };
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        { data: [resumableCandidate], error: null }
+      : { data: 'completed', error: null },
+    );
+    mocks.discover.mockRejectedValue(new Error('mercadopago_discovery_payment_identity_mismatch'));
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ failed: 1 }));
+    expect(mocks.reduce).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc).not.toHaveBeenCalledWith(
+      'upsert_billing_financial_anomaly',
+      expect.anything(),
+    );
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_outcome: 'failed',
+        p_provider_watermark: null,
+        p_next_cursor: null,
+        p_error_code: 'provider_fetch_failed',
+      }),
+    );
+  });
+
+  it('defers after an anomaly persistence when the deadline expires before page reduction', async () => {
+    let now = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    mocks.discover.mockResolvedValue({
+      events: [
+        {
+          type: 'invoice_paid',
+          provider: 'mercadopago',
+          externalEventId: 'invoice-after-deadline',
+        },
+      ],
+      financialAnomalies: [{ anomalyType: 'refund', externalResourceId: 'payment-deadline' }],
+      nextCursor: 'page-2',
+      providerWatermark: '2026-09-12T12:00:00Z',
+    });
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_reconciliation_candidates')
+        return { data: [candidate], error: null };
+      if (name === 'upsert_billing_financial_anomaly') {
+        now = 50;
+        return { data: 'anomaly-id', error: null };
+      }
+      return { data: 'completed', error: null };
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 50 }),
+    ).resolves.toEqual(expect.objectContaining({ anomalous: 1, deferred: 1 }));
+    expect(mocks.reduce).toHaveBeenCalledTimes(1);
+    expect(mocks.reduce).not.toHaveBeenCalledWith(
+      expect.objectContaining({ externalEventId: 'invoice-after-deadline' }),
+    );
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_outcome: 'deferred',
+        p_next_cursor: candidate.scan_cursor,
+        p_provider_watermark: '2026-09-12T12:00:00Z',
+      }),
+    );
+  });
+
   it('surfaces a completion failure because durable progress is unknown', async () => {
     mocks.rpc.mockImplementation((name: string) => {
       if (name === 'claim_billing_reconciliation_candidates')

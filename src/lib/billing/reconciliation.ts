@@ -234,6 +234,30 @@ export async function reconcileNonTerminalSubscriptions(input: {
       };
     }
     try {
+      for (const observation of page.financialAnomalies ?? []) {
+        if (Date.now() >= deadline) {
+          return {
+            outcome: 'deferred',
+            providerWatermark: page.providerWatermark,
+            nextCursor: candidate.scan_cursor,
+          };
+        }
+        const { error: anomalyError } = await admin.rpc('upsert_billing_financial_anomaly', {
+          p_provider: candidate.provider,
+          p_anomaly_type: observation.anomalyType,
+          p_external_resource_id: observation.externalResourceId,
+          p_observed_status: observation.observedStatus ?? (null as never),
+          p_account_id: candidate.account_id,
+          p_subscription_id: candidate.subscription_id,
+          p_original_amount: observation.originalAmount ?? (null as never),
+          p_affected_amount: observation.affectedAmount ?? (null as never),
+          p_currency: observation.currency ?? (null as never),
+        });
+        if (anomalyError) {
+          throw { errorCode: 'anomaly_persistence_failed' satisfies SafeErrorCode };
+        }
+        summary.anomalous += 1;
+      }
       for (const invoiceEvent of page.events) {
         if (Date.now() >= deadline) {
           return {
@@ -253,7 +277,15 @@ export async function reconcileNonTerminalSubscriptions(input: {
           };
         }
       }
-    } catch {
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'errorCode' in error &&
+        error.errorCode === 'anomaly_persistence_failed'
+      ) {
+        throw error;
+      }
       throw { errorCode: 'reducer_failed' satisfies SafeErrorCode };
     }
     if (page.nextCursor) {

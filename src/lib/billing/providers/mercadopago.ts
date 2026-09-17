@@ -932,7 +932,11 @@ export const mercadopagoProvider: PaymentProvider = {
       response.results.length,
     );
 
-    const events: NormalizedBillingEvent[] = [];
+    const eligibleCandidates: Array<{
+      invoice: AuthorizedPaymentResource;
+      invoiceId: string;
+      paymentId: string;
+    }> = [];
     let providerWatermark: { value: string; time: number } | null = null;
     for (const candidate of response.results) {
       if (!isAuthorizedPaymentResource(candidate)) throw discoveryError('invalid_result');
@@ -949,16 +953,58 @@ export const mercadopagoProvider: PaymentProvider = {
       const invoiceId = normalizeExternalId(candidate.id);
       const paymentId = normalizeExternalId(candidate.payment.id);
       if (!invoiceId || !paymentId) continue;
+      eligibleCandidates.push({ invoice: candidate, invoiceId, paymentId });
+    }
+
+    // A page is only safe to reduce after every eligible authorized-payment
+    // row has been tied to fresh payment evidence. Keep all results staged so
+    // a malformed, mismatched, or failed fetch cannot advance a partial page.
+    const verifiedPayments: Array<{
+      invoice: AuthorizedPaymentResource;
+      invoiceId: string;
+      paymentId: string;
+      payment: PaymentResource;
+    }> = [];
+    for (let index = 0; index < eligibleCandidates.length; index += 5) {
+      const group = eligibleCandidates.slice(index, index + 5);
+      let fetchedPayments: unknown[];
+      try {
+        fetchedPayments = await Promise.all(
+          group.map(({ paymentId }) =>
+            fetchResource<unknown>(`/v1/payments/${encodeURIComponent(paymentId)}`),
+          ),
+        );
+      } catch {
+        throw discoveryError('payment_fetch_failed');
+      }
+      for (const [paymentIndex, candidate] of group.entries()) {
+        const payment = fetchedPayments[paymentIndex];
+        if (!isPaymentResource(payment)) throw discoveryError('payment_invalid');
+        if (normalizeExternalId(payment.id) !== candidate.paymentId) {
+          throw discoveryError('payment_identity_mismatch');
+        }
+        verifiedPayments.push({ ...candidate, payment });
+      }
+    }
+
+    const events: NormalizedBillingEvent[] = [];
+    const financialAnomalies: FinancialAnomalyObservation[] = [];
+    for (const { invoice, invoiceId, paymentId, payment } of verifiedPayments) {
+      const observation = financialAnomalyObservationForPayment(payment, paymentId);
+      if (observation) {
+        financialAnomalies.push(observation);
+        continue;
+      }
       const event = normalizeAuthorizedPaymentEvent(
-        candidate,
-        authorizedPaymentEventId(invoiceId, paymentId, candidate.payment.status),
+        invoice,
+        authorizedPaymentEventId(invoiceId, paymentId, invoice.payment.status),
       );
       if (event && event.type !== 'webhook_acknowledged') events.push(event);
     }
-
     const nextOffset = paging.offset + response.results.length;
     return {
       events,
+      financialAnomalies,
       nextCursor: nextOffset < paging.total ? encodeInvoiceCursor({ offset: nextOffset }) : null,
       providerWatermark: providerWatermark?.value ?? null,
     };
