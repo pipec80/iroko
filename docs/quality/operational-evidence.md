@@ -1,7 +1,7 @@
 # Operational Evidence Register
 
-Last updated: **2026-09-16** (read-only billing-worker rollout preflight; no
-Cloud mutation or worker invocation)
+Last updated: **2026-09-16** (Plan 011g local closeout; the earlier 011e
+preflight is superseded; no Cloud mutation or worker invocation)
 
 This register prevents historical green checks from being read as present-day
 operational truth. GitHub Actions and provider consoles remain the primary live
@@ -27,18 +27,18 @@ the rule that determines when it expires.
 
 ## Current register
 
-| Capability                       | Environment                                    | Latest inspected evidence                                                                                                                                                                                                                                  | Verified at (UTC)     | Validity                         | Status                                                               |
-| -------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | -------------------------------- | -------------------------------------------------------------------- |
-| Documentation checker            | 011e Task 1 documentation worktree             | `pnpm docs:check`: 88 Markdown files; `pnpm test:docs-check`: 4/4; Prettier and `git diff --check` passed for the two changed documents. The two pnpm checks ran outside the sandbox after its Git/Node spawn `EPERM`.                                     | 2026-09-16            | Commit/worktree-bound            | CURRENT for this documentary surface only                            |
-| Production smoke                 | Vercel production                              | Latest `Nightly Monitoring / Production Smoke Tests` run not inspected in this pass                                                                                                                                                                        | —                     | 48 hours                         | **[NO VERIFICADO]**                                                  |
-| Email worker                     | Linked Supabase                                | Latest `Nightly Monitoring / Email Worker Health` result not inspected in this pass                                                                                                                                                                        | —                     | 48 hours                         | **[NO VERIFICADO]**                                                  |
-| Database advisors                | CI local database rebuilt from migrations      | Latest `Nightly Monitoring / Database Advisors` result not inspected in this pass                                                                                                                                                                          | —                     | 48 hours                         | **[NO VERIFICADO]**                                                  |
-| Migration parity                 | Local ↔ linked Supabase                        | Historical 2026-09-10 record: four `20260909*` billing migrations applied after finding them missing; CI/CD does not push migrations. No linked query in the 2026-09-11 pass.                                                                              | 2026-09-10 (recorded) | Change-bound                     | Historical parity only; current **[NO VERIFICADO]**                  |
-| Full CI and preview build        | GitHub Actions + Vercel Preview                | [PR #152](https://github.com/pipec80/iroko/pull/152) head `b396aa4` passed Quality, CodeQL, Documentation, Security, Gitleaks, Unit, Database Types/Tests, Edge Function, Chromium/WebKit E2E, Build and Vercel Preview; it was squash-merged as `4a0a3d4` | 2026-08-27            | Commit-bound                     | CURRENT for PR head; separate `main` run **[NO VERIFICADO]**         |
-| Mercado Pago basic circuit       | Test-seller sandbox via production deployment  | Historical informal 2026-09-10 record: checkout → active → first invoice paid → cancel, with adapter fix #179. Formal sanitized evidence is still pending; this is not real-money production acceptance.                                                   | 2026-09-10 (recorded) | Change-bound                     | Historical partial provider observation; current **[NO VERIFICADO]** |
-| Mercado Pago v1 Chile acceptance | Monthly CLP, hosted pending/no associated plan | [MP-01–15 matrix](../exec-plans/active/011-mercadopago-v1-chile-acceptance.md): renewal, failure/recovery, cancellation access, partial refunds, abandoned/unknown checkout and complete invoice discovery remain open.                                    | —                     | Scenario + change-bound          | Internal certification pending; **[NO VERIFICADO]**                  |
-| Billing workers                  | Supabase scheduler/Vault → Vercel Node         | Read-only preflight found the stable alias and worker-route artifact, but did not establish its source SHA, linked Supabase migration state, Vault/cron/health state, route reachability, or shared-secret configuration. No worker was invoked.           | 2026-09-16            | 48 hours + configuration changes | Pending operational rollout; current **[NO VERIFICADO]**             |
-| Other billing providers          | Stripe, Paddle, Lemon Squeezy                  | Independent adapter/catalogue/events/capabilities/reconciliation/test acceptance still required; MP acceptance does not cover them.                                                                                                                        | —                     | Provider + change-bound          | **[NO VERIFICADO]**                                                  |
+| Capability                       | Environment                                    | Latest inspected evidence                                                                                                                                                                                                                                  | Verified at (UTC)     | Validity                         | Status                                                                  |
+| -------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- | -------------------------------- | ----------------------------------------------------------------------- |
+| Documentation checker            | 011g/011e documentation worktree               | `pnpm docs:check`: 89 Markdown files; `pnpm test:docs-check`: 4/4; Prettier and `git diff --check` passed for the three changed documents. The two pnpm checks ran outside the sandbox after its Git/Node spawn `EPERM`.                                   | 2026-09-16            | Commit/worktree-bound            | CURRENT for this documentary surface only                               |
+| Production smoke                 | Vercel production                              | Latest `Nightly Monitoring / Production Smoke Tests` run not inspected in this pass                                                                                                                                                                        | —                     | 48 hours                         | **[NO VERIFICADO]**                                                     |
+| Email worker                     | Linked Supabase                                | Latest `Nightly Monitoring / Email Worker Health` result not inspected in this pass                                                                                                                                                                        | —                     | 48 hours                         | **[NO VERIFICADO]**                                                     |
+| Database advisors                | CI local database rebuilt from migrations      | Latest `Nightly Monitoring / Database Advisors` result not inspected in this pass                                                                                                                                                                          | —                     | 48 hours                         | **[NO VERIFICADO]**                                                     |
+| Migration parity                 | Local ↔ linked Supabase                        | Historical 2026-09-10 record: four `20260909*` billing migrations applied after finding them missing; CI/CD does not push migrations. No linked query in the 2026-09-11 pass.                                                                              | 2026-09-10 (recorded) | Change-bound                     | Historical parity only; current **[NO VERIFICADO]**                     |
+| Full CI and preview build        | GitHub Actions + Vercel Preview                | [PR #152](https://github.com/pipec80/iroko/pull/152) head `b396aa4` passed Quality, CodeQL, Documentation, Security, Gitleaks, Unit, Database Types/Tests, Edge Function, Chromium/WebKit E2E, Build and Vercel Preview; it was squash-merged as `4a0a3d4` | 2026-08-27            | Commit-bound                     | CURRENT for PR head; separate `main` run **[NO VERIFICADO]**            |
+| Mercado Pago basic circuit       | Test-seller sandbox via production deployment  | Historical informal 2026-09-10 record: checkout → active → first invoice paid → cancel, with adapter fix #179. Formal sanitized evidence is still pending; this is not real-money production acceptance.                                                   | 2026-09-10 (recorded) | Change-bound                     | Historical partial provider observation; current **[NO VERIFICADO]**    |
+| Mercado Pago v1 Chile acceptance | Monthly CLP, hosted pending/no associated plan | [MP-01–15 matrix](../exec-plans/active/011-mercadopago-v1-chile-acceptance.md): renewal, failure/recovery, cancellation access, partial refunds, abandoned/unknown checkout and complete invoice discovery remain open.                                    | —                     | Scenario + change-bound          | Internal certification pending; **[NO VERIFICADO]**                     |
+| Billing workers                  | Supabase scheduler/Vault → Vercel Node         | The 011e preflight was performed before Plan 011g and its `20260911140000_billing_financial_anomaly_ingress` migration. It cannot identify the current release candidate, establish linked parity, or authorize a rollout. No worker was invoked.          | 2026-09-16            | 48 hours + configuration changes | Fresh preflight and authorization required; current **[NO VERIFICADO]** |
+| Other billing providers          | Stripe, Paddle, Lemon Squeezy                  | Independent adapter/catalogue/events/capabilities/reconciliation/test acceptance still required; MP acceptance does not cover them.                                                                                                                        | —                     | Provider + change-bound          | **[NO VERIFICADO]**                                                     |
 
 ## Mercado Pago closeout evidence contract — 2026-09-11
 
@@ -93,38 +93,53 @@ smoke, auth/tenant isolation, email delivery, observability/alerts, migration
 parity and operational recovery. Commercial analytics/onboarding/distribution
 in Plan 013 can follow later; necessary security and operation cannot.
 
-## Billing worker rollout preflight — 2026-09-16
+## Superseded billing-worker rollout preflight — 2026-09-16
 
-This is a read-only preflight for Plan 011e Task 1. It records only the facts
-inspected on 2026-09-16; it does not authorize a rollout, establish current
+This historical read-only preflight for Plan 011e Task 1 was recorded before
+Plan 011g closed its local refund-ingress work. Its local candidate
+`83feceb0724aaf06cc12b7ffce17278874cf43bf` and migration inventory through
+`20260911130000_billing_reconciliation_state` are superseded by the current
+release candidate `611684f2905645f5165d7f0d3a98d6526e442793`, which includes
+Plan 011g and local migration
+`20260911140000_billing_financial_anomaly_ingress`. It records historical
+observations only; it does not authorize a rollout, establish current
 production behavior, or replace the correlated evidence required by Tasks 2–5.
 No secret values, provider payloads, customer data, signed URLs, or raw Cloud
 output are retained here.
 
-| Preflight area               | Observed result                                                                                                                                                                                          | Operational meaning                                                                                                                                                                                                                                                                   |
-| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Local checkout               | Clean `feat/mercadopago-v1-implementation` at `83feceb0724aaf06cc12b7ffce17278874cf43bf`, committed `2026-09-16T16:36:39-03:00`.                                                                         | This identifies the local candidate only. It does not establish deployed source identity.                                                                                                                                                                                             |
-| Local tooling                | Supabase CLI `2.110.0` and Vercel CLI `59.15.1` are installed. Vercel CLI was authenticated as the sanitized account alias `pipec80`.                                                                    | Installation and Vercel authentication do not establish Supabase linkage or authorization to mutate either platform.                                                                                                                                                                  |
-| Authorized-target candidates | Supabase project listing found exactly one active project: `iroko`, ref `rgrxlygtmvavqzkjyywg`, region `us-east-2`; the CLI reported `linked=false`. Vercel target is team/project `pipec80-labs/iroko`. | These are the only proposed rollout targets. Listing does not establish Supabase migration parity, Vercel deployment source identity, or authorization to mutate either target.                                                                                                       |
-| Stable alias                 | `project-a89lv.vercel.app` resolved to production deployment `dpl_EE7N9eropjg64w4MDYdqx7QSZ93A`, `READY`, with the worker-route artifact present.                                                        | The deployed source SHA was not established. If the stable alias cannot be shown to contain reviewed local SHA `83feceb0724aaf06cc12b7ffce17278874cf43bf`, authorization must explicitly include deployment of that verified SHA to `pipec80-labs/iroko` before worker configuration. |
-| Migration comparison         | Local migration inventory reaches `20260911130000_billing_reconciliation_state`. `supabase migration list --linked` stopped with `LegacyProjectNotLinkedError`.                                          | Linked migration parity for `rgrxlygtmvavqzkjyywg` is **[NO VERIFICADO]**. Do not apply migrations, configure workers, or create schedules until that exact target has been inspected read-only and parity reviewed.                                                                  |
-| Vercel environment names     | Scoped `vercel env ls` showed `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, and `MERCADOPAGO_WEBHOOK_URL` in Production and Preview. `BILLING_RECONCILIATION_SECRET` was absent.             | Variable presence says nothing about values, application/seller coherence, deployment ingestion, or webhook behavior. The worker cannot be accepted without a paired shared secret.                                                                                                   |
-| Vault, cron and health       | Vault secret names/values, `cron.job`, `private.billing_worker_health`, worker URL, and configuration values were not inspected.                                                                         | **[NO VERIFICADO]**. No schedule, net request, health row, ledger/job effect, or worker progress evidence exists from this preflight.                                                                                                                                                 |
-| Stable-route preflight       | The unauthenticated `POST {"mode":"recovery"}` was deliberately not sent. Automatic safety review rejected it because a misconfigured route could execute a worker.                                      | Route reachability and its expected `401` remain **[NO VERIFICADO]**. Do not use a blind unauthenticated invocation to fill this gap.                                                                                                                                                 |
+| Preflight area               | Observed result                                                                                                                                                                                          | Operational meaning                                                                                                                                                                 |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local checkout               | Clean `feat/mercadopago-v1-implementation` at `83feceb0724aaf06cc12b7ffce17278874cf43bf`, committed `2026-09-16T16:36:39-03:00`.                                                                         | Historical only. It does not identify the current release candidate or establish deployed source identity.                                                                          |
+| Local tooling                | Supabase CLI `2.110.0` and Vercel CLI `59.15.1` are installed. Vercel CLI was authenticated as the sanitized account alias `pipec80`.                                                                    | Installation and Vercel authentication do not establish Supabase linkage or authorization to mutate either platform.                                                                |
+| Authorized-target candidates | Supabase project listing found exactly one active project: `iroko`, ref `rgrxlygtmvavqzkjyywg`, region `us-east-2`; the CLI reported `linked=false`. Vercel target is team/project `pipec80-labs/iroko`. | These are the only proposed rollout targets. Listing does not establish Supabase migration parity, Vercel deployment source identity, or authorization to mutate either target.     |
+| Stable alias                 | `project-a89lv.vercel.app` resolved to production deployment `dpl_EE7N9eropjg64w4MDYdqx7QSZ93A`, `READY`, with the worker-route artifact present.                                                        | Historical only. The deployed source SHA was not established and must be inspected again for the current release candidate.                                                         |
+| Migration comparison         | Local migration inventory then reached `20260911130000_billing_reconciliation_state`. `supabase migration list --linked` stopped with `LegacyProjectNotLinkedError`.                                     | Superseded. The next comparison must include local migration `20260911140000_billing_financial_anomaly_ingress`; linked parity for `rgrxlygtmvavqzkjyywg` is **[NO VERIFICADO]**.   |
+| Vercel environment names     | Scoped `vercel env ls` showed `MERCADOPAGO_ACCESS_TOKEN`, `MERCADOPAGO_WEBHOOK_SECRET`, and `MERCADOPAGO_WEBHOOK_URL` in Production and Preview. `BILLING_RECONCILIATION_SECRET` was absent.             | Variable presence says nothing about values, application/seller coherence, deployment ingestion, or webhook behavior. The worker cannot be accepted without a paired shared secret. |
+| Vault, cron and health       | Vault secret names/values, `cron.job`, `private.billing_worker_health`, worker URL, and configuration values were not inspected.                                                                         | **[NO VERIFICADO]**. No schedule, net request, health row, ledger/job effect, or worker progress evidence exists from this preflight.                                               |
+| Stable-route preflight       | The unauthenticated `POST {"mode":"recovery"}` was deliberately not sent. Automatic safety review rejected it because a misconfigured route could execute a worker.                                      | Route reachability and its expected `401` remain **[NO VERIFICADO]**. Do not use a blind unauthenticated invocation to fill this gap.                                               |
 
-### Required authorization boundary and proposed mutations
+### Required fresh preflight and authorization boundary
 
-No rollout authorization is granted by this record or by the local coding
-approval. Target identification is already recorded above, but no mutation may
-begin before a new explicit authorization names **both** Vercel
-`pipec80-labs/iroko` and Supabase `iroko` (`rgrxlygtmvavqzkjyywg`, `us-east-2`).
-That authorization must permit only the following ordered work:
+No rollout authorization is granted by this historical record or by the local
+coding approval. Before any mutation, repeat the read-only preflight against
+the current release candidate
+`611684f2905645f5165d7f0d3a98d6526e442793` (or a reviewed descendant that
+contains all Plan 011g changes) and record a new dated result. It must inspect
+the stable deployment source SHA and compare the exact local migration
+inventory through `20260911140000_billing_financial_anomaly_ingress` with
+Supabase `iroko` (`rgrxlygtmvavqzkjyywg`).
+
+Only after that new preflight may a new explicit authorization name **both**
+Vercel `pipec80-labs/iroko` and Supabase `iroko`
+(`rgrxlygtmvavqzkjyywg`, `us-east-2`). That authorization must permit only the
+following ordered work:
 
 1. Inspect those exact targets read-only: reconcile the Supabase migration
    inventory and establish the stable deployment's source SHA.
-2. If `project-a89lv.vercel.app` cannot be shown to contain
-   `83feceb0724aaf06cc12b7ffce17278874cf43bf`, deploy that verified SHA to
-   `pipec80-labs/iroko`, then re-establish the stable alias and source identity.
+2. If `project-a89lv.vercel.app` cannot be shown to contain the current release
+   candidate SHA (or a reviewed descendant containing Plan 011g), deploy that
+   verified candidate to `pipec80-labs/iroko`, then re-establish the stable
+   alias and source identity.
 3. After parity review, apply only the reviewed missing migrations to
    `rgrxlygtmvavqzkjyywg`; re-inspect parity before any worker configuration.
 4. Create (not rotate) Vercel `BILLING_RECONCILIATION_SECRET` through a
@@ -147,14 +162,14 @@ state for investigation.
 
 ## Local documentation validation — 2026-09-16
 
-Results: documentation checker passed for 88 Markdown files; checker tests
-passed 4/4; Prettier passed for the two changed Markdown files; and
-`git diff --check` passed. These results cover the preflight documentation
+Results: documentation checker passed for 89 Markdown files; checker tests
+passed 4/4; Prettier passed for the three changed Markdown files; and
+`git diff --check` passed. These results cover the current documentation
 worktree only.
 
 Commands: `pnpm docs:check`, `pnpm test:docs-check`,
-`pnpm exec prettier --ignore-path NUL --write docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md`,
-`pnpm exec prettier --ignore-path NUL --check docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md`,
+`pnpm exec prettier --ignore-path NUL --write docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md docs/current-state.md`,
+`pnpm exec prettier --ignore-path NUL --check docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md docs/current-state.md`,
 and `git diff --check`. The two pnpm commands first failed inside the sandbox
 because Node could not spawn Git (`EPERM`), then passed outside it. No dependency
 install was completed, and no dependency or package-manager configuration was

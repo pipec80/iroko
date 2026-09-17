@@ -274,10 +274,10 @@ create a blind second provider POST.
 
 ## Configure and schedule
 
-### 011e read-only rollout preflight — 2026-09-16
+### Superseded 011e read-only rollout preflight — 2026-09-16
 
-The latest preflight is recorded in the [operational evidence
-register](../quality/operational-evidence.md#billing-worker-rollout-preflight--2026-09-16).
+The historical preflight is recorded in the [operational evidence
+register](../quality/operational-evidence.md#superseded-billing-worker-rollout-preflight--2026-09-16).
 It identified one proposed Supabase target, `iroko`
 (`rgrxlygtmvavqzkjyywg`, `us-east-2`), while the CLI still reported
 `linked=false`; the proposed Vercel target is `pipec80-labs/iroko`. The stable
@@ -294,15 +294,23 @@ Route reachability therefore remains **[NO VERIFICADO]** until an authorized,
 secret-safe rollout step can establish it alongside deployment identity and
 durable effects.
 
-Before a mutation, obtain explicit authorization naming Vercel
+It is superseded by release candidate
+`611684f2905645f5165d7f0d3a98d6526e442793`, which contains Plan 011g and
+local migration `20260911140000_billing_financial_anomaly_ingress`. Before a
+mutation, repeat the preflight against that candidate (or a reviewed descendant
+containing all Plan 011g changes), including a fresh stable-source inspection
+and an exact local-to-linked migration comparison through that migration.
+
+Only after the new preflight, obtain explicit authorization naming Vercel
 `pipec80-labs/iroko` and Supabase `iroko` (`rgrxlygtmvavqzkjyywg`,
 `us-east-2`). Target identification is already recorded, but mutation remains
 prohibited until that authorization is granted. It must first permit read-only
 migration parity and stable-source inspection. If the stable alias cannot be
-shown to contain verified local SHA `83feceb0724aaf06cc12b7ffce17278874cf43bf`,
-it must expressly permit deploying that SHA to `pipec80-labs/iroko` before
-worker configuration. Only after the parity review may the authorization permit
-the reviewed missing migrations, followed by a re-check of parity.
+shown to contain the release candidate SHA (or a reviewed descendant containing
+Plan 011g), it must expressly permit deploying that candidate to
+`pipec80-labs/iroko` before worker configuration. Only after the parity review
+may the authorization permit the reviewed missing migrations, followed by a
+re-check of parity.
 
 The remaining approved list must be limited and ordered: create Vercel
 `BILLING_RECONCILIATION_SECRET` (it is absent, so this is a create rather than a
@@ -315,7 +323,9 @@ not combine the two schedules or use a Preview URL.
 
 ### Authorized configuration and schedule
 
-Only after the preceding preflight blockers are resolved and the named mutation
+Only after the fresh preflight establishes the release candidate source and
+local migration inventory through
+`20260911140000_billing_financial_anomaly_ingress`, and the named mutation
 authorization is granted, use the verified stable production URL (never a
 protected Preview URL). Complete migration parity review before applying any
 reviewed missing migrations, then verify parity again before configuring the

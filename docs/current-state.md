@@ -1,9 +1,13 @@
 # Current State
 
-Last static verification: **2026-09-11** (targeted Mercado Pago planning/code inspection; platform-wide audit remains 2026-08-20)
+Last static verification: **2026-09-16** (targeted Mercado Pago code and
+documentation inspection through Plan 011g; platform-wide audit remains
+2026-08-20)
 Last recorded runtime observation: **2026-09-10** (Mercado Pago sandbox circuit, see
 [Runtime verification update](#runtime-verification-update--2026-09-10))
-Repository baseline inspected: `main` @ `66bc9b2`
+Repository baseline inspected: release candidate
+`611684f2905645f5165d7f0d3a98d6526e442793` (Plan 011g included; no Cloud
+deployment or linked-Supabase parity inspection)
 
 This is the operational entry point for humans and coding agents. It answers
 what Iroko is today, which work is active, and which claims have actually been
@@ -31,7 +35,8 @@ product. Commercialization remains an option, not a present-tense claim.
   Historical local test results do not certify the current full lifecycle.
   The 2026-09-10 observation was a **sandbox circuit against the production
   deployment**, not real-money production acceptance. Local code now covers
-  refund ingress and missed-invoice discovery, but renewal, rejection and
+  refund ingress and missed-invoice discovery, including local migration
+  `20260911140000_billing_financial_anomaly_ingress`, but renewal, rejection and
   recovery, paid-through access, provider refunds, provider missed-invoice
   discovery and worker operation/progress remain open in the
   [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md).
@@ -62,8 +67,9 @@ changes before implementation.
 | 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                    |
 | 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                    |
 
-Execution order: review the completed MP Phase 2/6 local changes → authorized
-worker rollout and verification → internal MP acceptance → Plan 012 and operational v1 checks →
+Execution order: complete a fresh 011e preflight for the Plan 011g release
+candidate → authorized worker rollout and verification → internal MP acceptance
+→ Plan 012 and operational v1 checks →
 independent Stripe/Paddle/Lemon Squeezy certifications → Plan 013 distribution.
 The last two steps do not block a v1 limited to own-use Chile/Mercado Pago.
 
