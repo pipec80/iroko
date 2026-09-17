@@ -23,3 +23,4 @@ aee6172e1d3777f567380ec47519331b5a440b6b:src/lib/impersonation-cookie.test.ts:ge
 # Cursor base64url fijo que representa {"offset":0,"extra":true}; fixture para
 # comprobar que Mercado Pago rechaza claves desconocidas, no una credencial.
 e6f99b5839cab60c9fd9772cc73b773aa0d508c4:src/lib/billing/providers/__tests__/mercadopago.test.ts:generic-api-key:1401
+9067dc4494823cad1003942038a697482ba8c69b:src/lib/billing/providers/__tests__/mercadopago.test.ts:generic-api-key:1731
