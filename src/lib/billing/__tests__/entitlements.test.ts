@@ -8,7 +8,13 @@ vi.mock('@/lib/supabase/server', () => ({
 
 import { getEntitlements, hasFeature, getLimit, withinLimit } from '../entitlements';
 
-function entitlementRow(over?: Partial<{ features: object; limits: object }>) {
+interface EntitlementRpcRow {
+  plan_slug: string;
+  features: Record<string, boolean>;
+  limits: Record<string, number>;
+}
+
+function entitlementRow(over?: Partial<EntitlementRpcRow>) {
   return [
     {
       plan_slug: 'pro',
@@ -22,7 +28,7 @@ function entitlementRow(over?: Partial<{ features: object; limits: object }>) {
 describe('entitlements', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('should map the RPC row into features and limits', async () => {
+  it('maps the authoritative Pro RPC row into features and limits', async () => {
     mocks.rpc.mockResolvedValue({ data: entitlementRow(), error: null });
     const ent = await getEntitlements('a1');
     expect(ent).toEqual({
@@ -39,6 +45,22 @@ describe('entitlements', () => {
       planSlug: 'free',
       features: {},
       limits: {},
+    });
+  });
+
+  it('maps the authoritative Free RPC row without inferring lifecycle details', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: entitlementRow({ plan_slug: 'free', features: {}, limits: {} }),
+      error: null,
+    });
+
+    await expect(getEntitlements('a1')).resolves.toEqual({
+      planSlug: 'free',
+      features: {},
+      limits: {},
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith('get_account_entitlements', {
+      p_account_id: 'a1',
     });
   });
 

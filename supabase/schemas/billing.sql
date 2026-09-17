@@ -987,6 +987,9 @@ CREATE TABLE billing.checkout_intents (
   checkout_url text,
   lease_expires_at timestamptz,
   failure_code text,
+  resolved_at timestamptz,
+  resolution_code text,
+  resolved_by text,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT checkout_intents_external_subscription_nonempty
@@ -994,7 +997,20 @@ CREATE TABLE billing.checkout_intents (
   CONSTRAINT checkout_intents_checkout_url_bounded
     CHECK (checkout_url IS NULL OR (char_length(checkout_url) <= 2048 AND checkout_url ~ '^https://')),
   CONSTRAINT checkout_intents_failure_code_bounded
-    CHECK (failure_code IS NULL OR char_length(failure_code) <= 100)
+    CHECK (failure_code IS NULL OR char_length(failure_code) <= 100),
+  CONSTRAINT checkout_intents_resolution_code_bounded CHECK (
+    resolution_code IS NULL OR
+    (NULLIF(btrim(resolution_code), '') IS NOT NULL AND char_length(resolution_code) <= 100)
+  ),
+  CONSTRAINT checkout_intents_resolved_by_bounded CHECK (
+    resolved_by IS NULL OR
+    (NULLIF(btrim(resolved_by), '') IS NOT NULL AND char_length(resolved_by) <= 120)
+  ),
+  CONSTRAINT checkout_intents_resolution_complete CHECK (
+    (resolved_at IS NULL AND resolution_code IS NULL AND resolved_by IS NULL)
+    OR
+    (resolved_at IS NOT NULL AND resolution_code IS NOT NULL AND resolved_by IS NOT NULL)
+  )
 );
 
 CREATE UNIQUE INDEX checkout_intents_open_account_provider_unique
@@ -1010,6 +1026,12 @@ CREATE INDEX checkout_intents_plan_id_idx
 
 CREATE TRIGGER set_updated_at BEFORE UPDATE ON billing.checkout_intents
   FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
+CREATE TRIGGER guard_billing_checkout_resolution
+  BEFORE UPDATE ON billing.checkout_intents
+  FOR EACH ROW EXECUTE FUNCTION private.guard_billing_checkout_resolution();
+CREATE TRIGGER guard_billing_checkout_resolution_insert
+  BEFORE INSERT ON billing.checkout_intents
+  FOR EACH ROW EXECUTE FUNCTION private.guard_billing_checkout_resolution();
 ALTER TABLE billing.checkout_intents ENABLE ROW LEVEL SECURITY;
 CREATE POLICY billing_checkout_intents_deny_all
   ON billing.checkout_intents AS RESTRICTIVE USING (false) WITH CHECK (false);
@@ -1169,13 +1191,19 @@ CREATE INDEX recovery_jobs_due_idx ON billing.recovery_jobs(next_attempt_at, cre
 CREATE TABLE billing.financial_anomalies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   provider text NOT NULL CHECK (NULLIF(btrim(provider), '') IS NOT NULL),
-  anomaly_type text NOT NULL CHECK (anomaly_type IN ('refund','chargeback','mediation','status_divergence','unresolved_payment')),
+  anomaly_type text NOT NULL CHECK (anomaly_type IN ('refund','partial_refund','chargeback','mediation','status_divergence','unresolved_payment')),
   external_resource_id text NOT NULL CHECK (NULLIF(btrim(external_resource_id), '') IS NOT NULL AND char_length(external_resource_id) <= 255),
   account_id uuid REFERENCES public.accounts(id) ON DELETE SET NULL,
   subscription_id uuid REFERENCES billing.subscriptions(id) ON DELETE SET NULL,
   invoice_id uuid REFERENCES billing.invoices(id) ON DELETE SET NULL,
   payment_id uuid REFERENCES billing.payment_attempts(id) ON DELETE SET NULL,
   observed_status text CHECK (observed_status IS NULL OR char_length(observed_status) <= 100),
+  original_amount integer CHECK (original_amount IS NULL OR original_amount >= 0),
+  affected_amount integer CHECK (affected_amount IS NULL OR affected_amount >= 0),
+  currency text CHECK (currency IS NULL OR currency ~ '^[A-Z]{3}$'),
+  CONSTRAINT financial_anomaly_amount_bounds CHECK (
+    original_amount IS NULL OR affected_amount IS NULL OR affected_amount <= original_amount
+  ),
   status text NOT NULL DEFAULT 'open' CHECK (status IN ('open','resolved')),
   occurrence_count integer NOT NULL DEFAULT 1 CHECK (occurrence_count > 0),
   first_seen_at timestamptz NOT NULL DEFAULT now(), last_seen_at timestamptz NOT NULL DEFAULT now(),
@@ -1200,3 +1228,74 @@ REVOKE ALL ON billing.recovery_jobs, billing.financial_anomalies FROM PUBLIC, an
 GRANT SELECT, INSERT, UPDATE ON billing.recovery_jobs, billing.financial_anomalies TO service_role;
 COMMENT ON TABLE billing.recovery_jobs IS 'Payload-free durable work for deferred provider payment correlation.';
 COMMENT ON TABLE billing.financial_anomalies IS 'Deduplicated adverse financial observations; never changes subscription access automatically.';
+
+-- ============================================================================
+-- Durable reconciliation progress
+-- ============================================================================
+
+CREATE TABLE billing.reconciliation_state (
+  subscription_id uuid PRIMARY KEY REFERENCES billing.subscriptions(id),
+  next_scan_at timestamptz NOT NULL DEFAULT now(),
+  lease_owner text,
+  lease_expires_at timestamptz,
+  invoice_watermark timestamptz,
+  scan_cursor text,
+  failure_count integer NOT NULL DEFAULT 0,
+  scan_watermark timestamptz,
+  last_error_code text,
+  last_completed_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT reconciliation_state_lease_pair CHECK (
+    (lease_owner IS NULL) = (lease_expires_at IS NULL)
+  ),
+  CONSTRAINT reconciliation_state_lease_owner_bounds CHECK (
+    lease_owner IS NULL
+    OR (NULLIF(btrim(lease_owner), '') IS NOT NULL AND char_length(lease_owner) <= 100)
+  ),
+  CONSTRAINT reconciliation_state_failure_count_bounds CHECK (
+    failure_count BETWEEN 0 AND 10
+  ),
+  CONSTRAINT reconciliation_state_error_code_bounds CHECK (
+    last_error_code IS NULL OR char_length(last_error_code) <= 100
+  )
+);
+CREATE INDEX reconciliation_state_next_scan_idx
+  ON billing.reconciliation_state (next_scan_at, subscription_id);
+CREATE TRIGGER set_updated_at
+  BEFORE UPDATE ON billing.reconciliation_state
+  FOR EACH ROW EXECUTE FUNCTION private.set_updated_at();
+ALTER TABLE billing.reconciliation_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY billing_reconciliation_state_deny_all
+  ON billing.reconciliation_state AS RESTRICTIVE USING (false) WITH CHECK (false);
+REVOKE ALL ON billing.reconciliation_state FROM PUBLIC, anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON billing.reconciliation_state TO service_role;
+COMMENT ON TABLE billing.reconciliation_state IS
+  'Provider-neutral lease, cursor, watermark, and retry state for one billing subscription.';
+
+CREATE OR REPLACE FUNCTION private.ensure_billing_reconciliation_state()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+BEGIN
+  IF NULLIF(btrim(NEW.external_subscription_id), '') IS NOT NULL THEN
+    INSERT INTO billing.reconciliation_state (subscription_id)
+    VALUES (NEW.id)
+    ON CONFLICT (subscription_id) DO NOTHING;
+    IF NEW.status IN ('canceled', 'unpaid') THEN
+      UPDATE billing.reconciliation_state
+      SET next_scan_at = now() + interval '6 hours',
+        lease_owner = CASE WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL ELSE lease_owner END,
+        lease_expires_at = CASE WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL ELSE lease_expires_at END,
+        scan_cursor = CASE WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL ELSE scan_cursor END,
+        scan_watermark = CASE WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL ELSE scan_watermark END,
+        last_error_code = CASE WHEN lease_owner IS NULL OR lease_expires_at <= now() THEN NULL ELSE last_error_code END
+      WHERE subscription_id = NEW.id;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION private.ensure_billing_reconciliation_state()
+  FROM PUBLIC, anon, authenticated, service_role;
+CREATE TRIGGER ensure_billing_reconciliation_state
+  AFTER INSERT OR UPDATE OF external_subscription_id, status ON billing.subscriptions
+  FOR EACH ROW EXECUTE FUNCTION private.ensure_billing_reconciliation_state();

@@ -65,15 +65,24 @@ create a new bounded plan if a regression or new audit finding appears.
 
 ## Active plans
 
-The remaining work opened from the 2026-08-18/19 forensic audit is ordered as
-Plan 011 (P0, behavior) before Plan 012 (P1, risk/debt) and Plan 013 (Fase D,
-sellability) — see each plan's own ordering rationale.
+Current order (2026-09-11): Mercado Pago code/acceptance gaps in Phases 2/6 →
+authorized worker rollout and verification → internal MP acceptance → Plan 012
+hardening/pricing and operational v1 checks. Stripe, Paddle and Lemon Squeezy
+follow as independent certifications; commercial distribution follows under
+Plan 013 when selling is chosen. Neither blocks the limited own-use v1 Chile.
 
-| Order | Plan                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Priority | Status                                                                                                                                        |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11    | [Billing Platform v2](exec-plans/active/011-billing-correctness.md) — Core → Mercado Pago → Stripe → Paddle → Lemon Squeezy → Reconciliation. Fase 1 cerrada vía [#152](https://github.com/pipec80/iroko/pull/152); Mercado Pago es la referencia de lanzamiento LATAM. Spec: [architecture/billing-platform-v2-design.md](architecture/billing-platform-v2-design.md). Task-by-task per phase: [1](exec-plans/active/011-phase1-core-v2-tasks.md) · [2](exec-plans/active/011-phase2-mercadopago-tasks.md) · [3](exec-plans/active/011-phase3-stripe-certification-tasks.md) · [4](exec-plans/active/011-phase4-paddle-tasks.md) · [5](exec-plans/active/011-phase5-lemon-squeezy-tasks.md) · [6](exec-plans/active/011-phase6-reconciliation-tasks.md) | P0       | Active — Fase 1 closed; Fase 2 (Mercado Pago) circuit verified in prod 2026-09-10, certification + Phase 6 worker open; Fases 3–5 not started |
-| 12    | [Security hardening + pricing source of truth](exec-plans/active/012-security-hardening-and-pricing-truth.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | P1       | Active — not started                                                                                                                          |
-| 13    | [Launch readiness roadmap (Fase D)](exec-plans/active/013-launch-readiness-roadmap.md)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | P2       | Roadmap — not yet broken into PRs                                                                                                             |
+| Order | Plan                                                                                                | Priority | Status                                                                                                                                                                                                                                                                                                        |
+| ----- | --------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 11    | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                 | P0       | Core v2 implemented/closed. MP coordination, recovery, anomalies and worker implemented; remaining code/acceptance and operations in the [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md). Sandbox basic circuit observed informally 2026-09-10; full internal acceptance pending. |
+| 12    | [Security hardening + pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 risk/debt gates; `scale → teams` separated from MP closure.                                                                                                                                                                                                                                        |
+| 13    | [Commercial preparation after own-use v1](exec-plans/active/013-launch-readiness-roadmap.md)        | P2       | Conditional on selling; essential smoke, observability and security remain v1 gates.                                                                                                                                                                                                                          |
+
+Plan 011 task detail: [Core](exec-plans/active/011-phase1-core-v2-tasks.md),
+[Mercado Pago](exec-plans/active/011-phase2-mercadopago-tasks.md),
+[Stripe](exec-plans/active/011-phase3-stripe-certification-tasks.md),
+[Paddle](exec-plans/active/011-phase4-paddle-tasks.md),
+[Lemon Squeezy](exec-plans/active/011-phase5-lemon-squeezy-tasks.md),
+[Reconciliation](exec-plans/active/011-phase6-reconciliation-tasks.md).
 
 ### Mercado Pago reliability work
 
@@ -81,9 +90,13 @@ The [Plan 011 reliability roadmap](exec-plans/active/011-mercadopago-reliability
 extends Phase 2 and the Mercado Pago slice of Phase 6. Its
 [design supplement](architecture/mercadopago-reliability-design.md) and
 [accepted ADR 0003](adr/0003-mercadopago-reliability-boundaries.md) preserve the
-pending hosted model, remove the unimplemented trial promise, and propose
-durable checkout/recovery coordination. Approval authorizes the sequential
-local implementation; it is not a completion or production-readiness claim.
+pending hosted model and define the now-implemented checkout/recovery
+coordination. Own-use v1 is Chile, monthly CLP, no associated plan, unchanged
+prices/slugs, no trial, upgrades/downgrades, Iroko-initiated pause or in-app card
+management. The [acceptance matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md)
+separates implemented, tested locally, verified at provider, pending operations
+and outside-v1 requirements. Current Cloud is **[NO VERIFICADO]**. Internal
+certification does not imply an official Mercado Pago certification.
 
 ## Directory policy
 

@@ -324,10 +324,35 @@ SELECT is(
   'invoice-paid reducer RPC does not mutate subscription status'
 );
 
-SELECT is(
-  (SELECT current_period_end FROM billing.subscriptions WHERE external_subscription_id = 'sub_v2_933'),
-  '2026-09-01T00:00:00.000Z'::timestamptz,
-  'invoice-paid reducer RPC does not mutate subscription period'
+SELECT results_eq(
+  $$
+    SELECT
+      current_period_start,
+      current_period_end,
+      plan_id,
+      cancel_at_period_end,
+      canceled_at,
+      provider,
+      customer_id
+    FROM billing.subscriptions
+    WHERE external_subscription_id = 'sub_v2_933'
+  $$,
+  $$
+    SELECT
+      '2030-08-01T00:00:00.000Z'::timestamptz,
+      '2030-09-01T00:00:00.000Z'::timestamptz,
+      (SELECT id FROM billing.plans WHERE slug = 'pro' AND "interval" = 'month'),
+      false,
+      NULL::timestamptz,
+      'stripe'::text,
+      (
+        SELECT id
+        FROM billing.customers
+        WHERE account_id = '00000000-0000-0000-0000-000000000933'::uuid
+          AND provider = 'stripe'
+      )
+  $$,
+  'invoice-paid reducer RPC advances the verified period without changing plan, cancellation, or provider state'
 );
 
 -- ── Reducers restantes: cada uno tiene una superficie de mutación acotada ──

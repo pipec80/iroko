@@ -502,7 +502,14 @@ BEGIN
   JOIN billing.customers c ON c.id = s.customer_id
   JOIN billing.plans p ON p.id = s.plan_id
   WHERE c.account_id = p_account_id
-    AND s.status IN ('active', 'trialing')
+    AND (
+      s.status IN ('active', 'trialing')
+      OR (
+        s.status = 'canceled'
+        AND s.current_period_end IS NOT NULL
+        AND s.current_period_end > now()
+      )
+    )
   ORDER BY s.created_at DESC
   LIMIT 1;
 
@@ -520,9 +527,67 @@ $$;
 
 ALTER FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") OWNER TO "postgres";
 
-COMMENT ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") IS 'Features+limits+slug del plan efectivo (sub activa → fallback free). Interno, sin check de membership (3H-1.5).';
+COMMENT ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") IS 'Effective plan row, including canceled access through a verified future period end, otherwise falling back to Free.';
 
 REVOKE ALL ON FUNCTION "private"."get_account_plan_row"("p_account_id" "uuid") FROM PUBLIC;
+
+
+CREATE OR REPLACE FUNCTION private.repair_mercadopago_subscription_periods()
+RETURNS integer
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_repaired_count integer;
+BEGIN
+  WITH ranked_evidence AS (
+    SELECT
+      subscription.id AS subscription_id,
+      invoice.period_start,
+      invoice.period_end,
+      row_number() OVER (
+        PARTITION BY subscription.id
+        ORDER BY invoice.period_end DESC NULLS LAST,
+                 invoice.period_start DESC NULLS LAST,
+                 invoice.paid_at DESC NULLS LAST,
+                 invoice.created_at DESC NULLS LAST,
+                 invoice.id DESC NULLS LAST
+      ) AS evidence_rank
+    FROM billing.subscriptions AS subscription
+    LEFT JOIN billing.invoices AS invoice
+      ON invoice.subscription_id = subscription.id
+     AND invoice.provider = subscription.provider
+     AND invoice.status = 'paid'
+     AND invoice.period_start IS NOT NULL
+     AND invoice.period_end IS NOT NULL
+     AND invoice.period_end > invoice.period_start
+    WHERE subscription.provider = 'mercadopago'
+  )
+  UPDATE billing.subscriptions AS subscription
+  SET current_period_start = evidence.period_start,
+      current_period_end = evidence.period_end
+  FROM ranked_evidence AS evidence
+  WHERE evidence.subscription_id = subscription.id
+    AND evidence.evidence_rank = 1
+    AND (
+      subscription.current_period_start IS DISTINCT FROM evidence.period_start
+      OR subscription.current_period_end IS DISTINCT FROM evidence.period_end
+    );
+
+  GET DIAGNOSTICS v_repaired_count = ROW_COUNT;
+  RETURN v_repaired_count;
+END;
+$$;
+
+ALTER FUNCTION private.repair_mercadopago_subscription_periods() OWNER TO postgres;
+
+COMMENT ON FUNCTION private.repair_mercadopago_subscription_periods() IS
+  'Migration repair that rebuilds Mercado Pago subscription periods from the deterministic greatest complete paid-invoice interval and clears unsupported scheduled-date evidence.';
+
+REVOKE ALL ON FUNCTION private.repair_mercadopago_subscription_periods()
+  FROM PUBLIC, anon, authenticated, service_role;
 
 
 CREATE OR REPLACE FUNCTION "private"."get_account_limit"("p_account_id" "uuid", "p_key" "text") RETURNS integer
@@ -784,5 +849,148 @@ BEGIN
   RETURN v_request_id;
 END;$$;
 REVOKE ALL ON FUNCTION private.invoke_billing_worker(text) FROM PUBLIC,anon,authenticated,service_role;
+
+
+CREATE TABLE private.billing_checkout_resolution_context (
+  backend_pid integer NOT NULL,
+  transaction_id bigint NOT NULL,
+  intent_id uuid NOT NULL,
+  PRIMARY KEY (backend_pid, transaction_id, intent_id)
+);
+
+REVOKE ALL ON TABLE private.billing_checkout_resolution_context
+  FROM PUBLIC, anon, authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION private.guard_billing_checkout_resolution()
+RETURNS trigger
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_authorized boolean := false;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.resolved_at IS NOT NULL
+      OR NEW.resolution_code IS NOT NULL
+      OR NEW.resolved_by IS NOT NULL THEN
+      RAISE EXCEPTION 'billing_checkout_resolution_direct_update_forbidden';
+    END IF;
+    RETURN NEW;
+  END IF;
+
+  IF OLD.resolved_at IS NOT NULL
+    OR OLD.resolution_code IS NOT NULL
+    OR OLD.resolved_by IS NOT NULL THEN
+    RAISE EXCEPTION 'billing_checkout_resolution_immutable';
+  END IF;
+
+  IF NEW.resolved_at IS DISTINCT FROM OLD.resolved_at
+    OR NEW.resolution_code IS DISTINCT FROM OLD.resolution_code
+    OR NEW.resolved_by IS DISTINCT FROM OLD.resolved_by THEN
+    DELETE FROM private.billing_checkout_resolution_context
+    WHERE backend_pid = pg_backend_pid()
+      AND transaction_id = txid_current()
+      AND intent_id = NEW.id
+    RETURNING true INTO v_authorized;
+
+    IF NOT COALESCE(v_authorized, false) THEN
+      RAISE EXCEPTION 'billing_checkout_resolution_direct_update_forbidden';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+ALTER FUNCTION private.guard_billing_checkout_resolution() OWNER TO postgres;
+REVOKE ALL ON FUNCTION private.guard_billing_checkout_resolution()
+  FROM PUBLIC, anon, authenticated, service_role;
+
+
+CREATE OR REPLACE FUNCTION private.resolve_billing_checkout_intent(
+  p_intent_id uuid,
+  p_outcome text,
+  p_resolution_code text,
+  p_operator_reference text
+) RETURNS text
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+DECLARE
+  v_intent billing.checkout_intents%ROWTYPE;
+  v_outcome text := btrim(p_outcome);
+  v_resolution_code text := btrim(p_resolution_code);
+  v_operator_reference text := btrim(p_operator_reference);
+  v_final_status text;
+BEGIN
+  IF p_outcome IS NULL OR v_outcome NOT IN ('canceled', 'failed') THEN
+    RAISE EXCEPTION 'billing_checkout_outcome_invalid';
+  END IF;
+  IF NULLIF(v_resolution_code, '') IS NULL
+    OR char_length(v_resolution_code) > 100 THEN
+    RAISE EXCEPTION 'billing_checkout_resolution_code_invalid';
+  END IF;
+  IF NULLIF(v_operator_reference, '') IS NULL
+    OR char_length(v_operator_reference) > 120 THEN
+    RAISE EXCEPTION 'billing_checkout_operator_reference_invalid';
+  END IF;
+
+  SELECT *
+  INTO v_intent
+  FROM billing.checkout_intents
+  WHERE id = p_intent_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'billing_checkout_intent_not_found';
+  END IF;
+  IF v_intent.external_subscription_id IS NOT NULL THEN
+    RAISE EXCEPTION 'billing_checkout_remote_requires_convergence';
+  END IF;
+  IF NOT (
+    v_intent.status = 'needs_review'
+    OR (
+      v_intent.status = 'pending'
+      AND v_intent.lease_expires_at IS NOT NULL
+      AND v_intent.lease_expires_at <= now()
+    )
+  ) THEN
+    RAISE EXCEPTION 'billing_checkout_intent_not_resolvable';
+  END IF;
+
+  INSERT INTO private.billing_checkout_resolution_context (
+    backend_pid,
+    transaction_id,
+    intent_id
+  ) VALUES (
+    pg_backend_pid(),
+    txid_current(),
+    v_intent.id
+  );
+
+  UPDATE billing.checkout_intents
+  SET status = v_outcome,
+      resolved_at = now(),
+      resolution_code = v_resolution_code,
+      resolved_by = v_operator_reference
+  WHERE id = v_intent.id
+  RETURNING status INTO v_final_status;
+
+  RETURN v_final_status;
+END;
+$$;
+
+ALTER FUNCTION private.resolve_billing_checkout_intent(uuid, text, text, text)
+  OWNER TO postgres;
+
+COMMENT ON FUNCTION private.resolve_billing_checkout_intent(uuid, text, text, text) IS
+  'Separately authorized operator action that closes a provider-reviewed local checkout intent while preserving immutable resolution evidence.';
+
+REVOKE ALL ON FUNCTION private.resolve_billing_checkout_intent(uuid, text, text, text)
+  FROM PUBLIC, anon, authenticated, service_role;
 
 

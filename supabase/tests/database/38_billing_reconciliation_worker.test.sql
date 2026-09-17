@@ -1,12 +1,16 @@
 BEGIN;
-SELECT plan(15);
+SELECT plan(18);
 SELECT has_table('private','billing_worker_health','worker health exists');
-SELECT has_function('public','get_billing_reconciliation_candidates',ARRAY['integer'],'scan RPC exists');
+SELECT has_function('public','claim_billing_reconciliation_candidates',ARRAY['integer','integer','text'],'claim RPC exists');
+SELECT has_function('public','complete_billing_reconciliation_candidate',ARRAY['uuid','text','text','timestamp with time zone','text','text'],'completion RPC exists');
+SELECT hasnt_function('public','get_billing_reconciliation_candidates',ARRAY['integer'],'legacy scan RPC is removed');
 SELECT has_function('public','apply_billing_reconciliation_snapshot',ARRAY['text','text','uuid','text','uuid','billing.subscription_status','timestamp with time zone','timestamp with time zone','boolean','text','jsonb','timestamp with time zone'],'CAS RPC exists');
 SELECT has_function('public','record_billing_worker_result',ARRAY['text','text','integer','jsonb'],'health RPC exists');
 SELECT has_function('private','invoke_billing_worker',ARRAY['text'],'Vault dispatcher exists');
-SELECT ok(has_function_privilege('service_role','public.get_billing_reconciliation_candidates(integer)','EXECUTE')
-  AND NOT has_function_privilege('authenticated','public.get_billing_reconciliation_candidates(integer)','EXECUTE'),'scan is service only');
+SELECT ok(has_function_privilege('service_role','public.claim_billing_reconciliation_candidates(integer,integer,text)','EXECUTE')
+  AND NOT has_function_privilege('authenticated','public.claim_billing_reconciliation_candidates(integer,integer,text)','EXECUTE')
+  AND has_function_privilege('service_role','public.complete_billing_reconciliation_candidate(uuid,text,text,timestamp with time zone,text,text)','EXECUTE')
+  AND NOT has_function_privilege('authenticated','public.complete_billing_reconciliation_candidate(uuid,text,text,timestamp with time zone,text,text)','EXECUTE'),'claim and completion are service only');
 SELECT ok(NOT has_function_privilege('service_role','private.invoke_billing_worker(text)','EXECUTE'),'dispatcher has no application grant');
 SELECT is(public.record_billing_worker_result('recovery','request-38',200,'{"claimed":1}'::jsonb),'recorded','health stores real route result');
 SELECT results_eq($$select mode,last_status_code from private.billing_worker_health where mode='recovery'$$,
@@ -19,7 +23,8 @@ INSERT INTO public.accounts(id,type,name,slug,created_by) VALUES('00000000-0000-
 INSERT INTO billing.customers(id,account_id,provider) VALUES('00000000-0000-0000-0000-000000003820','00000000-0000-0000-0000-000000003810','mercadopago');
 INSERT INTO billing.subscriptions(id,customer_id,plan_id,status,provider,external_subscription_id)
 VALUES('00000000-0000-0000-0000-000000003830','00000000-0000-0000-0000-000000003820',(SELECT id FROM billing.plans WHERE slug='pro' AND "interval"='month'),'incomplete','mercadopago','pa-38');
-SELECT is((SELECT count(*) FROM public.get_billing_reconciliation_candidates(20) WHERE external_subscription_id='pa-38'),1::bigint,'nonterminal row is scanned');
+SELECT is((SELECT count(*) FROM public.claim_billing_reconciliation_candidates(20,90,'worker-38') WHERE external_subscription_id='pa-38'),1::bigint,'nonterminal row is claimed by the durable protocol');
+SELECT is(public.complete_billing_reconciliation_candidate('00000000-0000-0000-0000-000000003830','worker-38','completed',NULL,NULL,NULL),'completed','claimed row completes and releases its lease');
 SELECT is(public.apply_billing_reconciliation_snapshot('mercadopago','reconcile-stale-38','00000000-0000-0000-0000-000000003810','pa-38',NULL,'active',NULL,NULL,false,NULL,'{}',now()-interval '1 day'),'stale','old snapshot loses CAS');
 SELECT is((SELECT status::text FROM billing.subscriptions WHERE id='00000000-0000-0000-0000-000000003830'),'incomplete','stale CAS does not mutate');
 SELECT is(public.apply_billing_reconciliation_snapshot('mercadopago','reconcile-apply-38','00000000-0000-0000-0000-000000003810','pa-38',NULL,'active',NULL,NULL,false,NULL,'{}',(SELECT updated_at FROM billing.subscriptions WHERE id='00000000-0000-0000-0000-000000003830')),'applied','matching CAS applies through reducer RPC');

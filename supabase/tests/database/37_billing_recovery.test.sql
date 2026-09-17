@@ -7,7 +7,12 @@ SELECT has_table('billing', 'financial_anomalies', 'financial anomalies table ex
 SELECT has_function('public', 'enqueue_billing_recovery_job', ARRAY['text','text','text','text','text'], 'enqueue RPC exists');
 SELECT has_function('public', 'claim_billing_recovery_jobs', ARRAY['integer','integer'], 'claim RPC exists');
 SELECT has_function('public', 'complete_billing_recovery_job', ARRAY['uuid','text','text'], 'completion RPC exists');
-SELECT has_function('public', 'upsert_billing_financial_anomaly', ARRAY['text','text','text','text','uuid','uuid'], 'anomaly RPC exists');
+SELECT has_function(
+  'public',
+  'upsert_billing_financial_anomaly',
+  ARRAY['text','text','text','text','uuid','uuid','integer','integer','text'],
+  'anomaly RPC exists'
+);
 SELECT has_function('private', 'resolve_billing_financial_anomaly', ARRAY['uuid','text'], 'manual resolver exists');
 
 SELECT ok(
@@ -36,14 +41,14 @@ SELECT ok(
   'retry gets a future backoff');
 
 SELECT public.upsert_billing_financial_anomaly(
-  'mercadopago','refund','pay-refund-37','refunded',NULL,NULL);
+  'mercadopago','partial_refund','pay-refund-37','approved',NULL,NULL,19990,5000,'CLP');
 SELECT public.upsert_billing_financial_anomaly(
-  'mercadopago','refund','pay-refund-37','refunded',NULL,NULL);
+  'mercadopago','partial_refund','pay-refund-37','approved',NULL,NULL,19990,5000,'CLP');
 SELECT results_eq(
-  $$ SELECT occurrence_count, status FROM billing.financial_anomalies
+  $$ SELECT anomaly_type, occurrence_count, status FROM billing.financial_anomalies
      WHERE external_resource_id='pay-refund-37' $$,
-  $$ VALUES (2, 'open'::text) $$,
-  'anomaly upsert is deduplicated and counted');
+  $$ VALUES ('partial_refund'::text, 2, 'open'::text) $$,
+  'partial-refund upsert is deduplicated and counted');
 
 UPDATE billing.recovery_jobs SET status='processing', attempt_count=5 WHERE resource_id='pay-37';
 SELECT results_eq(

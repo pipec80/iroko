@@ -1,4 +1,4 @@
-# Plan 013 — Fase D: preparación comercial y lanzamiento
+# Plan 013 — Fase D: preparación comercial posterior a v1 propia
 
 - Priority: P2 (comercial, no correctividad — ver regla de la sesión: "P0
   corrige comportamiento, P1 reduce riesgo, Fase D aumenta vendibilidad")
@@ -7,22 +7,36 @@
   contenido concreto de D-1/D-4 (copy de landing, estructura de Fumadocs) no
   existe aún y desglosar PRs sobre eso sería inventar detalle, no planificar.
 - Baseline: `main` @ `d9e2648`
-- Depende de: Plan 010 cerró el 2026-08-26; Plan 011 sigue siendo bloqueante.
-  **No lanzar con "billing completamente resuelto" en ningún copy de D-4
-  hasta que Plan 011 esté cerrado** — riesgo ya señalado en la sesión de
-  auditoría. Ítems abiertos concretos que bloquean "billing resuelto" para
-  Mercado Pago (identificados en el QA del 2026-09-10): el worker de
-  reconciliación/recovery no está agendado en Cloud
-  (`011-phase6-reconciliation-tasks.md`, Task 4) y no hay estado `past_due` /
-  UX de dunning para Mercado Pago (`011-phase2-mercadopago-tasks.md`,
-  "Deferred provider-coverage gaps").
+- Depende de: decidir vender el boilerplate después de la v1 propia.
+  Plan 010 está cerrado. Plan 011 conserva el programa de cuatro proveedores,
+  pero la v1 Chile requiere su tramo Mercado Pago de Fases 2/6, Plan 012 y los
+  gates operacionales. No necesita esperar a la distribución comercial.
+- Las promesas comerciales de D-4 requieren evidencia de cada proveedor
+  anunciado; «billing completamente resuelto» exige el programa completo.
+  Una certificación interna MP no certifica Stripe/Paddle/Lemon Squeezy.
 - Orden interno: D-1 → D-2 → D-3 → D-4 → D-5 → D-6 → lanzamiento. D-3
   (licenciamiento) tiene una restricción de timing dura: ver Nota de squash
   de migraciones abajo.
 
+## Separación de gates v1 y preparación comercial (2026-09-11)
+
+**Fuera de v1 propia:** Fumadocs comercial, buyer onboarding, licenciamiento,
+distribución, funnel de venta del boilerplate y material de conversión. Retomar
+estos entregables cuando se decida vender, con PRs acotados y evidencia de los
+proveedores que realmente se ofrecerán.
+
+**Necesario antes de usuarios reales en v1:** smoke de producción del flujo
+real, auth/aislamiento, hardening de Plan 012, coherencia de pricing,
+observabilidad y alertas de errores/pagos/worker/email, recuperación operacional
+y revisión de accesibilidad de los flujos críticos. Los apartados D-5/D-6
+mantienen la ampliación comercial; no posponen estos mínimos de operación.
+Evidencia y caducidad en el [registro operacional](../../quality/operational-evidence.md)
+y aceptación billing en la [matriz v1 Chile](011-mercadopago-v1-chile-acceptance.md).
+
 ## Objective
 
-Convertir el boilerplate técnicamente sólido (post Plan 010/011/012) en un
+Convertir, después de la v1 propia y con el alcance de proveedores verificado,
+el núcleo SaaS en un
 producto que un developer externo pueda comprar, instalar sin conocimiento
 interno del mantenedor, y usar como base de su propio SaaS.
 
@@ -69,8 +83,9 @@ política de soporte y de breaking changes; licencia legal real.
 **Restricción de timing — no reordenar sin releer esto.** El squash/
 reorganización de las ~136 migraciones de `supabase/migrations/` (discutido
 en sesión, ver `docs/private/legal/iroko-license-eula-structure.md` para el
-contexto de por qué importa el timing) **solo es seguro hacer antes de la
-primera venta real** — una vez que exista un comprador con "actualizaciones
+contexto de por qué importa el timing) **solo puede considerarse antes de la
+primera venta real**; incluso entonces requiere preservar los despliegues
+propios existentes y planificar su compatibilidad — una vez que exista un comprador con "actualizaciones
 de por vida" prometidas, cada migración nueva debe ser aditiva, no se puede
 reescribir el historial. Si se va a hacer, debe ir dentro de este ítem, antes
 de cerrar D-3, no después.
@@ -85,16 +100,15 @@ legal, no solo la estructura.
 ## D-4 — Landing y conversión
 
 **Precondición dura.** No reescribir el hero/copy de la landing prometiendo
-"billing resuelto" o similar hasta que Plan 011 esté cerrado y validado
-contra sandbox real — evitar vender una promesa que el código todavía no
+"billing resuelto" o similar hasta que el alcance anunciado de Plan 011 esté cerrado y validado
+contra el proveedor real; una promesa sobre los cuatro exige los cuatro — evitar vender una promesa que el código todavía no
 cumple.
 
 **Scope.** Hero reescrito alrededor del problema resuelto (no features);
 diferencial Supabase explicado; MercadoPago/LatAm destacado como
-diferenciador real (ya construido, falta comunicarlo); matriz de features
+diferenciador solo con los escenarios aceptados y sus límites explícitos; matriz de features
 honesta; comparación con construir desde cero; demo/screenshots/video;
-stack exacto documentado; CI/security como argumento comercial (justificado
-— el CI de este proyecto es genuinamente fuerte, verificado en sesión);
+stack exacto documentado; CI/security como argumento comercial (sustentado con evidencia actual de CI y seguridad);
 pricing conectado a `billing.plans` (depende de Plan 012, PR 5); FAQ; CTA de
 compra; analytics completo del funnel (depende de D-5).
 
@@ -107,7 +121,9 @@ respetado). Falta construir: dashboard de acquisition; signup conversion;
 signup → onboarding completion; activation; pricing viewed → checkout
 started → subscription activated (provider breakdown Stripe/MP); feature
 adoption; retention; invitation/team adoption; webhook/email failures;
-alertas relevantes — no dashboards decorativos sin acción asociada.
+alertas relevantes con acción asociada. Los errores críticos, fallos de
+webhooks/email y salud de workers necesarios para operar son gates previos
+de v1, no esperan a estos dashboards comerciales.
 
 ## D-6 — Polish final
 
@@ -121,11 +137,11 @@ error copy; paridad i18n visual en los 4 locales (el test de paridad de
 claves ya existe — esto es paridad _visual_, no de claves); smoke de
 producción completo antes de anunciar.
 
-## Orden resumido (referencia)
+## Orden comercial posterior (referencia histórica de Fase D)
 
 ```
 Plan 010  Tenant isolation           ┐
-Plan 011  Billing real               ┤ P0 — comportamiento
+Plan 011  Proveedores anunciados     ┤ P0 — comportamiento
                                       ┘
 Plan 012  Security hardening +       ┐
           pricing source of truth    ┘ P1 — riesgo/deuda
@@ -137,9 +153,11 @@ D-4  Landing / conversión            │
 D-5  Product analytics               │
 D-6  Accessibility / performance     ┘
                                       ↓
-                                LANZAMIENTO
+                         DISTRIBUCIÓN COMERCIAL
 ```
 
-No se desglosa Fase D en PRs ejecutables en este documento — retomar cuando
-Plan 010/011 estén cerrados, con el mismo nivel de detalle que Plan
-010/012 (archivos exactos, acceptance criteria verificables), no antes.
+No se desglosa Fase D en PRs ejecutables en este documento. Retomar después de
+v1 propia cuando se decida vender, con alcance de proveedores declarado,
+archivos exactos y acceptance criteria verificables. El orden operativo v1 es
+Fases 2/6 → workers → aceptación interna MP → Plan 012 y checks operacionales;
+las otras certificaciones siguen independientes antes de ofrecerlas.

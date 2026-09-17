@@ -424,7 +424,7 @@ ALTER FUNCTION "public"."generate_recovery_codes"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") RETURNS TABLE("plan_name" "text", "plan_slug" "text", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "features" "jsonb")
-    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
@@ -438,7 +438,14 @@ BEGIN
     JOIN billing.customers c ON c.id = s.customer_id
     JOIN billing.plans p ON p.id = s.plan_id
     WHERE c.account_id = p_account_id
-      AND s.status IN ('active', 'trialing')
+      AND (
+        s.status IN ('active', 'trialing')
+        OR (
+          s.status = 'canceled'
+          AND s.current_period_end IS NOT NULL
+          AND s.current_period_end > now()
+        )
+      )
     ORDER BY s.created_at DESC
     LIMIT 1;
 END;
@@ -448,7 +455,7 @@ $$;
 ALTER FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") IS 'Returns the current subscription summary for an account the user belongs to. SECURITY DEFINER: reads billing.* (schema not exposed to authenticated). Uses private.user_is_member() for access control.';
+COMMENT ON FUNCTION "public"."get_account_subscription"("p_account_id" "uuid") IS 'Returns the current subscription summary for an account the user belongs to, including canceled access through a verified future period end.';
 
 
 
@@ -492,7 +499,7 @@ COMMENT ON FUNCTION "public"."get_account_entitlements"("p_account_id" "uuid") I
 
 
 CREATE OR REPLACE FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") RETURNS TABLE("plan_slug" "text", "plan_name" "text", "plan_interval" "billing"."plan_interval", "status" "billing"."subscription_status", "current_period_end" timestamp with time zone, "cancel_at_period_end" boolean, "trial_end" timestamp with time zone, "provider" "text", "external_subscription_id" "text")
-    LANGUAGE "plpgsql" VOLATILE SECURITY DEFINER
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
 BEGIN
@@ -504,7 +511,14 @@ BEGIN
   JOIN billing.customers c ON c.id = s.customer_id
   JOIN billing.plans p ON p.id = s.plan_id
   WHERE c.account_id = p_account_id
-    AND s.status IN ('active', 'trialing', 'past_due', 'paused')
+    AND (
+      s.status IN ('active', 'trialing')
+      OR (
+        s.status = 'canceled'
+        AND s.current_period_end IS NOT NULL
+        AND s.current_period_end > now()
+      )
+    )
   ORDER BY s.created_at DESC
   LIMIT 1;
 END;
@@ -514,7 +528,67 @@ $$;
 ALTER FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Suscripción vigente de la cuenta para la UI de billing (owner/admin), incluyendo provider + external_subscription_id para poder cancelar contra el adapter real. Vacío si nunca se suscribió.';
+COMMENT ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") IS 'Owner/admin billing summary, including provider identity and canceled access through a verified future period end.';
+
+
+CREATE OR REPLACE FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") RETURNS TABLE("state" "text", "last_attempt_at" timestamp with time zone, "last_failure_code" "text")
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+  PERFORM private.assert_account_admin(p_account_id);
+
+  RETURN QUERY
+  WITH current_subscription AS (
+    SELECT subscription.id, subscription.provider
+    FROM billing.subscriptions AS subscription
+    INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+    WHERE customer.account_id = p_account_id
+      AND customer.provider = 'mercadopago'
+      AND subscription.provider = 'mercadopago'
+    ORDER BY subscription.created_at DESC,
+             subscription.updated_at DESC,
+             subscription.id DESC
+    LIMIT 1
+  ),
+  latest_attempt AS (
+    SELECT attempt.status, attempt.attempted_at, attempt.failure_code
+    FROM billing.payment_attempts AS attempt
+    INNER JOIN current_subscription AS subscription
+      ON subscription.id = attempt.subscription_id
+     AND subscription.provider = attempt.provider
+    ORDER BY attempt.attempted_at DESC,
+             CASE
+               WHEN attempt.status IN ('paid', 'recovered') THEN 1
+               ELSE 0
+             END DESC,
+             attempt.created_at DESC,
+             attempt.id DESC
+    LIMIT 1
+  )
+  SELECT
+    CASE latest_attempt.status
+      WHEN 'failed' THEN 'attention_required'::text
+      WHEN 'paid' THEN 'healthy'::text
+      WHEN 'recovered' THEN 'healthy'::text
+      ELSE 'unknown'::text
+    END,
+    latest_attempt.attempted_at,
+    CASE
+      WHEN latest_attempt.status = 'failed'
+        THEN left(NULLIF(btrim(latest_attempt.failure_code), ''), 100)
+      ELSE NULL::text
+    END
+  FROM (VALUES (true)) AS singleton(present)
+  LEFT JOIN latest_attempt ON singleton.present;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") IS 'Owner/admin payment-health signal derived from the latest Mercado Pago attempt. Returns exactly one bounded row and never exposes provider metadata or messages.';
 
 
 CREATE OR REPLACE FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") RETURNS "text"
@@ -681,8 +755,28 @@ BEGIN
   SET customer_id = EXCLUDED.customer_id,
       plan_id = EXCLUDED.plan_id,
       status = EXCLUDED.status,
-      current_period_start = EXCLUDED.current_period_start,
-      current_period_end = EXCLUDED.current_period_end,
+      current_period_start = CASE
+        WHEN EXCLUDED.current_period_start IS NOT NULL
+          AND EXCLUDED.current_period_end IS NOT NULL
+          AND EXCLUDED.current_period_end > EXCLUDED.current_period_start
+          AND (
+            billing.subscriptions.current_period_end IS NULL
+            OR EXCLUDED.current_period_end > billing.subscriptions.current_period_end
+          )
+          THEN EXCLUDED.current_period_start
+        ELSE billing.subscriptions.current_period_start
+      END,
+      current_period_end = CASE
+        WHEN EXCLUDED.current_period_start IS NOT NULL
+          AND EXCLUDED.current_period_end IS NOT NULL
+          AND EXCLUDED.current_period_end > EXCLUDED.current_period_start
+          AND (
+            billing.subscriptions.current_period_end IS NULL
+            OR EXCLUDED.current_period_end > billing.subscriptions.current_period_end
+          )
+          THEN EXCLUDED.current_period_end
+        ELSE billing.subscriptions.current_period_end
+      END,
       cancel_at_period_end = EXCLUDED.cancel_at_period_end;
 
   RETURN 'applied';
@@ -786,6 +880,31 @@ BEGIN
       attempted_at = EXCLUDED.attempted_at,
       metadata = EXCLUDED.metadata;
 
+  UPDATE billing.subscriptions AS subscription
+  SET current_period_start = CASE
+        WHEN p_period_start IS NOT NULL
+          AND p_period_end IS NOT NULL
+          AND p_period_end > p_period_start
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_period_end > subscription.current_period_end
+          )
+          THEN p_period_start
+        ELSE subscription.current_period_start
+      END,
+      current_period_end = CASE
+        WHEN p_period_start IS NOT NULL
+          AND p_period_end IS NOT NULL
+          AND p_period_end > p_period_start
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_period_end > subscription.current_period_end
+          )
+          THEN p_period_end
+        ELSE subscription.current_period_end
+      END
+  WHERE subscription.id = v_subscription_id;
+
   RETURN 'applied';
 END;
 $$;
@@ -794,7 +913,7 @@ $$;
 ALTER FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") IS 'Billing Core v2 narrow reducer: records one paid invoice and payment attempt without mutating subscription state.';
+COMMENT ON FUNCTION "public"."apply_invoice_paid"("p_provider" "text", "p_external_event_id" "text", "p_account_id" "uuid", "p_external_subscription_id" "text", "p_external_invoice_id" "text", "p_external_payment_id" "text", "p_amount_paid" integer, "p_currency" character(3), "p_period_start" timestamp with time zone, "p_period_end" timestamp with time zone, "p_paid_at" timestamp with time zone, "p_hosted_url" "text", "p_pdf_url" "text", "p_payload" "jsonb") IS 'Billing Core v2 narrow reducer: records one paid invoice and payment attempt, and monotonically advances verified subscription period evidence without changing lifecycle status.';
 
 
 
@@ -2071,6 +2190,10 @@ REVOKE ALL ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") FR
 GRANT ALL ON FUNCTION "public"."get_billing_overview"("p_account_id" "uuid") TO "authenticated";
 
 
+REVOKE ALL ON FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."get_billing_payment_health"("p_account_id" "uuid") TO "authenticated";
+
+
 
 REVOKE ALL ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."get_plan_provider_id"("p_slug" "text", "p_interval" "billing"."plan_interval", "p_provider" "text") TO "authenticated";
@@ -3340,12 +3463,32 @@ BEGIN
   IF v_subscription_id IS NULL THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
   IF NOT billing.reserve_provider_event(v_customer_id, 'subscription_updated', p_provider,
     p_external_event_id, p_payload) THEN RETURN 'duplicate'; END IF;
-  UPDATE billing.subscriptions
+  UPDATE billing.subscriptions AS subscription
   SET plan_id = COALESCE(p_plan_id, plan_id), status = p_status,
-      current_period_start = COALESCE(p_current_period_start, current_period_start),
-      current_period_end = COALESCE(p_current_period_end, current_period_end),
+      current_period_start = CASE
+        WHEN p_current_period_start IS NOT NULL
+          AND p_current_period_end IS NOT NULL
+          AND p_current_period_end > p_current_period_start
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_current_period_end > subscription.current_period_end
+          )
+          THEN p_current_period_start
+        ELSE subscription.current_period_start
+      END,
+      current_period_end = CASE
+        WHEN p_current_period_start IS NOT NULL
+          AND p_current_period_end IS NOT NULL
+          AND p_current_period_end > p_current_period_start
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_current_period_end > subscription.current_period_end
+          )
+          THEN p_current_period_end
+        ELSE subscription.current_period_end
+      END,
       cancel_at_period_end = p_cancel_at_period_end
-  WHERE id = v_subscription_id;
+  WHERE subscription.id = v_subscription_id;
   UPDATE billing.customers
   SET external_id = COALESCE(NULLIF(btrim(p_external_customer_id), ''), external_id)
   WHERE id = v_customer_id;
@@ -3372,11 +3515,19 @@ BEGIN
   IF v_subscription_id IS NULL THEN RAISE EXCEPTION 'billing_subscription_not_found'; END IF;
   IF NOT billing.reserve_provider_event(v_customer_id, 'subscription_canceled', p_provider,
     p_external_event_id, p_payload) THEN RETURN 'duplicate'; END IF;
-  UPDATE billing.subscriptions
+  UPDATE billing.subscriptions AS subscription
   SET status = 'canceled', canceled_at = COALESCE(p_canceled_at, now()),
-      current_period_end = COALESCE(p_access_until, current_period_end),
+      current_period_end = CASE
+        WHEN p_access_until IS NOT NULL
+          AND (
+            subscription.current_period_end IS NULL
+            OR p_access_until > subscription.current_period_end
+          )
+          THEN p_access_until
+        ELSE subscription.current_period_end
+      END,
       cancel_at_period_end = false
-  WHERE id = v_subscription_id;
+  WHERE subscription.id = v_subscription_id;
   RETURN 'applied';
 END;
 $$;
@@ -3662,11 +3813,12 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.resolve_billing_checkout_reference(
   p_external_reference uuid, p_external_subscription_id text
-) RETURNS TABLE(account_id uuid, checkout_intent_id uuid)
+) RETURNS TABLE(account_id uuid, checkout_intent_id uuid, subscription_id uuid)
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
   v_intent billing.checkout_intents%ROWTYPE;
   v_account_id uuid;
+  v_subscription_id uuid;
 BEGIN
   IF NULLIF(btrim(p_external_subscription_id), '') IS NULL THEN
     RAISE EXCEPTION 'billing_required_external_subscription_id_missing';
@@ -3681,16 +3833,26 @@ BEGIN
     IF v_intent.external_subscription_id IS NULL THEN
       PERFORM private.attach_billing_checkout_remote(v_intent.id, p_external_subscription_id, NULL);
     END IF;
-    RETURN QUERY SELECT v_intent.account_id, v_intent.id;
+    SELECT subscription.id INTO v_subscription_id
+    FROM billing.subscriptions AS subscription
+    INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+    WHERE customer.account_id = v_intent.account_id
+      AND subscription.provider = 'mercadopago'
+      AND subscription.external_subscription_id = btrim(p_external_subscription_id);
+    IF v_subscription_id IS NOT NULL THEN
+      RETURN QUERY SELECT v_intent.account_id, v_intent.id, v_subscription_id;
+    END IF;
     RETURN;
   END IF;
-  SELECT customer.account_id INTO v_account_id
+  SELECT customer.account_id, subscription.id INTO v_account_id, v_subscription_id
   FROM billing.subscriptions AS subscription
   INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
   WHERE customer.account_id = p_external_reference
     AND subscription.provider = 'mercadopago'
     AND subscription.external_subscription_id = btrim(p_external_subscription_id);
-  IF v_account_id IS NOT NULL THEN RETURN QUERY SELECT v_account_id, NULL::uuid; END IF;
+  IF v_account_id IS NOT NULL AND v_subscription_id IS NOT NULL THEN
+    RETURN QUERY SELECT v_account_id, NULL::uuid, v_subscription_id;
+  END IF;
 END;
 $$;
 
@@ -3733,22 +3895,39 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.upsert_billing_financial_anomaly(
+  text, text, text, text, uuid, uuid
+);
+
 CREATE OR REPLACE FUNCTION public.upsert_billing_financial_anomaly(
   p_provider text, p_anomaly_type text, p_external_resource_id text,
-  p_observed_status text DEFAULT NULL, p_account_id uuid DEFAULT NULL, p_subscription_id uuid DEFAULT NULL
+  p_observed_status text DEFAULT NULL, p_account_id uuid DEFAULT NULL,
+  p_subscription_id uuid DEFAULT NULL, p_original_amount integer DEFAULT NULL,
+  p_affected_amount integer DEFAULT NULL, p_currency text DEFAULT NULL
 ) RETURNS uuid LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 DECLARE v_id uuid;
 BEGIN
-  IF p_anomaly_type NOT IN ('refund','chargeback','mediation','status_divergence','unresolved_payment')
+  IF p_anomaly_type NOT IN ('refund','partial_refund','chargeback','mediation','status_divergence','unresolved_payment')
     OR NULLIF(btrim(p_provider),'') IS NULL OR NULLIF(btrim(p_external_resource_id),'') IS NULL
+    OR p_original_amount < 0 OR p_affected_amount < 0
+    OR (p_original_amount IS NOT NULL AND p_affected_amount IS NOT NULL AND p_affected_amount > p_original_amount)
+    OR (p_currency IS NOT NULL AND p_currency !~ '^[A-Z]{3}$')
     THEN RAISE EXCEPTION 'billing_financial_anomaly_invalid'; END IF;
-  INSERT INTO billing.financial_anomalies(provider,anomaly_type,external_resource_id,observed_status,account_id,subscription_id)
-  VALUES(btrim(p_provider),p_anomaly_type,btrim(p_external_resource_id),left(p_observed_status,100),p_account_id,p_subscription_id)
+  INSERT INTO billing.financial_anomalies(
+    provider,anomaly_type,external_resource_id,observed_status,account_id,subscription_id,
+    original_amount,affected_amount,currency
+  ) VALUES(
+    btrim(p_provider),p_anomaly_type,btrim(p_external_resource_id),left(p_observed_status,100),
+    p_account_id,p_subscription_id,p_original_amount,p_affected_amount,p_currency
+  )
   ON CONFLICT(provider,anomaly_type,external_resource_id) WHERE status='open' DO UPDATE SET
     last_seen_at=now(), occurrence_count=billing.financial_anomalies.occurrence_count+1,
     observed_status=COALESCE(EXCLUDED.observed_status,billing.financial_anomalies.observed_status),
     account_id=COALESCE(EXCLUDED.account_id,billing.financial_anomalies.account_id),
-    subscription_id=COALESCE(EXCLUDED.subscription_id,billing.financial_anomalies.subscription_id)
+    subscription_id=COALESCE(EXCLUDED.subscription_id,billing.financial_anomalies.subscription_id),
+    original_amount=COALESCE(EXCLUDED.original_amount,billing.financial_anomalies.original_amount),
+    affected_amount=COALESCE(EXCLUDED.affected_amount,billing.financial_anomalies.affected_amount),
+    currency=COALESCE(EXCLUDED.currency,billing.financial_anomalies.currency)
   RETURNING id INTO v_id;
   RETURN v_id;
 END;
@@ -3817,23 +3996,15 @@ END;
 $$;
 
 REVOKE ALL ON FUNCTION public.enqueue_billing_recovery_job(text,text,text,text,text) FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.upsert_billing_financial_anomaly(text,text,text,text,uuid,uuid) FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.upsert_billing_financial_anomaly(text,text,text,text,uuid,uuid,integer,integer,text) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.claim_billing_recovery_jobs(integer,integer) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.complete_billing_recovery_job(uuid,text,text) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION private.resolve_billing_financial_anomaly(uuid,text) FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.enqueue_billing_recovery_job(text,text,text,text,text) TO service_role;
-GRANT EXECUTE ON FUNCTION public.upsert_billing_financial_anomaly(text,text,text,text,uuid,uuid) TO service_role;
+GRANT EXECUTE ON FUNCTION public.upsert_billing_financial_anomaly(text,text,text,text,uuid,uuid,integer,integer,text) TO service_role;
 GRANT EXECUTE ON FUNCTION public.claim_billing_recovery_jobs(integer,integer) TO service_role;
 GRANT EXECUTE ON FUNCTION public.complete_billing_recovery_job(uuid,text,text) TO service_role;
 
-CREATE OR REPLACE FUNCTION public.get_billing_reconciliation_candidates(p_batch_size integer)
-RETURNS TABLE(account_id uuid,provider text,external_subscription_id text,subscription_updated_at timestamptz)
-LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$ BEGIN
-  IF p_batch_size<1 OR p_batch_size>20 THEN RAISE EXCEPTION 'billing_reconciliation_batch_invalid'; END IF;
-  RETURN QUERY SELECT c.account_id,s.provider,s.external_subscription_id,s.updated_at FROM billing.subscriptions s
-  JOIN billing.customers c ON c.id=s.customer_id WHERE s.status IN ('incomplete','trialing','active','past_due','paused')
-  AND s.external_subscription_id IS NOT NULL ORDER BY s.updated_at,s.id LIMIT p_batch_size;
-END;$$;
 CREATE OR REPLACE FUNCTION public.apply_billing_reconciliation_snapshot(
   p_provider text,p_external_event_id text,p_account_id uuid,p_external_subscription_id text,p_plan_id uuid,
   p_status billing.subscription_status,p_current_period_start timestamptz,p_current_period_end timestamptz,
@@ -3855,9 +4026,142 @@ RETURNS text LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
     request_id=EXCLUDED.request_id,last_invoked_at=EXCLUDED.last_invoked_at,last_completed_at=EXCLUDED.last_completed_at,
     last_status_code=EXCLUDED.last_status_code,last_summary=EXCLUDED.last_summary,updated_at=now(); RETURN 'recorded';
 END;$$;
-REVOKE ALL ON FUNCTION public.get_billing_reconciliation_candidates(integer) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.apply_billing_reconciliation_snapshot(text,text,uuid,text,uuid,billing.subscription_status,timestamptz,timestamptz,boolean,text,jsonb,timestamptz) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.record_billing_worker_result(text,text,integer,jsonb) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.get_billing_reconciliation_candidates(integer) TO service_role;
 GRANT EXECUTE ON FUNCTION public.apply_billing_reconciliation_snapshot(text,text,uuid,text,uuid,billing.subscription_status,timestamptz,timestamptz,boolean,text,jsonb,timestamptz) TO service_role;
 GRANT EXECUTE ON FUNCTION public.record_billing_worker_result(text,text,integer,jsonb) TO service_role;
+
+CREATE OR REPLACE FUNCTION public.claim_billing_reconciliation_candidates(
+  p_batch_size integer,
+  p_visibility_seconds integer,
+  p_worker_id text
+) RETURNS TABLE(
+  subscription_id uuid,
+  account_id uuid,
+  provider text,
+  external_subscription_id text,
+  subscription_updated_at timestamptz,
+  invoice_watermark timestamptz,
+  scan_cursor text,
+  scan_watermark timestamptz
+) LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+DECLARE v_worker_id text := btrim(p_worker_id);
+BEGIN
+  IF p_batch_size IS NULL OR p_batch_size < 1 OR p_batch_size > 20 THEN
+    RAISE EXCEPTION 'billing_reconciliation_batch_invalid';
+  END IF;
+  IF p_visibility_seconds IS NULL OR p_visibility_seconds < 30 OR p_visibility_seconds > 1800 THEN
+    RAISE EXCEPTION 'billing_reconciliation_visibility_invalid';
+  END IF;
+  IF NULLIF(v_worker_id, '') IS NULL OR char_length(v_worker_id) > 100 THEN
+    RAISE EXCEPTION 'billing_reconciliation_worker_invalid';
+  END IF;
+  RETURN QUERY
+  WITH candidates AS MATERIALIZED (
+    SELECT state.subscription_id
+    FROM billing.reconciliation_state AS state
+    INNER JOIN billing.subscriptions AS subscription ON subscription.id = state.subscription_id
+    WHERE state.next_scan_at <= now()
+      AND (state.lease_owner IS NULL OR state.lease_expires_at <= now())
+      AND subscription.status IN ('incomplete','trialing','active','past_due','paused')
+      AND NULLIF(btrim(subscription.external_subscription_id), '') IS NOT NULL
+    ORDER BY state.next_scan_at, state.subscription_id
+    FOR UPDATE OF state SKIP LOCKED
+    LIMIT p_batch_size
+  ), claimed AS (
+    UPDATE billing.reconciliation_state AS state
+    SET lease_owner = v_worker_id,
+      lease_expires_at = now() + make_interval(secs => p_visibility_seconds)
+    FROM candidates
+    WHERE state.subscription_id = candidates.subscription_id
+    RETURNING state.subscription_id
+  )
+  SELECT subscription.id, customer.account_id, subscription.provider,
+    subscription.external_subscription_id, subscription.updated_at,
+    state.invoice_watermark, state.scan_cursor, state.scan_watermark
+  FROM claimed
+  INNER JOIN billing.reconciliation_state AS state ON state.subscription_id = claimed.subscription_id
+  INNER JOIN billing.subscriptions AS subscription ON subscription.id = claimed.subscription_id
+  INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+  ORDER BY state.next_scan_at, state.subscription_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.complete_billing_reconciliation_candidate(
+  p_subscription_id uuid,
+  p_worker_id text,
+  p_outcome text,
+  p_provider_watermark timestamptz,
+  p_next_cursor text,
+  p_error_code text
+) RETURNS text LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
+DECLARE
+  v_state billing.reconciliation_state%ROWTYPE;
+  v_worker_id text := btrim(p_worker_id);
+  v_error_code text := left(NULLIF(btrim(p_error_code), ''), 100);
+  v_failure_delay_minutes integer;
+BEGIN
+  IF p_outcome IS NULL OR p_outcome NOT IN ('completed','deferred','failed','skipped') THEN
+    RAISE EXCEPTION 'billing_reconciliation_outcome_invalid';
+  END IF;
+  IF NULLIF(v_worker_id, '') IS NULL OR char_length(v_worker_id) > 100 THEN
+    RAISE EXCEPTION 'billing_reconciliation_worker_invalid';
+  END IF;
+  IF p_outcome = 'failed' AND NULLIF(btrim(p_error_code), '') IS NULL THEN
+    RAISE EXCEPTION 'billing_reconciliation_error_code_required';
+  END IF;
+  SELECT state.* INTO v_state
+  FROM billing.reconciliation_state AS state
+  WHERE state.subscription_id = p_subscription_id
+  FOR UPDATE;
+  IF NOT FOUND OR v_state.lease_owner IS DISTINCT FROM v_worker_id
+    OR v_state.lease_expires_at IS NULL OR v_state.lease_expires_at <= now() THEN
+    RAISE EXCEPTION 'billing_reconciliation_lease_not_owned';
+  END IF;
+  IF p_outcome = 'completed' AND p_next_cursor IS NULL THEN
+    UPDATE billing.reconciliation_state
+    SET next_scan_at = now() + interval '1 hour', lease_owner = NULL, lease_expires_at = NULL,
+      invoice_watermark = GREATEST(v_state.invoice_watermark, v_state.scan_watermark, p_provider_watermark),
+      scan_cursor = NULL, failure_count = 0, scan_watermark = NULL, last_error_code = NULL,
+      last_completed_at = now()
+    WHERE subscription_id = p_subscription_id;
+  ELSIF p_outcome = 'completed' THEN
+    UPDATE billing.reconciliation_state
+    SET next_scan_at = now() + interval '1 hour', lease_owner = NULL, lease_expires_at = NULL,
+      scan_cursor = p_next_cursor,
+      scan_watermark = GREATEST(v_state.scan_watermark, p_provider_watermark),
+      last_error_code = v_error_code
+    WHERE subscription_id = p_subscription_id;
+  ELSIF p_outcome = 'deferred' THEN
+    UPDATE billing.reconciliation_state
+    SET next_scan_at = now() + interval '1 minute', lease_owner = NULL, lease_expires_at = NULL,
+      scan_cursor = COALESCE(p_next_cursor, v_state.scan_cursor),
+      scan_watermark = GREATEST(v_state.scan_watermark, p_provider_watermark),
+      last_error_code = v_error_code
+    WHERE subscription_id = p_subscription_id;
+  ELSIF p_outcome = 'failed' THEN
+    v_failure_delay_minutes := LEAST(60, power(2, v_state.failure_count + 1)::integer);
+    UPDATE billing.reconciliation_state
+    SET next_scan_at = now() + make_interval(mins => v_failure_delay_minutes),
+      lease_owner = NULL, lease_expires_at = NULL,
+      failure_count = LEAST(10, v_state.failure_count + 1), last_error_code = v_error_code
+    WHERE subscription_id = p_subscription_id;
+  ELSE
+    UPDATE billing.reconciliation_state
+    SET next_scan_at = now() + interval '6 hours', lease_owner = NULL, lease_expires_at = NULL,
+      scan_cursor = NULL, failure_count = 0, scan_watermark = NULL, last_error_code = NULL,
+      last_completed_at = now()
+    WHERE subscription_id = p_subscription_id;
+  END IF;
+  RETURN p_outcome;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.claim_billing_reconciliation_candidates(integer,integer,text)
+  FROM PUBLIC,anon,authenticated;
+REVOKE ALL ON FUNCTION public.complete_billing_reconciliation_candidate(uuid,text,text,timestamptz,text,text)
+  FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_billing_reconciliation_candidates(integer,integer,text)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION public.complete_billing_reconciliation_candidate(uuid,text,text,timestamptz,text,text)
+  TO service_role;

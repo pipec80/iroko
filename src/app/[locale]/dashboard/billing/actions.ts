@@ -6,6 +6,7 @@ import { getActiveAccountId } from '@/lib/active-account';
 import { captureServer } from '@/lib/analytics/server';
 import { getProviderPrice } from '@/lib/billing/catalog';
 import { getPaymentProvider } from '@/lib/billing/registry';
+import { mapBillingPaymentHealth, type BillingPaymentHealth } from '@/lib/billing/payment-health';
 import { cancelBillingSubscription, startBillingCheckout } from '@/lib/billing/service';
 import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
 import type { NormalizedBillingEvent } from '@/lib/billing/events';
@@ -280,21 +281,30 @@ export const getBillingData = withServerAction(async function getBillingData(): 
   ActionResult<{
     plans: PlanRow[];
     overview: BillingOverview | null;
+    paymentHealth: BillingPaymentHealth;
     checkoutAvailable: boolean;
   }>
 > {
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
   const supabase = await createClient();
-  const [plansResult, overviewResult] = await Promise.all([
+  const [plansResult, overviewResult, paymentHealthResult] = await Promise.all([
     supabase.rpc('get_active_plans'),
     supabase.rpc('get_billing_overview', { p_account_id: accountId }),
+    supabase.rpc('get_billing_payment_health', { p_account_id: accountId }),
   ]);
   if (plansResult.error) return { data: null, error: 'fetch_failed' };
 
   const overviewNotAuthorized =
     overviewResult.error?.code === '42501' || overviewResult.error?.message === 'not_authorized';
   if (overviewResult.error && !overviewNotAuthorized) {
+    return { data: null, error: 'fetch_failed' };
+  }
+
+  const paymentHealthNotAuthorized =
+    paymentHealthResult.error?.code === '42501' ||
+    paymentHealthResult.error?.message === 'not_authorized';
+  if (paymentHealthResult.error && !paymentHealthNotAuthorized) {
     return { data: null, error: 'fetch_failed' };
   }
 
@@ -367,6 +377,9 @@ export const getBillingData = withServerAction(async function getBillingData(): 
     data: {
       plans: mappedPlans,
       overview: mappedOverview,
+      paymentHealth: mapBillingPaymentHealth(
+        paymentHealthNotAuthorized ? null : paymentHealthResult.data?.[0],
+      ),
       checkoutAvailable: paymentProvider !== null,
     },
   };

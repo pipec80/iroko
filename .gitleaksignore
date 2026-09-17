@@ -19,3 +19,7 @@ c023ff2c63671575f71e34dcf7346100fcf6da9b:src/test/totp.test.ts:generic-api-key:7
 # secreto real.
 aee6172e1d3777f567380ec47519331b5a440b6b:src/app/[locale]/dashboard/admin/accounts/[accountId]/__tests__/impersonation-actions.test.ts:generic-api-key:61
 aee6172e1d3777f567380ec47519331b5a440b6b:src/lib/impersonation-cookie.test.ts:generic-api-key:6
+
+# Cursor base64url fijo que representa {"offset":0,"extra":true}; fixture para
+# comprobar que Mercado Pago rechaza claves desconocidas, no una credencial.
+e6f99b5839cab60c9fd9772cc73b773aa0d508c4:src/lib/billing/providers/__tests__/mercadopago.test.ts:generic-api-key:1401

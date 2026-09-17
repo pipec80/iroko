@@ -81,6 +81,23 @@ const validEvent = {
   raw: {},
 };
 
+const financialAnomalyEvent = {
+  provider: 'mercadopago' as const,
+  type: 'financial_anomaly_observed' as const,
+  externalEventId: 'mercadopago:webhook:notification-partial',
+  accountReference: '00000000-0000-0000-0000-00000000a111',
+  externalSubscriptionId: 'preapproval-partial',
+  observation: {
+    anomalyType: 'partial_refund' as const,
+    externalResourceId: 'payment-partial',
+    observedStatus: 'approved',
+    originalAmount: 19_990,
+    affectedAmount: 5_000,
+    currency: 'CLP',
+  },
+  raw: { payer: { email: 'never-log-this@example.com' } },
+};
+
 describe('handleProviderWebhook', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -95,7 +112,7 @@ describe('handleProviderWebhook', () => {
       interval: 'month',
     });
     mocks.adminRpc.mockResolvedValue({
-      data: [{ account_id: 'a1', checkout_intent_id: null }],
+      data: [{ account_id: 'a1', checkout_intent_id: null, subscription_id: 'sub_1' }],
       error: null,
     });
   });
@@ -172,6 +189,21 @@ describe('handleProviderWebhook', () => {
       },
       'Billing webhook requires reconciliation',
     );
+    const anomalyCall = mocks.adminRpc.mock.calls.find(
+      ([name]) => name === 'upsert_billing_financial_anomaly',
+    );
+    expect(anomalyCall).toBeDefined();
+    expect(anomalyCall?.[1]).toStrictEqual({
+      p_account_id: undefined,
+      p_affected_amount: undefined,
+      p_anomaly_type: 'refund',
+      p_currency: undefined,
+      p_external_resource_id: 'payment_divergence',
+      p_observed_status: 'refunded',
+      p_original_amount: undefined,
+      p_provider: 'mercadopago',
+      p_subscription_id: undefined,
+    });
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 
@@ -264,6 +296,139 @@ describe('handleProviderWebhook', () => {
     );
     expect(JSON.stringify(mocks.logger.info.mock.calls)).not.toContain('never-log-this');
   });
+
+  it('persists a verified Mercado Pago financial anomaly without reducing access', async () => {
+    mocks.verifyWebhook.mockResolvedValue(financialAnomalyEvent);
+    mocks.adminRpc.mockResolvedValueOnce({
+      data: [
+        {
+          account_id: '00000000-0000-0000-0000-00000000a001',
+          checkout_intent_id: '00000000-0000-0000-0000-00000000a111',
+          subscription_id: '00000000-0000-0000-0000-00000000a002',
+        },
+      ],
+      error: null,
+    });
+    mocks.adminRpc.mockResolvedValueOnce({ data: 'anomaly-1', error: null });
+
+    await expect(
+      handleProviderWebhook('mercadopago', '{"payer":"never-log-this@example.com"}', 'sig', {
+        webhookId: 'notification-partial',
+      }),
+    ).resolves.toEqual({ status: 200, body: { result: 'financial_anomaly_observed' } });
+
+    expect(mocks.adminRpc).toHaveBeenCalledWith('resolve_billing_checkout_reference', {
+      p_external_reference: '00000000-0000-0000-0000-00000000a111',
+      p_external_subscription_id: 'preapproval-partial',
+    });
+    expect(mocks.adminRpc).toHaveBeenCalledWith('upsert_billing_financial_anomaly', {
+      p_provider: 'mercadopago',
+      p_anomaly_type: 'partial_refund',
+      p_external_resource_id: 'payment-partial',
+      p_observed_status: 'approved',
+      p_account_id: '00000000-0000-0000-0000-00000000a001',
+      p_subscription_id: '00000000-0000-0000-0000-00000000a002',
+      p_original_amount: 19_990,
+      p_affected_amount: 5_000,
+      p_currency: 'CLP',
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+    expect(mocks.adminRpc).not.toHaveBeenCalledWith(
+      'enqueue_billing_recovery_job',
+      expect.anything(),
+    );
+    expect(JSON.stringify(mocks.adminRpc.mock.calls)).not.toContain('never-log-this');
+    expect(JSON.stringify(mocks.logger.info.mock.calls)).not.toContain('never-log-this');
+  });
+
+  it('replays a verified financial anomaly through the same durable identity', async () => {
+    mocks.verifyWebhook.mockResolvedValue(financialAnomalyEvent);
+    mocks.adminRpc.mockResolvedValue({
+      data: [
+        {
+          account_id: '00000000-0000-0000-0000-00000000a001',
+          checkout_intent_id: '00000000-0000-0000-0000-00000000a111',
+          subscription_id: '00000000-0000-0000-0000-00000000a002',
+        },
+      ],
+      error: null,
+    });
+
+    await handleProviderWebhook('mercadopago', '{}', 'sig');
+    await handleProviderWebhook('mercadopago', '{}', 'sig');
+
+    const anomalyCalls = mocks.adminRpc.mock.calls.filter(
+      ([name]) => name === 'upsert_billing_financial_anomaly',
+    );
+    expect(anomalyCalls).toHaveLength(2);
+    expect(anomalyCalls[0]?.[1]).toStrictEqual(anomalyCalls[1]?.[1]);
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { data: [], error: null },
+    { data: null, error: { code: 'resolver_failed' } },
+  ])(
+    'returns a retriable failure when financial anomaly correlation is unavailable',
+    async (reply) => {
+      mocks.verifyWebhook.mockResolvedValue(financialAnomalyEvent);
+      mocks.adminRpc.mockResolvedValue(reply);
+
+      await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+        status: 500,
+        body: { error: 'billing_correlation_failed' },
+      });
+      expect(mocks.adminRpc).not.toHaveBeenCalledWith(
+        'upsert_billing_financial_anomaly',
+        expect.anything(),
+      );
+      expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+    },
+  );
+
+  it('returns a retriable failure when financial anomaly persistence fails', async () => {
+    mocks.verifyWebhook.mockResolvedValue(financialAnomalyEvent);
+    mocks.adminRpc.mockResolvedValueOnce({
+      data: [
+        {
+          account_id: '00000000-0000-0000-0000-00000000a001',
+          checkout_intent_id: '00000000-0000-0000-0000-00000000a111',
+          subscription_id: '00000000-0000-0000-0000-00000000a002',
+        },
+      ],
+      error: null,
+    });
+    mocks.adminRpc.mockResolvedValueOnce({ data: null, error: { code: 'upsert_failed' } });
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 500,
+      body: { error: 'billing_anomaly_persistence_failed' },
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it.each(['missing_external_reference', 'missing_preapproval_id'] as const)(
+    'returns a retriable failure for a verified anomaly with %s',
+    async (reason) => {
+      mocks.verifyWebhook.mockResolvedValue({
+        provider: 'mercadopago',
+        type: 'webhook_correlation_failed',
+        externalEventId: `mercadopago:webhook:notification-${reason}`,
+        resourceType: 'payment',
+        resourceId: `payment-${reason}`,
+        reason,
+        raw: { payer: { email: 'never-log-this@example.com' } },
+      });
+
+      await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+        status: 500,
+        body: { error: 'billing_correlation_failed' },
+      });
+      expect(mocks.adminRpc).not.toHaveBeenCalled();
+      expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+      expect(JSON.stringify(mocks.logger.error.mock.calls)).not.toContain('never-log-this');
+    },
+  );
 
   it('resolves a Mercado Pago intent reference before reducing the event', async () => {
     const event = {

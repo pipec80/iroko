@@ -87,6 +87,8 @@ describe('billing worker route', () => {
       stale: 0,
       anomalous: 0,
       skipped: 0,
+      failed: 1,
+      deferred: 2,
     });
 
     const response = await POST(request({ mode: 'reconciliation' }, 's'.repeat(32)));
@@ -96,9 +98,16 @@ describe('billing worker route', () => {
       batchSize: 20,
       maxDurationMs: 45_000,
     });
-    expect(await response.json()).toEqual(
-      expect.objectContaining({ mode: 'reconciliation', scanned: 1, repaired: 1 }),
-    );
+    expect(await response.json()).toEqual({
+      mode: 'reconciliation',
+      scanned: 1,
+      repaired: 1,
+      stale: 0,
+      anomalous: 0,
+      skipped: 0,
+      failed: 1,
+      deferred: 2,
+    });
   });
 
   it('returns a sanitized failure and records worker health when processing throws', async () => {

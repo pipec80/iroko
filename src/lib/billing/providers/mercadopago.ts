@@ -4,13 +4,19 @@ import { getProviderPrice } from '../catalog';
 import type { NormalizedBillingEvent } from '../events';
 import type {
   AcknowledgedWebhook,
+  BillingAnomalyType,
   CancelSubscriptionParams,
   CheckoutParams,
+  InvoiceDiscoveryInput,
+  InvoiceDiscoveryPage,
+  FinancialAnomalyObservation,
+  FinancialAnomalyWebhook,
   PaymentProvider,
   ProviderRecoveryResult,
   SubscriptionStatus,
   SubscriptionSnapshot,
   WebhookVerificationContext,
+  WebhookCorrelationFailure,
 } from '../types';
 
 const API_BASE = 'https://api.mercadopago.com';
@@ -33,7 +39,6 @@ interface PreapprovalResource {
   id: string;
   status: string;
   external_reference: string;
-  next_payment_date?: string;
   date_created?: string;
   last_modified?: string;
 }
@@ -45,7 +50,9 @@ interface AuthorizedPaymentResource {
   transaction_amount?: unknown;
   currency_id?: unknown;
   date_created?: unknown;
+  last_modified?: unknown;
   date_approved?: unknown;
+  debit_date?: unknown;
   payment: {
     id: string | number;
     status: string;
@@ -56,16 +63,138 @@ interface AuthorizedPaymentResource {
 interface PaymentResource {
   id: string | number;
   status: string;
+  transaction_amount?: unknown;
+  transaction_amount_refunded?: unknown;
+  currency_id?: unknown;
 }
 
 interface AuthorizedPaymentSearchResponse {
   results?: unknown;
+  paging?: unknown;
+}
+
+interface MercadoPagoInvoiceCursor {
+  offset: number;
+}
+
+interface AuthorizedPaymentSearchPaging {
+  offset: number;
+  limit: number;
+  total: number;
 }
 
 function normalizeExternalId(value: unknown): string | null {
   if (typeof value === 'string' && value.trim().length > 0) return value;
   if (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0) return String(value);
   return null;
+}
+
+function providerTimestamp(value: unknown): { value: string; time: number } | null {
+  if (typeof value !== 'string' || value.trim().length === 0) return null;
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(
+      value,
+    );
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  const offsetHour = match[8] === undefined ? 0 : Number(match[8]);
+  const offsetMinute = match[9] === undefined ? 0 : Number(match[9]);
+  if (
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > daysInMonth(year, month) ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59 ||
+    offsetHour > 23 ||
+    offsetMinute > 59
+  ) {
+    return null;
+  }
+
+  const time = Date.parse(value);
+  return Number.isNaN(time) ? null : { value, time };
+}
+
+function discoveryError(code: string): Error {
+  return new Error(`mercadopago_discovery_${code}`);
+}
+
+function discoveryPageSize(value: number): number {
+  if (!Number.isFinite(value)) throw discoveryError('invalid_page_size');
+  return Math.min(20, Math.max(1, Math.trunc(value)));
+}
+
+function encodeInvoiceCursor(cursor: MercadoPagoInvoiceCursor): string {
+  return Buffer.from(JSON.stringify(cursor)).toString('base64url');
+}
+
+function decodeInvoiceCursor(cursor: string | undefined, pageSize: number): number {
+  if (cursor === undefined) return 0;
+  if (!/^[A-Za-z0-9_-]+$/.test(cursor)) throw discoveryError('invalid_cursor');
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(Buffer.from(cursor, 'base64url').toString('utf8')) as unknown;
+  } catch {
+    throw discoveryError('invalid_cursor');
+  }
+  const parsedRecord: Record<string, unknown> | null =
+    typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed) ?
+      (parsed as Record<string, unknown>)
+    : null;
+  const parsedOffset = parsedRecord?.offset;
+  if (
+    !parsedRecord ||
+    Object.keys(parsedRecord).length !== 1 ||
+    typeof parsedOffset !== 'number' ||
+    !Number.isSafeInteger(parsedOffset) ||
+    parsedOffset < 0 ||
+    parsedOffset % pageSize !== 0
+  ) {
+    throw discoveryError('invalid_cursor');
+  }
+  return parsedOffset;
+}
+
+function validatedSearchPaging(
+  value: unknown,
+  requestedOffset: number,
+  requestedLimit: number,
+  resultCount: number,
+): AuthorizedPaymentSearchPaging {
+  const paging: Record<string, unknown> | null =
+    typeof value === 'object' && value !== null && !Array.isArray(value) ?
+      (value as Record<string, unknown>)
+    : null;
+  const offset = paging?.offset;
+  const limit = paging?.limit;
+  const total = paging?.total;
+  if (
+    !paging ||
+    typeof offset !== 'number' ||
+    typeof limit !== 'number' ||
+    typeof total !== 'number' ||
+    !Number.isSafeInteger(offset) ||
+    !Number.isSafeInteger(limit) ||
+    !Number.isSafeInteger(total) ||
+    offset !== requestedOffset ||
+    limit !== requestedLimit ||
+    total < 0 ||
+    resultCount > requestedLimit ||
+    requestedOffset + resultCount > total ||
+    (requestedOffset + resultCount < total && resultCount !== requestedLimit)
+  ) {
+    throw discoveryError('invalid_paging');
+  }
+  return { offset, limit, total };
 }
 
 function normalizeCurrency(value: unknown): string | null {
@@ -91,6 +220,60 @@ function normalizeAmount(value: unknown, currency: string): number | null {
   const scale = 10 ** fractionDigits;
   const minorAmount = whole * scale + Number(fraction.padEnd(fractionDigits, '0'));
   return Number.isSafeInteger(minorAmount) ? minorAmount : null;
+}
+
+function daysInMonth(year: number, month: number): number {
+  if (month === 2) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
+  }
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
+}
+
+function monthlyPaidPeriod(debitDate: unknown): { periodStart: string; periodEnd: string } | null {
+  if (typeof debitDate !== 'string') return null;
+  const match =
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|([+-])(\d{2}):(\d{2}))$/.exec(
+      debitDate,
+    );
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const hour = Number(match[4]);
+  const minute = Number(match[5]);
+  const second = Number(match[6]);
+  const offsetHour = match[8] === undefined ? 0 : Number(match[8]);
+  const offsetMinute = match[9] === undefined ? 0 : Number(match[9]);
+  if (
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > daysInMonth(year, month) ||
+    hour > 23 ||
+    minute > 59 ||
+    second > 59 ||
+    offsetHour > 23 ||
+    offsetMinute > 59
+  ) {
+    return null;
+  }
+
+  const periodStartDate = new Date(debitDate);
+  if (Number.isNaN(periodStartDate.getTime())) return null;
+
+  const originalDay = periodStartDate.getUTCDate();
+  const periodEndDate = new Date(periodStartDate);
+  periodEndDate.setUTCDate(1);
+  periodEndDate.setUTCMonth(periodEndDate.getUTCMonth() + 1);
+  const targetYear = periodEndDate.getUTCFullYear();
+  const targetMonth = periodEndDate.getUTCMonth() + 1;
+  periodEndDate.setUTCDate(Math.min(originalDay, daysInMonth(targetYear, targetMonth)));
+
+  return {
+    periodStart: periodStartDate.toISOString(),
+    periodEnd: periodEndDate.toISOString(),
+  };
 }
 
 function isAuthorizedPaymentResource(value: unknown): value is AuthorizedPaymentResource {
@@ -321,6 +504,7 @@ function normalizeAuthorizedPaymentEvent(
     });
   }
   if (amount === null || currency === undefined) return null;
+  const paidPeriod = monthlyPaidPeriod(payment.debit_date);
   return {
     provider: 'mercadopago',
     externalEventId,
@@ -331,6 +515,7 @@ function normalizeAuthorizedPaymentEvent(
     externalPaymentId: paymentId,
     amountPaid: amount,
     currency,
+    ...(paidPeriod ?? {}),
     paidAt: approvedAt,
     raw: payment,
   };
@@ -342,16 +527,47 @@ function acknowledgedWebhook(
   return { provider: 'mercadopago', type: 'webhook_acknowledged', ...input };
 }
 
-function anomalyTypeForPaymentStatus(status: string): ProviderRecoveryResult | null {
-  if (status === 'refunded')
-    return { kind: 'anomaly', anomalyType: 'refund', observedStatus: status };
-  if (status === 'charged_back') {
-    return { kind: 'anomaly', anomalyType: 'chargeback', observedStatus: status };
+function financialAnomalyObservationForPayment(
+  payment: PaymentResource,
+  externalResourceId: string,
+): FinancialAnomalyObservation | null {
+  const currency = normalizeCurrency(payment.currency_id);
+  const originalAmount = currency ? normalizeAmount(payment.transaction_amount, currency) : null;
+  const affectedAmount =
+    currency ? normalizeAmount(payment.transaction_amount_refunded, currency) : null;
+  const hasNormalizedAmounts = originalAmount !== null && affectedAmount !== null;
+  const hasBoundedAmounts = hasNormalizedAmounts && affectedAmount <= originalAmount;
+  const monetaryEvidence =
+    hasBoundedAmounts ? { originalAmount, affectedAmount, ...(currency ? { currency } : {}) }
+    : currency ? { currency }
+    : {};
+
+  let anomalyType: BillingAnomalyType;
+  if (
+    hasNormalizedAmounts &&
+    originalAmount > 0 &&
+    affectedAmount > 0 &&
+    affectedAmount < originalAmount
+  ) {
+    anomalyType = 'partial_refund';
+  } else if (hasNormalizedAmounts && originalAmount > 0 && affectedAmount >= originalAmount) {
+    anomalyType = 'refund';
+  } else if (payment.status === 'refunded') {
+    anomalyType = 'refund';
+  } else if (payment.status === 'charged_back') {
+    anomalyType = 'chargeback';
+  } else if (payment.status === 'in_mediation') {
+    anomalyType = 'mediation';
+  } else {
+    return null;
   }
-  if (status === 'in_mediation') {
-    return { kind: 'anomaly', anomalyType: 'mediation', observedStatus: status };
-  }
-  return null;
+
+  return {
+    anomalyType,
+    externalResourceId,
+    observedStatus: payment.status,
+    ...monetaryEvidence,
+  };
 }
 
 /**
@@ -490,7 +706,13 @@ export const mercadopagoProvider: PaymentProvider = {
     rawBody: string,
     signature: string,
     context?: WebhookVerificationContext,
-  ): Promise<NormalizedBillingEvent | AcknowledgedWebhook | null> {
+  ): Promise<
+    | NormalizedBillingEvent
+    | AcknowledgedWebhook
+    | FinancialAnomalyWebhook
+    | WebhookCorrelationFailure
+    | null
+  > {
     let parsedBody: unknown;
     try {
       parsedBody = JSON.parse(rawBody) as unknown;
@@ -519,7 +741,6 @@ export const mercadopagoProvider: PaymentProvider = {
           accountId: preapproval.external_reference,
           externalSubscriptionId: preapproval.id,
           canceledAt: preapproval.last_modified,
-          accessUntil: preapproval.next_payment_date,
           raw: preapproval,
         };
       }
@@ -530,7 +751,6 @@ export const mercadopagoProvider: PaymentProvider = {
         accountId: preapproval.external_reference,
         status,
         externalSubscriptionId: preapproval.id,
-        currentPeriodEnd: preapproval.next_payment_date,
         // Mercado Pago has no supported period-end cancellation capability.
         cancelAtPeriodEnd: false,
         raw: preapproval,
@@ -583,6 +803,38 @@ export const mercadopagoProvider: PaymentProvider = {
           raw: { notification: body, payment: providerPayment },
         });
       }
+      const accountReference =
+        (
+          typeof invoice.external_reference === 'string' &&
+          invoice.external_reference.trim().length > 0
+        ) ?
+          invoice.external_reference
+        : null;
+      const externalSubscriptionId = normalizeExternalId(invoice.preapproval_id);
+      const observation = financialAnomalyObservationForPayment(providerPayment, dataId);
+      if (observation && (!accountReference || !externalSubscriptionId)) {
+        return {
+          provider: 'mercadopago',
+          type: 'webhook_correlation_failed',
+          externalEventId: webhookEventId(context, `mercadopago:payment:${dataId}`),
+          resourceType: 'payment',
+          resourceId: dataId,
+          reason: !accountReference ? 'missing_external_reference' : 'missing_preapproval_id',
+          raw: { notification: body, payment: providerPayment, authorizedPayment: invoice },
+        };
+      }
+      if (!accountReference || !externalSubscriptionId) return null;
+      if (observation) {
+        return {
+          provider: 'mercadopago',
+          type: 'financial_anomaly_observed',
+          externalEventId: webhookEventId(context, `mercadopago:payment:${dataId}`),
+          accountReference,
+          externalSubscriptionId,
+          observation,
+          raw: { notification: body, payment: providerPayment, authorizedPayment: invoice },
+        };
+      }
       if (invoice.payment.status !== providerPayment.status) {
         return acknowledgedWebhook({
           reason: 'payment_status_divergence',
@@ -616,17 +868,17 @@ export const mercadopagoProvider: PaymentProvider = {
 
   async recoverResource(input): Promise<ProviderRecoveryResult> {
     const dataId = input.resourceId;
-    const [providerPayment, invoices] = await Promise.all([
-      fetchResource<unknown>(`/v1/payments/${encodeURIComponent(dataId)}`),
-      fetchResource<AuthorizedPaymentSearchResponse>(
-        `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
-      ),
-    ]);
+    const providerPayment = await fetchResource<unknown>(
+      `/v1/payments/${encodeURIComponent(dataId)}`,
+    );
     if (!isPaymentResource(providerPayment) || normalizeExternalId(providerPayment.id) !== dataId) {
       return { kind: 'unrelated' };
     }
-    const adverse = anomalyTypeForPaymentStatus(providerPayment.status);
-    if (adverse) return adverse;
+    const observation = financialAnomalyObservationForPayment(providerPayment, dataId);
+    if (observation) return { kind: 'anomaly', observation };
+    const invoices = await fetchResource<AuthorizedPaymentSearchResponse>(
+      `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
+    );
     const invoice =
       Array.isArray(invoices.results) ?
         invoices.results.find(
@@ -641,8 +893,11 @@ export const mercadopagoProvider: PaymentProvider = {
     if (invoice.payment.status !== providerPayment.status) {
       return {
         kind: 'anomaly',
-        anomalyType: 'status_divergence',
-        observedStatus: providerPayment.status,
+        observation: {
+          anomalyType: 'status_divergence',
+          externalResourceId: dataId,
+          observedStatus: providerPayment.status,
+        },
       };
     }
     const invoiceId = normalizeExternalId(invoice.id);
@@ -656,6 +911,105 @@ export const mercadopagoProvider: PaymentProvider = {
     return { kind: 'event', event };
   },
 
+  async discoverSubscriptionInvoices(input: InvoiceDiscoveryInput): Promise<InvoiceDiscoveryPage> {
+    const externalSubscriptionId = normalizeExternalId(input.externalSubscriptionId);
+    const modifiedSince = providerTimestamp(input.modifiedSince);
+    if (!externalSubscriptionId || !modifiedSince) {
+      throw discoveryError('invalid_input');
+    }
+
+    const pageSize = discoveryPageSize(input.pageSize);
+    const offset = decodeInvoiceCursor(input.cursor, pageSize);
+    const searchPath =
+      `/authorized_payments/search?preapproval_id=${encodeURIComponent(externalSubscriptionId)}` +
+      `&limit=${pageSize}&offset=${offset}`;
+    const response = await fetchResource<AuthorizedPaymentSearchResponse>(searchPath);
+    if (!Array.isArray(response.results)) throw discoveryError('invalid_paging');
+    const paging = validatedSearchPaging(
+      response.paging,
+      offset,
+      pageSize,
+      response.results.length,
+    );
+
+    const eligibleCandidates: Array<{
+      invoice: AuthorizedPaymentResource;
+      invoiceId: string;
+      paymentId: string;
+    }> = [];
+    let providerWatermark: { value: string; time: number } | null = null;
+    for (const candidate of response.results) {
+      if (!isAuthorizedPaymentResource(candidate)) throw discoveryError('invalid_result');
+      if (normalizeExternalId(candidate.preapproval_id) !== externalSubscriptionId) {
+        throw discoveryError('identity_mismatch');
+      }
+
+      const lastModified = providerTimestamp(candidate.last_modified);
+      if (lastModified && (!providerWatermark || lastModified.time > providerWatermark.time)) {
+        providerWatermark = lastModified;
+      }
+      if (lastModified && lastModified.time < modifiedSince.time) continue;
+
+      const invoiceId = normalizeExternalId(candidate.id);
+      const paymentId = normalizeExternalId(candidate.payment.id);
+      if (!invoiceId || !paymentId) continue;
+      eligibleCandidates.push({ invoice: candidate, invoiceId, paymentId });
+    }
+
+    // A page is only safe to reduce after every eligible authorized-payment
+    // row has been tied to fresh payment evidence. Keep all results staged so
+    // a malformed, mismatched, or failed fetch cannot advance a partial page.
+    const verifiedPayments: Array<{
+      invoice: AuthorizedPaymentResource;
+      invoiceId: string;
+      paymentId: string;
+      payment: PaymentResource;
+    }> = [];
+    for (let index = 0; index < eligibleCandidates.length; index += 5) {
+      const group = eligibleCandidates.slice(index, index + 5);
+      let fetchedPayments: unknown[];
+      try {
+        fetchedPayments = await Promise.all(
+          group.map(({ paymentId }) =>
+            fetchResource<unknown>(`/v1/payments/${encodeURIComponent(paymentId)}`),
+          ),
+        );
+      } catch {
+        throw discoveryError('payment_fetch_failed');
+      }
+      for (const [paymentIndex, candidate] of group.entries()) {
+        const payment = fetchedPayments[paymentIndex];
+        if (!isPaymentResource(payment)) throw discoveryError('payment_invalid');
+        if (normalizeExternalId(payment.id) !== candidate.paymentId) {
+          throw discoveryError('payment_identity_mismatch');
+        }
+        verifiedPayments.push({ ...candidate, payment });
+      }
+    }
+
+    const events: NormalizedBillingEvent[] = [];
+    const financialAnomalies: FinancialAnomalyObservation[] = [];
+    for (const { invoice, invoiceId, paymentId, payment } of verifiedPayments) {
+      const observation = financialAnomalyObservationForPayment(payment, paymentId);
+      if (observation) {
+        financialAnomalies.push(observation);
+        continue;
+      }
+      const event = normalizeAuthorizedPaymentEvent(
+        invoice,
+        authorizedPaymentEventId(invoiceId, paymentId, invoice.payment.status),
+      );
+      if (event && event.type !== 'webhook_acknowledged') events.push(event);
+    }
+    const nextOffset = paging.offset + response.results.length;
+    return {
+      events,
+      financialAnomalies,
+      nextCursor: nextOffset < paging.total ? encodeInvoiceCursor({ offset: nextOffset }) : null,
+      providerWatermark: providerWatermark?.value ?? null,
+    };
+  },
+
   async getSubscriptionSnapshot(externalSubscriptionId): Promise<SubscriptionSnapshot | null> {
     const preapproval = await fetchResource<PreapprovalResource>(
       `/preapproval/${encodeURIComponent(externalSubscriptionId)}`,
@@ -664,7 +1018,6 @@ export const mercadopagoProvider: PaymentProvider = {
     return {
       externalSubscriptionId: preapproval.id,
       status: mapPreapprovalStatus(preapproval.status),
-      ...(preapproval.next_payment_date ? { currentPeriodEnd: preapproval.next_payment_date } : {}),
       cancelAtPeriodEnd: false,
       ...(preapproval.last_modified ?
         {

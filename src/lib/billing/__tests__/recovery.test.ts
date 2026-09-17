@@ -37,13 +37,29 @@ describe('recoverBillingResources', () => {
     vi.clearAllMocks();
     mocks.getPaymentProvider.mockReturnValue({ recoverResource: mocks.recoverResource });
     mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
-    mocks.rpc.mockImplementation((name: string) => {
+    mocks.rpc.mockImplementation((name: string, args?: Record<string, unknown>) => {
       if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
       if (name === 'resolve_billing_checkout_reference') {
         return { data: [{ account_id: 'account-1', checkout_intent_id: null }], error: null };
       }
       if (name === 'complete_billing_recovery_job') {
         return { data: [{ status: 'resolved', anomaly_created: false }], error: null };
+      }
+      if (name === 'upsert_billing_financial_anomaly') {
+        const expectedKeys = [
+          'p_account_id',
+          'p_affected_amount',
+          'p_anomaly_type',
+          'p_currency',
+          'p_external_resource_id',
+          'p_observed_status',
+          'p_original_amount',
+          'p_provider',
+          'p_subscription_id',
+        ];
+        if (JSON.stringify(Object.keys(args ?? {}).sort()) !== JSON.stringify(expectedKeys)) {
+          return { data: null, error: { code: 'rpc_signature_mismatch' } };
+        }
       }
       return { data: 'anomaly-id', error: null };
     });
@@ -76,21 +92,42 @@ describe('recoverBillingResources', () => {
     });
   });
 
-  it('persists adverse payment evidence without reducing subscription access', async () => {
+  it('persists one partial-refund observation without reducing subscription access', async () => {
     mocks.recoverResource.mockResolvedValue({
       kind: 'anomaly',
-      anomalyType: 'refund',
-      observedStatus: 'refunded',
+      observation: {
+        anomalyType: 'partial_refund',
+        externalResourceId: 'pay-partial',
+        observedStatus: 'approved',
+        originalAmount: 19990,
+        affectedAmount: 5000,
+        currency: 'CLP',
+      },
     });
 
     await expect(
       recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ anomalous: 1 }));
-    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
-    expect(mocks.rpc).toHaveBeenCalledWith(
-      'upsert_billing_financial_anomaly',
-      expect.objectContaining({ p_anomaly_type: 'refund', p_external_resource_id: 'payment-371' }),
+    ).resolves.toEqual(
+      expect.objectContaining({ anomalous: 1, resolved: 1, retried: 0, exhausted: 0 }),
     );
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+    expect(mocks.rpc).toHaveBeenCalledWith('upsert_billing_financial_anomaly', {
+      p_account_id: undefined,
+      p_anomaly_type: 'partial_refund',
+      p_affected_amount: 5000,
+      p_currency: 'CLP',
+      p_external_resource_id: 'pay-partial',
+      p_observed_status: 'approved',
+      p_original_amount: 19990,
+      p_provider: 'mercadopago',
+      p_subscription_id: undefined,
+    });
+    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
+      p_job_id: job.id,
+      p_last_error_code: undefined,
+      p_outcome: 'anomaly',
+    });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 
   it('alerts once only when SQL reports a newly exhausted anomaly', async () => {

@@ -114,6 +114,9 @@ export type Database = {
           lease_expires_at: string | null
           plan_id: string
           provider: string
+          resolution_code: string | null
+          resolved_at: string | null
+          resolved_by: string | null
           status: string
           updated_at: string
         }
@@ -127,6 +130,9 @@ export type Database = {
           lease_expires_at?: string | null
           plan_id: string
           provider: string
+          resolution_code?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status: string
           updated_at?: string
         }
@@ -140,6 +146,9 @@ export type Database = {
           lease_expires_at?: string | null
           plan_id?: string
           provider?: string
+          resolution_code?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
           status?: string
           updated_at?: string
         }
@@ -224,8 +233,10 @@ export type Database = {
       financial_anomalies: {
         Row: {
           account_id: string | null
+          affected_amount: number | null
           anomaly_type: string
           created_at: string
+          currency: string | null
           external_resource_id: string
           first_seen_at: string
           id: string
@@ -233,6 +244,7 @@ export type Database = {
           last_seen_at: string
           observed_status: string | null
           occurrence_count: number
+          original_amount: number | null
           payment_id: string | null
           provider: string
           resolution_code: string | null
@@ -243,8 +255,10 @@ export type Database = {
         }
         Insert: {
           account_id?: string | null
+          affected_amount?: number | null
           anomaly_type: string
           created_at?: string
+          currency?: string | null
           external_resource_id: string
           first_seen_at?: string
           id?: string
@@ -252,6 +266,7 @@ export type Database = {
           last_seen_at?: string
           observed_status?: string | null
           occurrence_count?: number
+          original_amount?: number | null
           payment_id?: string | null
           provider: string
           resolution_code?: string | null
@@ -262,8 +277,10 @@ export type Database = {
         }
         Update: {
           account_id?: string | null
+          affected_amount?: number | null
           anomaly_type?: string
           created_at?: string
+          currency?: string | null
           external_resource_id?: string
           first_seen_at?: string
           id?: string
@@ -271,6 +288,7 @@ export type Database = {
           last_seen_at?: string
           observed_status?: string | null
           occurrence_count?: number
+          original_amount?: number | null
           payment_id?: string | null
           provider?: string
           resolution_code?: string | null
@@ -638,6 +656,59 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconciliation_state: {
+        Row: {
+          created_at: string
+          failure_count: number
+          invoice_watermark: string | null
+          last_completed_at: string | null
+          last_error_code: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          next_scan_at: string
+          scan_cursor: string | null
+          scan_watermark: string | null
+          subscription_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          failure_count?: number
+          invoice_watermark?: string | null
+          last_completed_at?: string | null
+          last_error_code?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          next_scan_at?: string
+          scan_cursor?: string | null
+          scan_watermark?: string | null
+          subscription_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          failure_count?: number
+          invoice_watermark?: string | null
+          last_completed_at?: string | null
+          last_error_code?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          next_scan_at?: string
+          scan_cursor?: string | null
+          scan_watermark?: string | null
+          subscription_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_state_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: true
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -1917,6 +1988,23 @@ export type Database = {
         Returns: undefined
       }
       check_request: { Args: never; Returns: undefined }
+      claim_billing_reconciliation_candidates: {
+        Args: {
+          p_batch_size: number
+          p_visibility_seconds: number
+          p_worker_id: string
+        }
+        Returns: {
+          account_id: string
+          external_subscription_id: string
+          invoice_watermark: string
+          provider: string
+          scan_cursor: string
+          scan_watermark: string
+          subscription_id: string
+          subscription_updated_at: string
+        }[]
+      }
       claim_billing_recovery_jobs: {
         Args: { p_batch_size: number; p_visibility_seconds: number }
         Returns: {
@@ -1927,6 +2015,17 @@ export type Database = {
           resource_id: string
           resource_type: string
         }[]
+      }
+      complete_billing_reconciliation_candidate: {
+        Args: {
+          p_error_code: string
+          p_next_cursor: string
+          p_outcome: string
+          p_provider_watermark: string
+          p_subscription_id: string
+          p_worker_id: string
+        }
+        Returns: string
       }
       complete_billing_recovery_job: {
         Args: {
@@ -2071,6 +2170,14 @@ export type Database = {
           trial_end: string
         }[]
       }
+      get_billing_payment_health: {
+        Args: { p_account_id: string }
+        Returns: {
+          last_attempt_at: string
+          last_failure_code: string
+          state: string
+        }[]
+      }
       get_billing_provider_price: {
         Args: {
           p_currency: string
@@ -2087,15 +2194,6 @@ export type Database = {
           plan_id: string
           plan_slug: string
           provider: string
-        }[]
-      }
-      get_billing_reconciliation_candidates: {
-        Args: { p_batch_size: number }
-        Returns: {
-          account_id: string
-          external_subscription_id: string
-          provider: string
-          subscription_updated_at: string
         }[]
       }
       get_email_worker_health: {
@@ -2339,6 +2437,7 @@ export type Database = {
         Returns: {
           account_id: string
           checkout_intent_id: string
+          subscription_id: string
         }[]
       }
       resolve_billing_plan_by_external_price: {
@@ -2429,9 +2528,12 @@ export type Database = {
       upsert_billing_financial_anomaly: {
         Args: {
           p_account_id?: string
+          p_affected_amount?: number
           p_anomaly_type: string
+          p_currency?: string
           p_external_resource_id: string
           p_observed_status?: string
+          p_original_amount?: number
           p_provider: string
           p_subscription_id?: string
         }

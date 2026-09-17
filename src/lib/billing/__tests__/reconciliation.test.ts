@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   snapshot: vi.fn(),
+  discover: vi.fn(),
   getProvider: vi.fn(),
   reduce: vi.fn(),
 }));
@@ -12,17 +13,35 @@ vi.mock('../reducer', () => ({ reduceBillingEvent: mocks.reduce }));
 import { reconcileNonTerminalSubscriptions } from '../reconciliation';
 
 const candidate = {
+  subscription_id: 'subscription-1',
   account_id: 'account-1',
   provider: 'mercadopago',
   external_subscription_id: 'pa-1',
   subscription_updated_at: '2026-09-09T12:00:00Z',
+  invoice_watermark: '2026-09-10T12:00:00Z',
+  scan_cursor: null,
+  scan_watermark: null,
 };
+
+function completionCalls() {
+  return mocks.rpc.mock.calls.filter(
+    ([name]) => name === 'complete_billing_reconciliation_candidate',
+  );
+}
 
 describe('reconcileNonTerminalSubscriptions', () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
     vi.clearAllMocks();
-    mocks.rpc.mockResolvedValue({ data: [candidate], error: null });
-    mocks.getProvider.mockReturnValue({ getSubscriptionSnapshot: mocks.snapshot });
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        { data: [candidate], error: null }
+      : { data: 'completed', error: null },
+    );
+    mocks.getProvider.mockReturnValue({
+      getSubscriptionSnapshot: mocks.snapshot,
+      discoverSubscriptionInvoices: mocks.discover,
+    });
     mocks.snapshot.mockResolvedValue({
       externalSubscriptionId: 'pa-1',
       status: 'active',
@@ -30,58 +49,574 @@ describe('reconcileNonTerminalSubscriptions', () => {
       cancelAtPeriodEnd: false,
       providerVersion: 'v2',
     });
-  });
-  it('repairs through the reducer with the scanned updated_at CAS', async () => {
+    mocks.discover.mockResolvedValue({
+      events: [],
+      nextCursor: null,
+      providerWatermark: '2026-09-11T12:00:00Z',
+    });
     mocks.reduce.mockResolvedValue({ status: 'applied' });
+  });
+
+  it('claims a UUID-owned batch and completes a stable snapshot so it cannot remain leased', async () => {
     await expect(
-      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
-    ).resolves.toEqual({ scanned: 1, repaired: 1, stale: 0, anomalous: 0, skipped: 0 });
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual({
+      scanned: 1,
+      repaired: 1,
+      stale: 0,
+      anomalous: 0,
+      skipped: 0,
+      failed: 0,
+      deferred: 0,
+    });
+    const claim = mocks.rpc.mock.calls.find(
+      ([name]) => name === 'claim_billing_reconciliation_candidates',
+    );
+    expect(claim?.[1]).toEqual(
+      expect.objectContaining({
+        p_batch_size: 20,
+        p_visibility_seconds: 90,
+        p_worker_id: expect.any(String),
+      }),
+    );
+    expect(claim?.[1].p_worker_id).toMatch(/^[0-9a-f-]{36}$/i);
     expect(mocks.reduce).toHaveBeenCalledWith(
       expect.objectContaining({ externalEventId: 'reconciliation:mercadopago:pa-1:v2' }),
       { expectedSubscriptionUpdatedAt: candidate.subscription_updated_at },
     );
-  });
-  it('does not overwrite a webhook update that wins after the scan', async () => {
-    mocks.reduce.mockResolvedValue({ status: 'stale' });
-    await expect(
-      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
-    ).resolves.toEqual(expect.objectContaining({ repaired: 0, stale: 1 }));
+    expect(completionCalls()).toHaveLength(1);
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_subscription_id: candidate.subscription_id,
+        p_outcome: 'completed',
+        p_next_cursor: null,
+        p_provider_watermark: '2026-09-11T12:00:00Z',
+      }),
+    );
   });
 
-  it('skips a provider that is not configured for reconciliation', async () => {
-    mocks.getProvider.mockImplementation(() => {
-      throw new Error('provider_not_configured');
+  it('isolates a provider rejection, records a safe failure, and continues later candidates', async () => {
+    const later = {
+      ...candidate,
+      subscription_id: 'subscription-2',
+      external_subscription_id: 'pa-2',
+    };
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        { data: [candidate, later], error: null }
+      : { data: 'completed', error: null },
+    );
+    mocks.snapshot.mockImplementation(async (id: string) => {
+      if (id === 'pa-1') throw new Error('remote response contains a secret');
+      return {
+        externalSubscriptionId: id,
+        status: 'active',
+        cancelAtPeriodEnd: false,
+        providerVersion: id,
+      };
     });
-
     await expect(
-      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
-    ).resolves.toEqual({ scanned: 1, repaired: 0, stale: 0, anomalous: 0, skipped: 1 });
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ failed: 1, repaired: 1 }));
+    expect(
+      completionCalls().map(([, args]) => [
+        args.p_subscription_id,
+        args.p_outcome,
+        args.p_error_code,
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        ['subscription-1', 'failed', 'provider_fetch_failed'],
+        ['subscription-2', 'completed', null],
+      ]),
+    );
+    expect(JSON.stringify(completionCalls())).not.toContain('secret');
+  });
+
+  it('runs at most five candidate provider calls concurrently', async () => {
+    const candidates = Array.from({ length: 6 }, (_, index) => ({
+      ...candidate,
+      subscription_id: `subscription-${index + 1}`,
+      external_subscription_id: `pa-${index + 1}`,
+    }));
+    let active = 0,
+      maximum = 0;
+    let releaseFirstGroup: (() => void) | undefined;
+    const firstGroup = new Promise<void>((resolve) => {
+      releaseFirstGroup = resolve;
+    });
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        { data: candidates, error: null }
+      : { data: 'completed', error: null },
+    );
+    mocks.snapshot.mockImplementation(async (id: string) => {
+      active += 1;
+      maximum = Math.max(maximum, active);
+      if (id !== 'pa-6') await firstGroup;
+      active -= 1;
+      return {
+        externalSubscriptionId: id,
+        status: 'active',
+        cancelAtPeriodEnd: false,
+        providerVersion: id,
+      };
+    });
+    const work = reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 });
+    await vi.waitFor(() => expect(maximum).toBe(5));
+    releaseFirstGroup?.();
+    await expect(work).resolves.toEqual(expect.objectContaining({ scanned: 6 }));
+    expect(maximum).toBe(5);
+  });
+
+  it('defers untouched claimed candidates when its time budget expires', async () => {
+    const candidates = [
+      candidate,
+      { ...candidate, subscription_id: 'subscription-2', external_subscription_id: 'pa-2' },
+    ];
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        { data: candidates, error: null }
+      : { data: 'completed', error: null },
+    );
+    vi.spyOn(Date, 'now').mockReturnValueOnce(0).mockReturnValue(2);
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 1 }),
+    ).resolves.toEqual(expect.objectContaining({ scanned: 2, deferred: 2 }));
     expect(mocks.snapshot).not.toHaveBeenCalled();
+    expect(completionCalls().map(([, args]) => args.p_outcome)).toEqual(['deferred', 'deferred']);
   });
 
-  it('skips a provider that does not expose subscription snapshots', async () => {
-    mocks.getProvider.mockReturnValue({});
-
-    await expect(
-      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
-    ).resolves.toEqual({ scanned: 1, repaired: 0, stale: 0, anomalous: 0, skipped: 1 });
-    expect(mocks.reduce).not.toHaveBeenCalled();
-  });
-
-  it('records a missing provider resource as an anomaly without mutating the subscription', async () => {
-    mocks.snapshot.mockResolvedValue(null);
-
-    await expect(
-      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
-    ).resolves.toEqual({ scanned: 1, repaired: 0, stale: 0, anomalous: 1, skipped: 0 });
-    expect(mocks.rpc).toHaveBeenCalledWith('upsert_billing_financial_anomaly', {
-      p_anomaly_type: 'status_divergence',
-      p_external_resource_id: 'pa-1',
-      p_provider: 'mercadopago',
-      p_observed_status: 'resource_not_found',
-      p_account_id: 'account-1',
-      p_subscription_id: undefined,
+  it('defers candidates when earlier work consumes the budget without starting later provider calls', async () => {
+    const candidates = Array.from({ length: 6 }, (_, index) => ({
+      ...candidate,
+      subscription_id: `subscription-${index + 1}`,
+      external_subscription_id: `pa-${index + 1}`,
+    }));
+    let now = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        { data: candidates, error: null }
+      : { data: 'completed', error: null },
+    );
+    mocks.snapshot.mockImplementation(async (id: string) => {
+      if (id === 'pa-1') now = 50;
+      return {
+        externalSubscriptionId: id,
+        status: 'active',
+        cancelAtPeriodEnd: false,
+        providerVersion: id,
+      };
     });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 50 }),
+    ).resolves.toEqual(expect.objectContaining({ scanned: 6, deferred: 6 }));
+
+    expect(mocks.snapshot).toHaveBeenCalledTimes(1);
+    expect(mocks.discover).not.toHaveBeenCalled();
+    expect(completionCalls()).toHaveLength(6);
+    expect(completionCalls().map(([, args]) => args.p_outcome)).toEqual(
+      Array.from({ length: 6 }, () => 'deferred'),
+    );
+    const completionCounts = new Map<string, number>();
+    for (const [, args] of completionCalls()) {
+      completionCounts.set(
+        args.p_subscription_id,
+        (completionCounts.get(args.p_subscription_id) ?? 0) + 1,
+      );
+    }
+    expect([...completionCounts.entries()].sort()).toEqual(
+      candidates.map(({ subscription_id }) => [subscription_id, 1]),
+    );
+  });
+
+  it('caps an in-flight snapshot wait at the invocation deadline and defers it', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-12T00:00:00Z'));
+    try {
+      mocks.snapshot.mockImplementation(
+        () =>
+          new Promise<never>(() => {
+            // Intentionally remains pending until the reconciliation deadline wins the race.
+          }),
+      );
+      const work = reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45 });
+
+      await vi.advanceTimersByTimeAsync(45);
+
+      await expect(work).resolves.toEqual(
+        expect.objectContaining({ scanned: 1, deferred: 1, failed: 0 }),
+      );
+      expect(mocks.discover).not.toHaveBeenCalled();
+      expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'deferred' }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('defers an invoice page returned at the deadline before reducing its events', async () => {
+    let now = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    mocks.discover.mockImplementation(async () => {
+      now = 50;
+      return {
+        events: [
+          {
+            type: 'invoice_paid',
+            provider: 'mercadopago',
+            externalEventId: 'invoice-at-deadline',
+            accountId: candidate.account_id,
+          },
+        ],
+        nextCursor: null,
+        providerWatermark: '2026-09-11T12:00:00Z',
+      };
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 50 }),
+    ).resolves.toEqual(expect.objectContaining({ scanned: 1, repaired: 1, deferred: 1 }));
+
+    expect(mocks.reduce).toHaveBeenCalledTimes(1);
+    expect(mocks.reduce).toHaveBeenCalledWith(
+      expect.objectContaining({ externalEventId: 'reconciliation:mercadopago:pa-1:v2' }),
+      { expectedSubscriptionUpdatedAt: candidate.subscription_updated_at },
+    );
+    expect(completionCalls()).toHaveLength(1);
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_outcome: 'deferred',
+        p_provider_watermark: '2026-09-11T12:00:00Z',
+        p_next_cursor: null,
+      }),
+    );
+  });
+
+  it('caps a hanging invoice discovery at the deadline and has no later reducer effect', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-12T00:00:00Z'));
+    try {
+      mocks.discover.mockImplementation(
+        () =>
+          new Promise<never>(() => {
+            // The provider interface has no abort signal; reconciliation must still finish durably.
+          }),
+      );
+      const work = reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45 });
+
+      await vi.advanceTimersByTimeAsync(45);
+
+      await expect(work).resolves.toEqual(
+        expect.objectContaining({ scanned: 1, repaired: 1, deferred: 1, failed: 0 }),
+      );
+      expect(mocks.reduce).toHaveBeenCalledTimes(1);
+      expect(mocks.reduce).toHaveBeenCalledWith(
+        expect.objectContaining({ externalEventId: 'reconciliation:mercadopago:pa-1:v2' }),
+        { expectedSubscriptionUpdatedAt: candidate.subscription_updated_at },
+      );
+      expect(completionCalls()).toHaveLength(1);
+      expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'deferred' }));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('runs snapshot before invoice discovery and reduces every discovered event sequentially', async () => {
+    const discovered = [
+      {
+        type: 'invoice_paid',
+        provider: 'mercadopago',
+        externalEventId: 'invoice-1',
+        accountId: 'account-1',
+      },
+      {
+        type: 'invoice_paid',
+        provider: 'mercadopago',
+        externalEventId: 'invoice-2',
+        accountId: 'account-1',
+      },
+    ];
+    const order: string[] = [];
+    mocks.snapshot.mockImplementation(async () => {
+      order.push('snapshot');
+      return {
+        externalSubscriptionId: 'pa-1',
+        status: 'active',
+        cancelAtPeriodEnd: false,
+        providerVersion: 'v2',
+      };
+    });
+    mocks.discover.mockImplementation(async () => {
+      order.push('discover');
+      return { events: discovered, nextCursor: null, providerWatermark: '2026-09-11T12:00:00Z' };
+    });
+    mocks.reduce.mockImplementation(async (event: { externalEventId: string }) => {
+      order.push(event.externalEventId);
+      return { status: event.externalEventId === 'invoice-1' ? 'duplicate' : 'applied' };
+    });
+    await reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 });
+    expect(order).toEqual([
+      'snapshot',
+      'reconciliation:mercadopago:pa-1:v2',
+      'discover',
+      'invoice-1',
+      'invoice-2',
+    ]);
+    expect(mocks.discover).toHaveBeenCalledWith({
+      externalSubscriptionId: 'pa-1',
+      modifiedSince: '2026-09-08T12:00:00.000Z',
+      pageSize: 20,
+    });
+    expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'completed' }));
+  });
+
+  it('skips invoice discovery and completes once when a fresh snapshot is terminal', async () => {
+    mocks.snapshot.mockResolvedValue({
+      externalSubscriptionId: candidate.external_subscription_id,
+      status: 'canceled',
+      cancelAtPeriodEnd: false,
+      providerVersion: 'terminal-v1',
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(
+      expect.objectContaining({ repaired: 1, skipped: 1, failed: 0, deferred: 0 }),
+    );
+
+    expect(mocks.reduce).toHaveBeenCalledWith(
+      expect.objectContaining({
+        externalEventId: 'reconciliation:mercadopago:pa-1:terminal-v1',
+        status: 'canceled',
+      }),
+      { expectedSubscriptionUpdatedAt: candidate.subscription_updated_at },
+    );
+    expect(mocks.discover).not.toHaveBeenCalled();
+    expect(completionCalls()).toHaveLength(1);
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_subscription_id: candidate.subscription_id,
+        p_outcome: 'skipped',
+        p_next_cursor: null,
+        p_provider_watermark: null,
+      }),
+    );
+  });
+
+  it('persists an intermediate cursor as deferred and resumes from it without advancing final state', async () => {
+    mocks.discover.mockResolvedValue({
+      events: [],
+      nextCursor: 'opaque-cursor',
+      providerWatermark: '2026-09-11T12:00:00Z',
+    });
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ deferred: 1 }));
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({ p_outcome: 'deferred', p_next_cursor: 'opaque-cursor' }),
+    );
+    mocks.rpc.mockClear();
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        {
+          data: [
+            { ...candidate, scan_cursor: 'opaque-cursor', scan_watermark: '2026-09-11T12:00:00Z' },
+          ],
+          error: null,
+        }
+      : { data: 'completed', error: null },
+    );
+    mocks.discover.mockResolvedValue({
+      events: [],
+      nextCursor: null,
+      providerWatermark: '2026-09-12T12:00:00Z',
+    });
+    await reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 });
+    expect(mocks.discover).toHaveBeenLastCalledWith(
+      expect.objectContaining({ cursor: 'opaque-cursor' }),
+    );
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_outcome: 'completed',
+        p_next_cursor: null,
+        p_provider_watermark: '2026-09-12T12:00:00Z',
+      }),
+    );
+  });
+
+  it('records an identity mismatch as an anomaly and completes without a reducer access mutation', async () => {
+    mocks.snapshot.mockResolvedValue({
+      externalSubscriptionId: 'other-subscription',
+      status: 'active',
+      cancelAtPeriodEnd: false,
+    });
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ anomalous: 1 }));
     expect(mocks.reduce).not.toHaveBeenCalled();
+    expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'completed' }));
+  });
+
+  it('persists discovered anomalies before unrelated invoices without reducing the refunded payment', async () => {
+    mocks.discover.mockResolvedValue({
+      events: [
+        {
+          type: 'invoice_paid',
+          provider: 'mercadopago',
+          externalEventId: 'invoice-ordinary',
+          accountId: candidate.account_id,
+        },
+      ],
+      financialAnomalies: [
+        {
+          anomalyType: 'partial_refund',
+          externalResourceId: 'payment-discovery-partial',
+          observedStatus: 'approved',
+          originalAmount: 19_990,
+          affectedAmount: 5_000,
+          currency: 'CLP',
+        },
+      ],
+      nextCursor: null,
+      providerWatermark: '2026-09-12T12:00:00Z',
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ anomalous: 1, repaired: 2 }));
+
+    expect(mocks.rpc).toHaveBeenCalledWith('upsert_billing_financial_anomaly', {
+      p_provider: candidate.provider,
+      p_anomaly_type: 'partial_refund',
+      p_external_resource_id: 'payment-discovery-partial',
+      p_observed_status: 'approved',
+      p_account_id: candidate.account_id,
+      p_subscription_id: candidate.subscription_id,
+      p_original_amount: 19_990,
+      p_affected_amount: 5_000,
+      p_currency: 'CLP',
+    });
+    expect(mocks.reduce).toHaveBeenCalledWith(
+      expect.objectContaining({ externalEventId: 'invoice-ordinary' }),
+    );
+    expect(mocks.reduce).not.toHaveBeenCalledWith(
+      expect.objectContaining({ externalPaymentId: 'payment-discovery-partial' }),
+    );
+  });
+
+  it('fails an anomaly page without reducing its invoices when anomaly persistence fails', async () => {
+    mocks.discover.mockResolvedValue({
+      events: [{ type: 'invoice_paid', provider: 'mercadopago', externalEventId: 'invoice-later' }],
+      financialAnomalies: [
+        { anomalyType: 'refund', externalResourceId: 'payment-refund', observedStatus: 'refunded' },
+      ],
+      nextCursor: 'page-2',
+      providerWatermark: '2026-09-12T12:00:00Z',
+    });
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_reconciliation_candidates')
+        return { data: [candidate], error: null };
+      if (name === 'upsert_billing_financial_anomaly')
+        return { data: null, error: { code: 'db_down' } };
+      return { data: 'completed', error: null };
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ failed: 1, anomalous: 0 }));
+    expect(mocks.reduce).toHaveBeenCalledTimes(1);
+    expect(mocks.reduce).not.toHaveBeenCalledWith(
+      expect.objectContaining({ externalEventId: 'invoice-later' }),
+    );
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({ p_outcome: 'failed', p_error_code: 'anomaly_persistence_failed' }),
+    );
+  });
+
+  it('fails a rejected discovery page without advancing its durable cursor or watermark', async () => {
+    const resumableCandidate = {
+      ...candidate,
+      scan_cursor: 'cursor-before-page',
+      scan_watermark: '2026-09-10T12:00:00Z',
+    };
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_reconciliation_candidates' ?
+        { data: [resumableCandidate], error: null }
+      : { data: 'completed', error: null },
+    );
+    mocks.discover.mockRejectedValue(new Error('mercadopago_discovery_payment_identity_mismatch'));
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).resolves.toEqual(expect.objectContaining({ failed: 1 }));
+    expect(mocks.reduce).toHaveBeenCalledTimes(1);
+    expect(mocks.rpc).not.toHaveBeenCalledWith(
+      'upsert_billing_financial_anomaly',
+      expect.anything(),
+    );
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_outcome: 'failed',
+        p_provider_watermark: null,
+        p_next_cursor: null,
+        p_error_code: 'provider_fetch_failed',
+      }),
+    );
+  });
+
+  it('defers after an anomaly persistence when the deadline expires before page reduction', async () => {
+    let now = 0;
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
+    mocks.discover.mockResolvedValue({
+      events: [
+        {
+          type: 'invoice_paid',
+          provider: 'mercadopago',
+          externalEventId: 'invoice-after-deadline',
+        },
+      ],
+      financialAnomalies: [{ anomalyType: 'refund', externalResourceId: 'payment-deadline' }],
+      nextCursor: 'page-2',
+      providerWatermark: '2026-09-12T12:00:00Z',
+    });
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_reconciliation_candidates')
+        return { data: [candidate], error: null };
+      if (name === 'upsert_billing_financial_anomaly') {
+        now = 50;
+        return { data: 'anomaly-id', error: null };
+      }
+      return { data: 'completed', error: null };
+    });
+
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 50 }),
+    ).resolves.toEqual(expect.objectContaining({ anomalous: 1, deferred: 1 }));
+    expect(mocks.reduce).toHaveBeenCalledTimes(1);
+    expect(mocks.reduce).not.toHaveBeenCalledWith(
+      expect.objectContaining({ externalEventId: 'invoice-after-deadline' }),
+    );
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({
+        p_outcome: 'deferred',
+        p_next_cursor: candidate.scan_cursor,
+        p_provider_watermark: '2026-09-12T12:00:00Z',
+      }),
+    );
+  });
+
+  it('surfaces a completion failure because durable progress is unknown', async () => {
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_reconciliation_candidates')
+        return { data: [candidate], error: null };
+      if (name === 'complete_billing_reconciliation_candidate')
+        return { data: null, error: { code: 'db_down' } };
+      return { data: 'completed', error: null };
+    });
+    await expect(
+      reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 }),
+    ).rejects.toThrow('billing_reconciliation_completion_failed');
   });
 });

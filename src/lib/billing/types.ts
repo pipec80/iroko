@@ -64,18 +64,71 @@ export interface AcknowledgedWebhook {
 }
 
 export type BillingAnomalyType =
-  'refund' | 'chargeback' | 'mediation' | 'status_divergence' | 'unresolved_payment';
+  | 'refund'
+  | 'partial_refund'
+  | 'chargeback'
+  | 'mediation'
+  | 'status_divergence'
+  | 'unresolved_payment';
+
+/** Minimal, normalized financial evidence retained for separate manual review. */
+export interface FinancialAnomalyObservation {
+  anomalyType: BillingAnomalyType;
+  externalResourceId: string;
+  observedStatus?: string;
+  originalAmount?: number;
+  affectedAmount?: number;
+  currency?: string;
+}
+
+/** A verified Mercado Pago financial observation that must not enter the billing reducer. */
+export interface FinancialAnomalyWebhook {
+  provider: 'mercadopago';
+  type: 'financial_anomaly_observed';
+  externalEventId: string;
+  accountReference: string;
+  externalSubscriptionId: string;
+  observation: FinancialAnomalyObservation;
+  raw: unknown;
+}
+
+/** A signed adverse Mercado Pago payment that lacks a durable local correlation identity. */
+export interface WebhookCorrelationFailure {
+  provider: 'mercadopago';
+  type: 'webhook_correlation_failed';
+  externalEventId: string;
+  resourceType: 'payment';
+  resourceId: string;
+  reason: 'missing_external_reference' | 'missing_preapproval_id';
+  raw: unknown;
+}
 
 export interface ProviderRecoveryInput {
   resourceType: 'payment';
   resourceId: string;
 }
 
+/** A bounded, opaque page request for invoices belonging to one subscription. */
+export interface InvoiceDiscoveryInput {
+  externalSubscriptionId: string;
+  modifiedSince: string;
+  pageSize: number;
+  cursor?: string;
+}
+
+/** Provider-normalized invoice events plus scan-local paging progress. */
+export interface InvoiceDiscoveryPage {
+  events: NormalizedBillingEvent[];
+  financialAnomalies?: FinancialAnomalyObservation[];
+  nextCursor: string | null;
+  providerWatermark: string | null;
+}
+
 export type ProviderRecoveryResult =
   | { kind: 'event'; event: NormalizedBillingEvent }
   | { kind: 'pending' }
   | { kind: 'unrelated' }
-  | { kind: 'anomaly'; anomalyType: BillingAnomalyType; observedStatus?: string };
+  | { kind: 'anomaly'; observation: FinancialAnomalyObservation };
 
 export interface SubscriptionSnapshot {
   externalSubscriptionId: string;
@@ -85,7 +138,11 @@ export interface SubscriptionSnapshot {
   providerModifiedAt?: string;
   providerVersion?: string;
 }
-export type ProviderWebhookResult = NormalizedBillingEvent | AcknowledgedWebhook;
+export type ProviderWebhookResult =
+  | NormalizedBillingEvent
+  | AcknowledgedWebhook
+  | FinancialAnomalyWebhook
+  | WebhookCorrelationFailure;
 
 export interface PaymentProvider {
   readonly name: ProviderName;
@@ -99,5 +156,6 @@ export interface PaymentProvider {
     context?: WebhookVerificationContext,
   ): Promise<ProviderWebhookResult | null>;
   recoverResource?(input: ProviderRecoveryInput): Promise<ProviderRecoveryResult>;
+  discoverSubscriptionInvoices?(input: InvoiceDiscoveryInput): Promise<InvoiceDiscoveryPage>;
   getSubscriptionSnapshot?(externalSubscriptionId: string): Promise<SubscriptionSnapshot | null>;
 }

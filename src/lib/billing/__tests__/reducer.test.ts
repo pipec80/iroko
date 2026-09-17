@@ -230,4 +230,20 @@ describe('reduceBillingEvent', () => {
       expect.anything(),
     );
   });
+
+  it('routes payment failure followed by recovery only to invoice and payment persistence', async () => {
+    mocks.rpc.mockResolvedValue({ data: 'applied', error: null });
+
+    await reduceBillingEvent(invoicePaymentFailedEvent);
+    await reduceBillingEvent(paymentRecoveredEvent);
+
+    expect(mocks.rpc.mock.calls.map(([rpcName]) => rpcName)).toEqual([
+      'apply_invoice_payment_failed',
+      'apply_payment_recovered',
+    ]);
+    expect(mocks.rpc).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^apply_subscription_/),
+      expect.anything(),
+    );
+  });
 });

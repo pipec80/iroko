@@ -1,15 +1,19 @@
-# Phase 2 (PR-4) — Mercado Pago reference certification: task-by-task implementation plan
+# Phase 2 (PR-4) — Mercado Pago internal reference certification: task-by-task implementation plan
 
 Detailed breakdown of **Phase 2** from
 [`011-billing-correctness.md`](011-billing-correctness.md). Corresponds to
 PR-4 and depends on merged Fase 1 (`BillingService` + capabilities + UI
-guard), not on Stripe. It is the first provider certification and the **P0
-gate before enabling Mercado Pago in production**.
+guard), not on Stripe. It owns the first internal provider acceptance and
+the **P0 gate before declaring Mercado Pago ready for real users**. The
+production deployment used for sandbox QA is not proof of that readiness.
 
 ## Reliability follow-up (approved 2026-09-09)
 
-The completed historical steps below remain evidence and are not rewritten.
-Two sequential follow-up PRs extend this phase under the
+The following deliveries are implemented on `main` at `66bc9b2` (static
+inspection 2026-09-11). They replace the older pending coordination and
+anomaly checklists; provider acceptance remains open in the
+[v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md). Delivery ownership
+remains under the
 [Mercado Pago reliability roadmap](011-mercadopago-reliability-roadmap.md):
 
 1. **Dashboard and checkout confirmation:** suppress the Mercado Pago trial,
@@ -24,9 +28,9 @@ Two sequential follow-up PRs extend this phase under the
    compatible.
 
 Neither follow-up changes prices, catalogue slugs, hosted checkout, the
-no-associated-plan model, access policy, or Cloud state. Their exact contracts,
-RED/GREEN scenarios, SQL permissions, and verification gates are defined in
-the approved reliability implementation plan.
+no-associated-plan model, access policy, or Cloud state. Current evidence is `service.ts`, the checkout confirmation/intent RPCs,
+their SQL tests 35/36, and provider/service/UI tests; see the matrix inventory.
+Existence of tests is not a fresh passing test run.
 
 ## Goal
 
@@ -36,9 +40,9 @@ supports **immediate cancellation only** in this phase: a local subscription
 must never become `canceled` until the Mercado Pago `PUT /preapproval/{id}`
 response confirms cancellation.
 
-This plan records implementation progress in the current branch and the
-verified linked-Cloud schema deployment. It is not sandbox, provider-enablement,
-or production-certification evidence.
+This plan separates implementation, historical local validation, historical
+provider observation and pending operations. Current Cloud and provider state
+is **[NO VERIFICADO]**; no official Mercado Pago certification is claimed.
 
 ## Authoritative policy and constraints
 
@@ -48,7 +52,8 @@ or production-certification evidence.
   scheduler in scope. The former DB-only cron and private function were
   retired because they could change local state without calling Mercado Pago.
 - An immediate cancellation calls Mercado Pago first. The returned resource
-  must report `status: 'canceled'` before Billing Core changes local state.
+  must report `status: 'cancelled'` or `'canceled'` before cancellation is
+  accepted; the webhook/reconciliation path converges local state.
 - Checkout resolves the active `mercadopago` catalog price in `CLP`, sends an
   inline `auto_recurring` amount in provider minor units, and never sends
   `preapproval_plan_id`. CLP is zero-decimal; the conversion remains
@@ -70,10 +75,11 @@ or production-certification evidence.
   omission of the `id:` component when the query parameter is absent), uses the
   notification envelope `id` as the delivery idempotency key, and fetches the
   provider resource before a local mutation. A valid generic `payment`
-  notification that has no linked authorized-payment invoice is acknowledged
-  without changing local billing state.
-- All DB mutations remain service-role-only through the bounded provisional
-  subscription RPC. Manual migrations and `supabase/schemas/*.sql` mirrors
+  notification that has no linked authorized-payment invoice is acknowledged and enqueued for durable correlation recovery; it does not
+  invent a subscription/invoice transition.
+- Billing mutations use the bounded service-role RPCs for intents,
+  subscription/invoice events and recovery; anomaly resolution is a privileged
+  operator action without application grants. Manual migrations and `supabase/schemas/*.sql` mirrors
   remain paired when schema work is required.
 
 **Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md),
@@ -86,9 +92,9 @@ before provider-facing work:
 - Subscription Webhooks: https://www.mercadopago.cl/developers/en/docs/subscriptions/additional-content/your-integrations/notifications/webhooks
 - Webhook signing and notification topics: https://www.mercadopago.cl/developers/en/docs/your-integrations/notifications/webhooks
 
-## Current branch progress
+## Implementation present — historical local validation retained
 
-The following work is implemented on this branch. Completion here means the
+The following work is implemented on the inspected `main`. Completion here means the
 bounded code/migration task is present; it does **not** certify an external
 provider or runtime.
 
@@ -104,10 +110,11 @@ provider or runtime.
       no cancellation Edge Function was added. Immediate cancellation validates
       the provider response before the local cancellation path proceeds.
 - [x] **Task 3 — Persist the provisional subscription safely.**
-      `BillingService` persists the selected local plan as `incomplete` after a
-      preapproval is created and before redirect. If that persistence fails, it
-      immediately compensates by canceling the remote preapproval, logs safe
-      incident metadata, and preserves the original error.
+      Current `BillingService` reserves an intent before POST and attaches the
+      remote ID/provisional `incomplete` row atomically before redirect. On
+      attach failure it retains `needs_review` for recovery. This replaces the
+      historical compensation-by-cancellation implementation; no blind retry
+      or automatic compensating cancellation is claimed for the current path.
 - [x] **Chilean catalog and checkout surface.** A versioned
       Mercado Pago `CLP` provider-price catalog maps Free / Plus / Pro to `0` /
       `19.990` / `102.990` monthly. The checkout surface displays zero-decimal CLP
@@ -128,7 +135,7 @@ provider or runtime.
       checkout/cancellation calls share the same bounded ten-second timeout as
       resource reads.
 
-## Remaining certification tasks
+## Remaining internal certification tasks
 
 ### Task 4: Review the focused contract and regression evidence
 
@@ -146,30 +153,37 @@ provider or runtime.
 
 - [x] The approved `mercadopago`/`CLP` catalog is versioned and verified in
       local and linked Cloud Supabase. Sandbox runtime credentials in the
-      application environment remain **[NO VERIFICADO]**.
-- [ ] Exercise the full lifecycle: pending preapproval creation; provisional
+      application environment are not rechecked here: **[NO VERIFICADO]**.
+      The informal 2026-09-10 run below is the later historical observation.
+- [ ] Formally capture the lifecycle already observed informally on 2026-09-10,
+      plus every required scenario in the v1 Chile matrix: pending preapproval creation; provisional
       `incomplete` local row with the selected plan; preapproval authorization
       webhook; authorized-payment invoice/payment event; and immediate
       cancellation.
 - [ ] Record provider event IDs and evidence that Mercado Pago itself reports
-      `canceled` before local cancellation. Webhook delivery, a sandbox payment,
-      a linked-Cloud checkout run, and real-payment evidence remain
-      **[NO VERIFICADO]** until captured in approved PR evidence.
-- [ ] The 2026-09-01 sandbox attempt proved that checkout persists the selected
-      local `incomplete` row, but it did not reach activation: the preapproval
-      request lacked its required subscription `notification_url`, and the
-      Preview token could not read the resource created for the test seller.
-      The adapter now requires and sends `MERCADOPAGO_WEBHOOK_URL`; repeat the
-      lifecycle only after Preview uses the production access token and webhook
-      signature secret of the test-seller application. This remains
-      **[NO VERIFICADO]** certification evidence, not a successful sandbox run.
-- [ ] Before production enablement, prevent concurrent or repeated pending
-      checkouts from creating multiple remote preapprovals for one account.
-      This needs a durable database reservation/lock and remains outside the
-      no-migration sandbox hardening change.
-- [ ] Before production enablement, normalize refunds and chargebacks (or
-      persist a durable reconciliation anomaly). The current divergence warning
-      is operational evidence, not a financial state transition.
+      `cancelled`/`canceled` before local cancellation. Formal evidence of
+      the linked-Cloud sandbox run remains pending; real-payment evidence
+      and current runtime are **[NO VERIFICADO]**.
+
+**Historical failed attempt — superseded by the informal 2026-09-10 run:**
+The 2026-09-01 sandbox attempt proved that checkout persists the selected
+local `incomplete` row, but it did not reach activation: the preapproval
+request lacked its required subscription `notification_url`, and the
+Preview token could not read the resource created for the test seller.
+The adapter now requires and sends `MERCADOPAGO_WEBHOOK_URL`; repeat the
+lifecycle with token, signature secret, seller, application and webhook
+coherent for the selected test environment. Do not copy real-seller
+production credentials to Preview as a generic fix. That attempt alone
+was not successful certification evidence.
+
+- [x] **Implemented after that attempt:** durable reservation and resume
+      (`service.ts`, migration `20260909160000`, SQL 36) prevent competing
+      callers from independently issuing POSTs. Operational acceptance is
+      still MP-04 in the matrix.
+- [x] **Implemented after that attempt:** persistent anomalies and manual
+      resolution (`recovery.ts`, migration `20260909180000`, SQL 37) replace
+      warning-only handling. Provider scenarios and partial refunds remain
+      open as MP-09/10; no automatic access change is introduced.
 - [x] **2026-09-10 sandbox lifecycle (informal, not yet PR evidence):** run
       against production `project-a89lv.vercel.app` with the test-seller
       application in `MERCADOPAGO_*` (Production scope) reached activation and
@@ -184,43 +198,44 @@ provider or runtime.
       This still needs to be re-run and captured as approved PR evidence with
       a linked-Cloud checkout, but it is no longer an unverified attempt.
 
-## Deferred provider-coverage gaps (identified 2026-09-10)
+## V1 gaps and explicit exclusions (reviewed 2026-09-11)
 
-Mercado Pago uses the "subscription with pending payment, no associated plan"
-model (`createCheckout` sends `status: 'pending'` + `init_point`). The core
-lifecycle works; these are known simplifications, not bugs. Sequence them into
-Phase 2 (adapter) or Phase 6 (state model) before Mercado Pago production
-enablement — several are also tracked as launch concerns in
-[`013-launch-readiness-roadmap.md`](013-launch-readiness-roadmap.md).
+The [v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md) is the current
+acceptance checklist. These are the bounded remaining concerns:
 
-- [ ] **No `past_due` for Mercado Pago.** `applyEvent` treats
-      `invoice_payment_failed` (and `invoice_paid`) as no-ops on subscription
-      status by design — `preapproval.status` is the single source of truth for
-      the lifecycle, invoices are a separate ledger. Consequence: during Mercado
-      Pago's retry window (4 retries / ~10 days, auto-cancel after 3 failed
-      instalments) the subscription stays `active` and the dashboard shows no
-      "payment failed, update your method" state; Iroko only learns of the
-      failure when the final `subscription_canceled` arrives. A grace-period /
-      dunning UX needs a **separate `payment_health` signal**, not a change to
-      the status state machine. The `past_due` / `unpaid` enum values are
-      currently unreachable for Mercado Pago.
-- [ ] **`incomplete` never expires.** A subscriber who creates the preapproval
-      but never completes payment leaves a permanent `incomplete` row (Stripe
-      has `incomplete_expired`). Needs a sweep, ideally in the reconciliation
-      worker.
-- [ ] **`paused` is inbound-only.** `mapPreapprovalStatus` maps `paused` →
-      `paused` (received if a subscriber pauses in Mercado Pago's UI), but
-      `capabilities.pauseSubscription` is `false` and there is no
-      `pauseSubscription()` or reactivation initiated from Iroko.
-- [ ] **No plan change / amount change.** `capabilities.changePlan` is `false`;
-      `PUT /preapproval/{id}` with `auto_recurring.transaction_amount` is not
-      wired. Blocks upgrade/downgrade across paid tiers for Mercado Pago.
-- [ ] **No payment-method management from Iroko.** `updatePaymentMethod` and
-      `customerPortal` are `false`. Subscribers change their card on Mercado
-      Pago's hosted page (works), but Iroko surfaces no link or portal for it.
-- Free trials are intentionally out of scope for Mercado Pago
-  (`011-mercadopago-reliability-roadmap.md`); `trialing` is unreachable for
-  this provider by decision, not omission.
+Executable handoffs for this phase are
+[`011a`](011a-mercadopago-payment-health-paid-through.md),
+[`011b`](011b-mercadopago-checkout-resolution.md),
+[`011c`](011c-mercadopago-financial-anomalies.md) and the Phase 2 scenarios in
+[`011f`](011f-mercadopago-internal-acceptance.md). They implement the accepted
+[reliability design](../../architecture/mercadopago-reliability-design.md#v1-chile-closeout-extension--accepted-2026-09-11).
+
+- **Phase 2, MP-06:** expose payment failure and recovery separately from
+  subscription status. Rejected payments already reach invoices/attempts;
+  Iroko does not first learn of them only at cancellation. `applyEvent`
+  intentionally leaves subscription status unchanged for invoice events.
+  Define a truthful payment-health signal and a viable hosted-flow next action,
+  without inventing `past_due`, grace-period access cuts or card-management UI.
+- **Phases 2/6, MP-08:** el gate local de código/runbook está completo: la
+  migración `20260911110000_billing_checkout_operator_resolution.sql`, el
+  resolver privado auditado e inmutable, SQL 40 y el procedimiento versionado
+  cubren la resolución de filas elegibles. La inspección del proveedor, la
+  ejecución autorizada del procedimiento y la aceptación interna siguen
+  pendientes; un lease o umbral de edad no autoriza recreación.
+- **Phases 2/6, MP-03/07/09/10:** specific evidence for renewal, paid-through
+  access at cancellation, refunds/chargebacks/mediation and partial refunds.
+- **Phase 6, MP-11–14:** known-payment recovery, discovery of wholly omitted
+  invoices, worker failure isolation, progress across batches and authorized
+  activation. Scheduling alone cannot close these code/acceptance gaps.
+- **Phase 2, MP-15:** coherent application/seller/credentials by environment
+  and formal sanitized evidence for the full circuit.
+
+**Outside v1:** trial, upgrade/downgrade, Iroko-initiated pause/reactivation,
+card management/customer portal inside Iroko, annual CLP checkout. Existing
+inbound `paused` normalization remains valid; disabled outbound capabilities
+are deliberate exclusions, not release blockers. Prices and durable slugs
+remain unchanged. No provider-hosted card update link is assumed to work
+without explicit verification.
 
 ## Completion criteria for Phase 2
 
@@ -230,12 +245,13 @@ enablement — several are also tracked as launch concerns in
 - Checkout uses the active Mercado Pago CLP catalog price, correct minor-unit
   conversion, no associated-plan ID, and the returned preapproval ID.
 - The provisional local subscription is `incomplete`, retains the selected
-  Iroko plan, and is compensated safely if persistence fails.
+  Iroko plan, and remains recoverable without a new POST if attach fails.
 - Webhook processing preserves the selected-plan path and keeps authorized
   payment invoice identity separate from nested payment identity/status.
 - Focused tests, pgTAP, formatting, typecheck, and lint have recorded passing
   evidence; local Docker/type generation evidence is not substituted by
   static review.
-- A documented sandbox lifecycle proves the provider-side cancellation and is
-  reviewed before any Mercado Pago enablement. Production enablement remains a
-  separate explicit approval.
+- Every Phase 2 row of the v1 Chile matrix has reviewed evidence, including
+  renewal, rejection/recovery and paid-through access. Mercado Pago acceptance
+  also requires its Phase 6 rows; basic sandbox success is insufficient.
+  Provider/Cloud changes and enablement require explicit authorization.
