@@ -30,9 +30,10 @@ product. Commercialization remains an option, not a present-tense claim.
   known-payment recovery, persistent anomalies and Node worker are implemented.
   Historical local test results do not certify the current full lifecycle.
   The 2026-09-10 observation was a **sandbox circuit against the production
-  deployment**, not real-money production acceptance. Renewal, rejection and
-  recovery, paid-through access, partial refunds, missed invoice discovery and
-  worker operation/progress remain open in the
+  deployment**, not real-money production acceptance. Local code now covers
+  refund ingress and missed-invoice discovery, but renewal, rejection and
+  recovery, paid-through access, provider refunds, provider missed-invoice
+  discovery and worker operation/progress remain open in the
   [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md).
 
 ## V1 product decision — 2026-09-11
@@ -55,14 +56,14 @@ Plan 011 is the remaining P0 behavior plan. Its internal dependency order is
 authoritative; coordinate overlapping database, authorization, and billing
 changes before implementation.
 
-| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                 |
-| ----- | -------------------------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP implementation present with code/acceptance gaps in Phases 2/6. Internal acceptance and worker operations pending. Other providers remain independent future certifications. |
-| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                          |
-| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                          |
+| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                           |
+| ----- | -------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 local code gaps are recorded as implemented/tested locally. Worker rollout and internal acceptance remain pending. Other providers remain independent future certifications. |
+| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                    |
+| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                    |
 
-Execution order: resolve MP Phase 2/6 gaps → authorized worker rollout and
-verification → internal MP acceptance → Plan 012 and operational v1 checks →
+Execution order: review the completed MP Phase 2/6 local changes → authorized
+worker rollout and verification → internal MP acceptance → Plan 012 and operational v1 checks →
 independent Stripe/Paddle/Lemon Squeezy certifications → Plan 013 distribution.
 The last two steps do not block a v1 limited to own-use Chile/Mercado Pago.
 

@@ -592,7 +592,7 @@ git commit -m "feat: reconcile Mercado Pago refund anomalies"
   provider verification, worker rollout, manual anomaly resolution, or v1
   acceptance decision.
 
-- [ ] **Step 1: Run the complete local regression gate**
+- [x] **Step 1: Run the complete local regression gate**
 
 Run:
 
@@ -617,7 +617,7 @@ Expected: every command exits 0. Record actual command results and test counts
 only after observing them; a passing local gate does not establish provider or
 Cloud behavior.
 
-- [ ] **Step 2: Update the four status documents without overstating evidence**
+- [x] **Step 2: Update the four status documents without overstating evidence**
 
 In the 011c execution record, replace the pending ordinary-webhook/discovery
 code-integration statement with the exact commits and observed local commands.
@@ -632,7 +632,7 @@ code gap before the still-pending 011e worker rollout and 011f internal
 acceptance. Do not mark Plan 011e closed, do not call this Mercado Pago official
 certification, and do not declare v1 ready for real users.
 
-- [ ] **Step 3: Validate the Markdown and diff**
+- [x] **Step 3: Validate the Markdown and diff**
 
 Run:
 
@@ -645,7 +645,7 @@ git diff --check
 
 Expected: every command exits 0.
 
-- [ ] **Step 4: Commit verified local evidence**
+- [x] **Step 4: Commit verified local evidence**
 
 ```bash
 git add docs/exec-plans/active/011g-mercadopago-refund-ingress.md docs/exec-plans/active/011c-mercadopago-financial-anomalies.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/active/011-mercadopago-reliability-roadmap.md docs/current-state.md

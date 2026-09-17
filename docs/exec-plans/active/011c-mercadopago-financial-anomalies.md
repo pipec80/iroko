@@ -40,12 +40,15 @@ PostgreSQL/Supabase migrations and pgTAP.
 - Task 3's complete local gate and documentation were committed as `496cb26`:
   pgTAP 509/509, billing Vitest 194/194, typecheck, lint, documentation check
   and diff check passed.
-- The amount-aware classification is currently exercised by recovery jobs that
-  are already queued. An ordinary linked `payment` webhook can normalize an
-  `approved` authorized payment as `invoice_paid` without scheduling recovery,
-  even when the fetched payment includes a refunded amount. Webhook/discovery
-  anomaly routing and its regression coverage remain a pending code integration
-  gate before operational acceptance.
+- Plan 011g closed the ordinary-webhook and discovery ingress code gap through
+  `d155088`, `4de00f3` and `6fa8d7c`: each path obtains and verifies fresh
+  payment evidence, persists a deduplicated full/partial anomaly before the
+  reducer, and leaves the reducer out of the anomalous path. Its local gate
+  observed a reset/types check; pgTAP 36 38/38, 37 20/20 and 41 21/21;
+  provider 96/96, webhook 25/25, recovery 11/11, reconciliation 17/17 and
+  billing 245/245 Vitest; plus typecheck, lint and Supabase lint, all with exit
+  status 0. The Supabase linter reported its pre-existing extension findings;
+  it did not report a task-owned failure.
 - Real provider observations, Cloud state, alert handling and manual resolver
   execution remain **[NO VERIFICADO]**. No execution record in this plan closes
   those acceptance gaps.
