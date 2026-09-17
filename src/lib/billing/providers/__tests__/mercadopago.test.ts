@@ -342,6 +342,62 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     });
   });
 
+  it.each([
+    ['external_reference', { preapproval_id: 'preapproval-missing-reference' }],
+    ['preapproval_id', { external_reference: 'account-missing-preapproval' }],
+  ])(
+    'returns a typed recoverable correlation failure for an adverse payment missing %s',
+    async (missingIdentity, invoiceIdentity) => {
+      const paymentId = `payment-missing-${missingIdentity}`;
+      const requestId = `req-missing-${missingIdentity}`;
+      const notificationId = `notification-missing-${missingIdentity}`;
+      const ts = '1720000000';
+      const v1 = await sign('test-mp-secret', requestId, paymentId, ts);
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: paymentId,
+            status: 'approved',
+            transaction_amount: '19990',
+            transaction_amount_refunded: '5000',
+            currency_id: 'CLP',
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            results: [
+              {
+                id: `invoice-missing-${missingIdentity}`,
+                ...invoiceIdentity,
+                transaction_amount: '19990',
+                currency_id: 'CLP',
+                date_created: '2026-08-31T00:00:00.000-04:00',
+                payment: { id: paymentId, status: 'approved' },
+              },
+            ],
+          }),
+        });
+
+      await expect(
+        mercadopagoProvider.verifyWebhook(
+          JSON.stringify({ type: 'payment', data: { id: paymentId } }),
+          `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+          { dataId: paymentId, webhookId: notificationId },
+        ),
+      ).resolves.toEqual({
+        provider: 'mercadopago',
+        type: 'webhook_correlation_failed',
+        externalEventId: `mercadopago:webhook:${notificationId}`,
+        resourceType: 'payment',
+        resourceId: paymentId,
+        reason: `missing_${missingIdentity}`,
+        raw: expect.any(Object),
+      });
+    },
+  );
+
   it('returns a typed full-refund observation for equal normalized amounts', async () => {
     const paymentId = 'payment-full-refund';
     const requestId = 'req-payment-full-refund';

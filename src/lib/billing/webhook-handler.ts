@@ -10,7 +10,12 @@ import type { NormalizedBillingEvent } from './events';
 import { reduceBillingEvent } from './reducer';
 import { getPaymentProvider } from './registry';
 import type { WebhookVerificationContext } from './types';
-import type { AcknowledgedWebhook, BillingAnomalyType, FinancialAnomalyWebhook } from './types';
+import type {
+  AcknowledgedWebhook,
+  BillingAnomalyType,
+  FinancialAnomalyWebhook,
+  WebhookCorrelationFailure,
+} from './types';
 
 /**
  * Resolves the account owner's user id for analytics attribution. Webhooks
@@ -220,6 +225,23 @@ async function persistFinancialAnomaly(
   }
 }
 
+/** Logs a signed correlation failure without persisting its raw provider payload. */
+function reportWebhookCorrelationFailure(
+  event: WebhookCorrelationFailure,
+  logContext: ReturnType<typeof webhookLogContext>,
+): void {
+  logger.error(
+    {
+      ...logContext,
+      action: 'billing.webhook.correlation_failed',
+      eventType: event.type,
+      reason: event.reason,
+      resourceType: event.resourceType,
+    },
+    'Billing webhook could not be correlated safely',
+  );
+}
+
 /**
  * Verifies and reduces a provider webhook. Providers produce the typed event;
  * the reducer owns the only persistence boundary and its idempotency key.
@@ -256,6 +278,11 @@ export async function handleProviderWebhook(
   if (!event || event.provider !== provider.name) {
     logger.warn({ ...logContext, action: 'billing.webhook.rejected' }, 'Billing webhook rejected');
     return { status: 400, body: { error: 'invalid_signature' } };
+  }
+
+  if (event.type === 'webhook_correlation_failed') {
+    reportWebhookCorrelationFailure(event, logContext);
+    return { status: 500, body: { error: 'billing_correlation_failed' } };
   }
 
   if (event.type === 'webhook_acknowledged') {

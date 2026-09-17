@@ -407,6 +407,29 @@ describe('handleProviderWebhook', () => {
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 
+  it.each(['missing_external_reference', 'missing_preapproval_id'] as const)(
+    'returns a retriable failure for a verified anomaly with %s',
+    async (reason) => {
+      mocks.verifyWebhook.mockResolvedValue({
+        provider: 'mercadopago',
+        type: 'webhook_correlation_failed',
+        externalEventId: `mercadopago:webhook:notification-${reason}`,
+        resourceType: 'payment',
+        resourceId: `payment-${reason}`,
+        reason,
+        raw: { payer: { email: 'never-log-this@example.com' } },
+      });
+
+      await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+        status: 500,
+        body: { error: 'billing_correlation_failed' },
+      });
+      expect(mocks.adminRpc).not.toHaveBeenCalled();
+      expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+      expect(JSON.stringify(mocks.logger.error.mock.calls)).not.toContain('never-log-this');
+    },
+  );
+
   it('resolves a Mercado Pago intent reference before reducing the event', async () => {
     const event = {
       ...validEvent,

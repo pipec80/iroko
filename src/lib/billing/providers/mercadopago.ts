@@ -16,6 +16,7 @@ import type {
   SubscriptionStatus,
   SubscriptionSnapshot,
   WebhookVerificationContext,
+  WebhookCorrelationFailure,
 } from '../types';
 
 const API_BASE = 'https://api.mercadopago.com';
@@ -705,7 +706,13 @@ export const mercadopagoProvider: PaymentProvider = {
     rawBody: string,
     signature: string,
     context?: WebhookVerificationContext,
-  ): Promise<NormalizedBillingEvent | AcknowledgedWebhook | FinancialAnomalyWebhook | null> {
+  ): Promise<
+    | NormalizedBillingEvent
+    | AcknowledgedWebhook
+    | FinancialAnomalyWebhook
+    | WebhookCorrelationFailure
+    | null
+  > {
     let parsedBody: unknown;
     try {
       parsedBody = JSON.parse(rawBody) as unknown;
@@ -804,8 +811,19 @@ export const mercadopagoProvider: PaymentProvider = {
           invoice.external_reference
         : null;
       const externalSubscriptionId = normalizeExternalId(invoice.preapproval_id);
-      if (!accountReference || !externalSubscriptionId) return null;
       const observation = financialAnomalyObservationForPayment(providerPayment, dataId);
+      if (observation && (!accountReference || !externalSubscriptionId)) {
+        return {
+          provider: 'mercadopago',
+          type: 'webhook_correlation_failed',
+          externalEventId: webhookEventId(context, `mercadopago:payment:${dataId}`),
+          resourceType: 'payment',
+          resourceId: dataId,
+          reason: !accountReference ? 'missing_external_reference' : 'missing_preapproval_id',
+          raw: { notification: body, payment: providerPayment, authorizedPayment: invoice },
+        };
+      }
+      if (!accountReference || !externalSubscriptionId) return null;
       if (observation) {
         return {
           provider: 'mercadopago',

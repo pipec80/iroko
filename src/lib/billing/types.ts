@@ -92,6 +92,17 @@ export interface FinancialAnomalyWebhook {
   raw: unknown;
 }
 
+/** A signed adverse Mercado Pago payment that lacks a durable local correlation identity. */
+export interface WebhookCorrelationFailure {
+  provider: 'mercadopago';
+  type: 'webhook_correlation_failed';
+  externalEventId: string;
+  resourceType: 'payment';
+  resourceId: string;
+  reason: 'missing_external_reference' | 'missing_preapproval_id';
+  raw: unknown;
+}
+
 export interface ProviderRecoveryInput {
   resourceType: 'payment';
   resourceId: string;
@@ -128,7 +139,10 @@ export interface SubscriptionSnapshot {
   providerVersion?: string;
 }
 export type ProviderWebhookResult =
-  NormalizedBillingEvent | AcknowledgedWebhook | FinancialAnomalyWebhook;
+  | NormalizedBillingEvent
+  | AcknowledgedWebhook
+  | FinancialAnomalyWebhook
+  | WebhookCorrelationFailure;
 
 export interface PaymentProvider {
   readonly name: ProviderName;
