@@ -1,6 +1,6 @@
 -- pgTAP: durable checkout coordination, permissions and lifecycle.
 BEGIN;
-SELECT plan(33);
+SELECT plan(38);
 
 SELECT has_table('billing', 'checkout_intents', 'checkout intents table exists');
 SELECT has_function('public', 'reserve_billing_checkout', ARRAY['uuid', 'uuid', 'text'], 'reserve RPC exists');
@@ -13,6 +13,28 @@ SELECT ok(
   AND NOT has_function_privilege('authenticated', 'public.reserve_billing_checkout(uuid,uuid,text)', 'EXECUTE')
   AND NOT has_function_privilege('anon', 'public.reserve_billing_checkout(uuid,uuid,text)', 'EXECUTE'),
   'reservation is service-role only'
+);
+SELECT ok(
+  has_function_privilege('service_role', 'public.resolve_billing_checkout_reference(uuid,text)', 'EXECUTE')
+  AND NOT has_function_privilege('authenticated', 'public.resolve_billing_checkout_reference(uuid,text)', 'EXECUTE')
+  AND NOT has_function_privilege('anon', 'public.resolve_billing_checkout_reference(uuid,text)', 'EXECUTE')
+  AND NOT EXISTS (
+    SELECT 1
+    FROM pg_proc AS procedure,
+         aclexplode(COALESCE(procedure.proacl, acldefault('f', procedure.proowner))) AS privilege
+    WHERE procedure.oid = 'public.resolve_billing_checkout_reference(uuid,text)'::regprocedure
+      AND privilege.grantee = 0
+      AND privilege.privilege_type = 'EXECUTE'
+  ),
+  'reference resolver is service-role only'
+);
+SELECT is(
+  (SELECT count(*)::integer FROM pg_proc
+   WHERE pronamespace = 'public'::regnamespace
+     AND proname = 'resolve_billing_checkout_reference'
+     AND oid = 'public.resolve_billing_checkout_reference(uuid,text)'::regprocedure),
+  1,
+  'reference resolver has one exact uuid/text contract'
 );
 
 INSERT INTO auth.users (
@@ -103,27 +125,71 @@ SELECT is(
 );
 
 SELECT results_eq(
-  $$ SELECT account_id, checkout_intent_id
+  $$ SELECT account_id, checkout_intent_id, subscription_id
      FROM public.resolve_billing_checkout_reference(
        (SELECT id FROM billing.checkout_intents WHERE external_subscription_id = 'preapproval-36'),
        'preapproval-36') $$,
-  $$ SELECT account_id, id FROM billing.checkout_intents
-     WHERE external_subscription_id = 'preapproval-36' $$,
-  'intent external_reference resolves to its owning account'
+  $$ SELECT intent.account_id, intent.id, subscription.id
+     FROM billing.checkout_intents AS intent
+     INNER JOIN billing.customers AS customer ON customer.account_id = intent.account_id
+       AND customer.provider = intent.provider
+     INNER JOIN billing.subscriptions AS subscription ON subscription.customer_id = customer.id
+       AND subscription.provider = intent.provider
+       AND subscription.external_subscription_id = intent.external_subscription_id
+     WHERE intent.external_subscription_id = 'preapproval-36' $$,
+  'intent external_reference resolves its owning account, intent and exact subscription'
 );
 
 SELECT results_eq(
-  $$ SELECT account_id, checkout_intent_id
+  $$ SELECT account_id, checkout_intent_id, subscription_id
      FROM public.resolve_billing_checkout_reference(
        '00000000-0000-0000-0000-000000003610', 'preapproval-36') $$,
-  $$ VALUES ('00000000-0000-0000-0000-000000003610'::uuid, NULL::uuid) $$,
-  'historical account reference resolves only with an exact local subscription'
+  $$ SELECT customer.account_id, NULL::uuid, subscription.id
+     FROM billing.subscriptions AS subscription
+     INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+     WHERE customer.account_id = '00000000-0000-0000-0000-000000003610'
+       AND subscription.provider = 'mercadopago'
+       AND subscription.external_subscription_id = 'preapproval-36' $$,
+  'historical account reference resolves only with its exact local subscription'
 );
 
 SELECT is_empty(
   $$ SELECT * FROM public.resolve_billing_checkout_reference(
        '00000000-0000-0000-0000-000000003610', 'foreign-preapproval') $$,
   'historical account reference cannot claim an unrelated remote id'
+);
+
+INSERT INTO public.accounts (id, type, name, slug, created_by)
+VALUES (
+  '00000000-0000-0000-0000-000000003611', 'team', 'Foreign Resolver',
+  'foreign-resolver', '00000000-0000-0000-0000-000000003601'
+);
+INSERT INTO billing.customers (id, account_id, provider)
+VALUES (
+  '00000000-0000-0000-0000-000000003612',
+  '00000000-0000-0000-0000-000000003611', 'mercadopago'
+);
+INSERT INTO billing.subscriptions (
+  id, customer_id, plan_id, status, provider, external_subscription_id
+) VALUES (
+  '00000000-0000-0000-0000-000000003613',
+  '00000000-0000-0000-0000-000000003612',
+  (SELECT id FROM billing.plans WHERE slug = 'pro' AND "interval" = 'month'),
+  'active', 'mercadopago', 'preapproval-foreign-resolver'
+);
+SELECT is_empty(
+  $$ SELECT * FROM public.resolve_billing_checkout_reference(
+       '00000000-0000-0000-0000-000000003610', 'preapproval-foreign-resolver') $$,
+  'account A cannot resolve a preapproval owned by account B'
+);
+SELECT is(
+  (SELECT count(*)::integer
+   FROM billing.subscriptions AS subscription
+   INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+   WHERE customer.account_id = '00000000-0000-0000-0000-000000003610'
+     AND subscription.external_subscription_id = 'preapproval-foreign-resolver'),
+  0,
+  'foreign resolver attempt does not attach B subscription to account A'
 );
 
 SELECT is(
@@ -252,7 +318,23 @@ SELECT lives_ok(
     (SELECT id FROM billing.checkout_intents
      WHERE account_id = '00000000-0000-0000-0000-000000003630')
   ),
-  'webhook correlation recovers a remote result after local attach failure'
+  'webhook correlation attaches the remote subscription after local attach failure'
+);
+SELECT results_eq(
+  $$ SELECT account_id, checkout_intent_id, subscription_id
+     FROM public.resolve_billing_checkout_reference(
+       (SELECT id FROM billing.checkout_intents
+        WHERE account_id = '00000000-0000-0000-0000-000000003630'),
+       'preapproval-lost-attach') $$,
+  $$ SELECT intent.account_id, intent.id, subscription.id
+     FROM billing.checkout_intents AS intent
+     INNER JOIN billing.customers AS customer ON customer.account_id = intent.account_id
+       AND customer.provider = intent.provider
+     INNER JOIN billing.subscriptions AS subscription ON subscription.customer_id = customer.id
+       AND subscription.provider = intent.provider
+       AND subscription.external_subscription_id = 'preapproval-lost-attach'
+     WHERE intent.account_id = '00000000-0000-0000-0000-000000003630' $$,
+  'recovered correlation returns the exact attached subscription'
 );
 SELECT results_eq(
   $$ SELECT intent.status, subscription.status::text

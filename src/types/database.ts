@@ -2437,6 +2437,7 @@ export type Database = {
         Returns: {
           account_id: string
           checkout_intent_id: string
+          subscription_id: string
         }[]
       }
       resolve_billing_plan_by_external_price: {

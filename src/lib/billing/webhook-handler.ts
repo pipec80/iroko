@@ -10,7 +10,7 @@ import type { NormalizedBillingEvent } from './events';
 import { reduceBillingEvent } from './reducer';
 import { getPaymentProvider } from './registry';
 import type { WebhookVerificationContext } from './types';
-import type { AcknowledgedWebhook, BillingAnomalyType } from './types';
+import type { AcknowledgedWebhook, BillingAnomalyType, FinancialAnomalyWebhook } from './types';
 
 /**
  * Resolves the account owner's user id for analytics attribution. Webhooks
@@ -175,6 +175,51 @@ async function resolveMercadoPagoAccount(
   }
 }
 
+/** Resolves the exact local subscription required to retain a verified anomaly safely. */
+async function resolveMercadoPagoFinancialAnomaly(
+  event: FinancialAnomalyWebhook,
+): Promise<{ accountId: string; subscriptionId: string } | null> {
+  try {
+    const admin = createAdminClient();
+    const { data, error } = await admin.rpc('resolve_billing_checkout_reference', {
+      p_external_reference: event.accountReference,
+      p_external_subscription_id: event.externalSubscriptionId,
+    });
+    const resolved = data?.[0];
+    if (error || !resolved?.account_id || !resolved.subscription_id) return null;
+    return { accountId: resolved.account_id, subscriptionId: resolved.subscription_id };
+  } catch {
+    return null;
+  }
+}
+
+type FinancialAnomalyPersistenceResult = 'persisted' | 'correlation_failed' | 'persistence_failed';
+
+/** Persists normalized adverse payment evidence without entering the access reducer. */
+async function persistFinancialAnomaly(
+  event: FinancialAnomalyWebhook,
+): Promise<FinancialAnomalyPersistenceResult> {
+  const resolved = await resolveMercadoPagoFinancialAnomaly(event);
+  if (!resolved) return 'correlation_failed';
+  try {
+    const admin = createAdminClient();
+    const { error } = await admin.rpc('upsert_billing_financial_anomaly', {
+      p_provider: event.provider,
+      p_anomaly_type: event.observation.anomalyType,
+      p_external_resource_id: event.observation.externalResourceId,
+      p_observed_status: event.observation.observedStatus,
+      p_account_id: resolved.accountId,
+      p_subscription_id: resolved.subscriptionId,
+      p_original_amount: event.observation.originalAmount,
+      p_affected_amount: event.observation.affectedAmount,
+      p_currency: event.observation.currency,
+    });
+    return error ? 'persistence_failed' : 'persisted';
+  } catch {
+    return 'persistence_failed';
+  }
+}
+
 /**
  * Verifies and reduces a provider webhook. Providers produce the typed event;
  * the reducer owns the only persistence boundary and its idempotency key.
@@ -250,6 +295,41 @@ export async function handleProviderWebhook(
       );
     }
     return { status: 200, body: { result: 'ignored' } };
+  }
+
+  if (event.type === 'financial_anomaly_observed') {
+    const persisted = await persistFinancialAnomaly(event);
+    if (persisted === 'correlation_failed') {
+      logger.error(
+        {
+          ...logContext,
+          action: 'billing.webhook.correlation_failed',
+          eventType: event.type,
+        },
+        'Billing webhook could not be correlated safely',
+      );
+      return { status: 500, body: { error: 'billing_correlation_failed' } };
+    }
+    if (persisted === 'persistence_failed') {
+      logger.error(
+        {
+          ...logContext,
+          action: 'billing.webhook.financial_anomaly_persistence_failed',
+          anomalyType: event.observation.anomalyType,
+        },
+        'Billing financial anomaly persistence failed',
+      );
+      return { status: 500, body: { error: 'billing_anomaly_persistence_failed' } };
+    }
+    logger.info(
+      {
+        ...logContext,
+        action: 'billing.webhook.financial_anomaly_observed',
+        anomalyType: event.observation.anomalyType,
+      },
+      'Billing financial anomaly observed',
+    );
+    return { status: 200, body: { result: 'financial_anomaly_observed' } };
   }
 
   const correlatedEvent = await resolveMercadoPagoAccount(event);

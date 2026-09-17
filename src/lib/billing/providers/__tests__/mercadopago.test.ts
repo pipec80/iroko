@@ -235,7 +235,13 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     fetchMock
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ id: paymentId, status: 'approved' }),
+        json: async () => ({
+          id: paymentId,
+          status: 'approved',
+          transaction_amount: '19990',
+          transaction_amount_refunded: '0',
+          currency_id: 'CLP',
+        }),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -279,6 +285,253 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     );
   });
 
+  it('returns a typed partial-refund observation before normalizing a linked approved payment', async () => {
+    const paymentId = 'payment-partial';
+    const requestId = 'req-payment-partial';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, paymentId, ts);
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: paymentId,
+          status: 'approved',
+          transaction_amount: '19990',
+          transaction_amount_refunded: '5000',
+          currency_id: 'CLP',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [
+            {
+              id: 'invoice-partial',
+              preapproval_id: 'preapproval-partial',
+              external_reference: '00000000-0000-0000-0000-00000000a111',
+              transaction_amount: '19990',
+              currency_id: 'CLP',
+              date_created: '2026-08-31T00:00:00.000-04:00',
+              payment: { id: paymentId, status: 'approved' },
+            },
+          ],
+        }),
+      });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(
+        JSON.stringify({ type: 'payment', data: { id: paymentId } }),
+        `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+        { dataId: paymentId, webhookId: 'notification-partial' },
+      ),
+    ).resolves.toEqual({
+      provider: 'mercadopago',
+      type: 'financial_anomaly_observed',
+      externalEventId: 'mercadopago:webhook:notification-partial',
+      accountReference: '00000000-0000-0000-0000-00000000a111',
+      externalSubscriptionId: 'preapproval-partial',
+      observation: {
+        anomalyType: 'partial_refund',
+        externalResourceId: paymentId,
+        observedStatus: 'approved',
+        originalAmount: 19_990,
+        affectedAmount: 5_000,
+        currency: 'CLP',
+      },
+      raw: expect.any(Object),
+    });
+  });
+
+  it('returns a typed full-refund observation for equal normalized amounts', async () => {
+    const paymentId = 'payment-full-refund';
+    const requestId = 'req-payment-full-refund';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, paymentId, ts);
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: paymentId,
+          status: 'approved',
+          transaction_amount: '19990',
+          transaction_amount_refunded: '19990',
+          currency_id: 'CLP',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [
+            {
+              id: 'invoice-full-refund',
+              preapproval_id: 'preapproval-full-refund',
+              external_reference: 'account-full-refund',
+              transaction_amount: '19990',
+              currency_id: 'CLP',
+              date_created: '2026-08-31T00:00:00.000-04:00',
+              payment: { id: paymentId, status: 'approved' },
+            },
+          ],
+        }),
+      });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(
+        JSON.stringify({ type: 'payment', data: { id: paymentId } }),
+        `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+        { dataId: paymentId, webhookId: 'notification-full-refund' },
+      ),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        type: 'financial_anomaly_observed',
+        observation: {
+          anomalyType: 'refund',
+          externalResourceId: paymentId,
+          observedStatus: 'approved',
+          originalAmount: 19_990,
+          affectedAmount: 19_990,
+          currency: 'CLP',
+        },
+      }),
+    );
+  });
+
+  it.each([
+    ['refunded', 'refund'],
+    ['charged_back', 'chargeback'],
+    ['in_mediation', 'mediation'],
+  ] as const)(
+    'prioritizes fresh %s evidence over an approved authorized-payment row',
+    async (status, anomalyType) => {
+      const paymentId = `payment-${status}`;
+      const requestId = `req-${status}`;
+      const ts = '1720000000';
+      const v1 = await sign('test-mp-secret', requestId, paymentId, ts);
+      fetchMock
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            id: paymentId,
+            status,
+            transaction_amount: '19990',
+            currency_id: 'CLP',
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            results: [
+              {
+                id: `invoice-${status}`,
+                preapproval_id: `preapproval-${status}`,
+                external_reference: 'account-financial-status',
+                transaction_amount: '19990',
+                currency_id: 'CLP',
+                date_created: '2026-08-31T00:00:00.000-04:00',
+                payment: { id: paymentId, status: 'approved' },
+              },
+            ],
+          }),
+        });
+
+      await expect(
+        mercadopagoProvider.verifyWebhook(
+          JSON.stringify({ type: 'payment', data: { id: paymentId } }),
+          `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+          { dataId: paymentId, webhookId: `notification-${status}` },
+        ),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          type: 'financial_anomaly_observed',
+          externalSubscriptionId: `preapproval-${status}`,
+          observation: expect.objectContaining({ anomalyType, observedStatus: status }),
+        }),
+      );
+    },
+  );
+
+  it('keeps over-refund evidence as a full refund without incompatible amounts', async () => {
+    const paymentId = 'payment-over-refund';
+    const requestId = 'req-over-refund';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, paymentId, ts);
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: paymentId,
+          status: 'approved',
+          transaction_amount: '19990',
+          transaction_amount_refunded: '20000',
+          currency_id: 'CLP',
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          results: [
+            {
+              id: 'invoice-over-refund',
+              preapproval_id: 'preapproval-over-refund',
+              external_reference: 'account-over-refund',
+              transaction_amount: '19990',
+              currency_id: 'CLP',
+              date_created: '2026-08-31T00:00:00.000-04:00',
+              payment: { id: paymentId, status: 'approved' },
+            },
+          ],
+        }),
+      });
+
+    const result = await mercadopagoProvider.verifyWebhook(
+      JSON.stringify({ type: 'payment', data: { id: paymentId } }),
+      `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+      { dataId: paymentId, webhookId: 'notification-over-refund' },
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        type: 'financial_anomaly_observed',
+        observation: expect.objectContaining({
+          anomalyType: 'refund',
+          externalResourceId: paymentId,
+          observedStatus: 'approved',
+        }),
+      }),
+    );
+    if (result?.type === 'financial_anomaly_observed') {
+      expect(result.observation).not.toHaveProperty('originalAmount');
+      expect(result.observation).not.toHaveProperty('affectedAmount');
+    }
+  });
+
+  it('validates the fresh payment identity before classifying adverse evidence', async () => {
+    const paymentId = 'payment-identity';
+    const requestId = 'req-payment-identity';
+    const ts = '1720000000';
+    const v1 = await sign('test-mp-secret', requestId, paymentId, ts);
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          id: 'different-payment',
+          status: 'refunded',
+          transaction_amount: '19990',
+          transaction_amount_refunded: '19990',
+          currency_id: 'CLP',
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ results: [] }) });
+
+    await expect(
+      mercadopagoProvider.verifyWebhook(
+        JSON.stringify({ type: 'payment', data: { id: paymentId } }),
+        `ts=${ts},v1=${v1};x-request-id=${requestId}`,
+        { dataId: paymentId, webhookId: 'notification-identity' },
+      ),
+    ).resolves.toBeNull();
+  });
+
   it('acknowledges a signed generic payment that is not linked to a subscription invoice', async () => {
     const paymentId = 'payment_not_subscription';
     const requestId = 'req_payment_not_subscription';
@@ -312,25 +565,25 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     });
   });
 
-  it('marks a linked payment status divergence for actionable observability', async () => {
-    const paymentId = 'payment_refunded';
-    const requestId = 'req_payment_refunded';
+  it('keeps an ordinary linked payment status divergence on its non-financial path', async () => {
+    const paymentId = 'payment_rejected';
+    const requestId = 'req_payment_rejected';
     const ts = '1720000000';
     const v1 = await sign('test-mp-secret', requestId, paymentId, ts);
     const body = JSON.stringify({ type: 'payment', data: { id: paymentId } });
     fetchMock
       .mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ id: paymentId, status: 'refunded' }),
+        json: async () => ({ id: paymentId, status: 'rejected' }),
       })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
           results: [
             {
-              id: 'invoice_refunded',
-              preapproval_id: 'pa_refunded',
-              external_reference: 'acc_refunded',
+              id: 'invoice_rejected',
+              preapproval_id: 'pa_rejected',
+              external_reference: 'acc_rejected',
               transaction_amount: '19990',
               currency_id: 'CLP',
               date_created: '2026-08-31T00:00:00.000-04:00',
@@ -343,17 +596,17 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     await expect(
       mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`, {
         dataId: paymentId,
-        webhookId: 'notification_payment_refunded',
+        webhookId: 'notification_payment_rejected',
       }),
     ).resolves.toEqual(
       expect.objectContaining({
         provider: 'mercadopago',
         type: 'webhook_acknowledged',
         reason: 'payment_status_divergence',
-        externalEventId: 'mercadopago:webhook:notification_payment_refunded',
+        externalEventId: 'mercadopago:webhook:notification_payment_rejected',
         resourceType: 'payment',
         resourceId: paymentId,
-        observedStatus: 'refunded',
+        observedStatus: 'rejected',
       }),
     );
   });

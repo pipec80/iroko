@@ -3813,11 +3813,12 @@ $$;
 
 CREATE OR REPLACE FUNCTION public.resolve_billing_checkout_reference(
   p_external_reference uuid, p_external_subscription_id text
-) RETURNS TABLE(account_id uuid, checkout_intent_id uuid)
+) RETURNS TABLE(account_id uuid, checkout_intent_id uuid, subscription_id uuid)
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
   v_intent billing.checkout_intents%ROWTYPE;
   v_account_id uuid;
+  v_subscription_id uuid;
 BEGIN
   IF NULLIF(btrim(p_external_subscription_id), '') IS NULL THEN
     RAISE EXCEPTION 'billing_required_external_subscription_id_missing';
@@ -3832,16 +3833,26 @@ BEGIN
     IF v_intent.external_subscription_id IS NULL THEN
       PERFORM private.attach_billing_checkout_remote(v_intent.id, p_external_subscription_id, NULL);
     END IF;
-    RETURN QUERY SELECT v_intent.account_id, v_intent.id;
+    SELECT subscription.id INTO v_subscription_id
+    FROM billing.subscriptions AS subscription
+    INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
+    WHERE customer.account_id = v_intent.account_id
+      AND subscription.provider = 'mercadopago'
+      AND subscription.external_subscription_id = btrim(p_external_subscription_id);
+    IF v_subscription_id IS NOT NULL THEN
+      RETURN QUERY SELECT v_intent.account_id, v_intent.id, v_subscription_id;
+    END IF;
     RETURN;
   END IF;
-  SELECT customer.account_id INTO v_account_id
+  SELECT customer.account_id, subscription.id INTO v_account_id, v_subscription_id
   FROM billing.subscriptions AS subscription
   INNER JOIN billing.customers AS customer ON customer.id = subscription.customer_id
   WHERE customer.account_id = p_external_reference
     AND subscription.provider = 'mercadopago'
     AND subscription.external_subscription_id = btrim(p_external_subscription_id);
-  IF v_account_id IS NOT NULL THEN RETURN QUERY SELECT v_account_id, NULL::uuid; END IF;
+  IF v_account_id IS NOT NULL AND v_subscription_id IS NOT NULL THEN
+    RETURN QUERY SELECT v_account_id, NULL::uuid, v_subscription_id;
+  END IF;
 END;
 $$;
 

@@ -81,6 +81,17 @@ export interface FinancialAnomalyObservation {
   currency?: string;
 }
 
+/** A verified Mercado Pago financial observation that must not enter the billing reducer. */
+export interface FinancialAnomalyWebhook {
+  provider: 'mercadopago';
+  type: 'financial_anomaly_observed';
+  externalEventId: string;
+  accountReference: string;
+  externalSubscriptionId: string;
+  observation: FinancialAnomalyObservation;
+  raw: unknown;
+}
+
 export interface ProviderRecoveryInput {
   resourceType: 'payment';
   resourceId: string;
@@ -97,6 +108,7 @@ export interface InvoiceDiscoveryInput {
 /** Provider-normalized invoice events plus scan-local paging progress. */
 export interface InvoiceDiscoveryPage {
   events: NormalizedBillingEvent[];
+  financialAnomalies?: FinancialAnomalyObservation[];
   nextCursor: string | null;
   providerWatermark: string | null;
 }
@@ -115,7 +127,8 @@ export interface SubscriptionSnapshot {
   providerModifiedAt?: string;
   providerVersion?: string;
 }
-export type ProviderWebhookResult = NormalizedBillingEvent | AcknowledgedWebhook;
+export type ProviderWebhookResult =
+  NormalizedBillingEvent | AcknowledgedWebhook | FinancialAnomalyWebhook;
 
 export interface PaymentProvider {
   readonly name: ProviderName;

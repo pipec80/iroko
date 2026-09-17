@@ -9,6 +9,8 @@ import type {
   CheckoutParams,
   InvoiceDiscoveryInput,
   InvoiceDiscoveryPage,
+  FinancialAnomalyObservation,
+  FinancialAnomalyWebhook,
   PaymentProvider,
   ProviderRecoveryResult,
   SubscriptionStatus,
@@ -524,10 +526,10 @@ function acknowledgedWebhook(
   return { provider: 'mercadopago', type: 'webhook_acknowledged', ...input };
 }
 
-function recoveryAnomalyForPayment(
+function financialAnomalyObservationForPayment(
   payment: PaymentResource,
   externalResourceId: string,
-): ProviderRecoveryResult | null {
+): FinancialAnomalyObservation | null {
   const currency = normalizeCurrency(payment.currency_id);
   const originalAmount = currency ? normalizeAmount(payment.transaction_amount, currency) : null;
   const affectedAmount =
@@ -560,13 +562,10 @@ function recoveryAnomalyForPayment(
   }
 
   return {
-    kind: 'anomaly',
-    observation: {
-      anomalyType,
-      externalResourceId,
-      observedStatus: payment.status,
-      ...monetaryEvidence,
-    },
+    anomalyType,
+    externalResourceId,
+    observedStatus: payment.status,
+    ...monetaryEvidence,
   };
 }
 
@@ -706,7 +705,7 @@ export const mercadopagoProvider: PaymentProvider = {
     rawBody: string,
     signature: string,
     context?: WebhookVerificationContext,
-  ): Promise<NormalizedBillingEvent | AcknowledgedWebhook | null> {
+  ): Promise<NormalizedBillingEvent | AcknowledgedWebhook | FinancialAnomalyWebhook | null> {
     let parsedBody: unknown;
     try {
       parsedBody = JSON.parse(rawBody) as unknown;
@@ -797,6 +796,27 @@ export const mercadopagoProvider: PaymentProvider = {
           raw: { notification: body, payment: providerPayment },
         });
       }
+      const accountReference =
+        (
+          typeof invoice.external_reference === 'string' &&
+          invoice.external_reference.trim().length > 0
+        ) ?
+          invoice.external_reference
+        : null;
+      const externalSubscriptionId = normalizeExternalId(invoice.preapproval_id);
+      if (!accountReference || !externalSubscriptionId) return null;
+      const observation = financialAnomalyObservationForPayment(providerPayment, dataId);
+      if (observation) {
+        return {
+          provider: 'mercadopago',
+          type: 'financial_anomaly_observed',
+          externalEventId: webhookEventId(context, `mercadopago:payment:${dataId}`),
+          accountReference,
+          externalSubscriptionId,
+          observation,
+          raw: { notification: body, payment: providerPayment, authorizedPayment: invoice },
+        };
+      }
       if (invoice.payment.status !== providerPayment.status) {
         return acknowledgedWebhook({
           reason: 'payment_status_divergence',
@@ -836,8 +856,8 @@ export const mercadopagoProvider: PaymentProvider = {
     if (!isPaymentResource(providerPayment) || normalizeExternalId(providerPayment.id) !== dataId) {
       return { kind: 'unrelated' };
     }
-    const adverse = recoveryAnomalyForPayment(providerPayment, dataId);
-    if (adverse) return adverse;
+    const observation = financialAnomalyObservationForPayment(providerPayment, dataId);
+    if (observation) return { kind: 'anomaly', observation };
     const invoices = await fetchResource<AuthorizedPaymentSearchResponse>(
       `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
     );

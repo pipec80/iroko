@@ -1,6 +1,6 @@
 -- pgTAP: normalized financial anomaly detail and service-only atomic upsert.
 BEGIN;
-SELECT plan(17);
+SELECT plan(21);
 
 SELECT has_column('billing', 'financial_anomalies', 'original_amount', 'anomalies store original amount');
 SELECT has_column('billing', 'financial_anomalies', 'affected_amount', 'anomalies store affected amount');
@@ -121,6 +121,60 @@ SELECT results_eq(
      WHERE id = current_setting('app.anomaly_detail_id')::uuid $$,
   $$ VALUES (19990, 8000, 'CLP'::text, 3, true) $$,
   'repeat upsert replaces evidence while preserving first-seen time'
+);
+
+SELECT set_config(
+  'app.anomaly_detail_refund_id',
+  public.upsert_billing_financial_anomaly(
+    'mercadopago', 'refund', 'payment-anomaly-detail', 'refunded',
+    '00000000-0000-0000-0000-000000004110',
+    '00000000-0000-0000-0000-000000004112',
+    19990, 19990, 'CLP'
+  )::text,
+  true
+);
+SELECT isnt(
+  current_setting('app.anomaly_detail_refund_id'),
+  current_setting('app.anomaly_detail_id'),
+  'partial refund and refund for one payment retain distinct anomaly identities'
+);
+SELECT results_eq(
+  $$ SELECT anomaly_type, occurrence_count
+     FROM billing.financial_anomalies
+     WHERE provider = 'mercadopago' AND external_resource_id = 'payment-anomaly-detail'
+     ORDER BY anomaly_type $$,
+  $$ VALUES ('partial_refund'::text, 3), ('refund'::text, 1) $$,
+  'provider, anomaly type and payment resource form the durable open-anomaly key'
+);
+SELECT set_config(
+  'app.anomaly_detail_stripe_id',
+  public.upsert_billing_financial_anomaly(
+    'stripe', 'partial_refund', 'payment-anomaly-detail', 'refunded',
+    NULL, NULL, 19990, 5000, 'CLP'
+  )::text,
+  true
+);
+SELECT results_eq(
+  $$ SELECT provider, anomaly_type, external_resource_id
+     FROM billing.financial_anomalies
+     WHERE id = current_setting('app.anomaly_detail_stripe_id')::uuid $$,
+  $$ VALUES ('stripe'::text, 'partial_refund'::text, 'payment-anomaly-detail'::text) $$,
+  'the same type and payment under a second provider is a separate anomaly'
+);
+SELECT set_config(
+  'app.anomaly_detail_over_refund_id',
+  public.upsert_billing_financial_anomaly(
+    'mercadopago', 'refund', 'payment-over-refund', 'refunded',
+    NULL, NULL, NULL, NULL, NULL
+  )::text,
+  true
+);
+SELECT results_eq(
+  $$ SELECT anomaly_type, original_amount, affected_amount
+     FROM billing.financial_anomalies
+     WHERE id = current_setting('app.anomaly_detail_over_refund_id')::uuid $$,
+  $$ VALUES ('refund'::text, NULL::integer, NULL::integer) $$,
+  'over-refund retains refund type without truncated monetary evidence'
 );
 
 SELECT throws_ok(
