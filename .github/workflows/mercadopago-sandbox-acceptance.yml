@@ -62,7 +62,8 @@ jobs:
           PLAYWRIGHT_BASE_URL: ${{ inputs.deployment_url }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           IROKO_E2E_TEST_USER_EMAIL: ${{ secrets.IROKO_E2E_TEST_USER_EMAIL }}
-          IROKO_E2E_TEST_USER_PASSWORD: ${{ secrets.IROKO_E2E_TEST_USER_PASSWORD }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           MERCADOPAGO_CLOUD_ACCEPTANCE: '1'
 
       - name: Upload Playwright report
