@@ -33,6 +33,22 @@ Next.js internal route, Mercado Pago sandbox/test environment.
 - Rollback unschedules jobs and removes the route allowance when needed; it
   retains durable work and anomaly evidence.
 
+**Status note — 2026-09-22:** the authoritative evidence for this rollout's
+current state lives in
+[Plan 011e worker rollout](../../quality/operational-evidence.md#plan-011e-worker-rollout--2026-09-22),
+not in the checkboxes below (this session did not re-execute each step and
+cannot audit that every literal sub-step ran as written). What is confirmed:
+both jobs are scheduled and have run unattended for days with zero failures
+(recovery 1493/1493, reconciliation 22/22), current worker health correlates
+`last_status_code=200` to the latest cron run for both modes, and Cloud
+migration parity is exact (159/159). What remains open regardless of checkbox
+state: Task 3 Step 3 (controlled recovery failure), Task 4 Step 4 (multi-batch
+and interruption recovery), and any real provider-known payment or missed
+invoice actually repaired/discovered — `last_summary` has shown `claimed=0`
+and `scanned=0` throughout, so neither worker has had a real case to resolve
+yet. Do not check remaining boxes from this evidence alone; only check a step
+after re-running and recording it per this plan's own instructions.
+
 ---
 
 ### Task 1: Capture the read-only rollout preflight

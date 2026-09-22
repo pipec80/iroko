@@ -88,12 +88,15 @@ documentation pass.
 ### Worker rollout update — 2026-09-22
 
 The authorized 011e rollout now has current Cloud evidence for the deployed
-Node route, Vault/scheduler circuit, and both worker modes. At 15:00 UTC the
-hourly reconciliation job (job 15) completed successfully for the fourth
-consecutive observed run (12:00, 13:00, 14:00 and 15:00 UTC). Its health row
-and correlated `pg_net` response both recorded HTTP 200 with no timeout or
-network error. Recovery likewise recorded HTTP 200 at 15:15 UTC with no timeout
-or network error. This verifies basic operation only.
+Node route, Vault/scheduler circuit, and both worker modes running unattended.
+`cron.job_run_details` shows the 5-minute recovery job (14) at 1493/1493
+`succeeded` from 2026-09-17 14:35 UTC through 2026-09-22 18:55 UTC, and the
+hourly reconciliation job (15) at 22/22 `succeeded` from 2026-09-21 21:00 UTC
+through 2026-09-22 18:00 UTC — zero non-succeeded rows for either job across
+that window. `private.billing_worker_health` correlates both modes' latest row
+to `last_status_code=200` at the same timestamp as the latest cron run. This
+verifies sustained basic operation only, and confirms Cloud migration parity
+(159/159 versions match `main`).
 
 The evidence does not identify a provider resource, prove a recovery repair,
 show a fully omitted provider invoice, or exercise multi-batch progress,
