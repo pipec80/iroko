@@ -407,12 +407,12 @@ describe('BillingTab — role-awareness', () => {
       },
     });
     mocks.cancelSubscription.mockResolvedValue({ data: true });
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     const { client } = renderBillingTab('owner');
     const invalidate = vi.spyOn(client, 'invalidateQueries');
 
     fireEvent.click(await waitFor(() => screen.getByTestId('cancel-immediately')));
+    fireEvent.click(await waitFor(() => screen.getByTestId('cancel-dialog-confirm')));
 
     await waitFor(() =>
       expect(mocks.cancelSubscription).toHaveBeenCalledWith({ timing: 'immediate' }),
@@ -420,8 +420,30 @@ describe('BillingTab — role-awareness', () => {
     // Regression: without this the dashboard kept showing the canceled
     // subscription as active until an unrelated navigation refetched it.
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['billing', 'data', 'account-1'] });
+    // The dialog closes itself once the mutation confirms.
+    await waitFor(() => expect(screen.queryByTestId('cancel-dialog-confirm')).toBeNull());
+  });
 
-    confirmSpy.mockRestore();
+  it('shows a loading state on the confirm dialog while the cancellation is in flight', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: {
+        plans: [PLAN_FREE, PLAN_PRO],
+        overview: {
+          ...ACTIVE_PRO_OVERVIEW,
+          capabilities: { ...NO_CAPABILITIES, cancelImmediately: true },
+        },
+      },
+    });
+    mocks.cancelSubscription.mockReturnValue(new Promise(() => {}));
+
+    renderBillingTab('owner');
+
+    fireEvent.click(await waitFor(() => screen.getByTestId('cancel-immediately')));
+    const confirmButton = await waitFor(() => screen.getByTestId('cancel-dialog-confirm'));
+    fireEvent.click(confirmButton);
+
+    await waitFor(() => expect(confirmButton).toHaveProperty('disabled', true));
+    expect(confirmButton.textContent).toContain('Cancelando');
   });
 
   it('shows Chilean prices without offering an unavailable annual checkout', async () => {

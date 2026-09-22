@@ -17,6 +17,14 @@ import {
 } from '@/app/[locale]/dashboard/billing/actions';
 import { PlanViewedTracker } from '@/components/analytics/plan-viewed-tracker';
 import { BillingPaymentHealthNotice } from '@/components/dashboard/org/billing-payment-health-notice';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useRouter } from '@/i18n/routing';
 import { logClient } from '@/lib/logger-client';
 import { canManageBilling, type MembershipRole } from '@/lib/permissions';
@@ -399,6 +407,7 @@ function SubscriptionStatusPanel({
 }) {
   const t = useTranslations('Billing');
   const queryClient = useQueryClient();
+  const [pendingTiming, setPendingTiming] = useState<'immediate' | 'period_end' | null>(null);
 
   const cancel = useMutation({
     mutationFn: async (timing: 'immediate' | 'period_end') => {
@@ -407,6 +416,7 @@ function SubscriptionStatusPanel({
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['billing', 'data', accountId] });
+      setPendingTiming(null);
     },
     // Igual que en checkout: sin esto un fallo (proveedor no soporta la
     // cancelación, cuenta sin suscripción, etc.) quedaba solo en cancel.error,
@@ -451,9 +461,7 @@ function SubscriptionStatusPanel({
           <button
             type="button"
             disabled={cancel.isPending}
-            onClick={() => {
-              if (window.confirm(t('cancel_confirm'))) cancel.mutate('period_end');
-            }}
+            onClick={() => setPendingTiming('period_end')}
             data-testid="cancel-period-end"
             className="mt-5 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{ borderColor: 'rgba(245,236,218,0.25)', color: 'var(--color-bone)' }}>
@@ -464,9 +472,7 @@ function SubscriptionStatusPanel({
           <button
             type="button"
             disabled={cancel.isPending}
-            onClick={() => {
-              if (window.confirm(t('cancel_now_confirm'))) cancel.mutate('immediate');
-            }}
+            onClick={() => setPendingTiming('immediate')}
             data-testid="cancel-immediately"
             className="mt-5 ml-3 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
             style={{ borderColor: 'rgba(245,236,218,0.25)', color: 'var(--color-bone)' }}>
@@ -474,6 +480,40 @@ function SubscriptionStatusPanel({
           </button>
         )}
       </div>
+
+      <Dialog
+        open={pendingTiming !== null}
+        onOpenChange={(open) => {
+          if (!open && !cancel.isPending) setPendingTiming(null);
+        }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('cancel_dialog_title')}</DialogTitle>
+            <DialogDescription>
+              {pendingTiming === 'immediate' ? t('cancel_now_confirm') : t('cancel_confirm')}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              disabled={cancel.isPending}
+              onClick={() => setPendingTiming(null)}
+              className="border-border text-foreground rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50">
+              {t('cancel_dialog_dismiss')}
+            </button>
+            <button
+              type="button"
+              disabled={cancel.isPending}
+              onClick={() => pendingTiming && cancel.mutate(pendingTiming)}
+              data-testid="cancel-dialog-confirm"
+              className="flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+              style={{ border: 0, background: 'var(--color-poppy)' }}>
+              {cancel.isPending && <Loader2 aria-hidden className="size-4 animate-spin" />}
+              {cancel.isPending ? t('cancel_dialog_canceling') : t('cancel_dialog_confirm')}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }
