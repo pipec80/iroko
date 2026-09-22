@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test';
 import type { APIRequestContext, Page } from '@playwright/test';
 
+import {
+  assertCanonicalCloudAcceptanceUrl,
+  assertSupabaseGenerateLinkStatus,
+} from './mercadopago-cloud-acceptance-config';
+
 const requiredSecrets = [
   'IROKO_E2E_TEST_USER_EMAIL',
   'NEXT_PUBLIC_SUPABASE_URL',
@@ -22,6 +27,8 @@ function requireCloudAcceptanceConfiguration() {
   if (process.env.MERCADOPAGO_CLOUD_ACCEPTANCE !== '1') {
     throw new Error('mercadopago_cloud_acceptance_requires_explicit_opt_in');
   }
+
+  assertCanonicalCloudAcceptanceUrl(baseUrl);
 
   for (const name of requiredSecrets) {
     if (!process.env[name]) throw new Error(`mercadopago_cloud_acceptance_missing_${name}`);
@@ -47,7 +54,7 @@ async function signInTestAccountThroughOtp(page: Page, request: APIRequestContex
     },
   );
 
-  expect(response.ok(), 'Supabase must generate an OTP for the dedicated test account').toBe(true);
+  assertSupabaseGenerateLinkStatus(response.status());
   const body: unknown = await response.json();
   const tokenHash =
     (

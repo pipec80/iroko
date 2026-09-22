@@ -9,15 +9,8 @@ on:
         type: choice
         options:
           - MP-01-hosted-checkout
-      target:
-        description: Deployed Vercel environment to exercise
-        required: true
-        type: choice
-        options:
-          - preview
-          - production
       deployment_url:
-        description: Exact HTTPS Vercel deployment URL for the selected SHA
+        description: 'Exact official HTTPS origin: https://project-a89lv.vercel.app.'
         required: true
         type: string
 
@@ -33,10 +26,10 @@ jobs:
     name: MP-01 hosted checkout
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Each target holds the matching SITE_URL and bypass secret. This workflow
-    # is intentionally workflow_dispatch-only: creating a checkout is not a
-    # safe per-push or nightly operation.
-    environment: ${{ inputs.target }}
+    # This workflow always targets the official origin used by Mercado Pago and
+    # Cloudflare. It is intentionally workflow_dispatch-only: creating a
+    # checkout is not a safe per-push or nightly operation.
+    environment: production
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
@@ -55,6 +48,9 @@ jobs:
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
+
+      - name: Validate canonical production origin
+        run: test "${{ inputs.deployment_url }}" = "https://project-a89lv.vercel.app"
 
       - name: Run MP-01 against the deployed application
         run: pnpm exec playwright test src/test/e2e/mercadopago-cloud-acceptance.spec.ts --project=chromium
