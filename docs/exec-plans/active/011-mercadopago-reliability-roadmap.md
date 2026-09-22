@@ -1,11 +1,11 @@
 # Plan 011 — Mercado Pago reliability delivery roadmap
 
-**Status (2026-09-16):** A/B and the recovery/anomaly/worker foundation of C,
+**Status (2026-09-22):** A/B and the recovery/anomaly/worker foundation of C,
 including local refund ingress through linked webhooks and discovery, are
-implemented on `feat/mercadopago-v1-implementation`. The local gate for that
-ingress is recorded in Plan 011g; operational rollout 011e and full internal
-acceptance 011f remain pending. Current Cloud evidence is **[NO VERIFICADO]**.
-See the
+implemented. The basic 011e rollout is verified in Cloud: both health modes
+correlate to HTTP 200 and reconciliation completed four consecutive hourly
+runs. The provider scenarios and worker failure/multi-batch drills remain
+pending in 011e/011f. See the
 [v1 Chile closure matrix](011-mercadopago-v1-chile-acceptance.md).
 
 **Goal:** Close the Mercado Pago correctness gaps without changing the hosted
@@ -111,7 +111,8 @@ because Mercado Pago's first slice is done.
    local payment-health, refund-ingress, missed-invoice discovery,
    worker-progress/failure and paid-through code slices have recorded local
    evidence but are not provider acceptance.
-2. Activate and verify both workers through an explicitly authorized rollout.
+2. Complete the remaining authorized worker drills: provider-known recovery,
+   fully omitted invoice, multiple batches, failure, lease reclaim and replay.
 3. Close internal Mercado Pago acceptance with sanitized row-by-row evidence.
 4. Resolve Plan 012 hardening/pricing and operational checks before real users;
    keep `scale → teams` separate.

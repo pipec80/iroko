@@ -3,9 +3,10 @@
 - Priority: P0
 - Status: Active — Fase 1 cerrada por PR #152 el 2026-08-27. Mercado Pago es
   la Fase 2 y referencia de la v1 propia Chile, CLP mensual. Coordinación
-  durable, recovery y anomalías implementados; aceptación interna y operación
-  pendientes. El registro histórico documenta aplicación de migraciones el
-  2026-09-10; paridad actual `[NO VERIFICADO]`.
+  durable, recovery y anomalías implementados; el rollout básico de workers
+  está verificado en Cloud. Permanecen aceptación interna y drills
+  proveedor/fallo/múltiples lotes. El registro histórico documenta aplicación
+  de migraciones el 2026-09-10; paridad actual `[NO VERIFICADO]`.
 - Baseline de Core v2: `main` @ `4a0a3d4`; revisión documental MP: `66bc9b2`
   (2026-09-11).
 - Depends on: Plan 010 cerró el 2026-08-26; reutilizar
@@ -50,8 +51,8 @@ alojado sin plan asociado, CLP mensual y precios/slugs actuales. Sin trial,
 upgrade/downgrade, pausa iniciada desde Iroko ni gestión de tarjetas interna.
 No se atribuye certificación oficial del proveedor.
 
-Orden: resolver gaps de Fases 2/6 → rollout autorizado y verificación de
-workers → aceptación interna MP → hardening/pricing de Plan 012 y checks
+Orden: resolver gaps de Fases 2/6 → completar los drills restantes del rollout
+011e → aceptación interna MP → hardening/pricing de Plan 012 y checks
 operacionales de v1 → certificaciones independientes Stripe, Paddle y Lemon
 Squeezy → preparación comercial de Plan 013 cuando se decida vender.
 `scale → teams` queda separado del cierre MP. El programa completo permanece

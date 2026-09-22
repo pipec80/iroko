@@ -1,7 +1,7 @@
 # Operational Evidence Register
 
-Last updated: **2026-09-16** (Plan 011g local closeout; the earlier 011e
-preflight is superseded; no Cloud mutation or worker invocation)
+Last updated: **2026-09-22** (Plan 011e worker rollout evidence and current
+Cloud health inspection; provider acceptance remains separate)
 
 This register prevents historical green checks from being read as present-day
 operational truth. GitHub Actions and provider consoles remain the primary live
@@ -37,7 +37,7 @@ the rule that determines when it expires.
 | Full CI and preview build        | GitHub Actions + Vercel Preview                | [PR #152](https://github.com/pipec80/iroko/pull/152) head `b396aa4` passed Quality, CodeQL, Documentation, Security, Gitleaks, Unit, Database Types/Tests, Edge Function, Chromium/WebKit E2E, Build and Vercel Preview; it was squash-merged as `4a0a3d4` | 2026-08-27            | Commit-bound                     | CURRENT for PR head; separate `main` run **[NO VERIFICADO]**            |
 | Mercado Pago basic circuit       | Test-seller sandbox via production deployment  | Historical informal 2026-09-10 record: checkout → active → first invoice paid → cancel, with adapter fix #179. Formal sanitized evidence is still pending; this is not real-money production acceptance.                                                   | 2026-09-10 (recorded) | Change-bound                     | Historical partial provider observation; current **[NO VERIFICADO]**    |
 | Mercado Pago v1 Chile acceptance | Monthly CLP, hosted pending/no associated plan | [MP-01–15 matrix](../exec-plans/active/011-mercadopago-v1-chile-acceptance.md): renewal, failure/recovery, cancellation access, partial refunds, abandoned/unknown checkout and complete invoice discovery remain open.                                    | —                     | Scenario + change-bound          | Internal certification pending; **[NO VERIFICADO]**                     |
-| Billing workers                  | Supabase scheduler/Vault → Vercel Node         | The 011e preflight was performed before Plan 011g and its `20260911140000_billing_financial_anomaly_ingress` migration. It cannot identify the current release candidate, establish linked parity, or authorize a rollout. No worker was invoked.          | 2026-09-16            | 48 hours + configuration changes | Fresh preflight and authorization required; current **[NO VERIFICADO]** |
+| Billing workers                  | Supabase scheduler/Vault → Vercel Node         | Basic 011e rollout: recovery and reconciliation health rows each correlate to `pg_net` HTTP 200 with no timeout/error. Reconciliation job 15 completed at 12:00, 13:00, 14:00 and 15:00 UTC on 2026-09-22.                                                  | 2026-09-22 15:15 UTC | 48 hours + configuration changes | **CURRENT** for basic operation only; provider recovery and failure/multi-batch drills remain **[NO VERIFICADO]** |
 | Other billing providers          | Stripe, Paddle, Lemon Squeezy                  | Independent adapter/catalogue/events/capabilities/reconciliation/test acceptance still required; MP acceptance does not cover them.                                                                                                                        | —                     | Provider + change-bound          | **[NO VERIFICADO]**                                                     |
 
 ## Mercado Pago closeout evidence contract — 2026-09-11
@@ -92,6 +92,24 @@ Before v1 real users, additionally verify Plan 012 hardening/pricing, production
 smoke, auth/tenant isolation, email delivery, observability/alerts, migration
 parity and operational recovery. Commercial analytics/onboarding/distribution
 in Plan 013 can follow later; necessary security and operation cannot.
+
+## Plan 011e worker rollout — 2026-09-22
+
+This section supersedes the historical preflight as evidence for basic worker
+operation. It records only sanitized Cloud observations; it does not certify
+Mercado Pago or authorize provider-side mutations.
+
+| Check | Observation | Status and limit |
+| ----- | ----------- | ---------------- |
+| Worker route and shared configuration | The authorized Vercel/Supabase rollout was completed with the scoped worker route, paired secret contract, Vault dispatcher and scheduler. The Vercel firewall diff was empty after publishing the narrow authenticated worker allowance. | Configuration was inspected during rollout; values and raw route credentials are intentionally absent. |
+| Recovery | Manual results and scheduled operation were observed during rollout; current health at 15:15 UTC correlated to `pg_net` HTTP 200 without timeout or network error. | **CURRENT** for invocation/transport only. A provider-known payment repaired by recovery is **[NO VERIFICADO]**. |
+| Reconciliation | Two manual results were observed during rollout. Job 15 then completed successfully at 12:00, 13:00, 14:00 and 15:00 UTC; current health at 15:00 UTC correlated to `pg_net` HTTP 200 without timeout or network error. | **CURRENT** for basic scheduled invocation. Provider-missed invoice discovery, multi-batch progress, induced failure, interruption/lease reclaim and replay are **[NO VERIFICADO]**. |
+| Durable effects | The current health responses provide transport and completion evidence only. | Do not infer a ledger repair, reconciliation convergence, or absence of anomalies from HTTP 200. Each requires its own sanitized correlated scenario. |
+
+The rollout closes the activation prerequisite in 011e. It does not close MP-11,
+MP-12, MP-14, or the internal provider certification matrix. If the worker
+configuration, release candidate, migrations or provider contract changes,
+repeat the relevant rollout checks before relying on this record.
 
 ## Superseded billing-worker rollout preflight — 2026-09-16
 

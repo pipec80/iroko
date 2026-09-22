@@ -22,6 +22,12 @@ Cerrar este tramo no cierra Stripe, Paddle, Lemon Squeezy ni el programa de
 cuatro proveedores. Tampoco declara la v1 lista para usuarios reales sin
 hardening, pricing y los checks operacionales descritos abajo.
 
+**Origen operativo fijo:** toda aceptación, webhook y verificación de Mercado
+Pago/Cloudflare usa `https://project-a89lv.vercel.app`. Las URLs temporales de
+un deployment de Vercel no son un origen válido: pueden variar su configuración
+y no reciben los webhooks configurados. No se sustituyen por conveniencia ni
+para una ejecución de preview.
+
 ## Cómo leer el estado
 
 - **Implementado:** código y migraciones presentes, con el límite indicado.
@@ -87,6 +93,15 @@ Las referencias de código y pruebas se resuelven en el inventario inferior.
 Cada pendiente incluye su fase responsable; salvo las filas que identifican un
 gate fechado, las pruebas citadas son existentes y no nuevos resultados de
 ejecución.
+
+**Corrección operacional 2026-09-22 para MP-11/13/14:** el rollout 011e ya
+verificó la invocación básica Cloud. Recovery y reconciliation tienen health
+correlacionado con `pg_net` HTTP 200, sin timeout/error; reconciliation job 15
+completó cuatro ejecuciones horarias consecutivas (12:00–15:00 UTC). Esta
+corrección sustituye las referencias históricas de la tabla a worker apagado o
+no reinspeccionado. No identifica un pago conocido reparado (MP-11), una factura
+realmente omitida (MP-12) ni prueba múltiples lotes, fallo, interrupción, lease
+reclaim o replay (MP-14): esos escenarios siguen **[NO VERIFICADO]**.
 
 | ID / requisito                                                                   | Referencia oficial                                                                                                           | Implementación inspeccionada                                                                                                                                                                                                                                                                                                                                                                                                                                                | Pruebas existentes y límite                                                                                                                                                                                                                                                                                                                                              | Evidencia operacional                                                                                            | Pendiente concreto de cierre                                                                                                                                                                                                                                  |
 | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
