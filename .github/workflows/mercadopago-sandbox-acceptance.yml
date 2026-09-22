@@ -16,6 +16,10 @@ on:
         options:
           - preview
           - production
+      deployment_url:
+        description: Exact HTTPS Vercel deployment URL for the selected SHA
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -55,7 +59,7 @@ jobs:
       - name: Run MP-01 against the deployed application
         run: pnpm exec playwright test src/test/e2e/mercadopago-cloud-acceptance.spec.ts --project=chromium
         env:
-          PLAYWRIGHT_BASE_URL: ${{ secrets.SITE_URL }}
+          PLAYWRIGHT_BASE_URL: ${{ inputs.deployment_url }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           IROKO_E2E_TEST_USER_EMAIL: ${{ secrets.IROKO_E2E_TEST_USER_EMAIL }}
           IROKO_E2E_TEST_USER_PASSWORD: ${{ secrets.IROKO_E2E_TEST_USER_PASSWORD }}
