@@ -9,6 +9,13 @@ on:
         type: choice
         options:
           - MP-01-hosted-checkout
+      target:
+        description: Deployed Vercel environment to exercise
+        required: true
+        type: choice
+        options:
+          - preview
+          - production
 
 permissions:
   contents: read
@@ -22,10 +29,10 @@ jobs:
     name: MP-01 hosted checkout
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # This protected environment holds only disposable sandbox credentials.
-    # It is intentionally workflow_dispatch-only: creating a checkout is not a
+    # Each target holds the matching SITE_URL and bypass secret. This workflow
+    # is intentionally workflow_dispatch-only: creating a checkout is not a
     # safe per-push or nightly operation.
-    environment: mercadopago-sandbox
+    environment: ${{ inputs.target }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
