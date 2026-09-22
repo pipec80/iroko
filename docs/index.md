@@ -96,9 +96,10 @@ prices/slugs, no trial, upgrades/downgrades, Iroko-initiated pause or in-app car
 management. The [acceptance matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md)
 separates implemented, tested locally, verified at provider, pending operations
 and outside-v1 requirements. Basic 011e worker operation has dated Cloud
-evidence; provider acceptance and the remaining failure/multi-batch drills are
-**[NO VERIFICADO]**. Internal certification does not imply an official Mercado
-Pago certification.
+evidence, and MP-01/02/05/07/15 are closed with a real correlated
+checkout/cancellation circuit; renewal, rejection/recovery, refunds, abandoned
+checkout and worker failure/multi-batch drills remain **[NO VERIFICADO]**.
+Internal certification does not imply an official Mercado Pago certification.
 
 ## Directory policy
 
