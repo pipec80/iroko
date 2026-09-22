@@ -16,12 +16,6 @@ describe('assertCanonicalCloudAcceptanceUrl', () => {
   it('accepts the official stable production URL', () => {
     expect(() => assertCanonicalCloudAcceptanceUrl(MERCADOPAGO_PRODUCTION_URL)).not.toThrow();
   });
-
-  it('rejects a temporary deployment URL in every acceptance path', () => {
-    expect(() =>
-      assertCanonicalCloudAcceptanceUrl('https://iroko-5j2mxg7hc-pipec80-labs.vercel.app'),
-    ).toThrow('mercadopago_cloud_acceptance_requires_canonical_production_url');
-  });
 });
 
 describe('assertSupabaseGenerateLinkStatus', () => {

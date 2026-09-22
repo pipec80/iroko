@@ -9,10 +9,6 @@ on:
         type: choice
         options:
           - MP-01-hosted-checkout
-      deployment_url:
-        description: 'Exact official HTTPS origin: https://project-a89lv.vercel.app.'
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -49,13 +45,10 @@ jobs:
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Validate canonical production origin
-        run: test "${{ inputs.deployment_url }}" = "https://project-a89lv.vercel.app"
-
       - name: Run MP-01 against the deployed application
         run: pnpm exec playwright test src/test/e2e/mercadopago-cloud-acceptance.spec.ts --project=chromium
         env:
-          PLAYWRIGHT_BASE_URL: ${{ inputs.deployment_url }}
+          PLAYWRIGHT_BASE_URL: https://project-a89lv.vercel.app
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           IROKO_E2E_TEST_USER_EMAIL: ${{ secrets.IROKO_E2E_TEST_USER_EMAIL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
