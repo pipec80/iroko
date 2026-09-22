@@ -1,11 +1,14 @@
 # Current State
 
 Last static verification: **2026-09-22** (Plan 011 Mercado Pago worker
-rollout evidence; platform-wide audit remains 2026-08-20)
+rollout evidence and closed provider-acceptance circuit; platform-wide audit
+remains 2026-08-20)
 Last recorded runtime observation: **2026-09-22** (recovery and reconciliation
 workers in Supabase Cloud, see
-[Worker rollout update](#worker-rollout-update--2026-09-22))
-Repository baseline inspected: `f2ab4d4b137ace8ec31074e3e00da9747f20cb23`
+[Worker rollout update](#worker-rollout-update--2026-09-22); real Mercado Pago
+checkout/cancellation circuit, see MP-01/02/05/07 in the
+[v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md))
+Repository baseline inspected: `4a546850c82ed417fb5285034bd495b8915a4362`
 (main; Cloud worker health inspected separately from provider acceptance)
 
 This is the operational entry point for humans and coding agents. It answers
@@ -33,12 +36,14 @@ product. Commercialization remains an option, not a present-tense claim.
   known-payment recovery, persistent anomalies and Node worker are implemented.
   The basic Cloud rollout is now observed for both worker modes; historical
   local test results and HTTP 200 alone do not certify the full lifecycle.
-  The 2026-09-10 observation was a **sandbox circuit against the production
-  deployment**, not real-money production acceptance. Local code now covers
-  refund ingress and missed-invoice discovery, including local migration
+  The 2026-09-10 **sandbox circuit against the production deployment** (checkout,
+  first charge, provider cancellation with paid-through access preserved) is
+  now confirmed with correlated database evidence, closing MP-01/02/05/07/15;
+  it is not real-money production acceptance. Local code now covers refund
+  ingress and missed-invoice discovery, including local migration
   `20260911140000_billing_financial_anomaly_ingress`, but renewal, rejection and
-  recovery, paid-through access, provider refunds, provider missed-invoice
-  discovery and worker operation/progress remain open in the
+  recovery, provider refunds, abandoned/unknown checkout, provider missed-invoice
+  discovery and worker failure/multi-batch drills remain open in the
   [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md).
 
 ## V1 product decision — 2026-09-11
@@ -61,11 +66,11 @@ Plan 011 is the remaining P0 behavior plan. Its internal dependency order is
 authoritative; coordinate overlapping database, authorization, and billing
 changes before implementation.
 
-| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                                                                                      |
-| ----- | -------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally and the basic 011e worker rollout is verified in Cloud. Internal provider acceptance and worker failure/multi-batch drills remain pending. Other providers remain independent future certifications. |
-| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                                                                               |
-| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                               |
+| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                                                                                                                                                                                                      |
+| ----- | -------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally, the basic 011e worker rollout is verified in Cloud, and MP-01/02/05/07/15 are closed with a real correlated checkout/cancellation circuit. Renewal, rejection/recovery, refunds, abandoned checkout and worker failure/multi-batch drills remain pending. Other providers remain independent future certifications. |
+| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                                                                                                                                                                                               |
+| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                                                                                                                                               |
 
 Execution order: complete the remaining internal MP acceptance and explicit
 worker failure/multi-batch drills after the basic 011e rollout → Plan 012 and
