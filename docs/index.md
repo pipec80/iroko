@@ -95,8 +95,10 @@ coordination. Own-use v1 is Chile, monthly CLP, no associated plan, unchanged
 prices/slugs, no trial, upgrades/downgrades, Iroko-initiated pause or in-app card
 management. The [acceptance matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md)
 separates implemented, tested locally, verified at provider, pending operations
-and outside-v1 requirements. Current Cloud is **[NO VERIFICADO]**. Internal
-certification does not imply an official Mercado Pago certification.
+and outside-v1 requirements. Basic 011e worker operation has dated Cloud
+evidence; provider acceptance and the remaining failure/multi-batch drills are
+**[NO VERIFICADO]**. Internal certification does not imply an official Mercado
+Pago certification.
 
 ## Directory policy
 

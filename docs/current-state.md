@@ -1,13 +1,12 @@
 # Current State
 
-Last static verification: **2026-09-16** (targeted Mercado Pago code and
-documentation inspection through Plan 011g; platform-wide audit remains
-2026-08-20)
-Last recorded runtime observation: **2026-09-10** (Mercado Pago sandbox circuit, see
-[Runtime verification update](#runtime-verification-update--2026-09-10))
-Repository baseline inspected: release candidate
-`611684f2905645f5165d7f0d3a98d6526e442793` (Plan 011g included; no Cloud
-deployment or linked-Supabase parity inspection)
+Last static verification: **2026-09-22** (Plan 011 Mercado Pago worker
+rollout evidence; platform-wide audit remains 2026-08-20)
+Last recorded runtime observation: **2026-09-22** (recovery and reconciliation
+workers in Supabase Cloud, see
+[Worker rollout update](#worker-rollout-update--2026-09-22))
+Repository baseline inspected: `f2ab4d4b137ace8ec31074e3e00da9747f20cb23`
+(main; Cloud worker health inspected separately from provider acceptance)
 
 This is the operational entry point for humans and coding agents. It answers
 what Iroko is today, which work is active, and which claims have actually been
@@ -32,7 +31,8 @@ product. Commercialization remains an option, not a present-tense claim.
 - Plan 010 tenant-isolation remediation is completed with regression evidence.
   Billing Core v2 closed through PR #152. Mercado Pago checkout coordination,
   known-payment recovery, persistent anomalies and Node worker are implemented.
-  Historical local test results do not certify the current full lifecycle.
+  The basic Cloud rollout is now observed for both worker modes; historical
+  local test results and HTTP 200 alone do not certify the full lifecycle.
   The 2026-09-10 observation was a **sandbox circuit against the production
   deployment**, not real-money production acceptance. Local code now covers
   refund ingress and missed-invoice discovery, including local migration
@@ -61,15 +61,15 @@ Plan 011 is the remaining P0 behavior plan. Its internal dependency order is
 authoritative; coordinate overlapping database, authorization, and billing
 changes before implementation.
 
-| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                           |
-| ----- | -------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 local code gaps are recorded as implemented/tested locally. Worker rollout and internal acceptance remain pending. Other providers remain independent future certifications. |
-| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                    |
-| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                    |
+| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                                                                                      |
+| ----- | -------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally and the basic 011e worker rollout is verified in Cloud. Internal provider acceptance and worker failure/multi-batch drills remain pending. Other providers remain independent future certifications. |
+| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                                                                               |
+| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                               |
 
-Execution order: complete a fresh 011e preflight for the Plan 011g release
-candidate → authorized worker rollout and verification → internal MP acceptance
-→ Plan 012 and operational v1 checks →
+Execution order: complete the remaining internal MP acceptance and explicit
+worker failure/multi-batch drills after the basic 011e rollout → Plan 012 and
+operational v1 checks →
 independent Stripe/Paddle/Lemon Squeezy certifications → Plan 013 distribution.
 The last two steps do not block a v1 limited to own-use Chile/Mercado Pago.
 
@@ -84,6 +84,25 @@ was not re-certified against a live runtime or cloud environment during this
 documentation pass.
 
 ## Verification boundary
+
+### Worker rollout update — 2026-09-22
+
+The authorized 011e rollout now has current Cloud evidence for the deployed
+Node route, Vault/scheduler circuit, and both worker modes running unattended.
+`cron.job_run_details` shows the 5-minute recovery job (14) at 1493/1493
+`succeeded` from 2026-09-17 14:35 UTC through 2026-09-22 18:55 UTC, and the
+hourly reconciliation job (15) at 22/22 `succeeded` from 2026-09-21 21:00 UTC
+through 2026-09-22 18:00 UTC — zero non-succeeded rows for either job across
+that window. `private.billing_worker_health` correlates both modes' latest row
+to `last_status_code=200` at the same timestamp as the latest cron run. This
+verifies sustained basic operation only, and confirms Cloud migration parity
+(159/159 versions match `main`).
+
+The evidence does not identify a provider resource, prove a recovery repair,
+show a fully omitted provider invoice, or exercise multi-batch progress,
+injected provider failure, process interruption, lease reclaim, or replay in
+Cloud. Those requirements remain **[NO VERIFICADO]** and are owned by 011e/011f
+until recorded with sanitized scenario evidence.
 
 ### Runtime verification update — 2026-09-10
 

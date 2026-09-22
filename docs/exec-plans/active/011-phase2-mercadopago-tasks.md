@@ -41,8 +41,10 @@ must never become `canceled` until the Mercado Pago `PUT /preapproval/{id}`
 response confirms cancellation.
 
 This plan separates implementation, historical local validation, historical
-provider observation and pending operations. Current Cloud and provider state
-is **[NO VERIFICADO]**; no official Mercado Pago certification is claimed.
+provider observation and pending operations. Basic Phase 6 worker operation
+has dated Cloud evidence, but current provider state and this plan's checkout
+acceptance remain **[NO VERIFICADO]**; no official Mercado Pago certification
+is claimed.
 
 ## Authoritative policy and constraints
 

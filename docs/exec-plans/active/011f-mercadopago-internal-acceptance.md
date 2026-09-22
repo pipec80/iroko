@@ -29,6 +29,9 @@ Supabase SQL, Vercel/Supabase diagnostics, Markdown evidence.
   annual checkout is accepted or tested as v1 functionality.
 - This is Iroko internal acceptance, not an official Mercado Pago
   certification.
+- Every Mercado Pago or Cloudflare scenario uses the fixed official origin
+  `https://project-a89lv.vercel.app`. A temporary Vercel deployment URL is not
+  eligible because webhooks are configured for the stable origin.
 - Record deployment revision, UTC timestamps and sanitized aliases. Never
   record credentials, payer email, card data, signatures or raw payloads.
 - Every provider charge, refund, cancellation, test-user creation or Cloud

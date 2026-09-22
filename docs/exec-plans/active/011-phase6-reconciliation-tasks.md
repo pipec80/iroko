@@ -33,14 +33,14 @@ and illustrative interfaces below. Tasks 1–3/5/6 retain historical
 steps as **planning examples, not a current missing-code list or observed
 RED/GREEN record**. Use this status mapping before any implementation:
 
-| Historical task  | Current replacement and acceptance boundary                                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1 Snapshot       | Implemented in `providers/mercadopago.ts`; HTTP 404 currently throws, unlike the old null-return example. Failure behavior remains MP-14.  |
-| 2 Reconciliation | `reconciliation.ts`, reducer and migration `20260909190000`: CAS, batches of 20, groups of 5. Progress/failure isolation remain open.      |
-| 3 Drift capture  | Persistent `financial_anomalies` and recovery alerts exist; the old blanket Sentry/PostHog claim does not prove every alert path.          |
-| 4 Schedule       | Node route, Vault dispatcher and health RPC implemented; activation and actual results remain pending.                                     |
-| 5 Idempotency    | Vitest recovery/reconciliation and SQL 37/38 cover leases, deduplication and CAS. Complete concurrent/multi-batch acceptance remains open. |
-| 6 Runbook        | `docs/runbooks/billing-reconciliation.md` exists; incident/rollout acceptance remains operational work.                                    |
+| Historical task  | Current replacement and acceptance boundary                                                                                                                                                                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Snapshot       | Implemented in `providers/mercadopago.ts`; HTTP 404 currently throws, unlike the old null-return example. Failure behavior remains MP-14.                                                                                                                                                    |
+| 2 Reconciliation | `reconciliation.ts`, reducer and migration `20260909190000`: CAS, batches of 20, groups of 5. Progress/failure isolation remain open.                                                                                                                                                        |
+| 3 Drift capture  | Persistent `financial_anomalies` and recovery alerts exist; the old blanket Sentry/PostHog claim does not prove every alert path.                                                                                                                                                            |
+| 4 Schedule       | Node route, Vault dispatcher and health RPC are implemented. Basic authorized rollout is verified: recovery/reconciliation health correlate to HTTP 200 and reconciliation job 15 completed four consecutive hourly runs on 2026-09-22. Failure, progress and replay acceptance remain open. |
+| 5 Idempotency    | Vitest recovery/reconciliation and SQL 37/38 cover leases, deduplication and CAS. Complete concurrent/multi-batch acceptance remains open.                                                                                                                                                   |
+| 6 Runbook        | `docs/runbooks/billing-reconciliation.md` exists; incident/rollout acceptance remains operational work.                                                                                                                                                                                      |
 
 **Goal:** Webhooks are the primary source of truth; this phase adds the
 safety net for when they are delayed, duplicated, or missed entirely — a
@@ -318,7 +318,8 @@ pnpm typecheck && pnpm lint
 
 ## Task 4: Scheduled execution
 
-**Implementation status (2026-09-10): code shipped, NOT scheduled in Cloud.**
+**Implementation status (2026-09-22): code shipped and basic Cloud scheduling
+verified; full operational drills remain open.**
 
 The worker was built as a **Vercel route**, not a Supabase Edge Function
 (migration `20260909190000_billing_reconciliation_worker.sql`):
@@ -335,45 +336,46 @@ The worker was built as a **Vercel route**, not a Supabase Edge Function
   `public.get_billing_reconciliation_candidates` / `apply_billing_reconciliation_snapshot`
   back the two modes.
 
-The recorded QA run on 2026-09-10 observed the sandbox webhook/reducer
-circuit but left the worker **off**, with pending `unlinked_payment` jobs.
-Current queue/Cloud state is **[NO VERIFICADO]**. Later events may have linked
-a particular payment, but this does not make all pending jobs cosmetic or
-prove their outcome. Inspect each resource and demonstrate idempotent
-resolution. A running worker still does not discover invoices whose IDs never
-reached Iroko; see the additional gates below.
+The recorded QA run on 2026-09-10 observed the sandbox webhook/reducer circuit
+but left the worker off. The authorized 011e rollout subsequently activated the
+Node route through Vault and `pg_cron`. On 2026-09-22 reconciliation job 15
+completed at 12:00, 13:00, 14:00 and 15:00 UTC; its current health row and
+`pg_net` response both recorded HTTP 200 without timeout/error. Recovery also
+recorded a correlated HTTP 200 at 15:15 UTC. This proves basic transport and
+scheduling, not a provider repair or clean queue. Inspect each resource and
+demonstrate idempotent resolution. A running worker still does not discover
+invoices whose IDs never reached Iroko; see the additional gates below.
 
-### Remaining activation checklist (Cloud / Vercel writes need explicit authorization)
+### Rollout record and remaining operational drills
 
-Reinspect current configuration read-only before rollout; missing items below
-are the 2026-09-10 observation, not a fresh inventory. Validate manual
-invocation before enabling schedules, then check both scheduled modes.
+The original activation checklist is completed for the authorized rollout.
+Secret values, URLs and raw credentials are deliberately not versioned. The
+remaining unchecked items are acceptance drills, not missing implementation.
 
-- [ ] **Step 1: Generate a shared secret** (≥ 32 chars).
-- [ ] **Step 2: Vercel** — set `BILLING_RECONCILIATION_SECRET` = the secret,
-      Production scope, then redeploy production so the route picks it up.
-- [ ] **Step 3: Supabase Vault** — create `billing_reconciliation_secret`
-      (same value) and `billing_worker_url` (= the canonical production URL,
+- [x] **Step 1: Generate and pair the shared secret** (≥ 32 chars).
+- [x] **Step 2: Vercel** — configured `BILLING_RECONCILIATION_SECRET` in
+      Production and redeployed the route.
+- [x] **Step 3: Supabase Vault** — configured the paired reconciliation secret
+      and `billing_worker_url` (= the canonical production URL,
       currently `https://project-a89lv.vercel.app`).
-- [ ] **Step 4: Vercel Firewall** — add a custom rule bypassing Bot Protection
-      for `/api/internal/billing/` (path prefix → action `bypass`), like
-      `allow-payment-webhooks` for `/api/webhooks/`. Required because
-      `net.http_post` from Postgres is a non-browser client and the project's
-      Bot Protection is in **Challenge** mode → a bare request gets a 429
-      "Vercel Security Checkpoint". The email worker does not need this because
-      it targets a Supabase Edge Function (`/functions/v1/…`), not a Vercel
-      route.
-- [ ] **Step 5: pg_cron** —
+- [x] **Step 4: Vercel Firewall** — the initial 429 from Bot Protection was
+      remediated with the narrow authenticated worker allowance: exact `POST`
+      route and required worker-secret header, no CIDR rule or prefix-wide
+      bypass. The later firewall diff was empty.
+- [x] **Step 5: pg_cron** —
       `select cron.schedule('billing-recovery-worker', '*/5 * * * *', $$select private.invoke_billing_worker('recovery')$$);`
       and
       `select cron.schedule('billing-reconciliation-worker', '0 * * * *', $$select private.invoke_billing_worker('reconciliation')$$);`
       (cadence per `docs/runbooks/billing-reconciliation.md`).
-- [ ] **Step 6: Smoke test** — one manual `invoke_billing_worker('recovery')`,
-      and one reconciliation invocation, then inspect `private.billing_worker_health`
-      joined with `net._http_response`. Confirm HTTP success and actual ledger/job
-      outcomes, then scheduled executions of both modes. Include a failed
-      invocation and recovery, multiple batches and replay without extra effects.
-      Cron success or HTTP 200 alone does not close this gate.
+- [x] **Step 6a: Basic smoke** — manual recovery and reconciliation invocations
+      were observed, followed by recovery scheduling and four consecutive hourly
+      reconciliation job-15 completions. Current health rows join to HTTP 200
+      `pg_net` responses without timeout/error.
+- [ ] **Step 6b: Acceptance drills** — demonstrate a known provider payment
+      recovered through the reducer, a fully omitted provider invoice, progress
+      across multiple Cloud batches, isolated provider failure, interrupted
+      lease reclaim and replay without extra effects. Cron success or HTTP 200
+      alone does not close these gates.
 
 ---
 
@@ -484,10 +486,10 @@ acceptance [`011f`](011f-mercadopago-internal-acceptance.md).
 
 ## Completion criteria for Phase 6
 
-- **Scheduling is one open gate, not the only remaining task.** Close the
-  additional code/acceptance gates and verify both modes under authorized
-  rollout. Empty health is historical evidence from 2026-09-10; current Cloud
-  execution remains **[NO VERIFICADO]**.
+- **Basic scheduling is verified, not full acceptance.** The 2026-09-22 Cloud
+  health rows and four consecutive reconciliation schedules establish route,
+  scheduler and transport operation. Close the remaining provider and
+  failure/multi-batch acceptance gates separately.
 - La detección local de una invoice sin webhook conocido y su replay ya tienen
   código y pruebas; observar una omisión real del proveedor y su convergencia
   sigue **[NO VERIFICADO]** hasta 011e/011f.
