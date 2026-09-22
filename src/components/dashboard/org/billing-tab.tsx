@@ -309,7 +309,13 @@ export function BillingTab({
 
       <BillingPaymentHealthNotice paymentHealth={data.paymentHealth} />
 
-      {overview && <SubscriptionStatusPanel overview={overview} formatDate={formatDate} />}
+      {overview && (
+        <SubscriptionStatusPanel
+          overview={overview}
+          formatDate={formatDate}
+          accountId={accountId}
+        />
+      )}
 
       {overview && <InvoiceHistory accountId={accountId} />}
     </div>
@@ -385,16 +391,31 @@ function PlanCard({
 function SubscriptionStatusPanel({
   overview,
   formatDate,
+  accountId,
 }: {
   overview: NonNullable<Awaited<ReturnType<typeof getBillingData>>['data']>['overview'];
   formatDate: (value: string) => string;
+  accountId: string;
 }) {
   const t = useTranslations('Billing');
+  const queryClient = useQueryClient();
 
   const cancel = useMutation({
     mutationFn: async (timing: 'immediate' | 'period_end') => {
       const result = await cancelSubscription({ timing });
       if (result.error) throw new Error(result.error);
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['billing', 'data', accountId] });
+    },
+    // Igual que en checkout: sin esto un fallo (proveedor no soporta la
+    // cancelación, cuenta sin suscripción, etc.) quedaba solo en cancel.error,
+    // que nada en este componente renderiza — desaparecía en silencio.
+    onError: (err: unknown) => {
+      logClient.error(
+        { action: 'billing.cancel' },
+        err instanceof Error ? err.message : 'cancel failed',
+      );
     },
   });
 

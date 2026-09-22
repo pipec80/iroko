@@ -396,6 +396,34 @@ describe('BillingTab — role-awareness', () => {
     expect(screen.queryByTestId('cancel-period-end')).toBeNull();
   });
 
+  it('refreshes the billing overview after a confirmed cancellation', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: {
+        plans: [PLAN_FREE, PLAN_PRO],
+        overview: {
+          ...ACTIVE_PRO_OVERVIEW,
+          capabilities: { ...NO_CAPABILITIES, cancelImmediately: true },
+        },
+      },
+    });
+    mocks.cancelSubscription.mockResolvedValue({ data: true });
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    const { client } = renderBillingTab('owner');
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+
+    fireEvent.click(await waitFor(() => screen.getByTestId('cancel-immediately')));
+
+    await waitFor(() =>
+      expect(mocks.cancelSubscription).toHaveBeenCalledWith({ timing: 'immediate' }),
+    );
+    // Regression: without this the dashboard kept showing the canceled
+    // subscription as active until an unrelated navigation refetched it.
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['billing', 'data', 'account-1'] });
+
+    confirmSpy.mockRestore();
+  });
+
   it('shows Chilean prices without offering an unavailable annual checkout', async () => {
     mocks.getBillingData.mockResolvedValue({
       data: {
