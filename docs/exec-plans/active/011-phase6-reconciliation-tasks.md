@@ -33,14 +33,14 @@ and illustrative interfaces below. Tasks 1–3/5/6 retain historical
 steps as **planning examples, not a current missing-code list or observed
 RED/GREEN record**. Use this status mapping before any implementation:
 
-| Historical task  | Current replacement and acceptance boundary                                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1 Snapshot       | Implemented in `providers/mercadopago.ts`; HTTP 404 currently throws, unlike the old null-return example. Failure behavior remains MP-14.  |
-| 2 Reconciliation | `reconciliation.ts`, reducer and migration `20260909190000`: CAS, batches of 20, groups of 5. Progress/failure isolation remain open.      |
-| 3 Drift capture  | Persistent `financial_anomalies` and recovery alerts exist; the old blanket Sentry/PostHog claim does not prove every alert path.          |
+| Historical task  | Current replacement and acceptance boundary                                                                                                                                                                                                                                                  |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1 Snapshot       | Implemented in `providers/mercadopago.ts`; HTTP 404 currently throws, unlike the old null-return example. Failure behavior remains MP-14.                                                                                                                                                    |
+| 2 Reconciliation | `reconciliation.ts`, reducer and migration `20260909190000`: CAS, batches of 20, groups of 5. Progress/failure isolation remain open.                                                                                                                                                        |
+| 3 Drift capture  | Persistent `financial_anomalies` and recovery alerts exist; the old blanket Sentry/PostHog claim does not prove every alert path.                                                                                                                                                            |
 | 4 Schedule       | Node route, Vault dispatcher and health RPC are implemented. Basic authorized rollout is verified: recovery/reconciliation health correlate to HTTP 200 and reconciliation job 15 completed four consecutive hourly runs on 2026-09-22. Failure, progress and replay acceptance remain open. |
-| 5 Idempotency    | Vitest recovery/reconciliation and SQL 37/38 cover leases, deduplication and CAS. Complete concurrent/multi-batch acceptance remains open. |
-| 6 Runbook        | `docs/runbooks/billing-reconciliation.md` exists; incident/rollout acceptance remains operational work.                                    |
+| 5 Idempotency    | Vitest recovery/reconciliation and SQL 37/38 cover leases, deduplication and CAS. Complete concurrent/multi-batch acceptance remains open.                                                                                                                                                   |
+| 6 Runbook        | `docs/runbooks/billing-reconciliation.md` exists; incident/rollout acceptance remains operational work.                                                                                                                                                                                      |
 
 **Goal:** Webhooks are the primary source of truth; this phase adds the
 safety net for when they are delayed, duplicated, or missed entirely — a
