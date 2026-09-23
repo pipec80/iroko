@@ -126,6 +126,65 @@ describe('handleProviderWebhook', () => {
     expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
 
+  it('logs the outcome status with the handler duration for every delivery', async () => {
+    mocks.verifyWebhook.mockResolvedValue(null);
+
+    await handleProviderWebhook('mercadopago', '{}', 'bad', { webhookId: 'notification_timed' });
+
+    expect(mocks.logger.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'billing.webhook.completed',
+        webhookId: 'notification_timed',
+        status: 400,
+        durationMs: expect.any(Number),
+      }),
+      'Billing webhook completed',
+    );
+  });
+
+  it('names a signed but unprocessable resource instead of blaming the signature', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_rejected',
+      externalEventId: 'notification_bad_resource',
+      reason: 'invalid_resource',
+      resourceType: 'payment',
+      resourceId: 'payment_bad',
+    });
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 400,
+      body: { error: 'invalid_resource' },
+    });
+    expect(mocks.logger.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'billing.webhook.invalid_resource',
+        resourceType: 'payment',
+      }),
+      expect.any(String),
+    );
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
+  it('acknowledges a signed resource that Iroko did not create without persisting work', async () => {
+    mocks.verifyWebhook.mockResolvedValue({
+      provider: 'mercadopago',
+      type: 'webhook_acknowledged',
+      reason: 'unrelated_resource',
+      externalEventId: 'notification_foreign',
+      resourceType: 'subscription',
+      resourceId: 'preapproval_foreign',
+      raw: {},
+    });
+
+    await expect(handleProviderWebhook('mercadopago', '{}', 'sig')).resolves.toEqual({
+      status: 200,
+      body: { result: 'ignored' },
+    });
+    expect(mocks.adminRpc).not.toHaveBeenCalled();
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+  });
+
   it('returns 500 so Mercado Pago retries when provider resource retrieval fails', async () => {
     mocks.verifyWebhook.mockRejectedValue(new Error('mercadopago_fetch_failed_503'));
 

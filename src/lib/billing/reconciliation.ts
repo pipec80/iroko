@@ -17,8 +17,26 @@ interface ClaimedCandidate {
   scan_watermark: string | null;
 }
 
+/**
+ * Stored in `reconciliation_state.last_error_code`, so it must never carry
+ * provider bodies: only a coarse class plus the HTTP status or discovery reason.
+ */
 type SafeErrorCode =
-  'provider_timeout' | 'provider_fetch_failed' | 'reducer_failed' | 'anomaly_persistence_failed';
+  | 'provider_timeout'
+  | 'provider_fetch_failed'
+  | `provider_fetch_failed:${number}`
+  | `provider_discovery_${string}`
+  | 'reducer_failed'
+  | 'anomaly_persistence_failed';
+
+const PLAIN_SAFE_ERROR_CODES: ReadonlySet<string> = new Set([
+  'provider_timeout',
+  'provider_fetch_failed',
+  'reducer_failed',
+  'anomaly_persistence_failed',
+]);
+const PROVIDER_HTTP_ERROR = /^mercadopago_(?:fetch|post|put)_failed_(\d{3})/;
+const PROVIDER_DISCOVERY_ERROR = /^mercadopago_discovery_([a-z_]+)$/;
 
 type Completion = {
   outcome: 'completed' | 'deferred' | 'failed' | 'skipped';
@@ -55,10 +73,24 @@ function modifiedSinceWithOverlap(watermark: string | null): string {
   ).toISOString();
 }
 
+/** Keeps the HTTP status or discovery reason so operators can tell a 400 from an outage. */
 function providerErrorCode(error: unknown): SafeErrorCode {
-  return error instanceof Error && /timeout/i.test(error.name) ?
-      'provider_timeout'
-    : 'provider_fetch_failed';
+  if (!(error instanceof Error)) return 'provider_fetch_failed';
+  if (/timeout/i.test(error.name)) return 'provider_timeout';
+  const status = PROVIDER_HTTP_ERROR.exec(error.message)?.[1];
+  if (status) return `provider_fetch_failed:${Number(status)}`;
+  const discoveryReason = PROVIDER_DISCOVERY_ERROR.exec(error.message)?.[1];
+  if (discoveryReason) return `provider_discovery_${discoveryReason}`;
+  return 'provider_fetch_failed';
+}
+
+function isSafeErrorCode(value: unknown): value is SafeErrorCode {
+  return (
+    typeof value === 'string' &&
+    (PLAIN_SAFE_ERROR_CODES.has(value) ||
+      /^provider_fetch_failed:\d{3}$/.test(value) ||
+      /^provider_discovery_[a-z_]+$/.test(value))
+  );
 }
 
 function throwIfDeadlineExceeded(deadline: number): void {
@@ -311,10 +343,7 @@ export async function reconcileNonTerminalSubscriptions(input: {
             typeof error === 'object' &&
             error !== null &&
             'errorCode' in error &&
-            (error.errorCode === 'provider_timeout' ||
-              error.errorCode === 'provider_fetch_failed' ||
-              error.errorCode === 'reducer_failed' ||
-              error.errorCode === 'anomaly_persistence_failed')
+            isSafeErrorCode(error.errorCode)
           ) ?
             error.errorCode
           : 'provider_fetch_failed',

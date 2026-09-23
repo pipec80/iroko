@@ -17,6 +17,7 @@ import type {
   SubscriptionSnapshot,
   WebhookVerificationContext,
   WebhookCorrelationFailure,
+  WebhookRejected,
 } from '../types';
 
 const API_BASE = 'https://api.mercadopago.com';
@@ -533,6 +534,21 @@ function acknowledgedWebhook(
   return { provider: 'mercadopago', type: 'webhook_acknowledged', ...input };
 }
 
+function rejectedWebhook(
+  context: WebhookVerificationContext | undefined,
+  resourceType: WebhookRejected['resourceType'],
+  resourceId: string,
+): WebhookRejected {
+  return {
+    provider: 'mercadopago',
+    type: 'webhook_rejected',
+    externalEventId: webhookEventId(context, `mercadopago:rejected:${resourceId}`),
+    reason: 'invalid_resource',
+    resourceType,
+    resourceId,
+  };
+}
+
 function financialAnomalyObservationForPayment(
   payment: PaymentResource,
   externalResourceId: string,
@@ -717,6 +733,7 @@ export const mercadopagoProvider: PaymentProvider = {
     | AcknowledgedWebhook
     | FinancialAnomalyWebhook
     | WebhookCorrelationFailure
+    | WebhookRejected
     | null
   > {
     let parsedBody: unknown;
@@ -736,7 +753,16 @@ export const mercadopagoProvider: PaymentProvider = {
       const preapproval = await fetchResource<PreapprovalResource>(
         `/preapproval/${encodeURIComponent(dataId)}`,
       );
-      if (!preapproval.external_reference) return null;
+      // A preapproval without our reference was not created by Iroko: nothing to reduce.
+      if (!preapproval.external_reference) {
+        return acknowledgedWebhook({
+          reason: 'unrelated_resource',
+          externalEventId: webhookEventId(context, `mercadopago:unrelated:${dataId}`),
+          resourceType: 'subscription',
+          resourceId: dataId,
+          raw: body,
+        });
+      }
       const status = mapPreapprovalStatus(preapproval.status);
       const externalEventId = webhookEventId(context, `${preapproval.id}_${preapproval.status}`);
       if (status === 'canceled') {
@@ -767,16 +793,18 @@ export const mercadopagoProvider: PaymentProvider = {
       const payment = await fetchResource<unknown>(
         `/authorized_payments/${encodeURIComponent(dataId)}`,
       );
-      if (!isAuthorizedPaymentResource(payment)) return null;
+      if (!isAuthorizedPaymentResource(payment)) return rejectedWebhook(context, 'payment', dataId);
       const invoiceId = normalizeExternalId(payment.id);
       const paymentId = normalizeExternalId(payment.payment.id);
-      if (!invoiceId || !paymentId) return null;
-      return normalizeAuthorizedPaymentEvent(
-        payment,
-        webhookEventId(
-          context,
-          authorizedPaymentEventId(invoiceId, paymentId, payment.payment.status),
-        ),
+      if (!invoiceId || !paymentId) return rejectedWebhook(context, 'payment', dataId);
+      return (
+        normalizeAuthorizedPaymentEvent(
+          payment,
+          webhookEventId(
+            context,
+            authorizedPaymentEventId(invoiceId, paymentId, payment.payment.status),
+          ),
+        ) ?? rejectedWebhook(context, 'payment', dataId)
       );
     }
 
@@ -787,9 +815,11 @@ export const mercadopagoProvider: PaymentProvider = {
           `/authorized_payments/search?payment_id=${encodeURIComponent(dataId)}`,
         ),
       ]);
-      if (!isPaymentResource(providerPayment)) return null;
+      if (!isPaymentResource(providerPayment)) return rejectedWebhook(context, 'payment', dataId);
       const providerPaymentId = normalizeExternalId(providerPayment.id);
-      if (!providerPaymentId || providerPaymentId !== dataId) return null;
+      if (!providerPaymentId || providerPaymentId !== dataId) {
+        return rejectedWebhook(context, 'payment', dataId);
+      }
 
       const invoice =
         Array.isArray(invoices.results) ?
@@ -829,7 +859,15 @@ export const mercadopagoProvider: PaymentProvider = {
           raw: { notification: body, payment: providerPayment, authorizedPayment: invoice },
         };
       }
-      if (!accountReference || !externalSubscriptionId) return null;
+      if (!accountReference || !externalSubscriptionId) {
+        return acknowledgedWebhook({
+          reason: 'unrelated_resource',
+          externalEventId: webhookEventId(context, `mercadopago:unrelated:${dataId}`),
+          resourceType: 'payment',
+          resourceId: dataId,
+          raw: body,
+        });
+      }
       if (observation) {
         return {
           provider: 'mercadopago',
@@ -853,13 +891,15 @@ export const mercadopagoProvider: PaymentProvider = {
       }
 
       const invoiceId = normalizeExternalId(invoice.id);
-      if (!invoiceId) return null;
-      return normalizeAuthorizedPaymentEvent(
-        invoice,
-        webhookEventId(
-          context,
-          authorizedPaymentEventId(invoiceId, providerPaymentId, invoice.payment.status),
-        ),
+      if (!invoiceId) return rejectedWebhook(context, 'payment', dataId);
+      return (
+        normalizeAuthorizedPaymentEvent(
+          invoice,
+          webhookEventId(
+            context,
+            authorizedPaymentEventId(invoiceId, providerPaymentId, invoice.payment.status),
+          ),
+        ) ?? rejectedWebhook(context, 'payment', dataId)
       );
     }
 

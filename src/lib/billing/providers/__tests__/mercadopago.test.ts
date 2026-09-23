@@ -585,7 +585,13 @@ describe('mercadopagoProvider.verifyWebhook', () => {
         `ts=${ts},v1=${v1};x-request-id=${requestId}`,
         { dataId: paymentId, webhookId: 'notification-identity' },
       ),
-    ).resolves.toBeNull();
+    ).resolves.toMatchObject({
+      type: 'webhook_rejected',
+      reason: 'invalid_resource',
+      resourceType: 'payment',
+      resourceId: paymentId,
+      externalEventId: 'mercadopago:webhook:notification-identity',
+    });
   });
 
   it('acknowledges a signed generic payment that is not linked to a subscription invoice', async () => {
@@ -989,32 +995,43 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     ['null payment', { payment: null }],
     ['empty payment id', { payment: { id: '', status: 'approved' } }],
     ['empty payment status', { payment: { id: 'payment_missing_status', status: '' } }],
-  ])('returns null for an authorized payment with %s', async (_description, paymentOverride) => {
-    const dataId = 'authorized_payment_malformed_nested_payment';
-    const requestId = 'req_malformed_nested_payment';
-    const ts = '1720000000';
-    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
-    const body = JSON.stringify({ type: 'subscription_authorized_payment', data: { id: dataId } });
+  ])(
+    'rejects the resource of an authorized payment with %s',
+    async (_description, paymentOverride) => {
+      const dataId = 'authorized_payment_malformed_nested_payment';
+      const requestId = 'req_malformed_nested_payment';
+      const ts = '1720000000';
+      const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+      const body = JSON.stringify({
+        type: 'subscription_authorized_payment',
+        data: { id: dataId },
+      });
 
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        id: 'invoice_malformed',
-        preapproval_id: 'pa_malformed',
-        external_reference: 'acc_malformed',
-        transaction_amount: '29900',
-        currency_id: 'CLP',
-        date_created: '2026-07-10T00:00:00.000-04:00',
-        ...paymentOverride,
-      }),
-    });
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: 'invoice_malformed',
+          preapproval_id: 'pa_malformed',
+          external_reference: 'acc_malformed',
+          transaction_amount: '29900',
+          currency_id: 'CLP',
+          date_created: '2026-07-10T00:00:00.000-04:00',
+          ...paymentOverride,
+        }),
+      });
 
-    await expect(
-      mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
-    ).resolves.toBeNull();
-  });
+      await expect(
+        mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
+      ).resolves.toMatchObject({
+        type: 'webhook_rejected',
+        reason: 'invalid_resource',
+        resourceType: 'payment',
+        resourceId: dataId,
+      });
+    },
+  );
 
-  it('returns null for an authorized payment with a malformed non-integer amount', async () => {
+  it('rejects the resource of an authorized payment with a malformed non-integer amount', async () => {
     const dataId = 'authorized_payment_invalid_amount';
     const requestId = 'req_5';
     const ts = '1720000000';
@@ -1036,7 +1053,12 @@ describe('mercadopagoProvider.verifyWebhook', () => {
 
     await expect(
       mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
-    ).resolves.toBeNull();
+    ).resolves.toMatchObject({
+      type: 'webhook_rejected',
+      reason: 'invalid_resource',
+      resourceType: 'payment',
+      resourceId: dataId,
+    });
   });
 
   it.each([
@@ -1045,30 +1067,41 @@ describe('mercadopagoProvider.verifyWebhook', () => {
     ['non-numeric', 'twenty-nine'],
     ['excess USD fraction precision', '29.999'],
     ['unsafe', '9007199254740992'],
-  ])('returns null for an authorized payment with a %s amount', async (_description, rawAmount) => {
-    const dataId = 'authorized_payment_invalid_currency_aware_amount';
-    const requestId = 'req_invalid_currency_aware_amount';
-    const ts = '1720000000';
-    const v1 = await sign('test-mp-secret', requestId, dataId, ts);
-    const body = JSON.stringify({ type: 'subscription_authorized_payment', data: { id: dataId } });
+  ])(
+    'rejects the resource of an authorized payment with a %s amount',
+    async (_description, rawAmount) => {
+      const dataId = 'authorized_payment_invalid_currency_aware_amount';
+      const requestId = 'req_invalid_currency_aware_amount';
+      const ts = '1720000000';
+      const v1 = await sign('test-mp-secret', requestId, dataId, ts);
+      const body = JSON.stringify({
+        type: 'subscription_authorized_payment',
+        data: { id: dataId },
+      });
 
-    fetchMock.mockResolvedValue({
-      ok: true,
-      json: async () => ({
-        id: 'invoice_invalid_currency_aware_amount',
-        preapproval_id: 'pa_invalid_currency_aware_amount',
-        external_reference: 'acc_invalid_currency_aware_amount',
-        transaction_amount: rawAmount,
-        currency_id: 'USD',
-        date_created: '2026-07-10T00:00:00.000-04:00',
-        payment: { id: 'payment_invalid_currency_aware_amount', status: 'approved' },
-      }),
-    });
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          id: 'invoice_invalid_currency_aware_amount',
+          preapproval_id: 'pa_invalid_currency_aware_amount',
+          external_reference: 'acc_invalid_currency_aware_amount',
+          transaction_amount: rawAmount,
+          currency_id: 'USD',
+          date_created: '2026-07-10T00:00:00.000-04:00',
+          payment: { id: 'payment_invalid_currency_aware_amount', status: 'approved' },
+        }),
+      });
 
-    await expect(
-      mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
-    ).resolves.toBeNull();
-  });
+      await expect(
+        mercadopagoProvider.verifyWebhook(body, `ts=${ts},v1=${v1};x-request-id=${requestId}`),
+      ).resolves.toMatchObject({
+        type: 'webhook_rejected',
+        reason: 'invalid_resource',
+        resourceType: 'payment',
+        resourceId: dataId,
+      });
+    },
+  );
 
   it('should return null for unhandled event types', async () => {
     const body = JSON.stringify({ type: 'unsupported_topic', data: { id: 'x' } });

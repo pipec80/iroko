@@ -1,5 +1,6 @@
 'use server';
 
+import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
 
 import { getActiveAccountId } from '@/lib/active-account';
@@ -132,6 +133,8 @@ export const startCheckout = withServerAction(async function startCheckout(input
     return { data: null, error: 'not_authenticated' };
   }
 
+  // The provider returns the buyer here, so keep them in the language they started in.
+  const locale = await getLocale();
   let checkout: CheckoutStartResult;
   try {
     checkout = await startBillingCheckout({
@@ -139,8 +142,8 @@ export const startCheckout = withServerAction(async function startCheckout(input
       customerEmail,
       planSlug: parsed.data.planSlug,
       interval: parsed.data.interval,
-      successUrl: `${env.SITE_URL}/es/dashboard/billing?status=success`,
-      cancelUrl: `${env.SITE_URL}/es/dashboard/billing?status=cancelled`,
+      successUrl: `${env.SITE_URL}/${locale}/dashboard/billing?status=success`,
+      cancelUrl: `${env.SITE_URL}/${locale}/dashboard/billing?status=cancelled`,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'checkout_failed';

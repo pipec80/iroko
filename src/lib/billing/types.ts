@@ -55,7 +55,11 @@ export interface AcknowledgedWebhook {
   provider: ProviderName;
   type: 'webhook_acknowledged';
   reason:
-    'unlinked_payment' | 'payment_pending' | 'payment_status_divergence' | 'unsupported_topic';
+    | 'unlinked_payment'
+    | 'payment_pending'
+    | 'payment_status_divergence'
+    | 'unsupported_topic'
+    | 'unrelated_resource';
   externalEventId: string;
   resourceType: 'payment' | 'subscription' | 'unknown';
   resourceId: string;
@@ -103,6 +107,19 @@ export interface WebhookCorrelationFailure {
   raw: unknown;
 }
 
+/**
+ * A signed notification whose fetched resource is malformed. Distinct from a
+ * failed signature check so operators can tell the two apart in logs and codes.
+ */
+export interface WebhookRejected {
+  provider: 'mercadopago';
+  type: 'webhook_rejected';
+  externalEventId: string;
+  reason: 'invalid_resource';
+  resourceType: 'subscription' | 'payment';
+  resourceId: string;
+}
+
 export interface ProviderRecoveryInput {
   resourceType: 'payment';
   resourceId: string;
@@ -142,7 +159,8 @@ export type ProviderWebhookResult =
   | NormalizedBillingEvent
   | AcknowledgedWebhook
   | FinancialAnomalyWebhook
-  | WebhookCorrelationFailure;
+  | WebhookCorrelationFailure
+  | WebhookRejected;
 
 export interface PaymentProvider {
   readonly name: ProviderName;

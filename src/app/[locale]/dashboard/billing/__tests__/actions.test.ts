@@ -14,8 +14,10 @@ const mocks = vi.hoisted(() => ({
   getProviderPrice: vi.fn(),
   getClaims: vi.fn(),
   captureServer: vi.fn(),
+  getLocale: vi.fn(),
 }));
 
+vi.mock('next-intl/server', () => ({ getLocale: mocks.getLocale }));
 vi.mock('@/lib/active-account', () => ({
   getActiveAccountId: mocks.getActiveAccountId,
   requireAccountRole: mocks.requireAccountRole,
@@ -79,6 +81,25 @@ describe('billing actions', () => {
     mocks.getClaims.mockResolvedValue({
       data: { claims: { sub: 'user-1', email: 'owner@example.com' } },
     });
+    mocks.getLocale.mockResolvedValue('es');
+  });
+
+  it('startCheckout returns the buyer to the locale they started in', async () => {
+    mocks.getLocale.mockResolvedValue('pt');
+    mocks.createCheckout.mockResolvedValue({
+      kind: 'redirect',
+      url: 'http://localhost:3000/pt/billing/mock-checkout?data=x',
+      intentId: 'mock-intent',
+    });
+
+    await startCheckout({ planSlug: 'pro', interval: 'month' });
+
+    expect(mocks.createCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({
+        successUrl: 'http://localhost:3000/pt/dashboard/billing?status=success',
+        cancelUrl: 'http://localhost:3000/pt/dashboard/billing?status=cancelled',
+      }),
+    );
   });
 
   it('startCheckout returns the provider checkout url and captures checkout_started', async () => {
