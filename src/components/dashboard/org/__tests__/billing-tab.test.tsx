@@ -446,6 +446,43 @@ describe('BillingTab — role-awareness', () => {
     expect(confirmButton.textContent).toContain('Cancelando');
   });
 
+  it('shows the paid-through end date and no cancel actions once the subscription is canceled', async () => {
+    // Regression: a canceled subscription that still has paid access kept
+    // reading "Se renueva el …" and offering "Cancelar ahora", so it looked
+    // as if it were still subscribed.
+    mocks.getBillingData.mockResolvedValue({
+      data: {
+        plans: [PLAN_FREE, PLAN_PRO],
+        overview: {
+          ...ACTIVE_PRO_OVERVIEW,
+          status: 'canceled',
+          capabilities: { ...NO_CAPABILITIES, cancelImmediately: true, cancelAtPeriodEnd: true },
+        },
+      },
+    });
+
+    renderBillingTab('owner');
+
+    const panel = await waitFor(() => screen.getByTestId('current-plan'));
+    expect(panel.textContent).toContain('Cancelada');
+    expect(panel.textContent).toContain('Acceso hasta el');
+    expect(panel.textContent).not.toContain('Se renueva el');
+    expect(screen.queryByTestId('cancel-immediately')).toBeNull();
+    expect(screen.queryByTestId('cancel-period-end')).toBeNull();
+  });
+
+  it('keeps announcing the renewal date while the subscription is active', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: { plans: [PLAN_FREE, PLAN_PRO], overview: ACTIVE_PRO_OVERVIEW },
+    });
+
+    renderBillingTab('owner');
+
+    const panel = await waitFor(() => screen.getByTestId('current-plan'));
+    expect(panel.textContent).toContain('Se renueva el');
+    expect(panel.textContent).not.toContain('Acceso hasta el');
+  });
+
   it('shows Chilean prices without offering an unavailable annual checkout', async () => {
     mocks.getBillingData.mockResolvedValue({
       data: {
