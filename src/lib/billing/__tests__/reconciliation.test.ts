@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  logError: vi.fn(),
   rpc: vi.fn(),
   snapshot: vi.fn(),
   discover: vi.fn(),
   getProvider: vi.fn(),
   reduce: vi.fn(),
 }));
+vi.mock('@/lib/logger', () => ({ logger: { error: mocks.logError } }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn(() => ({ rpc: mocks.rpc })) }));
 vi.mock('../registry', () => ({ getPaymentProvider: mocks.getProvider }));
 vi.mock('../reducer', () => ({ reduceBillingEvent: mocks.reduce }));
@@ -394,6 +396,58 @@ describe('reconcileNonTerminalSubscriptions', () => {
       pageSize: 20,
     });
     expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'completed' }));
+  });
+
+  it('reduces a discovered invoice against the claimed account, not the provider reference', async () => {
+    mocks.discover.mockResolvedValue({
+      events: [
+        {
+          type: 'invoice_paid',
+          provider: 'mercadopago',
+          externalEventId: 'invoice-with-intent-reference',
+          // Mercado Pago's external_reference is the checkout intent id.
+          accountId: 'checkout-intent-id',
+        },
+      ],
+      nextCursor: null,
+      providerWatermark: '2026-09-11T12:00:00Z',
+    });
+
+    await reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 });
+
+    expect(mocks.reduce).toHaveBeenCalledWith({
+      type: 'invoice_paid',
+      provider: 'mercadopago',
+      externalEventId: 'invoice-with-intent-reference',
+      accountId: candidate.account_id,
+    });
+    expect(completionCalls()[0]?.[1]).toEqual(expect.objectContaining({ p_outcome: 'completed' }));
+  });
+
+  it('logs the reducer error behind the coarse reducer_failed code', async () => {
+    mocks.discover.mockResolvedValue({
+      events: [{ type: 'invoice_paid', provider: 'mercadopago', externalEventId: 'invoice-x' }],
+      nextCursor: null,
+      providerWatermark: '2026-09-11T12:00:00Z',
+    });
+    mocks.reduce.mockImplementation(async (event: { externalEventId: string }) => {
+      if (event.externalEventId === 'invoice-x')
+        throw new Error('billing_invoice_paid_failed:P0001');
+      return { status: 'applied' };
+    });
+
+    await reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 });
+
+    expect(completionCalls()[0]?.[1]).toEqual(
+      expect.objectContaining({ p_outcome: 'failed', p_error_code: 'reducer_failed' }),
+    );
+    expect(mocks.logError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'billing.reconciliation.reducer_failed',
+        stage: 'discovered_invoice',
+      }),
+      'billing_invoice_paid_failed:P0001',
+    );
   });
 
   it('skips invoice discovery and completes once when a fresh snapshot is terminal', async () => {
