@@ -945,6 +945,7 @@
     "renews_on": "Renova em {date}",
     "cancels_on": "Cancela em {date}",
     "access_until": "Acesso até {date}",
+    "access_until_detail": "Até essa data você continua com todos os benefícios do {plan}. Depois disso, passará automaticamente para o plano Free.",
     "plan_canceled_badge": "Cancelado · até {date}",
     "plan_canceled_btn": "Você poderá assinar novamente em {date}",
     "cancel_btn": "Cancelar assinatura",

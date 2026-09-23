@@ -499,6 +499,14 @@ function SubscriptionStatusPanel({
             {t(periodEndMessageKey(overview), { date: formatDate(overview.currentPeriodEnd) })}
           </p>
         )}
+        {isCanceled && overview.currentPeriodEnd && (
+          <p
+            className="mt-1 max-w-prose text-[13px]"
+            style={{ color: 'rgba(245,236,218,0.7)' }}
+            data-testid="canceled-access-detail">
+            {t('access_until_detail', { plan: overview.planName })}
+          </p>
+        )}
         {!isCanceled && !overview.cancelAtPeriodEnd && overview.capabilities.cancelAtPeriodEnd && (
           <button
             type="button"
