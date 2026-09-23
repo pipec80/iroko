@@ -3,9 +3,54 @@ import { test } from 'node:test';
 
 import {
   checkCanonicalDocs,
+  checkRuntimeFonts,
   checkTokenParity,
   parseCssCustomProperties,
 } from '../check-design-system.mjs';
+
+const LAYOUT_PATH = 'src/app/layout.tsx';
+const VENDORED_LAYOUT = `localFont({ src: './fonts/Geist-latin.woff2' }); localFont({ src: './fonts/GeistMono-latin.woff2' });`;
+
+test('accepts Geist loaded from next/font/google', () => {
+  const layout = `import { Geist, Geist_Mono } from 'next/font/google';`;
+
+  assert.deepEqual(
+    checkRuntimeFonts({ layout, layoutPath: LAYOUT_PATH, fontFileExists: () => false }),
+    [],
+  );
+});
+
+test('accepts Geist loaded from the vendored font files', () => {
+  assert.deepEqual(
+    checkRuntimeFonts({
+      layout: VENDORED_LAYOUT,
+      layoutPath: LAYOUT_PATH,
+      fontFileExists: () => true,
+    }),
+    [],
+  );
+});
+
+test('rejects a vendored font reference whose file is missing', () => {
+  const issues = checkRuntimeFonts({
+    layout: VENDORED_LAYOUT,
+    layoutPath: LAYOUT_PATH,
+    fontFileExists: (file) => file === 'Geist-latin.woff2',
+  });
+
+  assert.equal(issues.length, 1);
+  assert.equal(issues[0].code, 'runtime-font-mismatch');
+});
+
+test('rejects a layout that loads neither Geist nor Geist Mono', () => {
+  const issues = checkRuntimeFonts({
+    layout: `import { Inter } from 'next/font/google';`,
+    layoutPath: LAYOUT_PATH,
+    fontFileExists: () => true,
+  });
+
+  assert.equal(issues.length, 1);
+});
 
 test('parses CSS custom properties while ignoring comments and whitespace', () => {
   const tokens = parseCssCustomProperties(`

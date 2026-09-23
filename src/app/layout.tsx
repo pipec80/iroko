@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import { getLocale } from 'next-intl/server';
 
 import { env } from '@/env';
@@ -8,15 +8,20 @@ import { appConfig } from '@/config/app.config';
 
 import './globals.css';
 
-const geistSans = Geist({
+// Geist (SIL OFL 1.1) is vendored as latin-subset variable fonts so builds never
+// depend on reaching fonts.googleapis.com, which failed CI intermittently.
+const geistSans = localFont({
+  src: './fonts/Geist-latin.woff2',
   variable: '--font-sans',
-  subsets: ['latin'],
+  weight: '100 900',
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
+const geistMono = localFont({
+  src: './fonts/GeistMono-latin.woff2',
   variable: '--font-mono',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: '400 700',
+  display: 'swap',
 });
 
 export const viewport: Viewport = {

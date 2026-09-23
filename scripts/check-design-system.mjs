@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -105,6 +105,29 @@ export function checkCanonicalDocs({ files }) {
   return issues;
 }
 
+const VENDORED_FONT_FILES = ['Geist-latin.woff2', 'GeistMono-latin.woff2'];
+
+/**
+ * The accepted baseline is Geist + Geist Mono. The layout may load them from
+ * `next/font/google` or from the vendored files, which keeps builds independent
+ * of fonts.googleapis.com; `fontFileExists` guards against a dangling reference.
+ */
+export function checkRuntimeFonts({ layout, layoutPath, fontFileExists }) {
+  const usesGoogleFonts = layout.includes('Geist') && layout.includes('Geist_Mono');
+  const usesVendoredFonts = VENDORED_FONT_FILES.every(
+    (file) => layout.includes(file) && fontFileExists(file),
+  );
+  if (usesGoogleFonts || usesVendoredFonts) return [];
+  return [
+    {
+      code: 'runtime-font-mismatch',
+      file: layoutPath,
+      message:
+        'Runtime layout must load Geist and Geist_Mono, from next/font/google or the vendored files in src/app/fonts.',
+    },
+  ];
+}
+
 function run() {
   const root = process.cwd();
   const specificationPath = join(CANONICAL_ROOT, 'colors_and_type.css');
@@ -127,16 +150,12 @@ function run() {
       runtime,
     }),
     ...checkCanonicalDocs({ files: canonicalFiles }),
+    ...checkRuntimeFonts({
+      layout: readFileSync(resolve(root, layoutPath), 'utf8'),
+      layoutPath,
+      fontFileExists: (file) => existsSync(resolve(root, 'src', 'app', 'fonts', file)),
+    }),
   ];
-
-  const layout = readFileSync(resolve(root, layoutPath), 'utf8');
-  if (!layout.includes('Geist') || !layout.includes('Geist_Mono')) {
-    issues.push({
-      code: 'runtime-font-mismatch',
-      file: layoutPath,
-      message: 'Runtime layout must load Geist and Geist_Mono.',
-    });
-  }
 
   if (issues.length === 0) {
     console.log(
