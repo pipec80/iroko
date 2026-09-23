@@ -1650,23 +1650,23 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
   }
 
   it('paginates exact preapproval invoices without duplicates and returns a stable watermark', async () => {
-    const firstPage = Array.from({ length: 20 }, (_, index) => authorizedPayment(index));
-    const secondPage = Array.from({ length: 5 }, (_, index) => authorizedPayment(index + 20));
+    const firstPage = Array.from({ length: 15 }, (_, index) => authorizedPayment(index));
+    const secondPage = Array.from({ length: 10 }, (_, index) => authorizedPayment(index + 15));
     fetchMock.mockImplementation(async (url: string) => {
       if (url.includes('/v1/payments/')) {
         return freshPaymentResponse(decodeURIComponent(url.split('/v1/payments/')[1] ?? ''));
       }
-      return url.includes('offset=20') ?
+      return url.includes('offset=15') ?
           {
             ok: true,
             json: async () => ({
-              paging: { offset: 20, limit: 20, total: 25 },
+              paging: { offset: 15, limit: 15, total: 25 },
               results: secondPage,
             }),
           }
         : {
             ok: true,
-            json: async () => ({ paging: { offset: 0, limit: 20, total: 25 }, results: firstPage }),
+            json: async () => ({ paging: { offset: 0, limit: 15, total: 25 }, results: firstPage }),
           };
     });
 
@@ -1677,14 +1677,14 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.mercadopago.com/authorized_payments/search?preapproval_id=pa%20%2Fsubscription%3F&limit=20&offset=0',
+      'https://api.mercadopago.com/authorized_payments/search?preapproval_id=pa%20%2Fsubscription%3F&limit=15&offset=0',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
     expect(first).toMatchObject({
       nextCursor: expect.any(String),
-      providerWatermark: '2026-09-20T11:00:00Z',
+      providerWatermark: '2026-09-15T11:00:00Z',
     });
-    expect(first?.events).toHaveLength(20);
+    expect(first?.events).toHaveLength(15);
 
     const second = await mercadopagoProvider.discoverSubscriptionInvoices?.({
       externalSubscriptionId: 'pa /subscription?',
@@ -1694,11 +1694,11 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://api.mercadopago.com/authorized_payments/search?preapproval_id=pa%20%2Fsubscription%3F&limit=20&offset=20',
+      'https://api.mercadopago.com/authorized_payments/search?preapproval_id=pa%20%2Fsubscription%3F&limit=15&offset=15',
       expect.objectContaining({ signal: expect.any(AbortSignal) }),
     );
-    expect(second).toMatchObject({ nextCursor: null, providerWatermark: '2026-09-05T11:00:00Z' });
-    expect(second?.events).toHaveLength(5);
+    expect(second).toMatchObject({ nextCursor: null, providerWatermark: '2026-09-20T11:00:00Z' });
+    expect(second?.events).toHaveLength(10);
     expect(
       new Set(
         [...(first?.events ?? []), ...(second?.events ?? [])].map((event) => event.externalEventId),
@@ -1882,7 +1882,8 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
 
   it.each([
     [0, 1],
-    [100, 20],
+    [20, 15],
+    [100, 15],
   ])('clamps requested page size %d to provider limit %d', async (pageSize, expectedLimit) => {
     fetchMock.mockResolvedValue({
       ok: true,

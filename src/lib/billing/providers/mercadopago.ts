@@ -22,6 +22,12 @@ import type {
 const API_BASE = 'https://api.mercadopago.com';
 const RESOURCE_FETCH_TIMEOUT_MS = 10_000;
 const WEBHOOK_TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000;
+/**
+ * `/authorized_payments/search` answers `400 Invalid value for limit` above 15.
+ * The docs do not state this cap; it was measured against the live API
+ * (limit 15 accepted, 16 rejected), so a larger page fails every discovery scan.
+ */
+const MAX_AUTHORIZED_PAYMENTS_PAGE_SIZE = 15;
 const NON_TERMINAL_PAYMENT_STATUSES = new Set([
   'pending',
   'in_process',
@@ -129,7 +135,7 @@ function discoveryError(code: string): Error {
 
 function discoveryPageSize(value: number): number {
   if (!Number.isFinite(value)) throw discoveryError('invalid_page_size');
-  return Math.min(20, Math.max(1, Math.trunc(value)));
+  return Math.min(MAX_AUTHORIZED_PAYMENTS_PAGE_SIZE, Math.max(1, Math.trunc(value)));
 }
 
 function encodeInvoiceCursor(cursor: MercadoPagoInvoiceCursor): string {
