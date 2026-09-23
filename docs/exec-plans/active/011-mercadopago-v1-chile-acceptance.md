@@ -7,7 +7,7 @@ en `66bc9b2`. Evidencia local de Plan 011a / Task 4 actualizada el
 [Fase 2](011-phase2-mercadopago-tasks.md) y el tramo Mercado Pago de
 [Fase 6](011-phase6-reconciliation-tasks.md). No crea otro programa.
 
-**Estado al 2026-09-23** (`main` en `e4b9d45`, más #208 abierta): cerradas con
+**Estado al 2026-09-23** (`main` en `220caa7`, con #205 y #208 mergeadas; #208 aún sin verificar en Cloud): cerradas con
 evidencia real MP-01, 02, 05, 07, 11, 13 y 15; MP-06 cerrada para rechazo y
 alerta; MP-08 parcial; MP-04 y MP-14 parciales. Siguen **[NO VERIFICADO]**: MP-03
 (renovación real el 2026-10-22), MP-09/10 (bloqueo del proveedor con cuentas de

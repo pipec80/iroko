@@ -10,7 +10,7 @@ workers in Supabase Cloud, see
 [Worker rollout update](#worker-rollout-update--2026-09-22); real Mercado Pago
 checkout/cancellation circuit, see MP-01/02/05/07 in the
 [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md))
-Repository baseline inspected: `e4b9d45b88c2c18f246a4bd065cb52638ac4ce72`
+Repository baseline inspected: `220caa7f73d07f9bfc9b6621b1a50b434d754c6b`
 (main; Cloud worker health inspected separately from provider acceptance)
 
 This is the operational entry point for humans and coding agents. It answers
