@@ -25,6 +25,41 @@ describe('BillingPaymentHealthNotice', () => {
     expect(screen.getByText('payment_attention_action')).toBeDefined();
   });
 
+  it('explains the rejection when the failure code is actionable', () => {
+    render(
+      <BillingPaymentHealthNotice
+        paymentHealth={{
+          state: 'attention_required',
+          lastAttemptAt: '2026-09-22T22:14:15Z',
+          lastFailureCode: 'cc_rejected_max_attempts',
+        }}
+      />,
+    );
+
+    expect(screen.getByTestId('payment-failure-reason').textContent).toBe(
+      'payment_reason_attempts',
+    );
+    expect(screen.getByText('payment_attention_body')).toBeDefined();
+  });
+
+  it.each([null, 'cc_rejected_duplicated_payment', 'something_new'])(
+    'falls back to the generic copy without a reason line for the code %j',
+    (lastFailureCode) => {
+      render(
+        <BillingPaymentHealthNotice
+          paymentHealth={{
+            state: 'attention_required',
+            lastAttemptAt: '2026-09-22T22:14:15Z',
+            lastFailureCode,
+          }}
+        />,
+      );
+
+      expect(screen.queryByTestId('payment-failure-reason')).toBeNull();
+      expect(screen.getByText('payment_attention_body')).toBeDefined();
+    },
+  );
+
   it.each(['healthy', 'unknown'] as const)('renders nothing for %s health', (state) => {
     const { container } = render(
       <BillingPaymentHealthNotice
