@@ -396,6 +396,11 @@ function PlanCard({
   );
 }
 
+function periodEndMessageKey(overview: { status: string; cancelAtPeriodEnd: boolean }) {
+  if (overview.status === 'canceled') return 'access_until';
+  return overview.cancelAtPeriodEnd ? 'cancels_on' : 'renews_on';
+}
+
 function SubscriptionStatusPanel({
   overview,
   formatDate,
@@ -432,6 +437,9 @@ function SubscriptionStatusPanel({
   if (!overview) return null;
 
   const statusLabel = t((SUBSCRIPTION_STATUS_KEYS[overview.status] ?? overview.status) as never);
+  // Una suscripción ya cancelada conserva el plan hasta el fin del período
+  // pagado: no se renueva ni se puede volver a cancelar.
+  const isCanceled = overview.status === 'canceled';
 
   return (
     <section
@@ -449,15 +457,12 @@ function SubscriptionStatusPanel({
         <p className="mt-2 text-sm" style={{ color: 'rgba(245,236,218,0.7)' }}>
           {t('status_label')}: {statusLabel}
         </p>
-        {overview.currentPeriodEnd &&
-          (overview.cancelAtPeriodEnd ?
-            <p className="mt-1 text-[13px]" style={{ color: 'rgba(245,236,218,0.55)' }}>
-              {t('cancels_on', { date: formatDate(overview.currentPeriodEnd) })}
-            </p>
-          : <p className="mt-1 text-[13px]" style={{ color: 'rgba(245,236,218,0.55)' }}>
-              {t('renews_on', { date: formatDate(overview.currentPeriodEnd) })}
-            </p>)}
-        {!overview.cancelAtPeriodEnd && overview.capabilities.cancelAtPeriodEnd && (
+        {overview.currentPeriodEnd && (
+          <p className="mt-1 text-[13px]" style={{ color: 'rgba(245,236,218,0.55)' }}>
+            {t(periodEndMessageKey(overview), { date: formatDate(overview.currentPeriodEnd) })}
+          </p>
+        )}
+        {!isCanceled && !overview.cancelAtPeriodEnd && overview.capabilities.cancelAtPeriodEnd && (
           <button
             type="button"
             disabled={cancel.isPending}
@@ -468,7 +473,7 @@ function SubscriptionStatusPanel({
             {t('cancel_btn')}
           </button>
         )}
-        {overview.capabilities.cancelImmediately && (
+        {!isCanceled && overview.capabilities.cancelImmediately && (
           <button
             type="button"
             disabled={cancel.isPending}

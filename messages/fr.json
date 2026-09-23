@@ -946,6 +946,7 @@
     "status_label": "Statut",
     "renews_on": "Se renouvelle le {date}",
     "cancels_on": "Se termine le {date}",
+    "access_until": "Accès jusqu'au {date}",
     "cancel_btn": "Annuler l'abonnement",
     "cancel_confirm": "Annuler votre abonnement à la fin de la période en cours ?",
     "cancel_now_btn": "Annuler maintenant",
