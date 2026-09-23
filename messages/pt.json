@@ -945,6 +945,8 @@
     "renews_on": "Renova em {date}",
     "cancels_on": "Cancela em {date}",
     "access_until": "Acesso até {date}",
+    "plan_canceled_badge": "Cancelado · até {date}",
+    "plan_canceled_btn": "Você poderá assinar novamente em {date}",
     "cancel_btn": "Cancelar assinatura",
     "cancel_confirm": "Cancelar sua assinatura ao final do período atual?",
     "cancel_now_btn": "Cancelar agora",

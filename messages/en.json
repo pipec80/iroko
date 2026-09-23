@@ -943,6 +943,8 @@
     "renews_on": "Renews on {date}",
     "cancels_on": "Cancels on {date}",
     "access_until": "Access until {date}",
+    "plan_canceled_badge": "Canceled · until {date}",
+    "plan_canceled_btn": "You can subscribe again on {date}",
     "cancel_btn": "Cancel subscription",
     "cancel_confirm": "Cancel your subscription at the end of the current period?",
     "cancel_now_btn": "Cancel now",

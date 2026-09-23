@@ -945,6 +945,8 @@
     "renews_on": "Se renueva el {date}",
     "cancels_on": "Se cancela el {date}",
     "access_until": "Acceso hasta el {date}",
+    "plan_canceled_badge": "Cancelado · hasta {date}",
+    "plan_canceled_btn": "Podrás volver a suscribirte el {date}",
     "cancel_btn": "Cancelar suscripción",
     "cancel_confirm": "¿Cancelar tu suscripción al final del período actual?",
     "cancel_now_btn": "Cancelar ahora",

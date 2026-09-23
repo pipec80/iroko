@@ -177,6 +177,12 @@ export function BillingTab({
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat(locale, { dateStyle: 'medium' }).format(new Date(value));
 
+  // Fecha hasta la que sigue vigente el plan de una suscripción ya cancelada.
+  const accessEndsOn =
+    overview?.status === 'canceled' && overview.currentPeriodEnd ?
+      formatDate(overview.currentPeriodEnd)
+    : null;
+
   return (
     <div className="space-y-8">
       <PlanViewedTracker source="billing_page" />
@@ -297,6 +303,7 @@ export function BillingTab({
               key={`${plan.slug}-${plan.interval}`}
               plan={plan}
               isCurrent={overview?.planSlug === plan.slug}
+              accessEndsOn={overview?.planSlug === plan.slug ? accessEndsOn : null}
               price={formatPrice(plan)}
               onSubscribe={() => beginCheckout({ slug: plan.slug, interval })}
               isSubscribing={checkout.isPending}
@@ -333,6 +340,7 @@ export function BillingTab({
 function PlanCard({
   plan,
   isCurrent,
+  accessEndsOn,
   price,
   onSubscribe,
   isSubscribing,
@@ -342,6 +350,8 @@ function PlanCard({
 }: {
   plan: PlanRow;
   isCurrent: boolean;
+  /** Fecha formateada hasta la que dura el plan si ya fue cancelado; null si sigue activo. */
+  accessEndsOn: string | null;
   price: string;
   onSubscribe: () => void;
   isSubscribing: boolean;
@@ -351,14 +361,23 @@ function PlanCard({
 }) {
   const t = useTranslations('Billing');
   const isFree = plan.slug === 'free';
+  const isCanceledWithAccess = isCurrent && accessEndsOn !== null;
 
   return (
-    <div className="card relative p-6" data-testid={`plan-card-${plan.slug}`}>
+    <div
+      className="card relative p-6"
+      style={isCanceledWithAccess ? { borderColor: 'var(--color-warning)' } : undefined}
+      data-testid={`plan-card-${plan.slug}`}>
       {isCurrent && (
         <div
           className="absolute -top-3 left-1/2 z-10 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-black tracking-widest whitespace-nowrap text-white uppercase"
-          style={{ background: 'var(--color-cobalt)' }}>
-          {t('plan_current_badge')}
+          style={{
+            background: isCanceledWithAccess ? 'var(--color-warning)' : 'var(--color-cobalt)',
+          }}
+          data-testid={`plan-badge-${plan.slug}`}>
+          {isCanceledWithAccess ?
+            t('plan_canceled_badge', { date: accessEndsOn })
+          : t('plan_current_badge')}
         </div>
       )}
       <h3 className="display-italic mb-1 text-2xl">{plan.name}</h3>
@@ -386,6 +405,8 @@ function PlanCard({
         {isProcessing && <Loader2 aria-hidden className="size-4 animate-spin" />}
         {isProcessing ?
           t('checkout_redirecting')
+        : isCanceledWithAccess ?
+          t('plan_canceled_btn', { date: accessEndsOn })
         : isCurrent ?
           t('plan_current_badge')
         : isFree ?
@@ -444,7 +465,11 @@ function SubscriptionStatusPanel({
   return (
     <section
       className="card relative overflow-hidden p-7"
-      style={{ background: 'var(--color-night)', color: 'var(--color-bone)', border: 0 }}
+      style={{
+        background: 'var(--color-night)',
+        color: 'var(--color-bone)',
+        border: isCanceled ? '1px solid var(--color-warning)' : 0,
+      }}
       data-testid="current-plan">
       <div className="iroko-grid pointer-events-none absolute inset-0 opacity-30" />
       <div className="relative">
@@ -454,11 +479,23 @@ function SubscriptionStatusPanel({
         <h3 className="display-italic mt-1 text-[32px]" style={{ color: 'var(--color-bone)' }}>
           {overview.planName}
         </h3>
-        <p className="mt-2 text-sm" style={{ color: 'rgba(245,236,218,0.7)' }}>
-          {t('status_label')}: {statusLabel}
+        <p
+          className="mt-2 flex items-center gap-2 text-sm"
+          style={{ color: 'rgba(245,236,218,0.7)' }}>
+          {t('status_label')}:
+          {isCanceled ?
+            <span
+              className="chip chip-sm"
+              style={{ background: 'var(--color-warning-wash)', color: 'var(--color-warning)' }}
+              data-testid="subscription-status-chip">
+              {statusLabel}
+            </span>
+          : statusLabel}
         </p>
         {overview.currentPeriodEnd && (
-          <p className="mt-1 text-[13px]" style={{ color: 'rgba(245,236,218,0.55)' }}>
+          <p
+            className={cn('mt-1', isCanceled ? 'text-[15px] font-semibold' : 'text-[13px]')}
+            style={{ color: isCanceled ? 'var(--color-gold)' : 'rgba(245,236,218,0.55)' }}>
             {t(periodEndMessageKey(overview), { date: formatDate(overview.currentPeriodEnd) })}
           </p>
         )}
