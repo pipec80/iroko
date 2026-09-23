@@ -133,6 +133,30 @@ describe('reconcileNonTerminalSubscriptions', () => {
     expect(JSON.stringify(completionCalls())).not.toContain('secret');
   });
 
+  it.each([
+    ['mercadopago_fetch_failed_400:Invalid value for limit', 'provider_fetch_failed:400'],
+    ['mercadopago_post_failed_503', 'provider_fetch_failed:503'],
+    ['mercadopago_discovery_invalid_paging', 'provider_discovery_invalid_paging'],
+    ['unexpected network failure', 'provider_fetch_failed'],
+  ])(
+    'stores the class of the provider failure for "%s" without its detail',
+    async (message, code) => {
+      mocks.rpc.mockImplementation((name: string) =>
+        name === 'claim_billing_reconciliation_candidates' ?
+          { data: [candidate], error: null }
+        : { data: 'completed', error: null },
+      );
+      mocks.discover.mockRejectedValue(new Error(message));
+
+      await reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45_000 });
+
+      expect(completionCalls().map(([, args]) => [args.p_outcome, args.p_error_code])).toEqual([
+        ['failed', code],
+      ]);
+      expect(JSON.stringify(completionCalls())).not.toContain('Invalid value');
+    },
+  );
+
   it('runs at most five candidate provider calls concurrently', async () => {
     const candidates = Array.from({ length: 6 }, (_, index) => ({
       ...candidate,
@@ -561,7 +585,7 @@ describe('reconcileNonTerminalSubscriptions', () => {
         p_outcome: 'failed',
         p_provider_watermark: null,
         p_next_cursor: null,
-        p_error_code: 'provider_fetch_failed',
+        p_error_code: 'provider_discovery_payment_identity_mismatch',
       }),
     );
   });

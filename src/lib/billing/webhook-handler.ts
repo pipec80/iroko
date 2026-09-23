@@ -137,7 +137,7 @@ function anomalyTypeForAcknowledgement(event: AcknowledgedWebhook): BillingAnoma
 
 /** Persists deferred work without retaining the verified provider payload. */
 async function persistAcknowledgement(event: AcknowledgedWebhook): Promise<boolean> {
-  if (event.reason === 'unsupported_topic') return true;
+  if (event.reason === 'unsupported_topic' || event.reason === 'unrelated_resource') return true;
   const admin = createAdminClient();
   const result =
     event.reason === 'payment_status_divergence' ?
@@ -242,11 +242,37 @@ function reportWebhookCorrelationFailure(
   );
 }
 
+/** Mercado Pago waits 22 s for a 200/201 before it schedules a redelivery. */
+const SLOW_WEBHOOK_WARNING_MS = 15_000;
+
 /**
  * Verifies and reduces a provider webhook. Providers produce the typed event;
  * the reducer owns the only persistence boundary and its idempotency key.
+ * Logs the total duration so a handler drifting toward the provider's
+ * acknowledgement deadline is visible before redeliveries start.
  */
 export async function handleProviderWebhook(
+  providerName: string,
+  rawBody: string,
+  signature: string,
+  context?: WebhookVerificationContext,
+): Promise<{ status: number; body: object }> {
+  const startedAt = Date.now();
+  const result = await processProviderWebhook(providerName, rawBody, signature, context);
+  const durationMs = Date.now() - startedAt;
+  logger[durationMs >= SLOW_WEBHOOK_WARNING_MS ? 'warn' : 'info'](
+    {
+      ...webhookLogContext(providerName, context),
+      action: 'billing.webhook.completed',
+      status: result.status,
+      durationMs,
+    },
+    'Billing webhook completed',
+  );
+  return result;
+}
+
+async function processProviderWebhook(
   providerName: string,
   rawBody: string,
   signature: string,
@@ -278,6 +304,19 @@ export async function handleProviderWebhook(
   if (!event || event.provider !== provider.name) {
     logger.warn({ ...logContext, action: 'billing.webhook.rejected' }, 'Billing webhook rejected');
     return { status: 400, body: { error: 'invalid_signature' } };
+  }
+
+  if (event.type === 'webhook_rejected') {
+    logger.warn(
+      {
+        ...logContext,
+        action: 'billing.webhook.invalid_resource',
+        reason: event.reason,
+        resourceType: event.resourceType,
+      },
+      'Signed billing webhook referenced a resource that could not be processed',
+    );
+    return { status: 400, body: { error: event.reason } };
   }
 
   if (event.type === 'webhook_correlation_failed') {
