@@ -49,6 +49,18 @@ and `scanned=0` throughout, so neither worker has had a real case to resolve
 yet. Do not check remaining boxes from this evidence alone; only check a step
 after re-running and recording it per this plan's own instructions.
 
+**Update — 2026-09-23:** the "no real case yet" statement above is superseded.
+Recovery repaired a real provider payment on 2026-09-22 (MP-11), and
+reconciliation has scanned a real subscription every hour since: it failed
+first on a provider `400` (fixed in #205) and then in the reducer (fixed by
+PR #208) while the worker kept answering HTTP 200, which is why transport
+health alone is not acceptance. That failing candidate is also real evidence of
+failure isolation with backoff. A Cloud lease drill covered lease reclaim
+(database semantics). Still open for Task 4 Step 4: more than one batch, an
+intermediate invoice cursor and a killed process, none of which sandbox can
+produce. Details: [operational evidence](../../quality/operational-evidence.md#mercado-pago-sandbox-drills-2026-09-23)
+and the [v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md).
+
 ---
 
 ### Task 1: Capture the read-only rollout preflight

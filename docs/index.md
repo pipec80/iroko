@@ -23,6 +23,7 @@ execution plans, runbooks, audits, and durable technical decisions.
 - [Definition of Done](quality/definition-of-done.md)
 - [Testing strategy](quality/testing-strategy.md)
 - [Local synchronization and Codex runbook](runbooks/local-sync-and-codex.md)
+- [Billing recovery and reconciliation runbook](runbooks/billing-reconciliation.md)
 - [Email queue worker runbook](runbooks/email-queue.md)
 - [Sentry tunnel Cloud smoke check runbook](runbooks/sentry-tunnel-smoke.md)
 - [Codex remediation orchestrator](prompts/codex-remediation-orchestrator.md)
@@ -71,11 +72,11 @@ hardening/pricing and operational v1 checks. Stripe, Paddle and Lemon Squeezy
 follow as independent certifications; commercial distribution follows under
 Plan 013 when selling is chosen. Neither blocks the limited own-use v1 Chile.
 
-| Order | Plan                                                                                                | Priority | Status                                                                                                                                                                                                                                                                                                        |
-| ----- | --------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11    | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                 | P0       | Core v2 implemented/closed. MP coordination, recovery, anomalies and worker implemented; remaining code/acceptance and operations in the [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md). Sandbox basic circuit observed informally 2026-09-10; full internal acceptance pending. |
-| 12    | [Security hardening + pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 risk/debt gates; `scale → teams` separated from MP closure.                                                                                                                                                                                                                                        |
-| 13    | [Commercial preparation after own-use v1](exec-plans/active/013-launch-readiness-roadmap.md)        | P2       | Conditional on selling; essential smoke, observability and security remain v1 gates.                                                                                                                                                                                                                          |
+| Order | Plan                                                                                                | Priority | Status                                                                                                                                                                                                                                                                                                                                                  |
+| ----- | --------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 11    | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                 | P0       | Core v2 implemented/closed. MP coordination, recovery, anomalies and worker implemented; acceptance and operations in the [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md) (2026-09-23: MP-01/02/05/06/07/11/13/15 closed with real evidence; MP-04/08/14 partial; renewal, refunds and a completed discovery scan pending). |
+| 12    | [Security hardening + pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 risk/debt gates; `scale → teams` separated from MP closure.                                                                                                                                                                                                                                                                                  |
+| 13    | [Commercial preparation after own-use v1](exec-plans/active/013-launch-readiness-roadmap.md)        | P2       | Conditional on selling; essential smoke, observability and security remain v1 gates.                                                                                                                                                                                                                                                                    |
 
 Plan 011 task detail: [Core](exec-plans/active/011-phase1-core-v2-tasks.md),
 [Mercado Pago](exec-plans/active/011-phase2-mercadopago-tasks.md),
@@ -96,10 +97,15 @@ prices/slugs, no trial, upgrades/downgrades, Iroko-initiated pause or in-app car
 management. The [acceptance matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md)
 separates implemented, tested locally, verified at provider, pending operations
 and outside-v1 requirements. Basic 011e worker operation has dated Cloud
-evidence, and MP-01/02/05/07/15 are closed with a real correlated
-checkout/cancellation circuit; renewal, rejection/recovery, refunds, abandoned
-checkout and worker failure/multi-batch drills remain **[NO VERIFICADO]**.
-Internal certification does not imply an official Mercado Pago certification.
+evidence, and MP-01/02/05/06/07/11/13/15 are closed with real correlated
+evidence. The first real discovery scans (2026-09-23) exposed two defects, so a
+completed reconciliation scan, renewal (due 2026-10-22), refunds (blocked for
+test accounts) and the volume drills of MP-14 remain **[NO VERIFICADO]**. The
+[design](architecture/mercadopago-reliability-design.md#verified-provider-behaviors-2026-09-23)
+records the provider behaviors measured against the live API, and the
+[billing reconciliation runbook](runbooks/billing-reconciliation.md) explains how
+to read a failing scan. Internal certification does not imply an official
+Mercado Pago certification.
 
 ## Directory policy
 

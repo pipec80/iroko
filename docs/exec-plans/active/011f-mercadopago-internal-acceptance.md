@@ -19,6 +19,18 @@ Supabase SQL, Vercel/Supabase diagnostics, Markdown evidence.
 **Spec:**
 [`docs/architecture/mercadopago-reliability-design.md`](../../architecture/mercadopago-reliability-design.md#delivery-i--rollout-and-internal-acceptance)
 
+**Status note — 2026-09-23:** the authoritative state of each scenario is the
+[v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md), not the checkboxes
+below, which were not maintained as steps ran. Where evidence stands: Steps for
+MP-01, 02, 05, 06 (rejection and alert), 07, 11, 13 and 15 have real correlated
+evidence; MP-04 is partial (resume observed; provider behaviors measured;
+simultaneous requests pending); MP-14 is partial (Cloud lease drill and a real
+failing scan); MP-03 waits for the real charge due 2026-10-22; MP-12 has no
+completed scan yet after two defects found on first contact (#205, #208);
+MP-09/10 cannot be exercised with test accounts (the API refuses refunds for
+their credentials) and stay pending for a productive account. Do not check a
+box from this note.
+
 ## Global Constraints
 
 - Scope is own-use Chile, monthly CLP, hosted checkout and pending preapproval
