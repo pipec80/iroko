@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   reduce: vi.fn(),
 }));
 
+vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn(() => ({ rpc: mocks.rpc })) }));
 vi.mock('../registry', () => ({ getPaymentProvider: mocks.getProvider }));
 vi.mock('../reducer', () => ({ reduceBillingEvent: mocks.reduce }));

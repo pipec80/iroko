@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
+import { logger } from '@/lib/logger';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 import type { SubscriptionUpdatedEvent } from './events';
@@ -82,6 +83,17 @@ function providerErrorCode(error: unknown): SafeErrorCode {
   const discoveryReason = PROVIDER_DISCOVERY_ERROR.exec(error.message)?.[1];
   if (discoveryReason) return `provider_discovery_${discoveryReason}`;
   return 'provider_fetch_failed';
+}
+
+/**
+ * The stored code is deliberately coarse, so the cause goes to the log. Reducer
+ * errors are `billing_*_failed:<SQLSTATE>` and carry no provider payload.
+ */
+function logReducerFailure(error: unknown, stage: 'snapshot' | 'discovered_invoice'): void {
+  logger.error(
+    { component: 'billing', action: 'billing.reconciliation.reducer_failed', stage },
+    error instanceof Error ? error.message : 'Reducer failed during reconciliation',
+  );
 }
 
 function isSafeErrorCode(value: unknown): value is SafeErrorCode {
@@ -229,7 +241,8 @@ export async function reconcileNonTerminalSubscriptions(input: {
       snapshotResult = await reduceBillingEvent(event, {
         expectedSubscriptionUpdatedAt: candidate.subscription_updated_at,
       });
-    } catch {
+    } catch (error) {
+      logReducerFailure(error, 'snapshot');
       throw { errorCode: 'reducer_failed' satisfies SafeErrorCode };
     }
     if (snapshotResult.status === 'stale') summary.stale += 1;
@@ -298,7 +311,13 @@ export async function reconcileNonTerminalSubscriptions(input: {
             nextCursor: candidate.scan_cursor,
           };
         }
-        const result = await reduceBillingEvent(invoiceEvent);
+        // Mercado Pago echoes the checkout intent id as `external_reference`, not
+        // the account id. The claimed subscription already fixes the account, and
+        // discovery is scoped to this preapproval, so it replaces the reference.
+        const result = await reduceBillingEvent({
+          ...invoiceEvent,
+          accountId: candidate.account_id,
+        });
         if (result.status === 'applied') summary.repaired += 1;
         else if (result.status === 'stale') summary.stale += 1;
         if (Date.now() >= deadline) {
@@ -318,6 +337,7 @@ export async function reconcileNonTerminalSubscriptions(input: {
       ) {
         throw error;
       }
+      logReducerFailure(error, 'discovered_invoice');
       throw { errorCode: 'reducer_failed' satisfies SafeErrorCode };
     }
     if (page.nextCursor) {
