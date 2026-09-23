@@ -1,6 +1,31 @@
 import { describe, expect, it } from 'vitest';
 
-import { mapBillingPaymentHealth } from '../payment-health';
+import { mapBillingPaymentHealth, paymentFailureReason } from '../payment-health';
+
+describe('paymentFailureReason', () => {
+  it.each([
+    ['cc_rejected_bad_filled_card_number', 'check_card'],
+    ['cc_rejected_bad_filled_security_code', 'check_card'],
+    ['cc_rejected_insufficient_amount', 'funds'],
+    ['cc_rejected_call_for_authorize', 'bank'],
+    ['cc_rejected_other_reason', 'bank'],
+    ['cc_rejected_max_attempts', 'attempts'],
+    ['cc_rejected_high_risk', 'security'],
+    ['cc_rejected_blacklist', 'security'],
+  ] as const)('groups %s as %s', (code, reason) => {
+    expect(paymentFailureReason(code)).toBe(reason);
+  });
+
+  it.each([
+    null,
+    '',
+    'cc_rejected_invalid_installments',
+    'cc_rejected_duplicated_payment',
+    'constructor',
+  ])('returns null for the missing or non-actionable code %j', (code) => {
+    expect(paymentFailureReason(code)).toBeNull();
+  });
+});
 
 describe('mapBillingPaymentHealth', () => {
   it.each(['healthy', 'attention_required', 'unknown'] as const)(
