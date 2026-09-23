@@ -945,6 +945,7 @@
     "renews_on": "Se renueva el {date}",
     "cancels_on": "Se cancela el {date}",
     "access_until": "Acceso hasta el {date}",
+    "access_until_detail": "Hasta esa fecha sigues teniendo todos los beneficios de {plan}. Después pasarás automáticamente al plan Free.",
     "plan_canceled_badge": "Cancelado · hasta {date}",
     "plan_canceled_btn": "Podrás volver a suscribirte el {date}",
     "cancel_btn": "Cancelar suscripción",

@@ -469,6 +469,10 @@ describe('BillingTab — role-awareness', () => {
     expect(panel.textContent).not.toContain('Se renueva el');
     expect(screen.queryByTestId('cancel-immediately')).toBeNull();
     expect(screen.queryByTestId('cancel-period-end')).toBeNull();
+    // Explains what happens next, so it does not read like an active plan.
+    const detail = screen.getByTestId('canceled-access-detail').textContent;
+    expect(detail).toContain('todos los beneficios de Pro');
+    expect(detail).toContain('pasarás automáticamente al plan Free');
   });
 
   it('marks the plan card as canceled and explains when subscribing again is possible', async () => {
@@ -503,6 +507,7 @@ describe('BillingTab — role-awareness', () => {
     // The amber "canceled" treatment must not leak onto an active plan.
     expect(screen.getByTestId('plan-badge-pro').textContent).toBe('Plan actual');
     expect(screen.queryByTestId('subscription-status-chip')).toBeNull();
+    expect(screen.queryByTestId('canceled-access-detail')).toBeNull();
   });
 
   it('shows Chilean prices without offering an unavailable annual checkout', async () => {
