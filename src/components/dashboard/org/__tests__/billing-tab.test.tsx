@@ -471,6 +471,25 @@ describe('BillingTab — role-awareness', () => {
     expect(screen.queryByTestId('cancel-period-end')).toBeNull();
   });
 
+  it('marks the plan card as canceled and explains when subscribing again is possible', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: {
+        plans: [PLAN_FREE, PLAN_PRO],
+        overview: { ...ACTIVE_PRO_OVERVIEW, status: 'canceled' },
+      },
+    });
+
+    renderBillingTab('owner');
+
+    const badge = await waitFor(() => screen.getByTestId('plan-badge-pro'));
+    expect(badge.textContent).toContain('Cancelado · hasta');
+    expect(badge.textContent).not.toContain('Plan actual');
+    const subscribe = screen.getByTestId('subscribe-pro');
+    expect(subscribe.textContent).toContain('Podrás volver a suscribirte el');
+    expect(subscribe).toHaveProperty('disabled', true);
+    expect(screen.getByTestId('subscription-status-chip').textContent).toBe('Cancelada');
+  });
+
   it('keeps announcing the renewal date while the subscription is active', async () => {
     mocks.getBillingData.mockResolvedValue({
       data: { plans: [PLAN_FREE, PLAN_PRO], overview: ACTIVE_PRO_OVERVIEW },
@@ -481,6 +500,9 @@ describe('BillingTab — role-awareness', () => {
     const panel = await waitFor(() => screen.getByTestId('current-plan'));
     expect(panel.textContent).toContain('Se renueva el');
     expect(panel.textContent).not.toContain('Acceso hasta el');
+    // The amber "canceled" treatment must not leak onto an active plan.
+    expect(screen.getByTestId('plan-badge-pro').textContent).toBe('Plan actual');
+    expect(screen.queryByTestId('subscription-status-chip')).toBeNull();
   });
 
   it('shows Chilean prices without offering an unavailable annual checkout', async () => {
