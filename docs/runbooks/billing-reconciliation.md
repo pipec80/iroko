@@ -17,6 +17,33 @@ from billing.subscriptions s join billing.customers c on c.id=s.customer_id
 where c.account_id = '<account-uuid>';
 ```
 
+### Reading a failing reconciliation scan
+
+HTTP 200 and a `succeeded` cron row prove that the worker ran, not that its
+candidates succeeded: a failed candidate is counted in `last_summary.failed`
+inside a 200 response. Inspect the candidate itself:
+
+```sql
+select s.status, r.failure_count, r.last_error_code, r.next_scan_at,
+       r.last_completed_at, r.lease_owner is not null as leased
+from billing.reconciliation_state r
+join billing.subscriptions s on s.id = r.subscription_id
+order by r.failure_count desc;
+```
+
+`failure_count` is capped at 10 and the retry delay grows to 60 minutes, so a
+count of 10 means "failing for a while", not "ten attempts". A candidate whose
+`last_completed_at` is still empty has never finished a scan.
+
+| `last_error_code`                 | Meaning                                                                                                        | Where to look                                                                                                                                                                                                         |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `provider_fetch_failed:<HTTP>`    | Mercado Pago answered that status (for example `400` for a rejected query parameter, `429` for rate limiting). | Replay the same read against the provider with the seller credentials; compare with the verified behaviors in the [design](../architecture/mercadopago-reliability-design.md#verified-provider-behaviors-2026-09-23). |
+| `provider_fetch_failed` (no code) | A non-HTTP failure (network, unexpected error).                                                                | Vercel runtime logs for `/api/internal/billing/worker`.                                                                                                                                                               |
+| `provider_timeout`                | The provider did not answer within the time budget.                                                            | Retry is automatic; investigate only if it persists.                                                                                                                                                                  |
+| `provider_discovery_<reason>`     | The provider answered but the page failed validation (`invalid_paging`, `identity_mismatch`, …).               | The validation in `discoverSubscriptionInvoices`; do not relax it without inspecting the provider response.                                                                                                           |
+| `reducer_failed`                  | The provider data was fine but the database reducer rejected an event.                                         | Log action `billing.reconciliation.reducer_failed` (stage `snapshot` or `discovered_invoice`) carries the SQLSTATE.                                                                                                   |
+| `anomaly_persistence_failed`      | A financial anomaly could not be stored.                                                                       | Database errors on `upsert_billing_financial_anomaly`.                                                                                                                                                                |
+
 ## Financial anomaly investigation and resolution
 
 This procedure does not authorize access to Mercado Pago or a Cloud database,
@@ -147,6 +174,22 @@ Proceed only when the target is `needs_review`, or when it is `pending` with an
 expired non-null lease. Stop and investigate otherwise. The resolver
 intentionally rejects every other state and any row that already has an
 external subscription ID.
+
+### Finding the remote preapproval for an intent
+
+The preapproval's `external_reference` is the checkout intent id, so an
+operator with separate provider authorization can find a remote resource that
+Iroko failed to attach. Two provider behaviors matter (measured 2026-09-23):
+
+- `GET /preapproval/search?external_reference=<intent>` **does not filter**; it
+  returns every preapproval of the seller. Fetch the results and keep only the
+  entry whose `external_reference` equals the intent id. Never rely on the
+  reported total.
+- Calling search twice in a row can answer `429`; pause between calls.
+
+An intent with no matching result, after reading all pages, supports decision 2
+below; a match belongs to decision 1. Do not create a new preapproval to find
+out: the provider does not deduplicate (`X-Idempotency-Key` is ignored).
 
 ### Read-only preflight and evidence
 
@@ -492,6 +535,33 @@ lease recovery, cursor resume and true second-session `SKIP LOCKED`) and
 `src/lib/billing/__tests__/reconciliation.test.ts` (provider failure isolation,
 deadline, cursor replay and reducer idempotency). Neither substitutes for Cloud
 multi-invocation evidence or provider acceptance.
+
+## Cloud lease drill (sandbox, requires authorization)
+
+Evidence for the lease part of MP-14 against the real database with a real
+candidate. It writes only that candidate's `reconciliation_state` row, contacts
+no provider and creates no charge. It does not prove a killed Node process, more
+than 20 candidates or an intermediate invoice cursor; those stay with the
+[local drill](#local-only-multi-batch-interruption-drill).
+
+1. Confirm the candidate is due (`next_scan_at <= now()`, no lease, non-terminal
+   subscription). Run the drill just before a scheduled scan, not after it: a
+   completed scan reschedules the row an hour ahead and it stops being claimable.
+2. Worker A claims with `claim_billing_reconciliation_candidates(1, 30, '<a>')`
+   (30 s is the minimum) and never completes it.
+3. After the lease expires, worker B claims it: one row is returned.
+4. Worker B calls `complete_billing_reconciliation_candidate` after its own
+   lease expired: it must raise `billing_reconciliation_lease_not_owned`.
+5. In **one** transaction (`now()` is frozen inside it), claim as C and then as
+   D: C receives the row and D receives none. Abort with a report exception so
+   nothing persists.
+6. Restore the row in one transaction: claim as E and complete it as `deferred`
+   passing the previous `last_error_code`. That keeps `failure_count` and the
+   error code and schedules the row one minute ahead.
+
+Separate tool calls are slower than a 30 s lease, so steps 5 and 6 must be a
+single statement block. Leave the row leased or scheduled far ahead and the
+next real scan is skipped.
 
 ## Incidents
 

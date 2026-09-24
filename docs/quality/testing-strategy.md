@@ -75,6 +75,21 @@ Pin the shape and interpretation of external integrations:
 
 Use fixtures derived from official schemas/examples, validate signatures and cover unknown/missing fields. Do not put real secrets or customer payloads in fixtures.
 
+Fixtures cannot reveal what the documentation omits. Mercado Pago invoice
+discovery passed its tests and still failed on its first real scan, twice: the
+provider rejects `limit` above 15 (undocumented) and echoes an identifier
+(`external_reference`) that Iroko defines differently from the fixtures. Before
+a provider read path is called done:
+
+- replay it once, read-only, against the sandbox with real seller credentials
+  and record the observed limits, identifiers and formats beside the fixtures;
+- build fixtures from that observed response, not from the documentation example;
+- record the measured behavior in the provider's design document so a later
+  change does not silently drop it.
+
+This is a read-only replay, not a substitute for the acceptance matrix, and it
+never uses production credentials of a real customer.
+
 ### E2E tests
 
 Keep a focused set of critical user journeys in Playwright:
