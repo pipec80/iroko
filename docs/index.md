@@ -98,9 +98,11 @@ management. The [acceptance matrix](exec-plans/active/011-mercadopago-v1-chile-a
 separates implemented, tested locally, verified at provider, pending operations
 and outside-v1 requirements. Basic 011e worker operation has dated Cloud
 evidence, and MP-01/02/05/06/07/11/13/15 are closed with real correlated
-evidence. The first real discovery scans (2026-09-23) exposed two defects, so a
-completed reconciliation scan, renewal (due 2026-10-22), refunds (blocked for
-test accounts) and the volume drills of MP-14 remain **[NO VERIFICADO]**. The
+evidence. The first real discovery scans (2026-09-23) exposed two defects, fixed
+in #205 and #208; since then the reconciliation scan completes in Cloud and its
+hourly replay adds nothing (2026-09-24). Renewal (due 2026-10-22), an actually
+omitted invoice for MP-12, refunds (blocked for test accounts) and the volume
+drills of MP-14 remain **[NO VERIFICADO]**. The
 [design](architecture/mercadopago-reliability-design.md#verified-provider-behaviors-2026-09-23)
 records the provider behaviors measured against the live API, and the
 [billing reconciliation runbook](runbooks/billing-reconciliation.md) explains how

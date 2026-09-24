@@ -1,9 +1,9 @@
 # Current State
 
-Last static verification: **2026-09-23** (Plan 011 Mercado Pago acceptance:
+Last static verification: **2026-09-24** (Plan 011 Mercado Pago acceptance:
 first real reconciliation scans, sandbox drills and measured provider
 behaviors; platform-wide audit remains 2026-08-20)
-Last recorded runtime observation: **2026-09-23** (reconciliation discovery
+Last recorded runtime observation: **2026-09-24** (reconciliation discovery
 against the live subscription and a Cloud lease drill, see
 [Runtime update](#runtime-update--2026-09-23); recovery and reconciliation
 workers in Supabase Cloud, see
@@ -71,11 +71,11 @@ Plan 011 is the remaining P0 behavior plan. Its internal dependency order is
 authoritative; coordinate overlapping database, authorization, and billing
 changes before implementation.
 
-| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                                                                                                                                                                                                                                        |
-| ----- | -------------------------------------------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally, the basic 011e worker rollout is verified in Cloud, and MP-01/02/05/06/07/11/13/15 are closed with real correlated evidence; MP-04, 08 and 14 are partial. Renewal (2026-10-22), refunds (needs a productive account), a completed discovery scan (MP-12) and volume drills remain pending. Other providers remain independent future certifications. |
-| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                                                                                                                                                                                                                                 |
-| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                                                                                                                                                                                 |
+| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ----- | -------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally, the basic 011e worker rollout is verified in Cloud, and MP-01/02/05/06/07/11/13/15 are closed with real correlated evidence; MP-04, 08 and 14 are partial. Renewal (2026-10-22), refunds (needs a productive account), an actually omitted invoice for MP-12 (the scan itself now completes) and volume drills remain pending. Other providers remain independent future certifications. |
+| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                                                                                                                                                                                                                                                                    |
+| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                                                                                                                                                                                                                    |
 
 Execution order: complete the remaining internal MP acceptance and explicit
 worker failure/multi-batch drills after the basic 011e rollout → Plan 012 and
@@ -108,10 +108,13 @@ inspected on 2026-09-22).
   Two defects were found in sequence: Mercado Pago rejects `limit` above 15 on
   `/authorized_payments/search` (fixed in #205, deployed), and discovered
   invoices carried the checkout id as account, which the reducer rejects
-  (`reducer_failed` at the 22:00 UTC scan; fixed in #208). At 22:12 UTC the row
-  still showed `failure_count=10` (the cap) and an empty `last_completed_at`:
-  a completed scan is **[NO VERIFICADO]** until #208 is deployed and an hourly
-  run finishes. Unit tests with mocked providers could not see either defect;
+  (`reducer_failed` at the 22:00 UTC scan; fixed in #208). **Observed on
+  2026-09-24 after #208 deployed:** the scan completes (`last_completed_at`
+  13:00 UTC, `failure_count=0`, no error code) and the hourly rescans add nothing
+  (12 Mercado Pago events, 3 invoices, 0 anomalies and 0 open jobs, unchanged from
+  00:51 to 14:09 UTC). Whether discovery repairs a genuinely omitted invoice
+  stays **[NO VERIFICADO]**. Unit tests with mocked providers could not see
+  either defect;
   see the provider-contract note in the
   [testing strategy](quality/testing-strategy.md#contract-tests).
 - **Lease drill (MP-14, part).** Against the real candidate: a lapsed lease is
@@ -124,14 +127,20 @@ inspected on 2026-09-22).
   filter by `external_reference`, and the test seller's credentials cannot create
   refunds (MP-09/10 need a productive account).
 - **Dashboard.** A canceled subscription with paid access remaining now reads as
-  canceled (access-until date, no cancel button, a distinct badge) and a rejected
-  payment explains its reason; both were reviewed on production (#198–#203).
+  canceled (access-until date, no cancel button, a distinct badge), reviewed on
+  production (#198–#202). A rejected payment now explains its reason (#203),
+  covered by tests but not yet seen on a real rejection.
 - **CI.** Builds no longer download Google Fonts (#207) after four transient
   failures in one day.
 
-Merged since the previous update: #190–#207 (acceptance workflow, evidence
-records, the canceled-plan and rejection-reason UI, discovery page size, webhook
-rejection naming and locale-aware return URL, vendored fonts).
+Merged since the previous update: PRs #190–#208 (acceptance workflow, evidence
+records, the canceled-plan and rejection-reason UI, discovery page size and
+account resolution, webhook rejection naming and locale-aware return URL,
+vendored fonts).
+
+The nightly monitoring run of 2026-09-24 07:59 UTC passed all three jobs
+(production smoke, email worker health, database advisors); see the
+[operational evidence register](quality/operational-evidence.md).
 
 ### Worker rollout update — 2026-09-22
 
@@ -184,7 +193,7 @@ provider configuration and migration parity were not re-inspected on
 gates, including renewal, paid-through access and recovery.
 
 Merged to `main` since PR #152: #153, #159, #161, #171–181, #187, #188 and
-PRs #190–#207 (Mercado Pago reliability slice, dependency updates, the QA fix
+PRs #190–#208 (Mercado Pago reliability slice, dependency updates, the QA fix
 and its documentation, the v1 local gap closure, the Cloud acceptance workflow,
 evidence records and the 2026-09-22/23 follow-up fixes).
 No Stripe / Paddle / Lemon Squeezy adapter work has started.

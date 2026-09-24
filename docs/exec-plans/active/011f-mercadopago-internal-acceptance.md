@@ -25,8 +25,9 @@ below, which were not maintained as steps ran. Where evidence stands: Steps for
 MP-01, 02, 05, 06 (rejection and alert), 07, 11, 13 and 15 have real correlated
 evidence; MP-04 is partial (resume observed; provider behaviors measured;
 simultaneous requests pending); MP-14 is partial (Cloud lease drill and a real
-failing scan); MP-03 waits for the real charge due 2026-10-22; MP-12 has no
-completed scan yet after two defects found on first contact (#205, #208);
+failing scan); MP-03 waits for the real charge due 2026-10-22; MP-12's scan
+completes since two defects found on first contact were fixed (#205, #208; seen
+on 2026-09-24) but no genuinely omitted invoice has occurred yet;
 MP-09/10 cannot be exercised with test accounts (the API refuses refunds for
 their credentials) and stay pending for a productive account. Do not check a
 box from this note.
