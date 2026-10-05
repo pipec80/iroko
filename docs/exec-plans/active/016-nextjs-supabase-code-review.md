@@ -290,14 +290,14 @@ propuesto. No convertir una ausencia de prueba en una vulnerabilidad confirmada.
 
 ### T0 — Fijar candidato e inventario
 
-- [ ] Registrar SHA, rama, diff local, versiones efectivas y fecha. No actualizar
+- [x] Registrar SHA, rama, diff local, versiones efectivas y fecha. No actualizar
       dependencias ni limpiar cambios ajenos para conseguir un candidato verde.
-- [ ] Crear el manifiesto exhaustivo por archivo y las matrices de configuración
+- [x] Crear el manifiesto exhaustivo por archivo y las matrices de configuración
       y reglas; asignar dueño a todas las entradas y justificar exclusiones.
-- [ ] Releer la auditoría del 24 de septiembre y planes 011/012/014/015 para
+- [x] Releer la auditoría del 24 de septiembre y planes 011/012/014/015 para
       marcar hallazgos conocidos, cerrados históricamente y pendientes actuales.
-- [ ] Acordar entorno y rutas exactas de pruebas. No imprimir valores de `.env`.
-- [ ] Resolver y registrar cómo deshabilitar las subidas externas del build
+- [x] Acordar entorno y rutas exactas de pruebas. No imprimir valores de `.env`.
+- [x] Resolver y registrar cómo deshabilitar las subidas externas del build
       según la versión instalada de Sentry y su configuración. Hasta verificar
       el mecanismo, no ejecutar build/analyze ni E2E que lance build. Quitar una
       variable del proceso no basta si `.env.local` puede volver a cargarla.
