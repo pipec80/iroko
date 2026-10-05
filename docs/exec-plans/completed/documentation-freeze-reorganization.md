@@ -670,3 +670,41 @@ git status --short --branch
 Expected: checks pass; the branch contains no untracked maintained document or
 unexplained modification; local manifests and local history remain ignored.
 Report exact outputs and anything not verified.
+
+---
+
+## Completion record — 2026-10-05
+
+This maintenance plan reorganized documentation only. It added no application,
+database, provider, vertical or commercial capability.
+
+### Commits
+
+| Commit | Record |
+| --- | --- |
+| `92f37b0` | Approved documentation-freeze structure |
+| `fc1def7` | Executable reorganization plan |
+| `cb2fda2` | Reusable-foundation documentation baseline |
+| `823de6b` | Exact roadmap archive and freeze roadmap |
+| `d01d2b3` | Active/deferred/completed plan lifecycle |
+| `8139b34` | Authority and navigation cleanup |
+| Closure commit | The commit that moves this record to `completed/`; its hash is intentionally not embedded in itself |
+
+### Fresh pre-closure validation
+
+- `pnpm docs:check` — passed, 102 Markdown files.
+- `pnpm test:docs-check` — passed, 4 tests and 0 failures.
+- `pnpm exec prettier --check <all 102 versioned/untracked Markdown files>` —
+  passed. The first sandboxed invocation failed with `EPERM` while reading the
+  installed Prettier binary; the identical command passed outside the sandbox.
+- `git diff --check` — passed.
+- Raw roadmap SHA-256 —
+  `2dd156cd17c5e4c4752acf46f7764d2fc105e0b8f014b4668cea23322ef8291f`,
+  identical to the Task 1 value.
+- Live stale-reference audit — zero obsolete maintained dependencies after
+  excluding the approved migration design, this execution record, raw history
+  and completed historical evidence.
+
+Post-commit documentation checks remain required by Step 9. Runtime, Cloud and
+provider health were outside this documentation-only plan and remain governed
+by their dated evidence records.

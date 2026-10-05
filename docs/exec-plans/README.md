@@ -29,14 +29,15 @@ Active product plans are:
 - [Plan 015 — reusable-foundation acceptance](active/015-reusable-foundation-acceptance.md)
 - [Plan 016 — Next.js and Supabase code review](active/016-nextjs-supabase-code-review.md)
 
-The documentation-freeze maintenance plan remains active only while this
-reorganization is being executed. Read the root roadmap for the single ordered
-queue.
+Read the root roadmap for the single ordered queue. Maintenance records that
+change documentation structure live with completed plans after their own
+validation contract passes.
 
 ## Deferred and completed records
 
 - [Plan 011 billing family](deferred/011-billing/README.md)
 - [Plan 013 — commercial preparation](deferred/013-launch-readiness-roadmap.md)
+- [Documentation freeze reorganization](completed/documentation-freeze-reorganization.md)
 - [Completed plans](completed/)
 
 Reactivate deferred work only through an explicit product decision and matching
