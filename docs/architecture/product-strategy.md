@@ -137,9 +137,9 @@ comparaciones históricas de `docs/local/` no son autoridad actual.
 | Instalación, guías y actualizaciones para reutilizar el kit | Hay setup y guías; no hay ensayo independiente observado de instalación/extensión/upgrade                  | Plan 015, necesario incluso para uso propio                                     |
 | Configuraciones coherentes de organizaciones y billing      | Hay flags y modelo de cuentas; ocultar enlaces no garantiza ausencia de dependencias o bloqueo de acciones | Plan 015 demuestra solo dos configuraciones; no prometer presets adicionales    |
 | Servicios comunes listos para extender                      | Existe una base amplia, con defectos concretos y recetas incompletas                                       | Plan 014 corrige; Plan 015 documenta y prueba la extensión                      |
-| Varios proveedores y cobros avanzados                       | Core extensible y adapters no equivalen a certificación; MP tiene aceptación pendiente                     | Plan 011 por proveedor ofrecido; no agregar uso/asientos para igualar una tabla |
+| Varios proveedores y cobros avanzados                       | Core extensible y adapters no equivalen a certificación; la evidencia MP está acotada por escenario        | Plan 011 diferido para escenarios/proveedores adicionales; no agregar uso/asientos para igualar una tabla |
 | IA monetizada, créditos o stacks alternativos               | No hay vertical IA completo ni soporte multi-framework demostrado                                          | Fuera del cierre; no mejora por sí solo la promesa acordada                     |
-| Empaquetado, soporte y entrega comercial                    | Iroko no está aceptado como producto instalable para terceros                                              | Plan 013 condicionado a vender, reutilizando evidencia de 015                   |
+| Empaquetado, soporte y entrega comercial                    | Iroko no está aceptado como producto instalable para terceros                                              | Plan 013 diferido hasta decidir vender, reutilizando evidencia de 015           |
 
 La hipótesis es **adaptación rápida sobre Supabase con operación explicable y
 una ruta de cobro Chile/CLP aceptada**. Mercado Pago puede aportar valor regional,
@@ -257,17 +257,18 @@ no es evidencia de que haya ocurrido.
 La [auditoría de esta investigación](../audits/2026-09-24-reusable-saas-readiness.md)
 conecta hallazgos con código y propietarios. No duplicar planes:
 
-- [011](../exec-plans/deferred/011-billing/011-billing-correctness.md): aceptación de billing por
-  escenario/proveedor; la [matriz Chile](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md)
-  conserva la autoridad sobre sus pendientes.
+- [011](../exec-plans/deferred/011-billing/README.md), diferido: el alcance
+  requerido por el freeze está satisfecho; la
+  [matriz Chile](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md)
+  conserva evidencia y escenarios pendientes sin declararlos completos.
 - [012](../exec-plans/active/012-security-hardening-and-pricing-truth.md): grants,
   salida HTTP, rate limit, CSP/secretos y pricing/copy coherente.
-- [014](../exec-plans/active/014-reference-surface-correctness.md), propuesto:
+- [014](../exec-plans/active/014-reference-surface-correctness.md), activo:
   cerrar superficies de ejemplo, confianza de URLs e interacción de auditoría.
-- [015](../exec-plans/active/015-reusable-foundation-acceptance.md), propuesto:
+- [015](../exec-plans/active/015-reusable-foundation-acceptance.md), activo:
   configuraciones mínimas, recetas, instalación independiente, operación y
   ensayo de actualización; aporta valor aunque no se venda la base.
-- [013](../exec-plans/deferred/013-launch-readiness-roadmap.md): distribución,
+- [013](../exec-plans/deferred/013-launch-readiness-roadmap.md), diferido: distribución,
   documentación comercial, licencias y soporte cuando se decida vender.
 
 Corregir los defectos independientes de 014 no requiere esperar una renovación

@@ -19,7 +19,7 @@ This catalog remains the entry point for detailed module contracts.
 These are implementation entry points, not a list of certified deployments.
 Paths are relative to the repository. See the
 [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) for test paths,
-observed checks and defects. Proposed
+observed checks and defects. Active
 [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md) supplies
 the extension recipes and independent acceptance; no recipe execution is
 claimed by this map.
@@ -35,7 +35,7 @@ claimed by this map.
 | Feature flags and module configuration | `src/lib/flags/index.ts`, `src/config/app.config.ts`                                  | Product flags, menu visibility, availability and authorization are distinct                                                      |
 | Billing and entitlements               | `src/lib/billing/`, `src/app/api/internal/billing/worker/`                            | [MP matrix](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md) owns acceptance; other providers not inferred from code |
 | Observability                          | `src/lib/logger.ts`, `src/lib/analytics/`, Sentry and nightly workflow                | Telemetry code exists; [operational register](../quality/operational-evidence.md) bounds actual observations                     |
-| Robot example                          | `src/lib/robot-config.ts`, `dashboard/robot/page.tsx`                                 | Hidden in navigation; that does not close route/actions/SQL. Proposed Plan 014 owns remediation                                  |
+| Robot example                          | `src/lib/robot-config.ts`, `dashboard/robot/page.tsx`                                 | Hidden in navigation; that does not close route/actions/SQL. Active Plan 014 owns remediation                                    |
 | Vector extension                       | `supabase/migrations/20260610120000_advanced_extensions.sql`                          | Extension enabled by migration; no complete AI vertical claimed                                                                  |
 
 ## Detailed module guides

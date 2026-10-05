@@ -220,5 +220,5 @@ GDPR:
 
 La implementación histórica de esta fase quedó completa. La preparación legal y comercial
 actual se sigue en el
-[Plan 013](../exec-plans/deferred/013-launch-readiness-roadmap.md); la operación real de export,
+[Plan 013 diferido](../exec-plans/deferred/013-launch-readiness-roadmap.md); la operación real de export,
 borrado y purga conserva estado **[NO VERIFICADO]** hasta registrar evidencia fresca.

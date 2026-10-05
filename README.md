@@ -117,7 +117,7 @@ de lectura, autoridad y ciclo de vida:
 - `docs/current-state.md` — estado vigente, prioridades y evidencia
 - `docs/architecture/` y `docs/adr/` — límites y decisiones duraderas
 - `docs/audits/` — auditorías de plataforma con hallazgos y evidencia de cierre
-- `docs/exec-plans/` — trabajo activo y registros de planes completados
+- `docs/exec-plans/` — ciclo de vida de planes activos, diferidos y completados
 - `docs/runbooks/` — guías operativas paso a paso
 - `docs/quality/` — Definition of Done y estrategia de testing
 - `docs/modules/` — guías vigentes de capacidades implementadas; cada una
@@ -125,19 +125,19 @@ de lectura, autoridad y ciclo de vida:
 - `docs/design-system/` — entrada al sistema canónico Poppy/Cobalt/Geist,
   estado, tokens, kits y clasificación de exportaciones históricas/generadas
 
-`docs/estado-fases.md` y `docs/local/` son notas de desarrollo locales o
-históricas (gitignored). No son autoridad y no existen en un checkout limpio.
+`docs/local/` conserva notas de trabajo e historia local ignorada. No es
+autoridad y no existe en un checkout limpio. El historial versionado y seguro
+de publicar está en [docs/history/](docs/history/README.md).
 
 ## Estado y alcance
 
-Plan 010 está completado dentro de su alcance. Plan 011 conserva la aceptación
-de billing y Plan 012 el hardening/pricing. La
-[investigación de reutilización](docs/audits/2026-09-24-reusable-saas-readiness.md)
-propone Plan 014 para defectos de superficies presentes y Plan 015 para
-configuración, instalación, extensión y actualización demostrables. Su
-implementación no comenzó durante la investigación. Plan 013 sigue reservado
-a preparación comercial cuando se decida vender.
+El [roadmap de freeze](ROADMAP.md) contiene el único orden vigente. Plan 011
+tiene el alcance requerido por este freeze satisfecho y conserva sus escenarios
+restantes como trabajo diferido; Plan 013 también queda diferido hasta decidir
+vender. Los Planes 012, 014, 015 y 016 forman el trabajo activo. Consulta el
+[índice de planes](docs/exec-plans/README.md) para su ciclo de vida y
+[el estado actual](docs/current-state.md) para evidencia verificada.
 
 Una capacidad configurada o presente en código no implica certificación en
-producción; consulta siempre [el estado actual](docs/current-state.md). El setup
+producción. El setup
 local de arriba no sustituye todavía el ensayo independiente de Plan 015.

@@ -4,6 +4,10 @@
 
 Iroko uses a test pyramid with cross-cutting quality dimensions. Edge cases and regression are not separate levels after E2E; they belong throughout unit, integration, database and E2E testing.
 
+This document defines durable strategy. The repository-root
+[`TESTING-PLAN.md`](../../TESTING-PLAN.md) owns the current per-folder test
+inventory, priorities, conventions and phase prompts.
+
 ## Layers
 
 ### Unit tests
@@ -160,7 +164,7 @@ Re-run the failing spec in isolation to narrow the cause; an isolated pass does
 not turn the full run green. Assign unresolved failures to the candidate's
 acceptance work and investigate shared state, timing and resource use before
 quarantining or classifying them. Do not rerun broadly merely to obtain a green
-result. Proposed [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md)
+result. Active [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md)
 requires explicit candidate-level results for the independent reuse trial.
 
 ## Coverage

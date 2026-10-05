@@ -16,28 +16,30 @@ No intentes resolver todo en una sola ejecución. Trabaja por fases y por un ún
 
 En este orden:
 
-1. `AGENTS.md` (local, no versionado — si no existe en tu checkout, sáltalo)
+1. `AGENTS.md` (contrato compartido y versionado)
 2. `README.md`
-3. `ROADMAP.md` (fuente de verdad detallada de arquitectura y fases; no existe `ARCHITECTURE.md`)
-4. `SECURITY.md`
-5. `docs/index.md`
-6. `docs/audits/2026-08-02-full-platform-audit.md`
-7. todos los archivos de `docs/exec-plans/active/`
-8. `docs/quality/definition-of-done.md`
-9. `docs/quality/testing-strategy.md`
-10. `package.json`
-11. `pnpm-workspace.yaml`
-12. `pnpm-lock.yaml`
-13. `next.config.ts`
-14. `src/proxy.ts`
-15. `src/lib/supabase/middleware.ts`
-16. `.github/workflows/`
-17. `supabase/config.toml`
-18. `supabase/migrations/`
-19. `supabase/functions/`
-20. pruebas Vitest, Playwright y pgTAP relacionadas.
+3. `docs/current-state.md` (estado y evidencia vigente)
+4. `ROADMAP.md` (dirección del freeze y orden de ejecución)
+5. `docs/capabilities.md` y `SECURITY.md`
+6. `docs/index.md`
+7. `docs/audits/2026-08-02-full-platform-audit.md`
+8. el plan activo aprobado para la tarea
+9. `docs/quality/definition-of-done.md`
+10. `docs/quality/testing-strategy.md` y `TESTING-PLAN.md`
+11. `package.json`
+12. `pnpm-workspace.yaml`
+13. `pnpm-lock.yaml`
+14. `next.config.ts`
+15. `src/proxy.ts`
+16. `src/lib/supabase/middleware.ts`
+17. `.github/workflows/`
+18. `supabase/config.toml`
+19. `supabase/migrations/`
+20. `supabase/functions/` y las pruebas Vitest, Playwright y pgTAP relacionadas.
 
-La rama actual, el lockfile, las migraciones y la configuración ejecutable son la fuente de verdad. La auditoría es evidencia histórica y debe revalidarse.
+Usa la jerarquía completa de `AGENTS.md`. La rama actual, el código, las
+pruebas, el lockfile, las migraciones y la configuración ejecutable tienen
+precedencia; la auditoría es evidencia histórica y debe revalidarse.
 
 ## Reglas críticas
 

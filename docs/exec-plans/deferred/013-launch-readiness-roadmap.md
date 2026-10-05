@@ -165,7 +165,8 @@ de v1, no esperan a estos dashboards comerciales.
 **Scope.** Axe sobre superficies aún no cubiertas por
 `src/test/e2e/axe.ts` (ya existe, cubre 4 specs — extender, no rehacer);
 keyboard navigation; focus states; responsive completo; Lighthouse CI (único
-ítem explícitamente pendiente de D6 original, ver `docs/estado-fases.md`);
+ítem explícitamente pendiente de D6 original, conservado en el
+[roadmap pre-freeze](../../history/roadmaps/roadmap-pre-freeze-2026-10-05.raw.md.txt));
 bundle analysis; images/fonts; SEO metadata; sitemap/canonicals/hreflang;
 páginas 404/500/error boundaries; empty states; loading/skeleton states;
 error copy; paridad i18n visual en los 4 locales (el test de paridad de

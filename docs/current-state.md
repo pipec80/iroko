@@ -105,47 +105,24 @@ program and future commercial distribution. No official provider certification
 is claimed. Security, smoke, observability and operational recovery remain
 required before real users; they are not deferred to selling the boilerplate.
 
-## Active work and order
+## Freeze work status
 
-Review planning update — 2026-09-29: [Plan 016](exec-plans/active/016-nextjs-supabase-code-review.md)
-defines and assigns Next.js/React, Supabase security and data-architecture
-reviews. Its expanded scope requires complete reading of maintained source,
-configuration, tests and applicable rules, with per-file evidence and explicit
-exclusions for generated/vendor artifacts; UI sampling is no longer sufficient.
-Three reviewers contributed scoped inventories, scenarios and safe
-validation preconditions. Full review, application checks and remediation have
-not run in this planning pass; the verification dates above are unchanged.
+The [root roadmap](../ROADMAP.md) owns the single execution sequence. This
+section reports evidence and lifecycle only; it does not define a second order.
 
-Plan 011 owns the remaining billing P0 behavior. Proposed Plan 014 adds
-independent behavior/authorization fixes from the reuse investigation. Preserve
-011's internal dependency order and coordinate overlapping database,
-authorization, and billing changes before implementation.
-
-| Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ----- | -------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 011   | [Billing Platform v2](exec-plans/deferred/011-billing/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally, the basic 011e worker rollout is verified in Cloud, and MP-01/02/05/06/07/11/13/15 are closed with real correlated evidence; MP-04, 08 and 14 are partial. Renewal (2026-10-22), refunds (needs a productive account), an actually omitted invoice for MP-12 (the scan itself now completes) and volume drills remain pending. Other providers remain independent future certifications. |
-| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Required v1 gates; public pricing drift and security sweep can advance independently of provider renewal. Slug rename separated from MP closeout.                                                                                                                                                                                                                                                                                                         |
-| 013   | [Commercial preparation](exec-plans/deferred/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                                                                                                                                                                                                                    |
-| 014   | [Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md)      | P0/P1    | Proposed: robot availability/roles, trusted image origins and platform audit interactions. No implementation yet.                                                                                                                                                                                                                                                                                                                                         |
-| 015   | [Reusable foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md)    | P1       | Proposed: minimal configuration, recipes, independent installation, extension, operations and upgrade evidence. No implementation yet.                                                                                                                                                                                                                                                                                                                    |
-
-Closure dependencies: remaining MP acceptance and worker failure/multi-batch
-drills stay within Plan 011. Plan 012 hardening/pricing and Plan 014 fixes can
-advance independently of the renewal wait. Plan 015 configuration/docs can
-advance, but its operational acceptance requires the offered 011 scope,
-Plan 012 and Plan 014. This adds a reuse gate without replacing the MP matrix
-or authorizing provider operations. Independent Stripe/Paddle/Lemon Squeezy
-certifications and Plan 013 distribution do not block a v1 limited to own-use
-Chile/Mercado Pago; distribution remains conditional on choosing to sell.
+| Plan | Lifecycle | Current evidence meaning |
+| --- | --- | --- |
+| [011 — Billing Platform v2](exec-plans/deferred/011-billing/README.md) | Deferred | The scope required by the current freeze is satisfied. Recorded implementation and provider evidence remains bounded to its scenario and date. Renewal, refunds, an actually omitted invoice, volume drills and other provider certifications remain deferred; they are not erased or completed. |
+| [012 — Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | Active | Required security and product-truth gates remain pending. |
+| [013 — Commercial preparation](exec-plans/deferred/013-launch-readiness-roadmap.md) | Deferred | Reactivates only if the owner chooses to sell the boilerplate. |
+| [014 — Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md) | Active | Robot authorization, trusted image origins and platform audit interaction are planned corrections; implementation has not started. |
+| [015 — Reusable-foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md) | Active | Independent installation, configuration, extension and update evidence remains pending. |
+| [016 — Next.js and Supabase code review](exec-plans/active/016-nextjs-supabase-code-review.md) | Active | Scope, reviewer responsibilities and inventories are prepared; the exhaustive review, candidate validation and consolidated evidence remain pending. |
 
 Plan 010 closed on 2026-08-26 through PRs #139, #140, #147, #149 and #150
-(the last being the independent toolchain repair). It is filed under
-`exec-plans/completed/`. This is implementation and disposable-preview
-evidence, not a fresh certification of every external provider or Cloud
-runtime.
-
-Plans 001–009 are filed as completed evidence records. Their historical status
-was not re-certified against a live runtime or cloud environment during this
+(the last being the independent toolchain repair). Plans 001–010 remain under
+`exec-plans/completed/` as evidence records. Their historical status was not
+re-certified against a live runtime or Cloud environment during this
 documentation pass.
 
 ## Verification boundary
@@ -316,21 +293,16 @@ platform documentation audit inventory remains historical (2026-08-20):
 | Documentation automation   | Dedicated checker and workflow prepared in this change                                   | Merge it and require the `Documentation` check on protected branches                 |
 | Operational truth          | Dated evidence register exists; current Cloud rows are unverified                        | Re-run runtime/Cloud checks before making current claims                             |
 
-Product or commercial readiness is a separate gate. It additionally requires
-closing the Mercado Pago v1 Chile matrix (Phases 2/6), stabilizing the complete
-test/runtime path and resolving Plan 012 hardening/pricing plus operational
-checks. The proposed Plan 014 corrects the reference surfaces identified in
-the September 24 audit; Plan 015 establishes independent installation,
-adaptation and upgrade evidence for internal reuse. The full Plan 011 remains
-required for a four-provider claim. Commercial distribution additionally
-needs Plan 013 licensing, packaging, support and buyer onboarding when selling
-is chosen, reusing the internal evidence from Plan 015.
+The MVP freeze gates are defined in the [root roadmap](../ROADMAP.md). Billing
+evidence is valid only for its recorded Mercado Pago scenarios; a four-provider
+claim still requires the deferred provider certifications. Commercial
+distribution additionally requires reactivating Plan 013 for licensing,
+packaging, support and buyer onboarding if selling is chosen.
 
 ## Known documentation and tooling debt
 
-- `ROADMAP.md` contains product direction and historical execution detail;
-  active plans and accepted ADRs take precedence for current work.
-- `docs/estado-fases.md` is local/ignored and stale; it is not authoritative.
+- The root roadmap owns freeze direction and order; its superseded detailed
+  predecessor is preserved in [documentation history](history/README.md).
 - The canonical design-system root is accepted in ADR 0002. The generated
   handoff and historical previews remain intentionally preserved; full PDF
   visual inspection and per-screen production parity are **[NO VERIFICADO]**.
