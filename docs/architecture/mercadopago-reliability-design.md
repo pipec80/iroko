@@ -3,12 +3,12 @@
 Date: 2026-09-09. Status update 2026-09-11: **Accepted — coordination,
 recovery/anomaly and worker foundation implemented; acceptance/operations
 pending**. Current code evidence and remaining gaps are in the
-[v1 Chile matrix](../exec-plans/active/011-mercadopago-v1-chile-acceptance.md).
+[v1 Chile matrix](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md).
 
 This is a bounded supplement to
 [Billing Platform v2](billing-platform-v2-design.md), not a replacement billing
-architecture. Work belongs to [Plan 011](../exec-plans/active/011-billing-correctness.md).
-The [delivery sequence](../exec-plans/active/011-mercadopago-reliability-roadmap.md)
+architecture. Work belongs to [Plan 011](../exec-plans/deferred/011-billing/011-billing-correctness.md).
+The [delivery sequence](../exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md)
 owns the review gates and subsequent task-plan boundaries.
 
 ## Evidence boundary
@@ -108,7 +108,7 @@ new uniqueness rule; do not delete or auto-cancel them to make a migration pass.
 
 ## Delivery C — durable recovery and financial anomalies
 
-Extend [Phase 6](../exec-plans/active/011-phase6-reconciliation-tasks.md) with
+Extend [Phase 6](../exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md) with
 Mercado Pago first. Other providers do not block this slice.
 
 - Keep signature verification at webhook ingress. Persist validated recovery
@@ -146,7 +146,7 @@ authorized operational contract below.
 The owner approved this extension after the 2026-09-11 code-grounded closeout
 review. It keeps ADR 0003's boundaries and supplies the missing design contract
 for MP-06–MP-15 in the
-[v1 Chile acceptance matrix](../exec-plans/active/011-mercadopago-v1-chile-acceptance.md).
+[v1 Chile acceptance matrix](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md).
 The implementation work is split by independently testable responsibility;
 Cloud rollout and provider acceptance remain separate from code delivery.
 
@@ -338,18 +338,18 @@ No single green run substitutes for another.
 
 The six executable handoffs under Plan 011 are:
 
-1. [payment health and paid-through access](../exec-plans/active/011a-mercadopago-payment-health-paid-through.md)
+1. [payment health and paid-through access](../exec-plans/deferred/011-billing/011a-mercadopago-payment-health-paid-through.md)
    (Delivery D);
-2. [abandoned/ambiguous checkout resolution](../exec-plans/active/011b-mercadopago-checkout-resolution.md)
+2. [abandoned/ambiguous checkout resolution](../exec-plans/deferred/011-billing/011b-mercadopago-checkout-resolution.md)
    (Delivery E);
-3. [financial anomaly detail](../exec-plans/active/011c-mercadopago-financial-anomalies.md)
+3. [financial anomaly detail](../exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md)
    (Delivery F);
-4. [reconciliation state, invoice discovery and worker resilience](../exec-plans/active/011d-mercadopago-invoice-discovery-reconciliation.md)
+4. [reconciliation state, invoice discovery and worker resilience](../exec-plans/deferred/011-billing/011d-mercadopago-invoice-discovery-reconciliation.md)
    (Deliveries G/H, one subsystem because they share claim/lease/watermark
    state);
-5. [authorized worker rollout](../exec-plans/active/011e-mercadopago-worker-rollout.md)
+5. [authorized worker rollout](../exec-plans/deferred/011-billing/011e-mercadopago-worker-rollout.md)
    (first half of Delivery I);
-6. [internal Mercado Pago acceptance](../exec-plans/active/011f-mercadopago-internal-acceptance.md)
+6. [internal Mercado Pago acceptance](../exec-plans/deferred/011-billing/011f-mercadopago-internal-acceptance.md)
    (second half of Delivery I).
 
 The first three code plans are independent after their schema contracts are

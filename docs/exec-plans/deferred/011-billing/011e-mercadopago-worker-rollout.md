@@ -17,7 +17,7 @@ rollback.
 Next.js internal route, Mercado Pago sandbox/test environment.
 
 **Spec:**
-[`docs/architecture/mercadopago-reliability-design.md`](../../architecture/mercadopago-reliability-design.md#delivery-i--rollout-and-internal-acceptance)
+[`docs/architecture/mercadopago-reliability-design.md`](../../../architecture/mercadopago-reliability-design.md#delivery-i--rollout-and-internal-acceptance)
 
 ## Global Constraints
 
@@ -35,7 +35,7 @@ Next.js internal route, Mercado Pago sandbox/test environment.
 
 **Status note — 2026-09-22:** the authoritative evidence for this rollout's
 current state lives in
-[Plan 011e worker rollout](../../quality/operational-evidence.md#plan-011e-worker-rollout--2026-09-22),
+[Plan 011e worker rollout](../../../quality/operational-evidence.md#plan-011e-worker-rollout--2026-09-22),
 not in the checkboxes below (this session did not re-execute each step and
 cannot audit that every literal sub-step ran as written). What is confirmed:
 both jobs are scheduled and have run unattended for days with zero failures
@@ -59,7 +59,7 @@ health alone is not acceptance. Since #208 was deployed the scan completes
 failure isolation with backoff. A Cloud lease drill covered lease reclaim
 (database semantics). Still open for Task 4 Step 4: more than one batch, an
 intermediate invoice cursor and a killed process, none of which sandbox can
-produce. Details: [operational evidence](../../quality/operational-evidence.md#mercado-pago-sandbox-drills-2026-09-23)
+produce. Details: [operational evidence](../../../quality/operational-evidence.md#mercado-pago-sandbox-drills-2026-09-23)
 and the [v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md).
 
 ---
@@ -334,8 +334,8 @@ git commit -m "docs: record billing reconciliation rollout"
 **Files:**
 
 - Modify: `docs/quality/operational-evidence.md`
-- Modify: `docs/exec-plans/active/011-phase6-reconciliation-tasks.md`
-- Modify: `docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`
 
 **Interfaces:**
 
@@ -363,7 +363,7 @@ Run:
 ```bash
 pnpm docs:check
 pnpm test:docs-check
-pnpm exec prettier --ignore-path NUL --check docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md docs/exec-plans/active/011-phase6-reconciliation-tasks.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md
+pnpm exec prettier --ignore-path NUL --check docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md
 git diff --check
 ```
 
@@ -372,6 +372,6 @@ Expected: all commands exit 0.
 - [ ] **Step 4: Commit the sanitized rollout evidence**
 
 ```bash
-git add docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md docs/exec-plans/active/011-phase6-reconciliation-tasks.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md
+git add docs/quality/operational-evidence.md docs/runbooks/billing-reconciliation.md docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md
 git commit -m "docs: record Mercado Pago worker rollout"
 ```

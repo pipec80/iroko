@@ -16,7 +16,7 @@
 preserving its own `cancelled`-vs-`expired` lifecycle distinction, which
 does not map cleanly onto Stripe/Paddle's simpler cancel semantics.
 
-**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md),
+**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../../architecture/billing-platform-v2-design.md),
 section 7.3. **Re-open before implementing** (last checked 2026-08-18):
 
 - Create checkout: https://docs.lemonsqueezy.com/api/checkouts/create-checkout

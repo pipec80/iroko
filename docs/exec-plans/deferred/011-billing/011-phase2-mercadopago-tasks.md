@@ -84,7 +84,7 @@ is claimed.
   operator action without application grants. Manual migrations and `supabase/schemas/*.sql` mirrors
   remain paired when schema work is required.
 
-**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md),
+**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../../architecture/billing-platform-v2-design.md),
 section 7.4. Re-open the Chile-specific Mercado Pago documentation immediately
 before provider-facing work:
 
@@ -210,7 +210,7 @@ Executable handoffs for this phase are
 [`011b`](011b-mercadopago-checkout-resolution.md),
 [`011c`](011c-mercadopago-financial-anomalies.md) and the Phase 2 scenarios in
 [`011f`](011f-mercadopago-internal-acceptance.md). They implement the accepted
-[reliability design](../../architecture/mercadopago-reliability-design.md#v1-chile-closeout-extension--accepted-2026-09-11).
+[reliability design](../../../architecture/mercadopago-reliability-design.md#v1-chile-closeout-extension--accepted-2026-09-11).
 
 - **Phase 2, MP-06:** expose payment failure and recovery separately from
   subscription status. Rejected payments already reach invoices/attempts;

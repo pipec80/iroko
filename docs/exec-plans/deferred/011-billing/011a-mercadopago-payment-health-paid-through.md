@@ -17,7 +17,7 @@ the existing read/entitlement RPCs include canceled subscriptions only when
 Vitest, Next.js 16 server actions, React 19, next-intl.
 
 **Spec:**
-[`docs/architecture/mercadopago-reliability-design.md`](../../architecture/mercadopago-reliability-design.md#delivery-d--payment-health-and-paid-through-access)
+[`docs/architecture/mercadopago-reliability-design.md`](../../../architecture/mercadopago-reliability-design.md#delivery-d--payment-health-and-paid-through-access)
 
 ## Global Constraints
 
@@ -359,7 +359,7 @@ git commit -m "feat: show Mercado Pago payment health"
 
 - Modify: `src/lib/billing/__tests__/entitlements.test.ts`
 - Modify: `src/lib/billing/__tests__/reducer.test.ts`
-- Modify: `docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`
 
 **Interfaces:**
 
@@ -411,6 +411,6 @@ evidence pending.
 - [ ] **Step 5: Commit the verified slice**
 
 ```bash
-git add src/lib/billing/__tests__/entitlements.test.ts src/lib/billing/__tests__/reducer.test.ts docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md
+git add src/lib/billing/__tests__/entitlements.test.ts src/lib/billing/__tests__/reducer.test.ts docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md
 git commit -m "test: verify Mercado Pago payment access boundaries"
 ```

@@ -77,7 +77,7 @@ that every tenant boundary outside that explicit scope is remediated.
 - PostHog handles product analytics.
 - Billing Platform v2 defines a provider-neutral core and staged provider
   certification. Stripe, Paddle, Lemon Squeezy, and Mercado Pago support must
-  be described according to [Plan 011](../exec-plans/active/011-billing-correctness.md),
+  be described according to [Plan 011](../exec-plans/deferred/011-billing/011-billing-correctness.md),
   not assumed from provider-specific code alone.
 
 ## Key runtime flows
@@ -97,9 +97,9 @@ that every tenant boundary outside that explicit scope is remediated.
 | If changing                                               | Read first                                                                                                                                                                                  |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Tenant membership, authorization, or RLS                  | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                                                                    |
-| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [Plan 011](../exec-plans/active/011-billing-correctness.md)                                                                 |
+| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [Plan 011](../exec-plans/deferred/011-billing/011-billing-correctness.md)                                                                 |
 | Security or pricing truth                                 | [Plan 012](../exec-plans/active/012-security-hardening-and-pricing-truth.md)                                                                                                                |
-| Commercial readiness                                      | [Plan 013](../exec-plans/active/013-launch-readiness-roadmap.md)                                                                                                                            |
+| Commercial readiness                                      | [Plan 013](../exec-plans/deferred/013-launch-readiness-roadmap.md)                                                                                                                            |
 | Completion claims                                         | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                                                                                   |
 | Adaptation, module availability, installation or upgrades | [Product strategy](product-strategy.md), [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) and proposed [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md) |
 

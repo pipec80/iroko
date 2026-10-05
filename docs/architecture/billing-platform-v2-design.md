@@ -3,7 +3,7 @@
 Status: Approved architecture, extracted from the billing audit and
 revalidated against current provider APIs on 2026-08-18. Verified against
 the actual Iroko codebase and a live Supabase Cloud query on 2026-08-19
-(see `docs/exec-plans/active/011-billing-correctness.md` for the specific
+(see `docs/exec-plans/deferred/011-billing/011-billing-correctness.md` for the specific
 file:line evidence that grounds this spec).
 
 Repository: pipec80/iroko

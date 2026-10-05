@@ -17,7 +17,7 @@ and the shared billing reducer. Keep webhook ingress in the existing runtime.
 **Tech Stack:** Next.js, TypeScript, Supabase PostgreSQL, Vitest, pgTAP,
 Playwright; no new dependency selected.
 
-**Spec:** [Mercado Pago reliability design](../../architecture/mercadopago-reliability-design.md).
+**Spec:** [Mercado Pago reliability design](../../../architecture/mercadopago-reliability-design.md).
 
 ## Global constraints
 
@@ -100,7 +100,7 @@ add relevant Playwright checks for A and `pnpm supa:test` plus generated-type
 verification for SQL changes. A local reset requires a disposable local DB.
 Cloud parity checks are read-only; migration application requires approval.
 
-Update [operational evidence](../../quality/operational-evidence.md) with
+Update [operational evidence](../../../quality/operational-evidence.md) with
 sanitized, dated results only after execution. Passing delivery A does not
 certify B/C or the full provider lifecycle. Do not move Plan 011 to completed
 because Mercado Pago's first slice is done.

@@ -16,7 +16,7 @@ intent as `canceled` or `failed`.
 **Tech Stack:** PostgreSQL/Supabase migrations, pgTAP and Markdown runbooks.
 
 **Spec:**
-[`docs/architecture/mercadopago-reliability-design.md`](../../architecture/mercadopago-reliability-design.md#delivery-e--abandoned-and-ambiguous-checkout-resolution)
+[`docs/architecture/mercadopago-reliability-design.md`](../../../architecture/mercadopago-reliability-design.md#delivery-e--abandoned-and-ambiguous-checkout-resolution)
 
 ## Global Constraints
 
@@ -236,9 +236,9 @@ git commit -m "docs: define abandoned checkout resolution"
 
 **Files:**
 
-- Modify: `docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md`
-- Modify: `docs/exec-plans/active/011-phase2-mercadopago-tasks.md`
-- Modify: `docs/exec-plans/active/011-phase6-reconciliation-tasks.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-phase2-mercadopago-tasks.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md`
 
 **Interfaces:**
 
@@ -269,6 +269,6 @@ an unknown response.
 - [ ] **Step 3: Commit the status update**
 
 ```bash
-git add docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/active/011-phase2-mercadopago-tasks.md docs/exec-plans/active/011-phase6-reconciliation-tasks.md
+git add docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/deferred/011-billing/011-phase2-mercadopago-tasks.md docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md
 git commit -m "docs: record checkout resolution evidence"
 ```

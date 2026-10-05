@@ -19,7 +19,7 @@ the shared reducer.
 Mercado Pago REST API, Vitest, Next.js internal route.
 
 **Spec:**
-[`docs/architecture/mercadopago-reliability-design.md`](../../architecture/mercadopago-reliability-design.md#delivery-g--omitted-invoice-discovery)
+[`docs/architecture/mercadopago-reliability-design.md`](../../../architecture/mercadopago-reliability-design.md#delivery-g--omitted-invoice-discovery)
 
 ## Global Constraints
 
@@ -426,8 +426,8 @@ git commit -m "feat: make billing reconciliation resumable"
 **Files:**
 
 - Modify: `docs/runbooks/billing-reconciliation.md`
-- Modify: `docs/exec-plans/active/011-phase6-reconciliation-tasks.md`
-- Modify: `docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`
 
 **Interfaces:**
 
@@ -472,6 +472,6 @@ and interruption recovery `[NO VERIFICADO]` for plans 011e/011f.
 - [x] **Step 4: Commit the verified handoff**
 
 ```bash
-git add docs/runbooks/billing-reconciliation.md docs/exec-plans/active/011-phase6-reconciliation-tasks.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md
+git add docs/runbooks/billing-reconciliation.md docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md
 git commit -m "docs: record resumable reconciliation evidence"
 ```

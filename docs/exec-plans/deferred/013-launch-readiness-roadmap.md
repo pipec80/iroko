@@ -24,7 +24,7 @@
 
 La [estrategia acordada](../../architecture/product-strategy.md) exige que la
 base ahorre trabajo al construir el siguiente SaaS, aunque no se venda como
-boilerplate. El propuesto [Plan 015](015-reusable-foundation-acceptance.md)
+boilerplate. El propuesto [Plan 015](../active/015-reusable-foundation-acceptance.md)
 asume la guía Markdown de instalación interna, recetas, configuración mínima y
 ensayo de extensión/actualización. Este trabajo no espera Fumadocs ni decisión
 de comercialización. D-1/D-2/D-3 reutilizarán su evidencia y añadirán audiencia
@@ -51,7 +51,7 @@ observabilidad y alertas de errores/pagos/worker/email, recuperación operaciona
 y revisión de accesibilidad de los flujos críticos. Los apartados D-5/D-6
 mantienen la ampliación comercial; no posponen estos mínimos de operación.
 Evidencia y caducidad en el [registro operacional](../../quality/operational-evidence.md)
-y aceptación billing en la [matriz v1 Chile](011-mercadopago-v1-chile-acceptance.md).
+y aceptación billing en la [matriz v1 Chile](011-billing/011-mercadopago-v1-chile-acceptance.md).
 
 ## Objective
 

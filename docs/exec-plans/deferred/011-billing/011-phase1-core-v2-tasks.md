@@ -25,7 +25,7 @@ billing tables without invented defaults.
 Supabase/Postgres, Vitest 4.1.10, pgTAP/Supabase DB tests, Sentry, PostHog,
 pino logger.
 
-**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md)
+**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../../architecture/billing-platform-v2-design.md)
 — the plan argues from the spec; read both.
 
 > **Closure record (2026-08-27):** Tasks 1–10 are complete through

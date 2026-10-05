@@ -16,7 +16,7 @@ financial anomaly outcomes outside the subscription reducer.
 PostgreSQL/Supabase migrations and pgTAP.
 
 **Spec:**
-[`docs/architecture/mercadopago-reliability-design.md`](../../architecture/mercadopago-reliability-design.md#delivery-f--financial-anomaly-detail)
+[`docs/architecture/mercadopago-reliability-design.md`](../../../architecture/mercadopago-reliability-design.md#delivery-f--financial-anomaly-detail)
 
 ## Global Constraints
 
@@ -281,7 +281,7 @@ git commit -m "feat: persist billing anomaly amounts"
 **Files:**
 
 - Modify: `docs/runbooks/billing-reconciliation.md`
-- Modify: `docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`
 
 **Interfaces:**
 
@@ -319,6 +319,6 @@ resolution executions `[NO VERIFICADO]` until the acceptance plan runs.
 - [x] **Step 4: Commit the handoff**
 
 ```bash
-git add docs/runbooks/billing-reconciliation.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md
+git add docs/runbooks/billing-reconciliation.md docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md
 git commit -m "docs: record financial anomaly coverage"
 ```

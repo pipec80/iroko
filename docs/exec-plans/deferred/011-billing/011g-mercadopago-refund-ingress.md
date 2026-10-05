@@ -23,8 +23,8 @@ using its already claimed account/subscription context.
 handler, PostgreSQL/Supabase migrations and pgTAP, Vitest.
 
 **Spec:**
-[`docs/exec-plans/active/011c-mercadopago-financial-anomalies.md`](011c-mercadopago-financial-anomalies.md),
-[`docs/architecture/mercadopago-reliability-design.md`](../../architecture/mercadopago-reliability-design.md#delivery-f--financial-anomaly-detail),
+[`docs/exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md`](011c-mercadopago-financial-anomalies.md),
+[`docs/architecture/mercadopago-reliability-design.md`](../../../architecture/mercadopago-reliability-design.md#delivery-f--financial-anomaly-detail),
 and [MP-10 in the v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md#matrix-de-cierre).
 
 ## Global Constraints
@@ -93,9 +93,9 @@ external_resource_id)` remains the deduplication key. Replays increment its
 | `src/lib/billing/__tests__/webhook-handler.test.ts`                        | Handler-level persistence, replay, no-reducer, no-raw-log, and failed-correlation tests.                   |
 | `src/lib/billing/reconciliation.ts`                                        | Persists discovery anomalies with a claimed account/subscription before reducing unrelated invoice events. |
 | `src/lib/billing/__tests__/reconciliation.test.ts`                         | Worker-level anomaly/no-access, failure-isolation and deadline/cursor regression tests.                    |
-| `docs/exec-plans/active/011c-mercadopago-financial-anomalies.md`           | Records the completed ingress evidence without rewriting its historical execution record.                  |
-| `docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md`            | Replaces MP-10's local ingress gap with exact local evidence while retaining provider/manual gates.        |
-| `docs/exec-plans/active/011-mercadopago-reliability-roadmap.md`            | Keeps the reliability dependency ordering aligned with the completed local ingress path.                   |
+| `docs/exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md`           | Records the completed ingress evidence without rewriting its historical execution record.                  |
+| `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`            | Replaces MP-10's local ingress gap with exact local evidence while retaining provider/manual gates.        |
+| `docs/exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md`            | Keeps the reliability dependency ordering aligned with the completed local ingress path.                   |
 | `docs/current-state.md`                                                    | States the local code status and preserves operational/acceptance evidence as **[NO VERIFICADO]**.         |
 
 ---
@@ -580,9 +580,9 @@ git commit -m "feat: reconcile Mercado Pago refund anomalies"
 
 **Files:**
 
-- Modify: `docs/exec-plans/active/011c-mercadopago-financial-anomalies.md`
-- Modify: `docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md`
-- Modify: `docs/exec-plans/active/011-mercadopago-reliability-roadmap.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md`
 - Modify: `docs/current-state.md`
 
 **Interfaces:**
@@ -639,7 +639,7 @@ Run:
 ```bash
 pnpm docs:check
 pnpm test:docs-check
-pnpm exec prettier --ignore-path NUL --check docs/exec-plans/active/011g-mercadopago-refund-ingress.md docs/exec-plans/active/011c-mercadopago-financial-anomalies.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/active/011-mercadopago-reliability-roadmap.md docs/current-state.md
+pnpm exec prettier --ignore-path NUL --check docs/exec-plans/deferred/011-billing/011g-mercadopago-refund-ingress.md docs/exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md docs/current-state.md
 git diff --check
 ```
 
@@ -648,7 +648,7 @@ Expected: every command exits 0.
 - [x] **Step 4: Commit verified local evidence**
 
 ```bash
-git add docs/exec-plans/active/011g-mercadopago-refund-ingress.md docs/exec-plans/active/011c-mercadopago-financial-anomalies.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/active/011-mercadopago-reliability-roadmap.md docs/current-state.md
+git add docs/exec-plans/deferred/011-billing/011g-mercadopago-refund-ingress.md docs/exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md docs/current-state.md
 git commit -m "docs: record Mercado Pago refund ingress coverage"
 ```
 

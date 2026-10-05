@@ -17,7 +17,7 @@ UI. Passing one scenario never substitutes for another.
 Supabase SQL, Vercel/Supabase diagnostics, Markdown evidence.
 
 **Spec:**
-[`docs/architecture/mercadopago-reliability-design.md`](../../architecture/mercadopago-reliability-design.md#delivery-i--rollout-and-internal-acceptance)
+[`docs/architecture/mercadopago-reliability-design.md`](../../../architecture/mercadopago-reliability-design.md#delivery-i--rollout-and-internal-acceptance)
 
 **Status note — 2026-09-23:** the authoritative state of each scenario is the
 [v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md), not the checkboxes
@@ -291,10 +291,10 @@ git commit -m "docs: record Mercado Pago recovery evidence"
 **Files:**
 
 - Modify: `docs/quality/mercadopago-v1-chile-acceptance-evidence.md`
-- Modify: `docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md`
-- Modify: `docs/exec-plans/active/011-phase2-mercadopago-tasks.md`
-- Modify: `docs/exec-plans/active/011-phase6-reconciliation-tasks.md`
-- Modify: `docs/exec-plans/active/011-billing-correctness.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-phase2-mercadopago-tasks.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md`
+- Modify: `docs/exec-plans/deferred/011-billing/011-billing-correctness.md`
 - Modify: `docs/current-state.md`
 - Modify: `docs/index.md`
 - Modify: `docs/quality/operational-evidence.md`
@@ -348,6 +348,6 @@ UTC timestamp. Any open required row keeps Mercado Pago acceptance pending.
 - [ ] **Step 5: Commit the acceptance record**
 
 ```bash
-git add docs/quality/mercadopago-v1-chile-acceptance-evidence.md docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/active/011-phase2-mercadopago-tasks.md docs/exec-plans/active/011-phase6-reconciliation-tasks.md docs/exec-plans/active/011-billing-correctness.md docs/current-state.md docs/index.md docs/quality/operational-evidence.md
+git add docs/quality/mercadopago-v1-chile-acceptance-evidence.md docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md docs/exec-plans/deferred/011-billing/011-phase2-mercadopago-tasks.md docs/exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md docs/exec-plans/deferred/011-billing/011-billing-correctness.md docs/current-state.md docs/index.md docs/quality/operational-evidence.md
 git commit -m "docs: record Mercado Pago v1 Chile acceptance"
 ```

@@ -44,7 +44,7 @@ Hardening and pricing source-of-truth remain v1 gates. The historical
 `scale → teams` rename is a separate catalogue migration, not a prerequisite
 for Mercado Pago acceptance or for removing duplicated public pricing.
 Prices/slugs remain unchanged during the MP closeout. See the
-[v1 Chile matrix and order](011-mercadopago-v1-chile-acceptance.md).
+[v1 Chile matrix and order](../deferred/011-billing/011-mercadopago-v1-chile-acceptance.md).
 
 ## Objective
 

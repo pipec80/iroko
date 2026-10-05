@@ -19,7 +19,7 @@ invoice → failed/recovered payment → cancellation → webhook replay) verifi
 against Stripe test mode. It is not the launch reference or a gate for the
 Mercado Pago LATAM path.
 
-**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md),
+**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../../architecture/billing-platform-v2-design.md),
 section 7.1. **Re-open before implementing** (APIs evolve; last checked
 2026-08-18):
 

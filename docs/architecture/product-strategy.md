@@ -257,8 +257,8 @@ no es evidencia de que haya ocurrido.
 La [auditoría de esta investigación](../audits/2026-09-24-reusable-saas-readiness.md)
 conecta hallazgos con código y propietarios. No duplicar planes:
 
-- [011](../exec-plans/active/011-billing-correctness.md): aceptación de billing por
-  escenario/proveedor; la [matriz Chile](../exec-plans/active/011-mercadopago-v1-chile-acceptance.md)
+- [011](../exec-plans/deferred/011-billing/011-billing-correctness.md): aceptación de billing por
+  escenario/proveedor; la [matriz Chile](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md)
   conserva la autoridad sobre sus pendientes.
 - [012](../exec-plans/active/012-security-hardening-and-pricing-truth.md): grants,
   salida HTTP, rate limit, CSP/secretos y pricing/copy coherente.
@@ -267,7 +267,7 @@ conecta hallazgos con código y propietarios. No duplicar planes:
 - [015](../exec-plans/active/015-reusable-foundation-acceptance.md), propuesto:
   configuraciones mínimas, recetas, instalación independiente, operación y
   ensayo de actualización; aporta valor aunque no se venda la base.
-- [013](../exec-plans/active/013-launch-readiness-roadmap.md): distribución,
+- [013](../exec-plans/deferred/013-launch-readiness-roadmap.md): distribución,
   documentación comercial, licencias y soporte cuando se decida vender.
 
 Corregir los defectos independientes de 014 no requiere esperar una renovación

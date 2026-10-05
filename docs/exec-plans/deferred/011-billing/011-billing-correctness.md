@@ -12,7 +12,7 @@
 - Depends on: Plan 010 cerró el 2026-08-26; reutilizar
   `requireAccountRole` como la autorización viva ya integrada. No mezclar
   cambios de esta orquestación con esa remediación ya cerrada.
-- Spec: [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md)
+- Spec: [`docs/architecture/billing-platform-v2-design.md`](../../../architecture/billing-platform-v2-design.md)
   — arquitectura aprobada, tipos, modelo de datos, comportamiento por
   provider, política de acceso, observabilidad, reconciliación. Este
   documento argumenta desde ese spec; léanse juntos.

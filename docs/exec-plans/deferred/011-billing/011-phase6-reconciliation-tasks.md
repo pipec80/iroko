@@ -48,7 +48,7 @@ scheduled worker that compares PSP state against Iroko state and either
 repairs safe deterministic differences through the same reducer used by
 webhooks, or flags ambiguous drift for a human instead of guessing.
 
-**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md),
+**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../../architecture/billing-platform-v2-design.md),
 section 12.
 
 ## Global Constraints
@@ -469,7 +469,7 @@ acceptance [`011f`](011f-mercadopago-internal-acceptance.md).
 - [x] **Failure isolation (MP-14) — código y prueba local:** una falla de
       proveedor se registra con código acotado y backoff sin abandonar los
       candidatos posteriores; el lease vencido vuelve a ser reclamable. El
-      [harness combinado local](../../../src/lib/billing/__tests__/reconciliation-drill.test.ts)
+      [harness combinado local](../../../../src/lib/billing/__tests__/reconciliation-drill.test.ts)
       de 25 aliases se ejecuta con un comando versionado y pasó 1/1; su seam
       modela los RPC y el proveedor, por lo que no prueba una interrupción de
       proceso ni una invocación Cloud reales.

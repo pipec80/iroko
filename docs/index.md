@@ -97,18 +97,18 @@ distribution is conditional on selling. Neither blocks limited own-use v1 Chile.
 
 | Order | Plan                                                                                                | Priority | Status                                                                                                                                                                                                                                                                                                         |
 | ----- | --------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11    | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                 | P0       | Core v2 implemented/closed. The [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md) records MP-01/02/05/06/07/11/13/15 closed; MP-04/08/14 partial. Discovery completes and replay does not duplicate; an actually omitted invoice, renewal, refunds and remaining drills are pending. |
+| 11    | [Billing Platform v2](exec-plans/deferred/011-billing/011-billing-correctness.md)                                 | P0       | Core v2 implemented/closed. The [v1 Chile matrix](exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md) records MP-01/02/05/06/07/11/13/15 closed; MP-04/08/14 partial. Discovery completes and replay does not duplicate; an actually omitted invoice, renewal, refunds and remaining drills are pending. |
 | 12    | [Security hardening + pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 risk/debt gates; `scale → teams` separated from MP closure.                                                                                                                                                                                                                                         |
-| 13    | [Commercial preparation after own-use v1](exec-plans/active/013-launch-readiness-roadmap.md)        | P2       | Conditional on selling; essential smoke, observability and security remain v1 gates.                                                                                                                                                                                                                           |
+| 13    | [Commercial preparation after own-use v1](exec-plans/deferred/013-launch-readiness-roadmap.md)        | P2       | Conditional on selling; essential smoke, observability and security remain v1 gates.                                                                                                                                                                                                                           |
 | 14    | [Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md)             | P0/P1    | Proposed, not implemented: robot route/action/RLS boundary, image origin validation, platform audit interaction.                                                                                                                                                                                               |
 | 15    | [Reusable foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md)           | P1       | Proposed, not implemented: no-subscription configuration, recipes, independent installation, extension and update drill; useful before commercialization.                                                                                                                                                      |
 
-Plan 011 task detail: [Core](exec-plans/active/011-phase1-core-v2-tasks.md),
-[Mercado Pago](exec-plans/active/011-phase2-mercadopago-tasks.md),
-[Stripe](exec-plans/active/011-phase3-stripe-certification-tasks.md),
-[Paddle](exec-plans/active/011-phase4-paddle-tasks.md),
-[Lemon Squeezy](exec-plans/active/011-phase5-lemon-squeezy-tasks.md),
-[Reconciliation](exec-plans/active/011-phase6-reconciliation-tasks.md).
+Plan 011 task detail: [Core](exec-plans/deferred/011-billing/011-phase1-core-v2-tasks.md),
+[Mercado Pago](exec-plans/deferred/011-billing/011-phase2-mercadopago-tasks.md),
+[Stripe](exec-plans/deferred/011-billing/011-phase3-stripe-certification-tasks.md),
+[Paddle](exec-plans/deferred/011-billing/011-phase4-paddle-tasks.md),
+[Lemon Squeezy](exec-plans/deferred/011-billing/011-phase5-lemon-squeezy-tasks.md),
+[Reconciliation](exec-plans/deferred/011-billing/011-phase6-reconciliation-tasks.md).
 
 Added 2026-09-29: [Plan 016](exec-plans/active/016-nextjs-supabase-code-review.md)
 coordinates a three-front code review and its evidence. Scope and reviewer
@@ -117,14 +117,14 @@ to the existing plans without authorizing fixes or changing their acceptance.
 
 ### Mercado Pago reliability work
 
-The [Plan 011 reliability roadmap](exec-plans/active/011-mercadopago-reliability-roadmap.md)
+The [Plan 011 reliability roadmap](exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md)
 extends Phase 2 and the Mercado Pago slice of Phase 6. Its
 [design supplement](architecture/mercadopago-reliability-design.md) and
 [accepted ADR 0003](adr/0003-mercadopago-reliability-boundaries.md) preserve the
 pending hosted model and define the now-implemented checkout/recovery
 coordination. Own-use v1 is Chile, monthly CLP, no associated plan, unchanged
 prices/slugs, no trial, upgrades/downgrades, Iroko-initiated pause or in-app card
-management. The [acceptance matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md)
+management. The [acceptance matrix](exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md)
 separates implemented, tested locally, verified at provider, pending operations
 and outside-v1 requirements. Basic 011e worker operation has dated Cloud
 evidence, and MP-01/02/05/06/07/11/13/15 are closed with real correlated

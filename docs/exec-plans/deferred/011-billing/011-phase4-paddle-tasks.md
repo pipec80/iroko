@@ -20,7 +20,7 @@ zero special cases added to the core reducer — if this adapter needs the
 reducer to change, that is itself a signal the contract from Fase 1 is
 incomplete and should be revisited before continuing.
 
-**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../architecture/billing-platform-v2-design.md),
+**Spec:** [`docs/architecture/billing-platform-v2-design.md`](../../../architecture/billing-platform-v2-design.md),
 section 7.2. **Re-open before implementing** (last checked 2026-08-18):
 
 - Verify webhook signatures: https://developer.paddle.com/webhooks/about/signature-verification/

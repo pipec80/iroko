@@ -388,7 +388,7 @@ esos checks. Cero hallazgos no significa ausencia garantizada de vulnerabilidade
 
 ## Relación con trabajo existente y cierre
 
-- [Plan 011](011-billing-correctness.md): conserva aceptación de proveedores y
+- [Plan 011](../deferred/011-billing/011-billing-correctness.md): conserva aceptación de proveedores y
   recuperación; este review evalúa implementación/contratos, no renueva evidencia Cloud.
 - [Plan 012](012-security-hardening-and-pricing-truth.md): recibe hardening y
   coherencia de pricing; evitar una segunda lista de correcciones sin dueño.
@@ -396,7 +396,7 @@ esos checks. Cero hallazgos no significa ausencia garantizada de vulnerabilidade
   imágenes y auditoría. Revalidar esos defectos, no presentarlos como nuevos.
 - [Plan 015](015-reusable-foundation-acceptance.md): recibe límites de módulos y
   reutilización; la instalación independiente sigue siendo su criterio propio.
-- [Plan 013](013-launch-readiness-roadmap.md): distribución comercial condicional.
+- [Plan 013](../deferred/013-launch-readiness-roadmap.md): distribución comercial condicional.
 
 No hace falta un ADR para asignar revisores. Proponer uno solo si un hallazgo
 requiere una decisión duradera que cambie los límites arquitectónicos aceptados.

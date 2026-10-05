@@ -10,7 +10,7 @@ against the live subscription and a Cloud lease drill, see
 workers in Supabase Cloud, see
 [Worker rollout update](#worker-rollout-update--2026-09-22); real Mercado Pago
 checkout/cancellation circuit, see MP-01/02/05/07 in the
-[v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md))
+[v1 Chile matrix](exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md))
 Repository baseline inspected for this static investigation:
 `f82d2fbe381014c80a090ba3c36c99e4778111c3` (main). Runtime entries below retain
 their own revision/date; they were not re-inspected in this investigation.
@@ -86,7 +86,7 @@ defects or prove SQL/runtime acceptance.
   (MP-11) were later closed with real correlated evidence. Local code covers
   refund ingress and missed-invoice discovery, including local migration
   `20260911140000_billing_financial_anomaly_ingress`. Still open in the
-  [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md):
+  [v1 Chile matrix](exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md):
   renewal (a real charge due 2026-10-22), provider refunds (blocked for test
   accounts), recovery of an actually omitted provider invoice, concurrent
   checkout and the volume scenarios of the worker drills.
@@ -123,9 +123,9 @@ authorization, and billing changes before implementation.
 
 | Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ----- | -------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally, the basic 011e worker rollout is verified in Cloud, and MP-01/02/05/06/07/11/13/15 are closed with real correlated evidence; MP-04, 08 and 14 are partial. Renewal (2026-10-22), refunds (needs a productive account), an actually omitted invoice for MP-12 (the scan itself now completes) and volume drills remain pending. Other providers remain independent future certifications. |
+| 011   | [Billing Platform v2](exec-plans/deferred/011-billing/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally, the basic 011e worker rollout is verified in Cloud, and MP-01/02/05/06/07/11/13/15 are closed with real correlated evidence; MP-04, 08 and 14 are partial. Renewal (2026-10-22), refunds (needs a productive account), an actually omitted invoice for MP-12 (the scan itself now completes) and volume drills remain pending. Other providers remain independent future certifications. |
 | 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Required v1 gates; public pricing drift and security sweep can advance independently of provider renewal. Slug rename separated from MP closeout.                                                                                                                                                                                                                                                                                                         |
-| 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                                                                                                                                                                                                                    |
+| 013   | [Commercial preparation](exec-plans/deferred/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                                                                                                                                                                                                                    |
 | 014   | [Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md)      | P0/P1    | Proposed: robot availability/roles, trusted image origins and platform audit interactions. No implementation yet.                                                                                                                                                                                                                                                                                                                                         |
 | 015   | [Reusable foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md)    | P1       | Proposed: minimal configuration, recipes, independent installation, extension, operations and upgrade evidence. No implementation yet.                                                                                                                                                                                                                                                                                                                    |
 
@@ -244,7 +244,7 @@ subscription lifecycle; the missing requirement is visible payment health,
 not inventing a Mercado Pago `past_due` transition. Current runtime, Cloud,
 provider configuration and migration parity were not re-inspected on
 2026-09-11: **[NO VERIFICADO]**. The
-[matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md) owns all closure
+[matrix](exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md) owns all closure
 gates, including renewal, paid-through access and recovery.
 
 Merged to `main` since PR #152: #153, #159, #161, #171–181, #187, #188 and
@@ -257,7 +257,7 @@ existence is not certification. Paddle/Lemon Squeezy remain planned adapters.
 
 ### Historical Mercado Pago planning update — 2026-09-09
 
-The [reliability roadmap](exec-plans/active/011-mercadopago-reliability-roadmap.md)
+The [reliability roadmap](exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md)
 defines bounded follow-up work inside Plan 011, with a
 [design supplement](architecture/mercadopago-reliability-design.md) and
 [Accepted ADR 0003](adr/0003-mercadopago-reliability-boundaries.md).
