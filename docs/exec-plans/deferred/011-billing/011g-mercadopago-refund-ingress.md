@@ -25,7 +25,7 @@ handler, PostgreSQL/Supabase migrations and pgTAP, Vitest.
 **Spec:**
 [`docs/exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md`](011c-mercadopago-financial-anomalies.md),
 [`docs/architecture/mercadopago-reliability-design.md`](../../../architecture/mercadopago-reliability-design.md#delivery-f--financial-anomaly-detail),
-and [MP-10 in the v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md#matrix-de-cierre).
+and [MP-10 in the v1 Chile matrix](011-mercadopago-v1-chile-acceptance.md#matriz-de-aceptación).
 
 ## Global Constraints
 

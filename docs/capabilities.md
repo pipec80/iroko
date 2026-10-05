@@ -18,8 +18,8 @@ The current freeze does not try to use every product Supabase may offer. It
 requires **every capability Iroko declares as supported** to have a minimal
 useful example, an explicit security boundary, test evidence, configuration
 guidance and a known failure mode. During the freeze, add no new provider,
-vertical or product module unless it is required to prove or repair an existing
-capability.
+vertical or product module. The [root roadmap](../ROADMAP.md) owns the allowed
+repair, verification, configuration and documentation boundary.
 
 Allowed work during the freeze:
 
