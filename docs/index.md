@@ -7,6 +7,8 @@ execution plans, runbooks, audits, and durable technical decisions.
 
 - [Current state](current-state.md) — product position, active work, verification
   boundary, and known documentation debt.
+- [MVP freeze roadmap](../ROADMAP.md) — allowed work, exact execution order,
+  exit gates and deferred scope; direction below current-state evidence.
 - [Capability inventory](capabilities.md) — canonical map of the SaaS core,
   Supabase services, external integrations, evidence boundaries and MVP freeze
   gates.
@@ -46,6 +48,8 @@ execution plans, runbooks, audits, and durable technical decisions.
 - [Codex remediation orchestrator](prompts/codex-remediation-orchestrator.md)
 - [Codex follow-up operations prompt](prompts/codex-follow-up-operations.md)
 - [Codex task template](prompts/codex-task-template.md)
+- [Documentation history](history/README.md) — superseded versioned material,
+  including the exact pre-freeze roadmap snapshot; non-authoritative.
 
 ## Authority when sources disagree
 
