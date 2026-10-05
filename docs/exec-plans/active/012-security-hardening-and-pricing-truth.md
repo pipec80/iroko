@@ -1,11 +1,13 @@
 # Plan 012 — Hardening de seguridad + fuente de verdad única para pricing
 
 - Priority: P1
-- Status: Pendiente — hardening y pricing; actualización documental 2026-09-11.
+- Status: Pendiente — hardening y pricing; coordinación documental 2026-09-24.
 - Baseline: `main` @ `d9e2648`
-- Orden v1: después de resolver y aceptar el tramo Mercado Pago de Fases 2/6
-  y antes de declarar v1 lista para usuarios reales. No espera a los cuatro
-  proveedores ni a la distribución comercial de Plan 013.
+- Orden v1: sus cambios independientes pueden avanzar sin esperar renovación
+  o aceptación final de Mercado Pago. Coordinar superficies compartidas con
+  Plan 011; ambos cierres son necesarios antes de declarar v1 lista para
+  usuarios reales. No espera a los cuatro proveedores ni a la distribución
+  comercial de Plan 013.
   `requireAccountRole` de Plan 010 ya existe en `main` para cualquier ítem
   que necesite autorización viva.
 - Scope: reducir privilegios/superficie sin cambiar arquitectura (P1-1), y
@@ -14,6 +16,25 @@
   vendibilidad directamente (eso es Fase D).
 
 ## Boundary with Mercado Pago reliability
+
+### Coordination update — 2026-09-24
+
+The [reuse investigation](../../audits/2026-09-24-reusable-saas-readiness.md)
+confirms public pricing drift (RS-04) and the unconditional readiness claim in
+`src/config/app.config.ts` (RS-10). PR 5 owns catalogue-aligned public copy and
+metadata, without promising capabilities that have not passed acceptance.
+The target promise and allowed evidence stages are in
+[product strategy](../../architecture/product-strategy.md).
+
+Proposed [Plan 014](014-reference-surface-correctness.md) owns robot
+route/action/SQL correctness, image-origin validation and platform audit
+interaction. They do not expand this plan's historical «no RLS changes» scope.
+Proposed [Plan 015](015-reusable-foundation-acceptance.md) owns configuration
+without new subscription sales and independent reuse. Coordinate its public
+billing visibility with PR 5; do not create a second catalogue. Plan 012 still
+owns the security sweep and does not certify infrastructure merely from code.
+
+### Existing Mercado Pago boundary
 
 The Mercado Pago reliability work does **not** implement this plan's pricing
 rename or source-of-truth migration. It preserves the current Free/Plus/Pro

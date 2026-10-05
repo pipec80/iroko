@@ -1,8 +1,9 @@
 # Current State
 
-Last static verification: **2026-09-24** (Plan 011 Mercado Pago acceptance:
-first real reconciliation scans, sandbox drills and measured provider
-behaviors; platform-wide audit remains 2026-08-20)
+Last static verification: **2026-09-24** (selective reusable-foundation
+investigation, full Vitest 99 files/1032 tests and TypeScript passed; see the
+[audit](audits/2026-09-24-reusable-saas-readiness.md). This is not an exhaustive
+security audit or fresh Cloud/provider verification.)
 Last recorded runtime observation: **2026-09-24** (reconciliation discovery
 against the live subscription and a Cloud lease drill, see
 [Runtime update](#runtime-update--2026-09-23); recovery and reconciliation
@@ -10,8 +11,9 @@ workers in Supabase Cloud, see
 [Worker rollout update](#worker-rollout-update--2026-09-22); real Mercado Pago
 checkout/cancellation circuit, see MP-01/02/05/07 in the
 [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md))
-Repository baseline inspected: `220caa7f73d07f9bfc9b6621b1a50b434d754c6b`
-(main; Cloud worker health inspected separately from provider acceptance)
+Repository baseline inspected for this static investigation:
+`f82d2fbe381014c80a090ba3c36c99e4778111c3` (main). Runtime entries below retain
+their own revision/date; they were not re-inspected in this investigation.
 
 This is the operational entry point for humans and coding agents. It answers
 what Iroko is today, which work is active, and which claims have actually been
@@ -24,6 +26,44 @@ Iroko is currently an **internal-first, reusable SaaS foundation**. It is being
 built to a quality level that may later support a commercial boilerplate or
 market kit, but it is not yet an installable, supported, customer-ready
 product. Commercialization remains an option, not a present-tense claim.
+
+The agreed target promise is: **«Tengo una base que ya resuelve acceso,
+cuentas, permisos y servicios comunes. Podemos dedicar el desarrollo a tu
+operación y adaptar la experiencia a lo que necesitas.»** The
+[product strategy](architecture/product-strategy.md) defines when that claim
+is justified, configuration versus domain extensions, and minimal complete
+Supabase integrations. Independent reuse is valuable before selling the kit.
+The [capability inventory](capabilities.md) is the canonical map of what the
+foundation already implements, how each capability is demonstrated, its known
+boundary and the acceptance gates for the current MVP feature freeze. During
+that freeze, new providers, verticals and commercial modules are deferred;
+work is limited to repairing, proving, configuring or documenting capabilities
+already in the inventory.
+The [competitive landscape review](audits/2026-10-05-saas-template-competitive-landscape.md)
+places Iroko close to MakerKit in the Supabase/B2B technical core, but still one
+productization stage behind the mature kits in independent setup, configuration,
+updates, billing breadth and customer-facing documentation. It adds no new MVP
+scope; it reinforces Plans 012, 014, 015 and 016 as the path through the freeze.
+The owner has now supplied the IoT/robot conversation: the
+[proposed IoT pilot](architecture/iot-vertical-pilot.md) interprets it as a
+derived telemetry product with the robot as its first real consumer. The
+robot server and selected HTTP client code were subsequently inspected
+read-only at `993ff4b5903a852231067858ee3ce9096431a651`. Availability/latency
+signals exist in code; current runtime, physical telemetry and Cloud
+integration remain **[NO VERIFICADO]**. Plan 015 T0 now proposes shared
+navigation/home composition; no implementation or robot changes were made.
+
+### Reuse investigation — 2026-09-24
+
+Static inspection found the robot flag hides navigation but does not guard its
+route/actions or tighten its membership-based SQL writes; the image helper
+accepts external lookalike origins (reproduced in isolation); platform audit
+filters/pagination switch to the account query. These are proposed Plan 014
+corrections, not fixed code. Plan 015 proposes coherent minimal configuration,
+recipes and an independent install/extension/update drill. Neither plan has
+started implementation. The [audit](audits/2026-09-24-reusable-saas-readiness.md)
+records exact evidence and limitations. Passing unit tests do not close these
+defects or prove SQL/runtime acceptance.
 
 ## Current technical baseline
 
@@ -48,7 +88,7 @@ product. Commercialization remains an option, not a present-tense claim.
   `20260911140000_billing_financial_anomaly_ingress`. Still open in the
   [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md):
   renewal (a real charge due 2026-10-22), provider refunds (blocked for test
-  accounts), a completed provider missed-invoice discovery scan, concurrent
+  accounts), recovery of an actually omitted provider invoice, concurrent
   checkout and the volume scenarios of the worker drills.
 
 ## V1 product decision — 2026-09-11
@@ -67,21 +107,36 @@ required before real users; they are not deferred to selling the boilerplate.
 
 ## Active work and order
 
-Plan 011 is the remaining P0 behavior plan. Its internal dependency order is
-authoritative; coordinate overlapping database, authorization, and billing
-changes before implementation.
+Review planning update — 2026-09-29: [Plan 016](exec-plans/active/016-nextjs-supabase-code-review.md)
+defines and assigns Next.js/React, Supabase security and data-architecture
+reviews. Its expanded scope requires complete reading of maintained source,
+configuration, tests and applicable rules, with per-file evidence and explicit
+exclusions for generated/vendor artifacts; UI sampling is no longer sufficient.
+Three reviewers contributed scoped inventories, scenarios and safe
+validation preconditions. Full review, application checks and remediation have
+not run in this planning pass; the verification dates above are unchanged.
+
+Plan 011 owns the remaining billing P0 behavior. Proposed Plan 014 adds
+independent behavior/authorization fixes from the reuse investigation. Preserve
+011's internal dependency order and coordinate overlapping database,
+authorization, and billing changes before implementation.
 
 | Order | Work                                                                                         | Priority | Current meaning                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | ----- | -------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 011   | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                          | P0       | Core v2 closed; MP Phase 2/6 code is implemented/tested locally, the basic 011e worker rollout is verified in Cloud, and MP-01/02/05/06/07/11/13/15 are closed with real correlated evidence; MP-04, 08 and 14 are partial. Renewal (2026-10-22), refunds (needs a productive account), an actually omitted invoice for MP-12 (the scan itself now completes) and volume drills remain pending. Other providers remain independent future certifications. |
-| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 gates after MP acceptance; public pricing drift and security sweep. Slug rename separated from MP closeout.                                                                                                                                                                                                                                                                                                                                    |
+| 012   | [Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Required v1 gates; public pricing drift and security sweep can advance independently of provider renewal. Slug rename separated from MP closeout.                                                                                                                                                                                                                                                                                                         |
 | 013   | [Commercial preparation](exec-plans/active/013-launch-readiness-roadmap.md)                  | P2       | After own-use v1, when selling is chosen. Essential smoke, security and observability remain v1 gates.                                                                                                                                                                                                                                                                                                                                                    |
+| 014   | [Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md)      | P0/P1    | Proposed: robot availability/roles, trusted image origins and platform audit interactions. No implementation yet.                                                                                                                                                                                                                                                                                                                                         |
+| 015   | [Reusable foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md)    | P1       | Proposed: minimal configuration, recipes, independent installation, extension, operations and upgrade evidence. No implementation yet.                                                                                                                                                                                                                                                                                                                    |
 
-Execution order: complete the remaining internal MP acceptance and explicit
-worker failure/multi-batch drills after the basic 011e rollout → Plan 012 and
-operational v1 checks →
-independent Stripe/Paddle/Lemon Squeezy certifications → Plan 013 distribution.
-The last two steps do not block a v1 limited to own-use Chile/Mercado Pago.
+Closure dependencies: remaining MP acceptance and worker failure/multi-batch
+drills stay within Plan 011. Plan 012 hardening/pricing and Plan 014 fixes can
+advance independently of the renewal wait. Plan 015 configuration/docs can
+advance, but its operational acceptance requires the offered 011 scope,
+Plan 012 and Plan 014. This adds a reuse gate without replacing the MP matrix
+or authorizing provider operations. Independent Stripe/Paddle/Lemon Squeezy
+certifications and Plan 013 distribution do not block a v1 limited to own-use
+Chile/Mercado Pago; distribution remains conditional on choosing to sell.
 
 Plan 010 closed on 2026-08-26 through PRs #139, #140, #147, #149 and #150
 (the last being the independent toolchain repair). It is filed under
@@ -196,7 +251,9 @@ Merged to `main` since PR #152: #153, #159, #161, #171–181, #187, #188 and
 PRs #190–#208 (Mercado Pago reliability slice, dependency updates, the QA fix
 and its documentation, the v1 local gap closure, the Cloud acceptance workflow,
 evidence records and the 2026-09-22/23 follow-up fixes).
-No Stripe / Paddle / Lemon Squeezy adapter work has started.
+No subsequent v2 certification phase for Stripe / Paddle / Lemon Squeezy is
+closed. An existing Stripe adapter and registry entry are present; their
+existence is not certification. Paddle/Lemon Squeezy remain planned adapters.
 
 ### Historical Mercado Pago planning update — 2026-09-09
 
@@ -262,9 +319,12 @@ platform documentation audit inventory remains historical (2026-08-20):
 Product or commercial readiness is a separate gate. It additionally requires
 closing the Mercado Pago v1 Chile matrix (Phases 2/6), stabilizing the complete
 test/runtime path and resolving Plan 012 hardening/pricing plus operational
-checks. The full Plan 011 remains required for a four-provider claim.
-Commercial distribution additionally needs Plan 013 installation, licensing,
-upgrade, support and buyer onboarding when selling is chosen.
+checks. The proposed Plan 014 corrects the reference surfaces identified in
+the September 24 audit; Plan 015 establishes independent installation,
+adaptation and upgrade evidence for internal reuse. The full Plan 011 remains
+required for a four-provider claim. Commercial distribution additionally
+needs Plan 013 licensing, packaging, support and buyer onboarding when selling
+is chosen, reusing the internal evidence from Plan 015.
 
 ## Known documentation and tooling debt
 
@@ -277,10 +337,10 @@ upgrade, support and buyer onboarding when selling is chosen.
 - The eight guides in `docs/modules/` are current at static-code level as of
   2026-08-20; their runtime and Cloud behavior remains **[NO VERIFICADO]**.
 - In the platform-wide audit table, initial data is cross-account, but filters
-  and `Cargar más` still call `getAccountAuditLogs`; remediation is not yet
-  planned.
-- The documentation workflow exists in this worktree but is not enforced until
-  it is merged and selected as a required branch-protection check.
+  and `Cargar más` still call `getAccountAuditLogs`; remediation is proposed in
+  Plan 014 T3.
+- The documentation workflow is versioned. Its current enforcement as a
+  required branch-protection check is **[NO VERIFICADO]** in this local audit.
 
 Fresh operational status and expiry rules live in the
 [operational evidence register](quality/operational-evidence.md).

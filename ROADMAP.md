@@ -2,12 +2,13 @@
 
 > Este documento conserva dirección de producto y detalle histórico de las
 > fases. No es la fuente de verdad del estado operativo. Para trabajo actual,
-> lee `docs/current-state.md` y `docs/exec-plans/active/`; si hay conflicto,
+> lee `docs/current-state.md`, `docs/architecture/product-strategy.md` y
+> `docs/exec-plans/active/`; si hay conflicto,
 > aplica el orden de autoridad de `AGENTS.md`.
 
 ---
 
-## Prioridad vigente — v1 propia Chile (2026-09-11)
+## Prioridad vigente — v1 propia Chile (actualizada 2026-09-24)
 
 La [matriz de cierre Mercado Pago](docs/exec-plans/active/011-mercadopago-v1-chile-acceptance.md)
 separa implementación, pruebas locales, evidencia en proveedor, pendientes
@@ -19,32 +20,69 @@ precios y slugs. Sin trial, upgrade/downgrade, pausa desde Iroko ni tarjetas
 internas. Coordinación durable, recovery y anomalías ya tienen código; el
 circuito sandbox básico observado el 2026-09-10 no cierra aceptación interna.
 
-Orden: gaps MP Fases 2/6 → workers con rollout autorizado → aceptación interna
-MP → hardening/pricing de Plan 012 y checks operacionales antes de usuarios
-reales → Stripe/Paddle/Lemon Squeezy como certificaciones independientes →
-Plan 013 si se decide vender. El rename `scale → teams` queda separado del
-cierre MP. Smoke, observabilidad y seguridad de operación son gates de v1.
+Frentes de cierre: gaps y aceptación MP Fases 2/6 en Plan 011;
+hardening/pricing en Plan 012; correcciones del caso de referencia en el
+propuesto Plan 014; demostración de reutilización en el propuesto Plan 015.
+Los tres últimos no necesitan esperar a la renovación de MP para avanzar.
+Los rollouts y operaciones de proveedor conservan autorización separada.
+Stripe/Paddle/Lemon Squeezy son certificaciones independientes; Plan 013 queda
+condicionado a vender. El rename `scale → teams` queda separado del cierre MP.
+Smoke, observabilidad y seguridad de operación son gates de v1.
 
 ## 0. La Constitución (reglas que gobiernan TODO)
 
+Actualización de dirección: **2026-09-24**. La
+[estrategia de producto](docs/architecture/product-strategy.md) concentra la
+promesa, límites de adaptación, comparación competitiva y etapas de evidencia.
+La [investigación de cierre](docs/audits/2026-09-24-reusable-saas-readiness.md)
+asigna hallazgos a los planes existentes y a los propuestos 014/015. Estos
+últimos no tienen implementación iniciada. Sus números no implican ejecutar
+después de comercializar: 014 corrige comportamiento; 015 demuestra reutilización
+interna; 013 continúa condicionado a vender.
+
 ### Identidad del producto
 
-> **Una base SaaS interna, reutilizable y Supabase-first.**
-> Se construye para servir como base profesional de los proyectos de pipec y
-> conservar la opción de convertirse en starter kit comercial más adelante.
+> Tengo una base que ya resuelve acceso, cuentas, permisos y servicios comunes.
+> Podemos dedicar el desarrollo a tu operación y adaptar la experiencia a lo
+> que necesitas.
+
+Esta es la **promesa objetivo de cierre**, no una declaración de aceptación
+actual. Iroko sigue siendo una base interna reutilizable y Supabase-first con
+opción de convertirse en starter comercial. La evidencia determina qué alcance
+puede afirmarse en presente. El mantenedor ya aportó el chat de su
+[vertical IoT propuesta](docs/architecture/iot-vertical-pilot.md), con el robot
+como primer consumidor. Su servidor ya se inspeccionó selectivamente en modo
+lectura para escoger datos reales y diseñar la composición del dashboard.
+Su alcance sigue separado del core, sin cambios ni aceptación runtime/cloud.
 
 **Cuña objetivo:** LatAm-first (Mercado Pago + español-first), profundidad de
 seguridad/multi-tenancy y arquitectura de billing extensible. Es una dirección
 de producto, no una certificación actual de proveedores ni una afirmación de
 venta.
 
-### La Regla de Oro (el recortador de scope)
+### La Regla de Oro — integración mínima completa
 
-> **Si se puede hacer nativo en Supabase y entra en free tier → está en el v1.**
-> **Si necesita infra externa o plan pago → es add-on Pro/Enterprise, o no va.**
+> **Cada capacidad incorporada debe resolver una necesidad reutilizable mediante
+> un caso pequeño, completo y verificable.**
 
-Esta regla es la autoridad final. Ante cualquier duda de "¿meto esto?", se mide contra
-la regla. Si no entra, no entra.
+Entrar en Supabase Free es un criterio de coste, no una obligación de agregar
+una función. El caso incluye autorización, errores, pruebas, límites operativos
+y guía de extensión. Un avatar público no certifica documentos privados; un
+worker no certifica cualquier job; un proveedor no certifica a los demás.
+
+Supabase-first permite lógica de aplicación Node: billing conserva su reducer
+y worker en Node, coordinado desde PostgreSQL/pg_cron/pg_net. El correo tiene
+un worker Edge. Esta distribución está aceptada en
+[ADR 0003](docs/adr/0003-mercadopago-reliability-boundaries.md); revisarla requiere
+un requisito medido, no migrar por uniformidad.
+
+### Referencia histórica de alcance y fases
+
+Las tablas y fases siguientes conservan decisiones y ejecución histórica. Sus
+tiers, checks y reglas antiguas no crean requisitos de cierre ni certificaciones
+actuales. Para alcance presente rigen estrategia, current-state y planes activos.
+La instalación/recetas/actualización internas pasan al propuesto Plan 015;
+distribución, licencia y soporte para compradores permanecen en Plan 013.
 
 ### Qué está DENTRO y qué está FUERA
 

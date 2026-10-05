@@ -141,24 +141,27 @@ Never run destructive tests against production data.
 
 A required test must not be hidden with `continue-on-error`. A skipped test requires a linked plan/issue and a reason. Flaky tests are defects: quarantine only temporarily with ownership and an expiry condition.
 
-### Known local environment characteristic: full-suite E2E flake rate
+### Historical local timeouts: diagnose before attributing cause
 
-Do not confuse this with a flaky test. On a resource-constrained local machine, three
+On a resource-constrained local machine, three
 consecutive full local runs of `pnpm validate:full` (2026-08-11) each produced exactly
 one failing E2E spec out of 48 — a different spec each time (`onboarding.spec.ts`,
 `team.spec.ts`, `billing.spec.ts`), always a generic timeout. Every failing spec passed
 cleanly when re-run in isolation immediately after (`playwright test --workers=1
 <spec>`), including with `--workers=1` matching CI. No spec reproduced its failure twice.
 
-This points to resource contention during a long sequential 48-spec run on this specific
-machine (tight RAM margins already known to affect local Supabase/Docker usage), not a
-defect in any individual test or in the app under test. CI has not shown this pattern
-across the corresponding PRs.
+The historical pattern suggests resource contention during those runs. It does
+not exclude an intermittent application/test defect or establish the cause of
+a later timeout. The corresponding historical CI observations are not a fresh
+claim about current CI.
 
-If a full local run fails a single spec, re-run that spec in isolation before treating it
-as a regression. If it passes in isolation, it is this known characteristic, not a defect
-— do not open a quarantine for it and do not blindly re-run the full suite hoping for a
-clean pass.
+If a full run fails, retain its failure, logs/trace and environment information.
+Re-run the failing spec in isolation to narrow the cause; an isolated pass does
+not turn the full run green. Assign unresolved failures to the candidate's
+acceptance work and investigate shared state, timing and resource use before
+quarantining or classifying them. Do not rerun broadly merely to obtain a green
+result. Proposed [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md)
+requires explicit candidate-level results for the independent reuse trial.
 
 ## Coverage
 

@@ -20,6 +20,26 @@
 
 ## Separación de gates v1 y preparación comercial (2026-09-11)
 
+### Reutilización interna separada — 2026-09-24
+
+La [estrategia acordada](../../architecture/product-strategy.md) exige que la
+base ahorre trabajo al construir el siguiente SaaS, aunque no se venda como
+boilerplate. El propuesto [Plan 015](015-reusable-foundation-acceptance.md)
+asume la guía Markdown de instalación interna, recetas, configuración mínima y
+ensayo de extensión/actualización. Este trabajo no espera Fumadocs ni decisión
+de comercialización. D-1/D-2/D-3 reutilizarán su evidencia y añadirán audiencia
+externa, entrega, licencia, soporte y proceso comercial; no repetirán el ensayo
+como si nunca hubiera existido. La implementación de 015 aún no comenzó.
+
+El mantenedor aportó el contexto de su
+[vertical IoT](../../architecture/iot-vertical-pilot.md), candidata para probar
+015 en un derivado desechable. Su servidor y contrato HTTP fueron inspeccionados
+selectivamente en modo lectura; no hubo cambios ni aceptación de integración.
+No se añaden MQTT, media o control del robot a los requisitos de distribución
+del boilerplate.
+
+### Gates de operación y distribución
+
 **Fuera de v1 propia:** Fumadocs comercial, buyer onboarding, licenciamiento,
 distribución, funnel de venta del boilerplate y material de conversión. Retomar
 estos entregables cuando se decida vender, con PRs acotados y evidencia de los
@@ -59,6 +79,12 @@ solo la documentación.
 
 ## D-2 — Buyer onboarding / DX
 
+La [comparación documental de referentes del 2026-09-25](../../architecture/product-strategy.md#aprendizajes-de-instalación-adaptación-y-postventa--2026-09-25)
+distingue onboarding del instalador, configuración del administrador y alta del
+usuario final. D-2 prepara al comprador del kit; no debe confundir el wizard de
+cuentas del SaaS con una instalación completa. Reutilizar la ficha y evidencia
+de Plan 015 antes de diseñar automatización adicional.
+
 **Scope.** Checklist inicial en README/docs: renombrar marca desde un punto
 central; cambiar colores/logo; cambiar dominio/support email; configurar
 locales; activar/desactivar módulos; configurar provider de billing;
@@ -79,6 +105,15 @@ sesión, por ocultar historial de commits interno); estrategia de updates
 (upstream, releases/tags, changelog, upgrade guides); no incluir secretos ni
 config propia en lo que se entrega; separar demo vs código del comprador;
 política de soporte y de breaking changes; licencia legal real.
+
+Antes de publicar la oferta, indicar qué se vende: licencia del kit, puesta en
+marcha o solución adaptada. No asumir que comprar código incluye desarrollo de
+una vertical, operación del hosting o upgrades instalados por el vendedor.
+Para cada modalidad ofrecida, especificar entregables, responsables de cuentas
+de proveedores y costes, aceptación, canal/plazo de soporte, mantenimiento y
+cambios fuera de alcance. La investigación propone estas distinciones; no fija
+precios, SLA ni obliga a ofrecer las tres modalidades. La entrega técnica interna
+permanece en 015 y no espera esta decisión comercial.
 
 **Restricción de timing — no reordenar sin releer esto.** El squash/
 reorganización de las ~136 migraciones de `supabase/migrations/` (discutido

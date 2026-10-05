@@ -7,6 +7,23 @@ execution plans, runbooks, audits, and durable technical decisions.
 
 - [Current state](current-state.md) — product position, active work, verification
   boundary, and known documentation debt.
+- [Capability inventory](capabilities.md) — canonical map of the SaaS core,
+  Supabase services, external integrations, evidence boundaries and MVP freeze
+  gates.
+- [Product strategy](architecture/product-strategy.md) — agreed promise,
+  minimal complete integrations, adaptation boundaries, competitor research
+  and evidence required before making product claims.
+- [Reusable SaaS investigation — 2026-09-24](audits/2026-09-24-reusable-saas-readiness.md)
+  — code-grounded capability inventory, defects, verification and plan ownership.
+- [SaaS template competitive landscape — 2026-10-05](audits/2026-10-05-saas-template-competitive-landscape.md)
+  — official-source comparison, corrected claims, Iroko gaps and freeze decisions.
+- [Next.js/Supabase review plan](exec-plans/active/016-nextjs-supabase-code-review.md)
+  — exhaustive maintained-code/configuration/rules review assigned to
+  Next.js/React, Supabase security and data architecture; per-file coverage
+  required, full review and validation pending.
+- [Proposed IoT pilot](architecture/iot-vertical-pilot.md) — owner-supplied
+  vertical direction, core/IoT/robot boundaries, static server evidence and
+  dashboard composition; runtime and Cloud integration remain unverified.
 - [System overview](architecture/system-overview.md) — system context,
   architectural boundaries, and change map.
 - [ADR index](adr/README.md) — durable decisions and their trade-offs.
@@ -66,17 +83,21 @@ create a new bounded plan if a regression or new audit finding appears.
 
 ## Active plans
 
-Current order (2026-09-11): Mercado Pago code/acceptance gaps in Phases 2/6 →
-authorized worker rollout and verification → internal MP acceptance → Plan 012
-hardening/pricing and operational v1 checks. Stripe, Paddle and Lemon Squeezy
-follow as independent certifications; commercial distribution follows under
-Plan 013 when selling is chosen. Neither blocks the limited own-use v1 Chile.
+Current closure map (2026-09-24): Plan 011 owns remaining MP acceptance;
+Plan 012 owns hardening/pricing. Proposed Plan 014 corrects independently
+identified reference-surface defects without waiting for a provider renewal.
+Proposed Plan 015 proves internal reuse; its operational acceptance requires
+the offered scope of 011 plus 012/014. Planning is not implementation approval.
+Stripe, Paddle and Lemon Squeezy remain independent certifications; Plan 013
+distribution is conditional on selling. Neither blocks limited own-use v1 Chile.
 
-| Order | Plan                                                                                                | Priority | Status                                                                                                                                                                                                                                                                                                                                                  |
-| ----- | --------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 11    | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                 | P0       | Core v2 implemented/closed. MP coordination, recovery, anomalies and worker implemented; acceptance and operations in the [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md) (2026-09-23: MP-01/02/05/06/07/11/13/15 closed with real evidence; MP-04/08/14 partial; renewal, refunds and a completed discovery scan pending). |
-| 12    | [Security hardening + pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 risk/debt gates; `scale → teams` separated from MP closure.                                                                                                                                                                                                                                                                                  |
-| 13    | [Commercial preparation after own-use v1](exec-plans/active/013-launch-readiness-roadmap.md)        | P2       | Conditional on selling; essential smoke, observability and security remain v1 gates.                                                                                                                                                                                                                                                                    |
+| Order | Plan                                                                                                | Priority | Status                                                                                                                                                                                                                                                                                                         |
+| ----- | --------------------------------------------------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 11    | [Billing Platform v2](exec-plans/active/011-billing-correctness.md)                                 | P0       | Core v2 implemented/closed. The [v1 Chile matrix](exec-plans/active/011-mercadopago-v1-chile-acceptance.md) records MP-01/02/05/06/07/11/13/15 closed; MP-04/08/14 partial. Discovery completes and replay does not duplicate; an actually omitted invoice, renewal, refunds and remaining drills are pending. |
+| 12    | [Security hardening + pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | P1       | Pending v1 risk/debt gates; `scale → teams` separated from MP closure.                                                                                                                                                                                                                                         |
+| 13    | [Commercial preparation after own-use v1](exec-plans/active/013-launch-readiness-roadmap.md)        | P2       | Conditional on selling; essential smoke, observability and security remain v1 gates.                                                                                                                                                                                                                           |
+| 14    | [Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md)             | P0/P1    | Proposed, not implemented: robot route/action/RLS boundary, image origin validation, platform audit interaction.                                                                                                                                                                                               |
+| 15    | [Reusable foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md)           | P1       | Proposed, not implemented: no-subscription configuration, recipes, independent installation, extension and update drill; useful before commercialization.                                                                                                                                                      |
 
 Plan 011 task detail: [Core](exec-plans/active/011-phase1-core-v2-tasks.md),
 [Mercado Pago](exec-plans/active/011-phase2-mercadopago-tasks.md),
@@ -84,6 +105,11 @@ Plan 011 task detail: [Core](exec-plans/active/011-phase1-core-v2-tasks.md),
 [Paddle](exec-plans/active/011-phase4-paddle-tasks.md),
 [Lemon Squeezy](exec-plans/active/011-phase5-lemon-squeezy-tasks.md),
 [Reconciliation](exec-plans/active/011-phase6-reconciliation-tasks.md).
+
+Added 2026-09-29: [Plan 016](exec-plans/active/016-nextjs-supabase-code-review.md)
+coordinates a three-front code review and its evidence. Scope and reviewer
+assignments are prepared; full execution remains pending. It routes findings
+to the existing plans without authorizing fixes or changing their acceptance.
 
 ### Mercado Pago reliability work
 

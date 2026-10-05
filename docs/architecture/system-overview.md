@@ -1,7 +1,8 @@
 # System Overview
 
 Status: current architectural map with explicitly marked planned areas
-Last reviewed: 2026-08-20
+Last reviewed: 2026-09-24 (product/reuse boundary and billing worker map;
+not an exhaustive implementation or runtime audit)
 
 ## Purpose and boundary
 
@@ -10,6 +11,10 @@ application owns presentation and application orchestration; Supabase owns
 identity, persistent data, row-level authorization, migrations, and background
 Edge Functions. External services provide delivery, analytics, observability,
 and payments.
+
+The [product strategy](product-strategy.md) defines the reusable foundation's
+promise and minimal complete integrations. Supabase-first does not require
+every application worker to execute in an Edge Function.
 
 This overview describes stable boundaries. Detailed implementation work belongs
 in [active execution plans](../exec-plans/active/), while decision rationale
@@ -65,6 +70,9 @@ that every tenant boundary outside that explicit scope is remediated.
 ### Background and external integrations
 
 - Supabase Edge Functions include the email queue worker.
+- Billing recovery/reconciliation run in the existing Node route, invoked by
+  Supabase `pg_cron`/`pg_net`; PostgreSQL owns durable state. The reducer is not
+  duplicated into Deno. See [ADR 0003](../adr/0003-mercadopago-reliability-boundaries.md).
 - Sentry handles error reporting; Pino handles structured server logging.
 - PostHog handles product analytics.
 - Billing Platform v2 defines a provider-neutral core and staged provider
@@ -86,13 +94,14 @@ that every tenant boundary outside that explicit scope is remediated.
 
 ## Change map
 
-| If changing                              | Read first                                                                                                                  |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| Tenant membership, authorization, or RLS | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests    |
-| Billing contracts or providers           | [Billing Platform v2 design](billing-platform-v2-design.md) and [Plan 011](../exec-plans/active/011-billing-correctness.md) |
-| Security or pricing truth                | [Plan 012](../exec-plans/active/012-security-hardening-and-pricing-truth.md)                                                |
-| Commercial readiness                     | [Plan 013](../exec-plans/active/013-launch-readiness-roadmap.md)                                                            |
-| Completion claims                        | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                   |
+| If changing                                               | Read first                                                                                                                                                                                  |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenant membership, authorization, or RLS                  | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                                                                    |
+| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [Plan 011](../exec-plans/active/011-billing-correctness.md)                                                                 |
+| Security or pricing truth                                 | [Plan 012](../exec-plans/active/012-security-hardening-and-pricing-truth.md)                                                                                                                |
+| Commercial readiness                                      | [Plan 013](../exec-plans/active/013-launch-readiness-roadmap.md)                                                                                                                            |
+| Completion claims                                         | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                                                                                   |
+| Adaptation, module availability, installation or upgrades | [Product strategy](product-strategy.md), [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) and proposed [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md) |
 
 ## Deliberate non-claims
 

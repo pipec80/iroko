@@ -5,6 +5,13 @@ calidad y modularidad necesarias para poder convertirse más adelante en un
 boilerplate comercial. Hoy no se presenta como producto instalable, soportado
 o listo para clientes.
 
+La promesa que guía el cierre es: **«Tengo una base que ya resuelve acceso,
+cuentas, permisos y servicios comunes. Podemos dedicar el desarrollo a tu
+operación y adaptar la experiencia a lo que necesitas.»** Su uso como afirmación
+comercial depende de la evidencia del alcance ofrecido. La
+[estrategia de producto](docs/architecture/product-strategy.md) define los
+límites, las configuraciones de referencia y cómo demostrar reutilización.
+
 Antes de trabajar en el repositorio, lee [AGENTS.md](AGENTS.md) y
 [docs/current-state.md](docs/current-state.md). El mapa completo de
 documentación está en [docs/index.md](docs/index.md).
@@ -18,7 +25,7 @@ documentación está en [docs/index.md](docs/index.md).
 | Estilos         | Tailwind CSS 4 + shadcn + tokens Iroko            |
 | i18n            | next-intl (en / es / pt / fr)                     |
 | Estado servidor | TanStack Query 5                                  |
-| Observabilidad  | Sentry, Vercel Analytics, Vercel Speed Insights   |
+| Observabilidad  | Sentry, Pino, PostHog y métricas de Vercel        |
 | Tests           | Vitest (unit) + Playwright (E2E) + pgTAP (DB)     |
 | Deploy objetivo | Vercel + Supabase                                 |
 
@@ -123,7 +130,14 @@ históricas (gitignored). No son autoridad y no existen en un checkout limpio.
 
 ## Estado y alcance
 
-Los planes 010 y 011 contienen remediaciones P0 activas de aislamiento tenant
-y billing. Los planes 012 y 013 cubren hardening y preparación comercial. Una
-capacidad configurada o presente en código no implica certificación en
-producción; consulta siempre [el estado actual](docs/current-state.md).
+Plan 010 está completado dentro de su alcance. Plan 011 conserva la aceptación
+de billing y Plan 012 el hardening/pricing. La
+[investigación de reutilización](docs/audits/2026-09-24-reusable-saas-readiness.md)
+propone Plan 014 para defectos de superficies presentes y Plan 015 para
+configuración, instalación, extensión y actualización demostrables. Su
+implementación no comenzó durante la investigación. Plan 013 sigue reservado
+a preparación comercial cuando se decida vender.
+
+Una capacidad configurada o presente en código no implica certificación en
+producción; consulta siempre [el estado actual](docs/current-state.md). El setup
+local de arriba no sustituye todavía el ensayo independiente de Plan 015.
