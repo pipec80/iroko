@@ -7,6 +7,7 @@
 - Rama: `main`, con upstream `origin/main`, ocho commits locales por delante al
   fijar el candidato.
 - Fecha y zona: 2026-10-05, `America/Santiago`.
+- Último checkpoint: 2026-10-07.
 
 Este informe separa lectura, ejecución y evidencia operacional. Ningún hallazgo
 histórico se considera reproducido por aparecer aquí y ningún check local prueba
@@ -152,16 +153,108 @@ usará un token inválido como prueba de ausencia de efectos externos.
 | Fase | Estado | Evidencia |
 | --- | --- | --- |
 | T0 | Cerrada | SHA, herramientas, inventario, responsables, matrices, antecedentes y rutas registrados |
-| T1 | En ejecución | lectura integral y contraste por N/S/D pendientes |
+| T1 | En ejecución, dos lotes registrados | cobertura prioritaria y segundas lecturas completadas; inventario exhaustivo todavía pendiente |
 | T2 | Pendiente | ningún check de esta fase se atribuye todavía al informe |
 | T3 | Pendiente | hallazgos, fortalezas y orden de remediación todavía no consolidados |
 
-## Hallazgos
+### Cobertura T1 acumulada al 2026-10-07
 
-Pendientes de T1. Esta sección no replica automáticamente los hallazgos de la
-auditoría anterior.
+Los tres frentes trabajaron exclusivamente sobre el candidato mediante lectura
+de Git. Los números siguientes son cobertura de lectura, no porcentajes de
+seguridad ni aceptación:
+
+| Frente | Cobertura completa demostrada | Pendiente mínimo |
+| --- | --- | --- |
+| N — Next.js/React | 64/394 entradas propias o compartidas; 12.220/61.773 líneas físicas | 330 entradas |
+| S — seguridad | 58/384 entradas únicas; el segundo lote cerró o revalidó 23 filas y 22 consumidores de apoyo | 326 entradas sin lectura completa registrada |
+| D — datos | 30/284 entradas propias; además se leyeron 10 consumidores/pruebas de apoyo | 254 entradas |
+
+Los conjuntos se solapan. No deben sumarse para obtener cobertura global. El
+primer manifiesto contó líneas no vacías; el checkpoint corrigió `line_count`
+contra los bytes del snapshot Git. Por ejemplo, `public.sql` pasó de 3.209 a
+4.167 líneas físicas, `billing.sql` de 991 a 1.301 y la migración Vault quedó
+registrada con 179 líneas. Los estados por archivo se completarán al continuar
+T1; esta corrección no cambia el SHA revisado.
+
+El lote N cerró todas las entradas de `application`, `tool-config` y
+`product-config`. El lote D cerró los once espejos `supabase/schemas/*.sql`. Los
+barridos sobre el resto no se cuentan como lectura integral.
+
+## Hallazgos confirmados por segunda lectura
+
+No se confirmó ningún P0. Estos candidatos P1 recibieron lectura de dos frentes
+o contraste equivalente de código, consumidor y prueba:
+
+| ID | Resultado | Impacto y siguiente cierre |
+| --- | --- | --- |
+| N-01 | Caché de ajustes sin `accountId` | Un `QueryClient` singleton puede mostrar temporalmente metadatos de API keys, webhooks, entregas y entitlements de la cuenta anterior. Las RPC vuelven a autorizar y contienen la mutación. Particionar todas las query keys por cuenta y probar A→B con caché caliente. |
+| S-01 | SSRF por resolución DNS en webhooks | La validación rechaza IP privadas literales, pero entrega hostnames directamente a `pg_net`; un dominio controlado puede resolver o cambiar hacia una red interna. Mover el envío a un egreso con resolución y política de red controladas, o demostrar un control equivalente. Pertenece a Plan 012.2. |
+| S-02 | Campo incorrecto al cambiar contraseña | La acción envía `currentPassword`; `@supabase/auth-js` espera `current_password`, y el test consolida el nombre erróneo. Corregir el contrato y probar contra GoTrue local con contraseña correcta e incorrecta. |
+| S-03 | Build sin gate positivo de upload Sentry | Con `SENTRY_AUTH_TOKEN`, un build local puede subir source maps. Añadir un flag validado, cerrado por defecto, que aplique `sourcemaps.disable: true` fuera del job autorizado. El efecto externo concreto permanece `[NO VERIFICADO]`. |
+| D-01 | Recovery sin fencing de lease | Un worker vencido puede completar o reprogramar el claim recuperado por otro worker porque complete sólo recibe `jobId`. Añadir token/generación de lease y una prueba con dos sesiones. |
+| N-04 | Autosave descartado al desmontar | Navegar antes de 800 ms cancela el único timer y pierde la última edición. Guardar antes de navegar o bloquear/advertir mientras exista estado sucio. |
+| N-05 | Guardados fuera de orden | Dos saves concurrentes pueden dejar persistida una versión anterior. Añadir revisión monotónica/CAS y pruebas con respuestas invertidas y dos sesiones. |
+
+## Candidatos todavía pendientes de contraste final
+
+| ID | Prioridad tentativa | Estado |
+| --- | --- | --- |
+| N-06 | P1 | El hook conserva notificaciones al cambiar `userId`; el defecto del componente está confirmado, pero la preservación real durante impersonación requiere E2E. |
+| D-03 | P1 | API keys y webhooks separan `count(*)` del `INSERT`; falta una prueba concurrente por el último cupo y segunda lectura S. |
+| D-04 | P1 | `documents.account_id` y `project_id` tienen FKs independientes; falta segunda lectura S y prueba de constraint cross-account. |
+| N-09 | P1/P2 | Configuración y copy prometen `production-ready`, despliegue menor a 30 minutos y SLA sin evidencia aceptada; corresponde a verdad de producto de Plan 012.5. |
+
+## Hallazgos P2 o diferidos
+
+- N-02: `next-sitemap` prioriza `NEXT_PUBLIC_APP_URL`, variable no validada y
+  ausente del inventario, sobre `SITE_URL`.
+- N-03: los patrones de exclusión no contemplan el prefijo locale y el sitemap
+  versionado publica rutas de dashboard/auth; no es bypass de autorización.
+- N-07: una promesa tardía de `setAuth()` puede suscribir un canal Realtime
+  después del cleanup.
+- N-08: `global-error.tsx` no ofrece el callback de recuperación documentado por
+  la versión instalada de Next.
+- N-10: varias traducciones administrativas de francés y portugués permanecen
+  en inglés.
+- S-04: comparación de origen Supabase mediante `startsWith`; ya pertenece a
+  Plan 014 T2.
+- D-02: Stripe carece de coordinación durable/idempotency key ante checkouts
+  concurrentes. Se conserva en la familia 011 diferida mientras Stripe no forme
+  parte del alcance ofrecido; no bloquea el freeze actual.
+- La diferencia Supabase CLI 2.109.1 en CI frente a 2.110.0 local es deuda P2
+  de reproducibilidad. No demuestra divergencia de esquema.
 
 ## Fortalezas observadas
 
-Pendientes de T1. La existencia de código, pruebas o políticas no se contará
-como evidencia operacional sin su contraste correspondiente.
+- El Proxy valida claims, conserva cookies y headers al componer next-intl con
+  Supabase y evita cachear respuestas con sesión.
+- Las RPC privilegiadas revisadas usan `SECURITY DEFINER`, `search_path` vacío,
+  nombres calificados y grants acotados.
+- API keys y secretos de webhook se almacenan mediante hash/Vault y los RPC
+  vuelven a comprobar rol y cuenta.
+- Mercado Pago reserva la intención antes del POST remoto y su reconciliación
+  usa lease owner, watermark, cursores durables y precondiciones contra cambios
+  concurrentes.
+- Los cuatro catálogos de traducción tienen paridad de claves y ninguna hoja
+  vacía; los textos no traducidos se registran aparte.
+- Los once espejos SQL incluyen las redefiniciones más recientes. Esto prueba
+  contenido versionado, no paridad con una base ejecutada.
+
+## Límites y continuación
+
+T1 **no está cerrada**. Continúan pendientes centenares de archivos, pruebas y
+migraciones. Build, E2E, pgTAP, Edge Functions, estado de Cloud, paridad de
+migraciones y comportamiento real de DNS/egreso permanecen `[NO VERIFICADO]`.
+La siguiente sesión debe continuar T1 desde el
+[handoff del 7 de octubre](2026-10-07-plan-016-t1-handoff.md); no debe comenzar
+Plan 014 T1 hasta terminar la cobertura y consolidación exigidas para este punto
+del roadmap.
+
+## Registro detallado de candidatos
+
+El handoff conserva las rutas principales, el estado de contraste, la corrección
+mínima y la prueba de cierre propuesta, además del ledger exacto de archivos
+leídos. Las fichas completas con condición de entrada y resultado
+esperado/observado pertenecen a T3 y todavía no constituyen el dictamen final.
+T3 debe revalidarlas sobre el candidato y asignar cada reparación sin duplicar
+Planes 011, 012 o 014.

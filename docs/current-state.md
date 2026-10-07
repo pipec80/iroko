@@ -117,7 +117,7 @@ section reports evidence and lifecycle only; it does not define a second order.
 | [013 — Commercial preparation](exec-plans/deferred/013-launch-readiness-roadmap.md) | Deferred | Reactivates only if the owner chooses to sell the boilerplate. |
 | [014 — Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md) | Active | Robot authorization, trusted image origins and platform audit interaction are planned corrections; implementation has not started. |
 | [015 — Reusable-foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md) | Active | Independent installation, configuration, extension and update evidence remains pending. |
-| [016 — Next.js and Supabase code review](exec-plans/active/016-nextjs-supabase-code-review.md) | Active | Scope, reviewer responsibilities and inventories are prepared; the exhaustive review, candidate validation and consolidated evidence remain pending. |
+| [016 — Next.js and Supabase code review](exec-plans/active/016-nextjs-supabase-code-review.md) | Active | T0 fixed the candidate and inventories. Two T1 read-only batches found no P0 and confirmed several bounded P1 candidates, but hundreds of manifest entries, T2 validation and T3 consolidation remain pending; see the [dated handoff](audits/2026-10-07-plan-016-t1-handoff.md). |
 
 Plan 010 closed on 2026-08-26 through PRs #139, #140, #147, #149 and #150
 (the last being the independent toolchain repair). Plans 001–010 remain under

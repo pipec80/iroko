@@ -1,7 +1,7 @@
 # Plan 016 — Revisión de Next.js, seguridad Supabase y arquitectura de datos
 
 - Fecha: 2026-09-29.
-- Estado: alcance exhaustivo definido y repartido; lectura integral y validaciones pendientes.
+- Estado: T0 cerrado; T1 parcial con dos lotes y segundas lecturas prioritarias registradas; cobertura exhaustiva y validaciones pendientes.
 - Tipo: revisión técnica, no plan de implementación ni certificación de producción.
 - Base local de planificación: `main` en `f82d2fbe381014c80a090ba3c36c99e4778111c3`.
 - Contexto: 14 documentos modificados/nuevos preexistentes; conservarlos. La
