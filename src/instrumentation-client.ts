@@ -2,39 +2,41 @@ import * as Sentry from '@sentry/nextjs';
 
 import { shouldFilterClientEvent } from '@/lib/sentry-filters';
 
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+if (process.env.NEXT_PUBLIC_LOCAL_VALIDATION !== 'true') {
+  Sentry.init({
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Separa production / preview / development en issues y alertas.
-  // Fallback 'local' (no NODE_ENV): los builds de producción locales (E2E de
-  // Playwright) no deben mezclarse con la producción real de Vercel.
-  environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? 'local',
+    // Separa production / preview / development en issues y alertas.
+    // Fallback 'local' (no NODE_ENV): los builds de producción locales (E2E de
+    // Playwright) no deben mezclarse con la producción real de Vercel.
+    environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? 'local',
 
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-  tracePropagationTargets: [
-    'localhost',
-    /^https:\/\/[^/]+\.supabase\.co/,
-    /^https:\/\/iroko\.vercel\.app/,
-  ],
+    tracePropagationTargets: [
+      'localhost',
+      /^https:\/\/[^/]+\.supabase\.co/,
+      /^https:\/\/iroko\.vercel\.app/,
+    ],
 
-  // GDPR: mask all inputs and text in Session Replay
-  replaysSessionSampleRate: 0.05,
-  replaysOnErrorSampleRate: 1.0,
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllInputs: true,
-      maskAllText: true,
-    }),
-  ],
+    // GDPR: mask all inputs and text in Session Replay
+    replaysSessionSampleRate: 0.05,
+    replaysOnErrorSampleRate: 1.0,
+    integrations: [
+      Sentry.replayIntegration({
+        maskAllInputs: true,
+        maskAllText: true,
+      }),
+    ],
 
-  // Drop noise: network errors and chunk load failures are not actionable
-  beforeSend(event) {
-    return shouldFilterClientEvent(event) ? null : event;
-  },
+    // Drop noise: network errors and chunk load failures are not actionable
+    beforeSend(event) {
+      return shouldFilterClientEvent(event) ? null : event;
+    },
 
-  debug: false,
-});
+    debug: false,
+  });
+}
 
 // Instrumenta las navegaciones del App Router como spans (requerido por la
 // convención instrumentation-client de Next.js 15+).

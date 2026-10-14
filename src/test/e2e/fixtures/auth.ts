@@ -1,5 +1,6 @@
 import { expect, test as base, type Page } from '@playwright/test';
 
+import { requireUserUuid, withAuthCleanup } from '../../local-auth-cleanup';
 import { execSqlAsPostgres, SUPABASE_URL } from '../helpers';
 
 type AuthFixtures = {
@@ -19,7 +20,7 @@ export const test = base.extend<AuthFixtures>({
     // Guard: contra producción (nightly define PLAYWRIGHT_BASE_URL) no existe
     // el Supabase local — saltar con causa explícita en vez de ECONNREFUSED.
     testInfo.skip(
-      Boolean(process.env.PLAYWRIGHT_BASE_URL),
+      Boolean(process.env.PLAYWRIGHT_BASE_URL) && process.env.LOCAL_VALIDATION !== 'true',
       'authenticatedPage requiere Supabase local (127.0.0.1:54321) — este test no debe llevar @smoke ni correr contra producción.',
     );
 
@@ -58,39 +59,52 @@ export const test = base.extend<AuthFixtures>({
       throw new Error(`Failed to create test user: ${JSON.stringify(body)}`);
     }
 
-    const userId = body.id;
+    const userId = requireUserUuid(body.id);
 
-    // F3-C4: handle_new_user crea el profile con onboarding_completed=false por
-    // default — sin esto, el edge gate de middleware.ts redirigiría todo login
-    // fresco a /dashboard/onboarding, rompiendo cualquier spec que dependa de
-    // llegar a una sección real del dashboard tras autenticarse. service_role
-    // no tiene UPDATE sobre profiles (grants hardening) — vía psql como postgres.
-    execSqlAsPostgres(
-      `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${userId}'`,
+    await withAuthCleanup(
+      async () => {
+        // F3-C4: handle_new_user crea el profile con onboarding_completed=false por
+        // default — sin esto, el edge gate de proxy.ts redirigiría todo login
+        // fresco a /dashboard/onboarding, rompiendo cualquier spec que dependa de
+        // llegar a una sección real del dashboard tras autenticarse. service_role
+        // no tiene UPDATE sobre profiles (grants hardening) — vía psql como postgres.
+        execSqlAsPostgres(
+          `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${userId}'`,
+        );
+
+        // Login vía UI para establecer las cookies de sesión en el browser context.
+        // Usar getByRole en lugar de form button[type="submit"] porque la página de login
+        // tiene DOS botones submit (sign-in + magic link) y el selector genérico es ambiguo.
+        await page.goto('/es/login');
+        await page.locator('input[name="email"][type="email"]').fill(email);
+        await page.locator('input[name="password"]').fill(password);
+        await page.getByRole('button', { name: /iniciar sesión/i }).click();
+        await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+
+        await provide(page);
+
+        expect(hydrationErrors, 'Errores de hydration mismatch de React durante el test').toEqual(
+          [],
+        );
+      },
+      () => {
+        // The personal-account trigger uses NEW.id; never remove team or other accounts.
+        execSqlAsPostgres(
+          `DELETE FROM public.accounts WHERE id = '${userId}' AND type = 'personal' AND created_by = '${userId}'`,
+        );
+      },
+      async () => {
+        const cleanup = await request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+        });
+        if (!cleanup.ok()) throw new Error('Local test user cleanup failed');
+      },
+      () => {
+        console.warn(
+          'Local authenticated fixture cleanup failed; disposable database cleanup is required',
+        );
+      },
     );
-
-    // Login vía UI para establecer las cookies de sesión en el browser context.
-    // Usar getByRole en lugar de form button[type="submit"] porque la página de login
-    // tiene DOS botones submit (sign-in + magic link) y el selector genérico es ambiguo.
-    await page.goto('/es/login');
-    await page.locator('input[name="email"][type="email"]').fill(email);
-    await page.locator('input[name="password"]').fill(password);
-    await page.getByRole('button', { name: /iniciar sesión/i }).click();
-    await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
-
-    await provide(page);
-
-    expect(hydrationErrors, 'Errores de hydration mismatch de React durante el test').toEqual([]);
-
-    // Cleanup: eliminar el usuario de test (best-effort)
-    await request
-      .delete(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-        headers: {
-          apikey: serviceKey,
-          Authorization: `Bearer ${serviceKey}`,
-        },
-      })
-      .catch(() => {});
   },
 });
 
