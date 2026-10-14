@@ -1844,6 +1844,14 @@ export type Database = {
           type: Database["public"]["Enums"]["account_type"]
         }[]
       }
+      admit_account_api_request: {
+        Args: { p_client_ip: unknown; p_key_hash?: string }
+        Returns: {
+          account_id: string
+          decision: string
+          retry_after_seconds: number
+        }[]
+      }
       apply_billing_reconciliation_snapshot: {
         Args: {
           p_account_id: string
