@@ -87,8 +87,10 @@ default candidate alias despite `--skip-domain`; do not claim no alias effects.
 The bounded 012.3 Cloud/API acceptance is complete; Cloud 503/500 fault injection,
 legacy hook header trust, independent external-IP verification and unrelated
 provider/callback acceptance remain **[NO VERIFICADO]**. Pre-existing broad
-service_role/accounts grants remain follow-up work. Closure documentation is
-being integrated locally; push/merge remain pending. Next: concretize012.4.
+service_role/accounts grants remain follow-up work. Closure documentation and
+the Cloud harness were committed locally as `54dba97`; push/merge remain pending.
+The [follow-up register](audits/2026-10-14-plan-012-3-follow-ups.md) records each
+unexecuted check, inherited difference and condition for resuming it. Next: concretize012.4.
 See the [execution record](audits/2026-10-14-plan-012-3-cloud-execution.md).
 
 ## Product position

@@ -4,7 +4,7 @@ Estado: implementación, aceptación local e integración de código aprobadas;
 migraciones Cloud aplicadas y candidato READY. RPC y endpoint mediante CLI
 aprobados; WAF publicado, candidato público aceptado y alias estable promovido.
 Repetición pública estable aprobada; alcance operativo Cloud 012.3 aceptado.
-Commit documental de cierre en preparación; push/merge pendientes.
+Evidencia y harness Cloud integrados en el commit local `54dba97`; push/merge pendientes.
 Plan padre: [012](012-security-hardening-and-pricing-truth.md).
 
 ## Contrato aprobado
@@ -170,6 +170,8 @@ consistencia documental tras el PASS estable. Quedan **[NO VERIFICADO]** los
 fallos 503/500 provocados a través de Next Cloud y la confianza CF/XFF heredada;
 el drift service_role/accounts se conserva como seguimiento separado.
 No se renueva aceptación de todos los proveedores por esta ejecución.
-Este documento forma parte del cierre local por integrar; no acredita un commit
-ya creado. Siguiente paso: concretar 012.4; push/merge pendientes.
+Este cierre y sus harness se integraron en el commit local `54dba97`.
+Los [seguimientos pendientes](../../audits/2026-10-14-plan-012-3-follow-ups.md)
+registran qué no se ejecutó y los criterios para retomarlo.
+Siguiente paso: concretar 012.4; push/merge pendientes.
 Evidencia y límites en el [registro Cloud](../../audits/2026-10-14-plan-012-3-cloud-execution.md).

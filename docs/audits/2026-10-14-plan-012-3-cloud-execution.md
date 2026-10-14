@@ -276,7 +276,9 @@ assertion en el E2E de Mercado Pago. Ambos harness aprobaron `node --check`;
 formato focalizado, `node scripts/check-docs.mjs` (143 Markdown) y
 `git diff --check` completan la verificación documental.
 
-La integración local de esta evidencia y sus harness queda acreditada por el
-historial Git, no por este texto. Push y merge pendientes.
+La integración local de esta evidencia y sus harness quedó registrada en el
+commit `54dba97`. Push y merge pendientes. La
+[tabla de seguimientos](2026-10-14-plan-012-3-follow-ups.md) reúne lo no ejecutado,
+las diferencias heredadas y los criterios para retomarlos.
 Siguiente paso recomendado: concretar el plan ejecutable 012.4 desde el alcance
 documentado del Plan 012, con inventario actual de CSP, secretos y consumidores.

@@ -239,6 +239,8 @@ preservando el worker y las protecciones previas. Alcance operativo cerrado;
 confianza CF/XFF del hook heredado, provocación Cloud de 500/503 y reducción de
 ACL históricas de service_role conservan sus límites/seguimientos separados.
 Evidencia y recuperación: [ejecución Cloud](../../audits/2026-10-14-plan-012-3-cloud-execution.md).
+Pendientes explícitos, condiciones para retomarlos y criterios de cierre en el
+[registro de seguimientos](../../audits/2026-10-14-plan-012-3-follow-ups.md).
 Siguiente paso recomendado: concretar y ejecutar 012.4 desde su inventario actual.
 
 **Snapshot previo a la implementación local — 2026-10-13 (Cloud 163):** la API cuenta no tiene cuota
