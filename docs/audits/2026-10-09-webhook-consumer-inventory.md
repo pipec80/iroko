@@ -20,14 +20,14 @@ sigue separada; no se modificó configuración de ningún proveedor.
 
 ## Resultado
 
-| Circuito | Entrada o destino | Evidencia actual | Relación con 012.2 |
-| --- | --- | --- | --- |
-| Mercado Pago entrante | Next.js `/api/webhooks/mercadopago` | Ruta y verificación implementadas; Vercel tiene las tres variables de integración en production/preview; Cloud registra 12 eventos Billing de proveedor mercadopago | Preservar; no migra al sender nuevo |
-| Recuperación Billing | Supabase cron → Next.js `/api/internal/billing/worker` | Cron activo cada cinco minutos; último registro recovery 2026-10-09 22:55:01 UTC, completado HTTP200 | Preservar |
-| Conciliación Billing | Mismo worker, modo reconciliation | Cron activo cada hora; último registro 2026-10-09 22:00:01 UTC, completado HTTP200 | Preservar |
-| Correo | Supabase cron → Edge Function `process-email-queue` | Única Edge Function desplegada listada, ACTIVE; cron activo por minuto | Preservar |
-| Webhooks salientes de cuentas | Tabla `public.webhook_endpoints` y cola `public.webhook_deliveries` | Cero endpoints, cero entregas; cron legacy activo y cuatro triggers propios habilitados | Este es el circuito que modifica 012.2 |
-| Auth hook local | PostgreSQL `public.custom_access_token_hook` | Configuración local habilitada; hook SQL, no URL de Mercado Pago | Preservar; configuración Cloud de Auth no renovada |
+| Circuito                      | Entrada o destino                                                   | Evidencia actual                                                                                                                                                    | Relación con 012.2                                 |
+| ----------------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Mercado Pago entrante         | Next.js `/api/webhooks/mercadopago`                                 | Ruta y verificación implementadas; Vercel tiene las tres variables de integración en production/preview; Cloud registra 12 eventos Billing de proveedor mercadopago | Preservar; no migra al sender nuevo                |
+| Recuperación Billing          | Supabase cron → Next.js `/api/internal/billing/worker`              | Cron activo cada cinco minutos; último registro recovery 2026-10-09 22:55:01 UTC, completado HTTP200                                                                | Preservar                                          |
+| Conciliación Billing          | Mismo worker, modo reconciliation                                   | Cron activo cada hora; último registro 2026-10-09 22:00:01 UTC, completado HTTP200                                                                                  | Preservar                                          |
+| Correo                        | Supabase cron → Edge Function `process-email-queue`                 | Única Edge Function desplegada listada, ACTIVE; cron activo por minuto                                                                                              | Preservar                                          |
+| Webhooks salientes de cuentas | Tabla `public.webhook_endpoints` y cola `public.webhook_deliveries` | Cero endpoints, cero entregas; cron legacy activo y cuatro triggers propios habilitados                                                                             | Este es el circuito que modifica 012.2             |
+| Auth hook local               | PostgreSQL `public.custom_access_token_hook`                        | Configuración local habilitada; hook SQL, no URL de Mercado Pago                                                                                                    | Preservar; configuración Cloud de Auth no renovada |
 
 Los timestamps/HTTP200 de Billing prueban registros de ejecución del worker,
 no éxito económico completo ni recepción reciente del webhook entrante.

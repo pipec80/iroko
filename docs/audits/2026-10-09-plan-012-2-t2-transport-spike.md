@@ -12,28 +12,28 @@ No hubo instalaciones, cambios de aplicación, migraciones nuevas, escrituras DB
 
 ## Comandos y resultados frescos
 
-~~~powershell
+```powershell
 pwsh -NoProfile -File .superpowers/012-2-ssrf/generate-test-certs.ps1
 node .superpowers/012-2-ssrf/dns-wire-spike.mjs
 node .superpowers/012-2-ssrf/transport-spike.mjs
 node --check .superpowers/012-2-ssrf/dns-wire-spike.mjs
 node --check .superpowers/012-2-ssrf/transport-spike.mjs
-~~~
+```
 
 Generación ejecutada por backend; ambos ensayos y node --check repetidos por coordinador: exit0. No son aserciones pgTAP ni tests de producto.
 
-| Ensayo | Resultado observado |
-| --- | --- |
-| Comparador doble resolución | Dos resoluciones; una conexión TCP y una solicitud HTTP al receptor prohibido de prueba |
-| Transporte candidato | 28/28 controles; cero conexiones TCP y cero solicitudes HTTP prohibidas; una resolución en intento fijado |
-| Control positivo | HTTPS204, Host y SNI delivery.test, certificado validado, cuerpo UTF-8 exacto y HMAC correcto |
-| Destinos DNS fixtures | IPv4 privado/link-local, IPv6 loopback/link-local/ULA/mapped y conjunto A/AAAA mixto rechazados |
-| DNS vacío/error/timeout | Rechazo antes del envío |
-| Redirecciones | 301/302/303/307/308 hacia HTTPS prohibido o HTTP no seguidos |
-| TLS inválido | Hostname de certificado incorrecto rechazado con ERR_TLS_CERT_ALTNAME_INVALID |
-| Retry | DNS cambia a dirección prohibida; siguiente intento vuelve a validar y no conecta |
-| Límites de transporte | Deadline y límite de respuesta aplicados |
-| DNS UDP real separado | 6/6 controles;9 consultas en loopback: A/AAAA, cambio A público→privado, conjunto mixto, NXDOMAIN, ENODATA y timeout |
+| Ensayo                      | Resultado observado                                                                                                  |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Comparador doble resolución | Dos resoluciones; una conexión TCP y una solicitud HTTP al receptor prohibido de prueba                              |
+| Transporte candidato        | 28/28 controles; cero conexiones TCP y cero solicitudes HTTP prohibidas; una resolución en intento fijado            |
+| Control positivo            | HTTPS204, Host y SNI delivery.test, certificado validado, cuerpo UTF-8 exacto y HMAC correcto                        |
+| Destinos DNS fixtures       | IPv4 privado/link-local, IPv6 loopback/link-local/ULA/mapped y conjunto A/AAAA mixto rechazados                      |
+| DNS vacío/error/timeout     | Rechazo antes del envío                                                                                              |
+| Redirecciones               | 301/302/303/307/308 hacia HTTPS prohibido o HTTP no seguidos                                                         |
+| TLS inválido                | Hostname de certificado incorrecto rechazado con ERR_TLS_CERT_ALTNAME_INVALID                                        |
+| Retry                       | DNS cambia a dirección prohibida; siguiente intento vuelve a validar y no conecta                                    |
+| Límites de transporte       | Deadline y límite de respuesta aplicados                                                                             |
+| DNS UDP real separado       | 6/6 controles;9 consultas en loopback: A/AAAA, cambio A público→privado, conjunto mixto, NXDOMAIN, ENODATA y timeout |
 
 El primer ensayo del agente detectó una carrera en el límite de respuesta: destroy(error) emitía el error después de end. Se corrigió el harness para rechazar inmediatamente y evitar la resolución posterior. Los resultados finales reflejan esa corrección; no se modificó producto.
 

@@ -95,14 +95,14 @@ that every tenant boundary outside that explicit scope is remediated.
 
 ## Change map
 
-| If changing                                               | Read first                                                                                                                                                                                  |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tenant membership, authorization, or RLS                  | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                                                                    |
-| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [deferred Plan 011 evidence](../exec-plans/deferred/011-billing/README.md)                                                            |
-| Security or pricing truth                                 | [Plan 012](../exec-plans/active/012-security-hardening-and-pricing-truth.md)                                                                                                                |
-| Commercial readiness                                      | [Deferred Plan 013](../exec-plans/deferred/013-launch-readiness-roadmap.md)                                                                                                                   |
-| Completion claims                                         | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                                                                                   |
-| Adaptation, module availability, installation or upgrades | [Product strategy](product-strategy.md), [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) and active [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md)   |
+| If changing                                               | Read first                                                                                                                                                                                |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenant membership, authorization, or RLS                  | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                                                                  |
+| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [deferred Plan 011 evidence](../exec-plans/deferred/011-billing/README.md)                                                |
+| Security or pricing truth                                 | [Plan 012](../exec-plans/active/012-security-hardening-and-pricing-truth.md)                                                                                                              |
+| Commercial readiness                                      | [Deferred Plan 013](../exec-plans/deferred/013-launch-readiness-roadmap.md)                                                                                                               |
+| Completion claims                                         | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                                                                                 |
+| Adaptation, module availability, installation or upgrades | [Product strategy](product-strategy.md), [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) and active [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md) |
 
 ## Deliberate non-claims
 

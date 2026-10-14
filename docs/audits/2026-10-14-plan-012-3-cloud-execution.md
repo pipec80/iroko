@@ -38,18 +38,18 @@ detener la aplicación y reconciliar antes de continuar.
 
 ## Matriz de comprobaciones
 
-| Capa | Evidencia requerida | Estado actual |
-| --- | --- | --- |
-| Herramientas | Resolución CLI/versiones, autenticación y permisos actuales, MCP estructurado | PASS comunicado por coordinador |
-| Preflight SQL | Identidad verificada externamente, ledger, hook, mantenimiento, fingerprints | PASS, baseline 163 y snapshot privado |
-| Aplicación SQL | Tres versiones exactas, resultado por migración, ledger esperado 166 | PASS, exit 0; ledger 166 y máximo 20261014012941 |
-| Postflight SQL | Fuentes, ACL/RLS/índices, columnas SELECT y cron | PASS con drift preexistente de grants de cuentas, descrito abajo |
-| PostgREST Cloud | RPC accesible solo al backend y decisiones durables | Siete comprobaciones PASS, exit 0; no equivale a comprobar todos los métodos de la excepción del hook en Cloud |
-| Hosting | Build, revisión exacta, configuración, identidad IP canónica, ausencia de modo local | Build Turbopack, TypeScript y sitemap PASS, 45 s; READY. Bucket canónico observado mediante CLI |
-| Endpoint | 200 aislado, 401, última plaza →429, Retry-After y presupuestos compartidos | Cinco comprobaciones PASS CLI, cinco PASS HTTPS público del candidato y cinco PASS HTTPS público estable |
-| Abuso y concurrencia | IP 300/301, claves múltiples, última plaza concurrente y ventana móvil | RPC PASS; endpoint ocho concurrentes: un 200 y siete 429 |
-| Regresiones | Conservación de configuración, fuentes y protecciones previas | Comparaciones SQL/WAF aprobadas y cero deliveries; no se renovó funcionalmente cada callback/worker/billing Cloud |
-| Limpieza | Fixtures propios retirados, sin borrar buckets compartidos | RPC: cero cuentas/claves/eventos/counters. Deployment: cero cuentas/claves/eventos de cuenta; eventos IP reales preservados para TTL |
+| Capa                 | Evidencia requerida                                                                  | Estado actual                                                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Herramientas         | Resolución CLI/versiones, autenticación y permisos actuales, MCP estructurado        | PASS comunicado por coordinador                                                                                                      |
+| Preflight SQL        | Identidad verificada externamente, ledger, hook, mantenimiento, fingerprints         | PASS, baseline 163 y snapshot privado                                                                                                |
+| Aplicación SQL       | Tres versiones exactas, resultado por migración, ledger esperado 166                 | PASS, exit 0; ledger 166 y máximo 20261014012941                                                                                     |
+| Postflight SQL       | Fuentes, ACL/RLS/índices, columnas SELECT y cron                                     | PASS con drift preexistente de grants de cuentas, descrito abajo                                                                     |
+| PostgREST Cloud      | RPC accesible solo al backend y decisiones durables                                  | Siete comprobaciones PASS, exit 0; no equivale a comprobar todos los métodos de la excepción del hook en Cloud                       |
+| Hosting              | Build, revisión exacta, configuración, identidad IP canónica, ausencia de modo local | Build Turbopack, TypeScript y sitemap PASS, 45 s; READY. Bucket canónico observado mediante CLI                                      |
+| Endpoint             | 200 aislado, 401, última plaza →429, Retry-After y presupuestos compartidos          | Cinco comprobaciones PASS CLI, cinco PASS HTTPS público del candidato y cinco PASS HTTPS público estable                             |
+| Abuso y concurrencia | IP 300/301, claves múltiples, última plaza concurrente y ventana móvil               | RPC PASS; endpoint ocho concurrentes: un 200 y siete 429                                                                             |
+| Regresiones          | Conservación de configuración, fuentes y protecciones previas                        | Comparaciones SQL/WAF aprobadas y cero deliveries; no se renovó funcionalmente cada callback/worker/billing Cloud                    |
+| Limpieza             | Fixtures propios retirados, sin borrar buckets compartidos                           | RPC: cero cuentas/claves/eventos/counters. Deployment: cero cuentas/claves/eventos de cuenta; eventos IP reales preservados para TTL |
 
 Scripts de lectura preparados:
 [preflight](../../scripts/sql/0123-cloud-preflight.sql) y

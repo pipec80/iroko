@@ -32,10 +32,10 @@ silenciar avisos. Referencia [SECURITY DEFINER autenticado](https://supabase.com
 
 ## Artefactos exactos revisados
 
-| Orden | Archivo | SHA256 |
-| --- | --- | --- |
-| 1 | 20261008120000_robot_reference_rbac.sql | E5D488D7465BBE12718A71B09783DAB2B8DD3214FE5A1DAF13134751B6CED753 |
-| 2 | 20261008130000_revoke_excess_grants.sql | C2496AC67D2E674B9A5933FDC774330CF69D9877E1EDB274EA335F00B325E313 |
+| Orden | Archivo                                 | SHA256                                                           |
+| ----- | --------------------------------------- | ---------------------------------------------------------------- |
+| 1     | 20261008120000_robot_reference_rbac.sql | E5D488D7465BBE12718A71B09783DAB2B8DD3214FE5A1DAF13134751B6CED753 |
+| 2     | 20261008130000_revoke_excess_grants.sql | C2496AC67D2E674B9A5933FDC774330CF69D9877E1EDB274EA335F00B325E313 |
 
 Evidencia local ignorada en `.superpowers/012-cloud-prepare/`:project.json,
 migrations.json,security.json,snapshot.json,catalog-baseline.json,
@@ -64,8 +64,7 @@ include-all, no include-seed, no include-roles, no migraciones ajenas.
    Firmas/propietarios/ACL de RPC preservados; comparar todos los objetos que no
    debían cambiar. Capturar catálogo y advisors de este punto.
 
-3. Solo con gate014 aprobado, ejecutar dry-run stage-012: debe listar únicamente
-   20261008130000. Tras la misma autorización para ambas etapas:
+3. Solo con gate014 aprobado, ejecutar dry-run stage-012: debe listar únicamente 20261008130000. Tras la misma autorización para ambas etapas:
 
    `supabase --workdir .superpowers/012-cloud-prepare/stage-012 db push --linked`
 
@@ -121,7 +120,6 @@ un backup de datos. Este cambio no borra datos ni altera estructuras.
 
 La autorización solicitada cubre exclusivamente aplicar estas dos migraciones,
 en orden y con gate intermedio, y realizar postflight de lectura. La autorización fue recibida después de esta preparación; ambas aplicaciones y sus gates están documentados en el registro de ejecución enlazado. Siguiente paso actual: seguir las recomendaciones de ese registro.
-
 
 ## Revisión y checks de preparación
 

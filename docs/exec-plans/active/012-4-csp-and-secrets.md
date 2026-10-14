@@ -113,20 +113,20 @@ es pura. Input nombra flag, CI, token-presente, localValidation y metadatos
 GitHub/Vercel; nunca registra el token. `LOCAL_VALIDATION` conserva su contrato.
 
 - [ ] Renovar Git/índice, CLI Windows y labels/puertos/ledger del stack oficial;
-  inventariar servicios/consumidores de readiness. Registrar presencia/config
-  separada de runtime. No imprimir supabase status con claves sin filtrar.
+      inventariar servicios/consumidores de readiness. Registrar presencia/config
+      separada de runtime. No imprimir supabase status con claves sin filtrar.
 - [ ] RED unitario: flag ausente/false, token sin flag, CI ausente, PR/PRtarget,
-  repo/ref/proyecto incorrectos y localValidation devuelven false; contextos
-  confiables explícitos true. Flag inválido falla validación de env.
+      repo/ref/proyecto incorrectos y localValidation devuelven false; contextos
+      confiables explícitos true. Flag inválido falla validación de env.
 - [ ] GREEN: cuando gate off usar sourcemaps.disable=true, release.create=false,
-  release.finalize=false, telemetry=false; omitir setCommits/deploy y efectos de
-  monitores auxiliares de build. Mantener wrapper/tunnel y SDK runtime normales.
+      release.finalize=false, telemetry=false; omitir setCommits/deploy y efectos de
+      monitores auxiliares de build. Mantener wrapper/tunnel y SDK runtime normales.
 - [ ] Quitar token Sentry del env global de jobs no confiables; pasarlo solo al
-  paso/contexto aprobado. Conservar builds sin secretos. No generar token nuevo.
+      paso/contexto aprobado. Conservar builds sin secretos. No generar token nuevo.
 - [ ] Ejecutar `pnpm test sentry-build-policy local-sentry local-validation`;
-  build local con destinos loopback, token sintético y egreso bloqueado/observado:
-  cero intentos Sentry de build y ningún map público. Registrar matriz real
-  de rutas estáticas/dinámicas y tamaños; build no habilita upload por sí solo.
+      build local con destinos loopback, token sintético y egreso bloqueado/observado:
+      cero intentos Sentry de build y ningún map público. Registrar matriz real
+      de rutas estáticas/dinámicas y tamaños; build no habilita upload por sí solo.
 
 El runner acepta solo `--build` o `--e2e`: copia de fuentes sin .env, claves
 locales capturadas en RAM, dependencias ya instaladas y comprobadas, sin instalar.
@@ -161,31 +161,31 @@ con duración exactamente 2100 segundos. Verify valida todo el envelope y
 devuelve el payload tipado o null. El reloj del cliente no fija el TTL.
 
 - [ ] RED cookie: secreto dedicado distinto de Supabase; firma exacta hex64,
-  exactamente dos segmentos y base64url canónico, TTL y UUID/propósito correctos;
-  vacío, payload incompleto, futuro/expirado, cookie v1 y rotación A→B rechazados.
+      exactamente dos segmentos y base64url canónico, TTL y UUID/propósito correctos;
+      vacío, payload incompleto, futuro/expirado, cookie v1 y rotación A→B rechazados.
 - [ ] RED pgTAP y HTTP local real: expiry target con fila/claim correcto permitido;
-  preexpiry, motivo manual, otra fila/target/adminclaim, anon y authenticated sin
-  sub denegados. Reproducir antes la diferencia route/SQL con fixture MFA real;
-  observar sesión/fila/cookies, no solo redirect.
-  Incluir positivos admin dueño manual y service_role sin UID verificado,
-  contrastados con el negativo authenticated sin sub.
+      preexpiry, motivo manual, otra fila/target/adminclaim, anon y authenticated sin
+      sub denegados. Reproducir antes la diferencia route/SQL con fixture MFA real;
+      observar sesión/fila/cookies, no solo redirect.
+      Incluir positivos admin dueño manual y service_role sin UID verificado,
+      contrastados con el negativo authenticated sin sub.
 - [ ] GREEN SQL aplica condiciones conjuntas bajo lock; no ampliar ACL para
-  resolver permisos. Route valida identidad y session UUID; intenta cierre
-  seguro, hace signOut(scope:local) y borra cookies auxiliares aun con error RPC;
-  returnTo interno seguro, sin bucle login/dashboard ni sesión target restante.
+      resolver permisos. Route valida identidad y session UUID; intenta cierre
+      seguro, hace signOut(scope:local) y borra cookies auxiliares aun con error RPC;
+      returnTo interno seguro, sin bucle login/dashboard ni sesión target restante.
 - [ ] GREEN inicio/manual: compensar errores después de begin y antes/después
-  de verifyOtp; comprobar compensación, no tragar error. Restauración verifica
-  admin real, binding de sesión/target/cookie y orden restore→RPC. No usar solo
-  getSession/cookie como prueba de identidad.
-  Tras verifyOtp parcial, restaurar/verificar admin antes de compensar con RPC
-  dueño; si falla restauración, signOut y recuperación dirigida. Nunca permitir
-  cierre target antes de expiry para resolver esa compensación.
+      de verifyOtp; comprobar compensación, no tragar error. Restauración verifica
+      admin real, binding de sesión/target/cookie y orden restore→RPC. No usar solo
+      getSession/cookie como prueba de identidad.
+      Tras verifyOtp parcial, restaurar/verificar admin antes de compensar con RPC
+      dueño; si falla restauración, signOut y recuperación dirigida. Nunca permitir
+      cierre target antes de expiry para resolver esa compensación.
 - [ ] Ejecutar unitarios de cookie/actions/expire, SQL50 y E2E impersonation
-  con admin MFA/aal2 real local. Cero filas/usuarios/leases fixture tras cleanup.
-  Invalidar cookie no garantiza cerrar fila antes de expiry: probar recuperación
-  autenticada del admin mediante RPC existente o runbook operativo de cierre
-  dirigido. Antes de rotar/desplegar, las sesiones activas afectadas deben estar
-  cerradas; no restaurar firmando con la clave Supabase anterior.
+      con admin MFA/aal2 real local. Cero filas/usuarios/leases fixture tras cleanup.
+      Invalidar cookie no garantiza cerrar fila antes de expiry: probar recuperación
+      autenticada del admin mediante RPC existente o runbook operativo de cierre
+      dirigido. Antes de rotar/desplegar, las sesiones activas afectadas deben estar
+      cerradas; no restaurar firmando con la clave Supabase anterior.
 
 Comandos focalizados: `pnpm test impersonation-cookie impersonation-actions api/impersonation/expire`;
 `pnpm supa:test supabase/tests/database/50_impersonation_expiry_contract.test.sql`.
@@ -208,23 +208,23 @@ concreto; no `verifyMockPayload<T>` con cast. Gate único de mock usa producció
 y opt-in, aplicado también a page/action/verificador y cancelación.
 
 - [ ] RED mock: default no-mock no elude gate; producción sin opt-in rechaza
-  cada consumidor; token con tercer segmento/hex/base64 no canónicos o payload
-  checkout usado como evento se rechaza. Sin gate, no crear evento ni checkout.
+      cada consumidor; token con tercer segmento/hex/base64 no canónicos o payload
+      checkout usado como evento se rechaza. Sin gate, no crear evento ni checkout.
 - [ ] GREEN conservar MOCK_BILLING_SECRET dedicado con formato fuerte validado
-  en env, fixtures/CI sintéticos separados y comparación HMAC constante;
-  límites de entrada y Zod estricto para checkout y eventos normalizados. No
-  cambiar slugs, precios, reducer, lifecycle ni contrato de proveedores reales.
+      en env, fixtures/CI sintéticos separados y comparación HMAC constante;
+      límites de entrada y Zod estricto para checkout y eventos normalizados. No
+      cambiar slugs, precios, reducer, lifecycle ni contrato de proveedores reales.
 - [ ] Levantar matriz local de ACL efectivos de Vault: PUBLIC/anon/authenticated/
-  service_role/owners/membresías/defaults y helpers por firma. Consultar nombres,
-  cardinalidad y privilegios; no decrypted_secret. Metadatos Cloud solo lectura
-  cuando haya acceso confirmado. No asumir que todo service_role debe perder acceso.
+      service_role/owners/membresías/defaults y helpers por firma. Consultar nombres,
+      cardinalidad y privilegios; no decrypted_secret. Metadatos Cloud solo lectura
+      cuando haya acceso confirmado. No asumir que todo service_role debe perder acceso.
 - [ ] RED/GREEN de denegaciones clientes y controles positivos de email, billing,
-  webhook worker, endpoint-secret CRUD y HMAC exacto. Si hay exceso real, nueva
-  migración+espejo acotados al consumidor revisado; ninguna revocación automática
-  de funciones legítimas ni rotación masiva de secretos operativos.
+      webhook worker, endpoint-secret CRUD y HMAC exacto. Si hay exceso real, nueva
+      migración+espejo acotados al consumidor revisado; ninguna revocación automática
+      de funciones legítimas ni rotación masiva de secretos operativos.
 - [ ] Ejecutar unitarios signing/mock/registry/billing, workers y pgTAP pertinentes;
-  documentar explícitamente que TTL/replay del checkout sigue sin implementarse.
-  Fixture válido no hace requests a proveedores de pagos reales ni Resend.
+      documentar explícitamente que TTL/replay del checkout sigue sin implementarse.
+      Fixture válido no hace requests a proveedores de pagos reales ni Resend.
 
 Si la configuración existente no cumple el formato fuerte, preparar sustitución
 de ese secreto mock para la etapa autorizada; no modificar su valor ahora.
@@ -252,27 +252,27 @@ falla cerrado al render. Email resuelve rutas internas contra SITE_URL validado;
 la política de transporte webhook/SSRF permanece independiente.
 
 - [ ] RED fixtures compartidos: aceptar HTTPS/path/query/hash y rutas internas
-  actuales, null/blanco sin enlace. Rechazar javascript (también mayúsculas),
-  data/vbscript/file/ftp/mailto/http externo, //host, backslash, controles,
-  credenciales, malformados y longitud >2000. SQL prueba formas canónicas.
-  Rechazar controles/backslashes antes de trim; revalidar después de normalizar
-  para impedir que `/a/..//host` produzca un href `//host`. Medir longitud
-  canónica tras percent-encoding; comprobar idempotencia y TS acepta → SQL acepta.
+      actuales, null/blanco sin enlace. Rechazar javascript (también mayúsculas),
+      data/vbscript/file/ftp/mailto/http externo, //host, backslash, controles,
+      credenciales, malformados y longitud >2000. SQL prueba formas canónicas.
+      Rechazar controles/backslashes antes de trim; revalidar después de normalizar
+      para impedir que `/a/..//host` produzca un href `//host`. Medir longitud
+      canónica tras percent-encoding; comprobar idempotencia y TS acepta → SQL acepta.
 - [ ] GREEN entradas: anuncio y notify validan antes de INSERT o email; formulario
-  admite rutas internas (no depender de type=url). Conservar invitación/equipo/
-  billing. En UI/email, dato histórico inválido mantiene contenido sin anchor/CTA.
+      admite rutas internas (no depender de type=url). Conservar invitación/equipo/
+      billing. En UI/email, dato histórico inválido mantiene contenido sin anchor/CTA.
 - [ ] Preflight DB cuenta datos por categoría, sin volcar links/tokens. SQL helper
-  invoker puro con privilegios mínimos para constraints; RPC conserva firma,
-  ACL y admin/MFA. Constraints protegen escritura directa incluso service_role.
-  Separar válidos normalizables de inválidos: normalizar los primeros antes del
-  constraint; solo inválidos pasan a NULL en link, preservando las filas.
-  Revisar conteos antes de aplicar. Probar positivos INSERT service_role y RPC
-  admin/MFA sin grants genéricos. Sin nuevas suscripciones ni broadcasts.
+      invoker puro con privilegios mínimos para constraints; RPC conserva firma,
+      ACL y admin/MFA. Constraints protegen escritura directa incluso service_role.
+      Separar válidos normalizables de inválidos: normalizar los primeros antes del
+      constraint; solo inválidos pasan a NULL en link, preservando las filas.
+      Revisar conteos antes de aplicar. Probar positivos INSERT service_role y RPC
+      admin/MFA sin grants genéricos. Sin nuevas suscripciones ni broadcasts.
 - [ ] RED/GREEN RPC directa inválida antes de persistir, INSERT directo inválido
-  denegado y equivalencia TS/SQL sobre corpus canónico. Ausencia/blanco siempre
-  sin navegación; no prometer parser WHATWG completo en Postgres.
+      denegado y equivalencia TS/SQL sobre corpus canónico. Ausencia/blanco siempre
+      sin navegación; no prometer parser WHATWG completo en Postgres.
 - [ ] Ejecutar tests helper, acciones anuncios, notify, inbox/email, pgTAP51 y
-  regresiones webhook registration/destination/transport/worker de012.2.
+      regresiones webhook registration/destination/transport/worker de012.2.
 
 Comandos: `pnpm test navigation-link announcements/__tests__/actions notifications email/__tests__/templates`;
 `pnpm supa:test supabase/tests/database/51_navigation_link_contract.test.sql`;
@@ -294,27 +294,27 @@ El provider conserva el nonce del documento vivo durante navegación, prefetch
 y server actions; no lo sustituye por el nonce de una respuesta RSC posterior.
 
 - [ ] Gate de render: contrastar build nuevo contra baseline. Si aparecen rutas
-  estáticas que convertiría la propuesta global, documentar impacto y detener
-  ese cambio para revisión; no adoptar cobertura parcial silenciosamente.
+      estáticas que convertiría la propuesta global, documentar impacto y detener
+      ese cambio para revisión; no adoptar cobertura parcial silenciosamente.
 - [ ] RED proxy: nonce nuevo por documento, cliente no lo elige; CSP request y
-  response coinciden. Preservar headers internos next-intl, cookies auth,
-  redirects, locale y controles de caché. API/assets/ingest/tunnel no se rompen.
+      response coinciden. Preservar headers internos next-intl, cookies auth,
+      redirects, locale y controles de caché. API/assets/ingest/tunnel no se rompen.
 - [ ] GREEN generar nonce seguro, sobrescribir headers entrantes nonce/CSP y
-  propagar al render basándose en respuesta next-intl. RootLayout declara
-  SSR con connection(), lee nonce servidor, lo pasa a tema/provider/CAPTCHA.
-  No cache compartido de HTML con nonce; no relajar no-store de sesiones.
+      propagar al render basándose en respuesta next-intl. RootLayout declara
+      SSR con connection(), lee nonce servidor, lo pasa a tema/provider/CAPTCHA.
+      No cache compartido de HTML con nonce; no relajar no-store de sesiones.
 - [ ] En producción script-src sin unsafe-inline/eval; conservar allowlists y
-  styles inline con excepción. Reportes CSP se derivan del DSN configurado y
-  se deshabilitan sin DSN/local-validation; no conservar destino hardcodeado
-  ajeno ni enviar reportes reales desde pruebas locales. DSN público no es secreto.
+      styles inline con excepción. Reportes CSP se derivan del DSN configurado y
+      se deshabilitan sin DSN/local-validation; no conservar destino hardcodeado
+      ajeno ni enviar reportes reales desde pruebas locales. DSN público no es secreto.
 - [ ] Chromium sobre build productivo local: nonce/header/HTML, script sin nonce
-  bloqueado mediante resultado observable, scripts legítimos ejecutan, tema,
-  hidratación, login/CAPTCHA, server action, prefetch/soft navigation/reload,
-  cuatro idiomas, error/not-found. PostHog interceptado: consentimiento/revocación/
-  impersonación intactos. Sentry runtime/mock gates preservados; cero egreso real.
-  Incluir montaje tardío de Turnstile tras navegación y documentos error/not-found
-  en paths con punto o prefijos excluidos por el matcher actual. Demostrar
-  cobertura real antes de denominar global a la política.
+      bloqueado mediante resultado observable, scripts legítimos ejecutan, tema,
+      hidratación, login/CAPTCHA, server action, prefetch/soft navigation/reload,
+      cuatro idiomas, error/not-found. PostHog interceptado: consentimiento/revocación/
+      impersonación intactos. Sentry runtime/mock gates preservados; cero egreso real.
+      Incluir montaje tardío de Turnstile tras navegación y documentos error/not-found
+      en paths con punto o prefijos excluidos por el matcher actual. Demostrar
+      cobertura real antes de denominar global a la política.
 
 Comandos: `pnpm test src/proxy.test.ts sentry-build-policy local-sentry` y
 `node scripts/run-plan-0124-local.mjs --e2e`. El runner incluye csp.spec.ts,
@@ -327,30 +327,30 @@ autorizada; el config estándar que elimina su site key no acredita esa prueba.
 ## Tarea 6 — Aceptación, documentación e integración
 
 - [ ] Ejecutar pgTAP completo contra stack oficial comprobado, unitarios completos,
-  typecheck, lint, formato focalizado, build/E2E seguros, check-docs y diff.
-  Contar TAP y resultados reales; sin asumir los conteos históricos de012.3.
+      typecheck, lint, formato focalizado, build/E2E seguros, check-docs y diff.
+      Contar TAP y resultados reales; sin asumir los conteos históricos de012.3.
 - [ ] Revisión independiente por cada entrega y del diff exacto final; resolver
-  hallazgos, conservar workers/callbacks y límites de pruebas no ejecutadas.
+      hallazgos, conservar workers/callbacks y límites de pruebas no ejecutadas.
 - [ ] Actualizar SECURITY.md, módulo impersonación (proxy.ts, no middleware.ts),
-  comentarios CSP/webhook obsoletos, env ejemplos/CI, Plan012/current-state y
-  auditoría de ejecución; integrar commits locales selectivos con hooks. No
-  git add global ni archivos privados/caches. No exigir formato al generado DB.
+      comentarios CSP/webhook obsoletos, env ejemplos/CI, Plan012/current-state y
+      auditoría de ejecución; integrar commits locales selectivos con hooks. No
+      git add global ni archivos privados/caches. No exigir formato al generado DB.
 - [ ] Preparar una etapa Cloud separada: identidad, migraciones, matriz Vault y
-  presencia de secretos en metadatos. Nuevo secreto antes del código que lo
-  requiere; cerrar sesiones activas afectadas antes de invalidar cookies.
-  No escribir secretos o desplegar con la autorización de012.3.
+      presencia de secretos en metadatos. Nuevo secreto antes del código que lo
+      requiere; cerrar sesiones activas afectadas antes de invalidar cookies.
+      No escribir secretos o desplegar con la autorización de012.3.
 - [ ] Tras autorización específica: deployment de prueba sellado, uploads off
-  salvo prueba de upload expresamente habilitada, CSP browser sin violaciones
-  atribuibles; un evento browserSDK Sentry y uno PostHog tras consentimiento,
-  confirmados en los proveedores con ID saneado. Máximo tres intentos por prueba,
-  sin PII ni volumen continuo. Verificar herramientas Free; recepción no
-  accesible queda NO VERIFICADO, nunca sustituirla por envelope200.
+      salvo prueba de upload expresamente habilitada, CSP browser sin violaciones
+      atribuibles; un evento browserSDK Sentry y uno PostHog tras consentimiento,
+      confirmados en los proveedores con ID saneado. Máximo tres intentos por prueba,
+      sin PII ni volumen continuo. Verificar herramientas Free; recepción no
+      accesible queda NO VERIFICADO, nunca sustituirla por envelope200.
 - [ ] Comprobar Turnstile real y navegación/login bajo CSP en el candidato;
-  no desactivar Bot Protection o ampliar WAF globalmente para aprobar el ensayo.
+      no desactivar Bot Protection o ampliar WAF globalmente para aprobar el ensayo.
 - [ ] Verificar impersonación MFA real, mock solo opt-in, workers y cleanup;
-  comparar advisors con baseline, clasificar avisos intencionales. Reasignación
-  de dominio requiere destino concreto y autorización; rollback conserva un
-  deployment compatible con el secreto nuevo, no vuelve a firmar con Supabase.
+      comparar advisors con baseline, clasificar avisos intencionales. Reasignación
+      de dominio requiere destino concreto y autorización; rollback conserva un
+      deployment compatible con el secreto nuevo, no vuelve a firmar con Supabase.
 
 **Resultado esperado:** implementación y aceptación local primero; Cloud y Git
 registrados por separado. No declarar cierre012.4 hasta recepción observable de

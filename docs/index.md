@@ -34,6 +34,7 @@ execution plans, evidence, runbooks and durable technical decisions.
 
 ## Evidence and operations
 
+- [Git consolidation and Dependabot review](audits/2026-10-14-git-consolidation-and-dependabot.md) — exact updates, checks and integration state before 012.4.
 - [Operational evidence](quality/operational-evidence.md) — dated runtime,
   Cloud and release observations with validity rules.
 - [Plan 012.3 closure and follow-ups](audits/2026-10-14-plan-012-3-follow-ups.md) — accepted scope, unexecuted checks and criteria for resuming pending work.

@@ -680,14 +680,14 @@ database, provider, vertical or commercial capability.
 
 ### Commits
 
-| Commit | Record |
-| --- | --- |
-| `92f37b0` | Approved documentation-freeze structure |
-| `fc1def7` | Executable reorganization plan |
-| `cb2fda2` | Reusable-foundation documentation baseline |
-| `823de6b` | Exact roadmap archive and freeze roadmap |
-| `d01d2b3` | Active/deferred/completed plan lifecycle |
-| `8139b34` | Authority and navigation cleanup |
+| Commit         | Record                                                                                              |
+| -------------- | --------------------------------------------------------------------------------------------------- |
+| `92f37b0`      | Approved documentation-freeze structure                                                             |
+| `fc1def7`      | Executable reorganization plan                                                                      |
+| `cb2fda2`      | Reusable-foundation documentation baseline                                                          |
+| `823de6b`      | Exact roadmap archive and freeze roadmap                                                            |
+| `d01d2b3`      | Active/deferred/completed plan lifecycle                                                            |
+| `8139b34`      | Authority and navigation cleanup                                                                    |
 | Closure commit | The commit that moves this record to `completed/`; its hash is intentionally not embedded in itself |
 
 ### Fresh pre-closure validation

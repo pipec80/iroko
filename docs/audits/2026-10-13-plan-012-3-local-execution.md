@@ -96,22 +96,22 @@ operativa sigue **[NO VERIFICADO]** hasta la etapa de hosting autorizada.
 
 ## Verificaciones y revisión
 
-| Verificación | Resultado registrado |
-| --- | --- |
-| pgTAP completo, `pnpm supa:test` | 49 archivos / 999 assertions PASS, exit 0; duración 55 s |
-| Test49, lectura real cuenta | RED 42501 tras dos assertions; GREEN siete assertions PASS |
-| HTTP hook local | 10 comprobaciones y cleanup, PASS |
-| HTTP admisión API local | 7 comprobaciones y cleanup, PASS |
+| Verificación                     | Resultado registrado                                                                             |
+| -------------------------------- | ------------------------------------------------------------------------------------------------ |
+| pgTAP completo, `pnpm supa:test` | 49 archivos / 999 assertions PASS, exit 0; duración 55 s                                         |
+| Test49, lectura real cuenta      | RED 42501 tras dos assertions; GREEN siete assertions PASS                                       |
+| HTTP hook local                  | 10 comprobaciones y cleanup, PASS                                                                |
+| HTTP admisión API local          | 7 comprobaciones y cleanup, PASS                                                                 |
 | Unitarios focalizados TypeScript | Primera ejecución GREEN: 40 pruebas; cambios posteriores incluidos en la suite completa aprobada |
-| Unitarios completos | 112 archivos / 1.281 pruebas PASS, exit 0; duración 549,08 s |
-| `pnpm typecheck` | PASS en ejecución renovada, exit 0 |
-| `pnpm lint` | Cero errores; cuatro warnings anteriores de Mercado Pago |
-| Documentos y diff | 142 documentos aprobados; diff PASS con CRLF reconocido y controles de espacios activos |
-| Matrices CSV e inventario | 947 comprobaciones semánticas aprobadas; inventario actualizado a 132 rutas |
-| Build webpack aislado | PASS, exit 0; compilación, TypeScript y generación de páginas/rutas terminadas |
-| E2E Next.js/Robot | HTTP real aprobado; Chromium Robot una prueba PASS; cleanup y detención del servidor confirmados |
-| Limpieza final manual | Cero eventos IP, eventos cuenta, cuentas fixture y usuarios Auth fixture; ledger local166 |
-| Cloud y hosting de 012.3 | **[NO VERIFICADO]**, fuera de esta etapa |
+| Unitarios completos              | 112 archivos / 1.281 pruebas PASS, exit 0; duración 549,08 s                                     |
+| `pnpm typecheck`                 | PASS en ejecución renovada, exit 0                                                               |
+| `pnpm lint`                      | Cero errores; cuatro warnings anteriores de Mercado Pago                                         |
+| Documentos y diff                | 142 documentos aprobados; diff PASS con CRLF reconocido y controles de espacios activos          |
+| Matrices CSV e inventario        | 947 comprobaciones semánticas aprobadas; inventario actualizado a 132 rutas                      |
+| Build webpack aislado            | PASS, exit 0; compilación, TypeScript y generación de páginas/rutas terminadas                   |
+| E2E Next.js/Robot                | HTTP real aprobado; Chromium Robot una prueba PASS; cleanup y detención del servidor confirmados |
+| Limpieza final manual            | Cero eventos IP, eventos cuenta, cuentas fixture y usuarios Auth fixture; ledger local166        |
+| Cloud y hosting de 012.3         | **[NO VERIFICADO]**, fuera de esta etapa                                                         |
 
 La revisión estática independiente previa no identificó bloqueadores en el
 cambio acotado; no sustituye las verificaciones finales ni acredita hosting.
@@ -155,16 +155,16 @@ aplicado para satisfacer formato.
 
 Nueve commits locales de código confirmados con hooks:
 
-| Commit | Unidad |
-| --- | --- |
-| `e718439` | ESLint y exclusión de scratch |
-| `38278c9` | Gate local de aceptación |
-| `d18acf2` | Robot |
-| `b43fbff` | Grants mínimos |
-| `0e45afd` | Webhook seguro |
-| `af8fbbc` | Grants del contexto de validación |
-| `feedbc0` | Diagnóstico CI sin secretos |
-| `441e755` | Contrato HTTP y concurrencia del hook |
+| Commit    | Unidad                                          |
+| --------- | ----------------------------------------------- |
+| `e718439` | ESLint y exclusión de scratch                   |
+| `38278c9` | Gate local de aceptación                        |
+| `d18acf2` | Robot                                           |
+| `b43fbff` | Grants mínimos                                  |
+| `0e45afd` | Webhook seguro                                  |
+| `af8fbbc` | Grants del contexto de validación               |
+| `feedbc0` | Diagnóstico CI sin secretos                     |
+| `441e755` | Contrato HTTP y concurrencia del hook           |
 | `71ae75d` | Admisión API y corrección de lectura, ledger166 |
 
 Se conservan trece unidades lógicas de revisión, agrupadas en estos nueve

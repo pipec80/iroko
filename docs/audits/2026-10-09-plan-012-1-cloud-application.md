@@ -13,20 +13,20 @@ La autorización cubrió exclusivamente 014 → 012 con gate intermedio y postfl
 
 CLI Supabase Windows 2.110.0 autenticado; MCP autenticado para catálogo, historial, estado y Security Advisors. Los 161 archivos originales y sus stages coincidieron con el manifiesto SHA256 antes de aplicar.
 
-| Migración | SHA256 |
-| --- | --- |
+| Migración                               | SHA256                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
 | 20261008120000_robot_reference_rbac.sql | E5D488D7465BBE12718A71B09783DAB2B8DD3214FE5A1DAF13134751B6CED753 |
 | 20261008130000_revoke_excess_grants.sql | C2496AC67D2E674B9A5933FDC774330CF69D9877E1EDB274EA335F00B325E313 |
 
 Comandos ejecutados, todos con exit 0:
 
-~~~powershell
+```powershell
 supabase --workdir .superpowers/012-cloud-prepare/stage-014 db push --linked --dry-run
 supabase --workdir .superpowers/012-cloud-prepare/stage-014 db push --linked --yes
 supabase --workdir .superpowers/012-cloud-prepare/stage-012 db push --linked --dry-run
 supabase --workdir .superpowers/012-cloud-prepare/stage-012 db push --linked --yes
 supabase db push --linked --dry-run
-~~~
+```
 
 Cada stage propuso y aplicó únicamente su migración; sin seeds ni roles. El dry-run final respondió upToDate=true, migrations=[], seeds=[], roles=[]. Historial observado: 159 → 160 → 161; última versión 20261008130000. Salud final: ACTIVE_HEALTHY. La atomicidad SQL/ledger se revisó en el código oficial del CLI y el rollback se ensayó localmente; no se provocaron fallos en Cloud.
 
@@ -52,13 +52,13 @@ Gate final aprobado por coordinador y revisor independiente. Siguiente paso de e
 
 Comparación normalizada antes/después por nombre, nivel, detalle y metadata: **60 hallazgos idénticos, 57 WARN y 3 INFO; cero regresiones atribuibles**.
 
-| Hallazgo | Cantidad | Decisión |
-| --- | --- | --- |
-| authenticated SECURITY DEFINER ejecutable | 53 WARN | Exposición RPC intencional; conservar autorización interna, sin revocación automática. No se reauditaron aquí las 53 funciones individualmente. |
-| anon SECURITY DEFINER ejecutable | 2 WARN | check_request y get_active_plans: consumidores públicos intencionales ya clasificados. |
-| Search path de billing.assert_provider_price_matches_plan | 1 WARN | Seguimiento separado; no modificado. |
-| Protección Auth de contraseñas filtradas desactivada | 1 WARN | Seguimiento de configuración separado; no modificado. |
-| RLS habilitado sin policy | 3 INFO | Baseline preservado; no añadido por estas migraciones. |
+| Hallazgo                                                  | Cantidad | Decisión                                                                                                                                        |
+| --------------------------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| authenticated SECURITY DEFINER ejecutable                 | 53 WARN  | Exposición RPC intencional; conservar autorización interna, sin revocación automática. No se reauditaron aquí las 53 funciones individualmente. |
+| anon SECURITY DEFINER ejecutable                          | 2 WARN   | check_request y get_active_plans: consumidores públicos intencionales ya clasificados.                                                          |
+| Search path de billing.assert_provider_price_matches_plan | 1 WARN   | Seguimiento separado; no modificado.                                                                                                            |
+| Protección Auth de contraseñas filtradas desactivada      | 1 WARN   | Seguimiento de configuración separado; no modificado.                                                                                           |
+| RLS habilitado sin policy                                 | 3 INFO   | Baseline preservado; no añadido por estas migraciones.                                                                                          |
 
 ## Evidencia y límites
 

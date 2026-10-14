@@ -63,15 +63,15 @@ No se afirma atomicidad universal del historial: la migración histórica
 
 Comparación 014 aplicada → 012 aplicada:
 
-| Control | Resultado |
-| --- | --- |
-| Privilegios administrativos efectivos retirados | 105 |
-| ACL de funciones cambiadas | 10 firmas exactas |
-| CRUD de anon/authenticated/service_role/supabase_auth_admin | Cero cambios |
-| Policies, RLS, propietarios y cuerpos/configuración de funciones | Sin cambios |
-| Roles, membresías, esquemas y secuencias | Sin cambios |
-| Defaults service_role y supabase_admin | Sin cambios |
-| service_role SELECT accounts/profiles/accounts_memberships | Positivos antes y después |
+| Control                                                          | Resultado                 |
+| ---------------------------------------------------------------- | ------------------------- |
+| Privilegios administrativos efectivos retirados                  | 105                       |
+| ACL de funciones cambiadas                                       | 10 firmas exactas         |
+| CRUD de anon/authenticated/service_role/supabase_auth_admin      | Cero cambios              |
+| Policies, RLS, propietarios y cuerpos/configuración de funciones | Sin cambios               |
+| Roles, membresías, esquemas y secuencias                         | Sin cambios               |
+| Defaults service_role y supabase_admin                           | Sin cambios               |
+| service_role SELECT accounts/profiles/accounts_memberships       | Positivos antes y después |
 
 Los tres SELECT resuelven la divergencia de catálogo del bootstrap manual
 anterior; no prueban por sí solos circuitos operacionales externos.
@@ -85,11 +85,11 @@ SHA256: `3c757bdbd8eec9b46b061356ac64d0cd71bc951f4c9aef1172dcee6f7f525b24`.
 Wrapper: BEGIN READ ONLY, setup oficial, query original agregada a JSON, ROLLBACK.
 No se presenta como ejecución del comando CLI, cuyo acceso TCP estaba bloqueado.
 
-| Punto | Hallazgos | Diferencias |
-| --- | --- | --- |
-| 159 — baseline | 66: 65 INFO / 1 WARN | Baseline capturado |
-| 160 — tras 014 | 66 | JSON completo idéntico |
-| 161 — tras 012 | 66 | JSON completo idéntico |
+| Punto          | Hallazgos            | Diferencias            |
+| -------------- | -------------------- | ---------------------- |
+| 159 — baseline | 66: 65 INFO / 1 WARN | Baseline capturado     |
+| 160 — tras 014 | 66                   | JSON completo idéntico |
+| 161 — tras 012 | 66                   | JSON completo idéntico |
 
 INFO: 61 unused_index, tres rls_enabled_no_policy y un no_primary_key.
 WARN: search_path mutable de billing.assert_provider_price_matches_plan.
@@ -117,7 +117,6 @@ identidad, preservación y arrays completos de advisors.
 Siguiente paso recomendado: preparar la etapa Cloud 014 → 012 para autorización
 explícita, con preflight de identidad/historial/ACL y verificación posterior. No
 hay autorización de aplicación Cloud en este ensayo ni se declara paridad.
-
 
 ## PgTAP y corrección del destino de la fixture 42
 
@@ -152,7 +151,6 @@ ensayo sí prueba la concurrencia contra el destino desechable exacto. No se
 modifica la fixture versionada dentro de este lote; su parametrización portable
 queda como mejora del harness separada de Grants.
 
-
 ## Cierre local y limpieza final
 
 HBA original restaurado: comparación exacta de bytes true, pg_reload_conf true
@@ -176,7 +174,6 @@ tráfico Realtime, providers, instalación de cliente ni evidencia Cloud. No se
 repitieron Vitest/typecheck/lint porque esta etapa no cambia código de aplicación
 ni fuentes SQL versionadas. Formato focalizado, check-docs y diff se verifican
 al cerrar los documentos.
-
 
 Checks documentales finales observados: Prettier focalizado exit 0;
 node scripts/check-docs.mjs exit 0 (123 Markdown); git diff --check exit 0.

@@ -132,14 +132,14 @@ comparaciones históricas de `docs/local/` no son autoridad actual.
 
 ### Brechas que sí cambian el cierre
 
-| Dimensión anunciada por referentes                          | Situación de Iroko en esta investigación                                                                   | Decisión                                                                        |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Instalación, guías y actualizaciones para reutilizar el kit | Hay setup y guías; no hay ensayo independiente observado de instalación/extensión/upgrade                  | Plan 015, necesario incluso para uso propio                                     |
-| Configuraciones coherentes de organizaciones y billing      | Hay flags y modelo de cuentas; ocultar enlaces no garantiza ausencia de dependencias o bloqueo de acciones | Plan 015 demuestra solo dos configuraciones; no prometer presets adicionales    |
-| Servicios comunes listos para extender                      | Existe una base amplia, con defectos concretos y recetas incompletas                                       | Plan 014 corrige; Plan 015 documenta y prueba la extensión                      |
+| Dimensión anunciada por referentes                          | Situación de Iroko en esta investigación                                                                   | Decisión                                                                                                  |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Instalación, guías y actualizaciones para reutilizar el kit | Hay setup y guías; no hay ensayo independiente observado de instalación/extensión/upgrade                  | Plan 015, necesario incluso para uso propio                                                               |
+| Configuraciones coherentes de organizaciones y billing      | Hay flags y modelo de cuentas; ocultar enlaces no garantiza ausencia de dependencias o bloqueo de acciones | Plan 015 demuestra solo dos configuraciones; no prometer presets adicionales                              |
+| Servicios comunes listos para extender                      | Existe una base amplia, con defectos concretos y recetas incompletas                                       | Plan 014 corrige; Plan 015 documenta y prueba la extensión                                                |
 | Varios proveedores y cobros avanzados                       | Core extensible y adapters no equivalen a certificación; la evidencia MP está acotada por escenario        | Plan 011 diferido para escenarios/proveedores adicionales; no agregar uso/asientos para igualar una tabla |
-| IA monetizada, créditos o stacks alternativos               | No hay vertical IA completo ni soporte multi-framework demostrado                                          | Fuera del cierre; no mejora por sí solo la promesa acordada                     |
-| Empaquetado, soporte y entrega comercial                    | Iroko no está aceptado como producto instalable para terceros                                              | Plan 013 diferido hasta decidir vender, reutilizando evidencia de 015           |
+| IA monetizada, créditos o stacks alternativos               | No hay vertical IA completo ni soporte multi-framework demostrado                                          | Fuera del cierre; no mejora por sí solo la promesa acordada                                               |
+| Empaquetado, soporte y entrega comercial                    | Iroko no está aceptado como producto instalable para terceros                                              | Plan 013 diferido hasta decidir vender, reutilizando evidencia de 015                                     |
 
 La hipótesis es **adaptación rápida sobre Supabase con operación explicable y
 una ruta de cobro Chile/CLP aceptada**. Mercado Pago puede aportar valor regional,

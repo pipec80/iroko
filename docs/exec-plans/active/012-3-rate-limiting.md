@@ -31,13 +31,13 @@ Plan padre: [012](012-security-hardening-and-pricing-truth.md).
 
 - [x] Baseline exacto del stack oficial, rama, índice y cambios pendientes.
 - [x] Agente pruebas: harness HTTP local, 100/101, rollback, conexiones reales
-  concurrentes y cleanup limitado a fixtures propios. Registrar RED antes del fix.
+      concurrentes y cleanup limitado a fixtures propios. Registrar RED antes del fix.
 - [x] Agente SQL: hook y admisión en secuencia, espejos, pgTAP, ACL/RLS y
-  mantenimiento indexado acotado, conservando tareas anteriores.
+      mantenimiento indexado acotado, conservando tareas anteriores.
 - [x] Agente TypeScript: resolución de IP, admisión tipada, endpoint y unitarios
-  RED/GREEN; conservar verificación anterior para otros consumidores.
+      RED/GREEN; conservar verificación anterior para otros consumidores.
 - [x] Coordinador: tipos locales, aceptación integrada, revisión independiente,
-  documentación e integración Git selectiva.
+      documentación e integración Git selectiva.
 
 ## Gates de aceptación
 

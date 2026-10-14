@@ -7,24 +7,24 @@ Estado: 014-T1 aceptado localmente; SQL, build webpack, E2E y checks finales apr
 
 ## Propiedad y supervisión
 
-| Frente | Archivos / contrato | Estado |
-| --- | --- | --- |
-| Aplicación | robot-config, página Robot, comentario appConfig y unitarios propios | Agente implementador; RED antes del guard, GREEN después |
-| Datos | migración aditiva, espejo public.sql y pgTAP Robot | Agente implementador; no aplicar a DB sin identificar destino desechable |
-| Preflight | toolchain y condiciones de unit/SQL/E2E | Agente de lectura; Docker inaccesible, Sentry gate pendiente |
-| Coordinación | documentación, evidencias, revisión independiente y checks comunes | Agente principal |
+| Frente       | Archivos / contrato                                                  | Estado                                                                   |
+| ------------ | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Aplicación   | robot-config, página Robot, comentario appConfig y unitarios propios | Agente implementador; RED antes del guard, GREEN después                 |
+| Datos        | migración aditiva, espejo public.sql y pgTAP Robot                   | Agente implementador; no aplicar a DB sin identificar destino desechable |
+| Preflight    | toolchain y condiciones de unit/SQL/E2E                              | Agente de lectura; Docker inaccesible, Sentry gate pendiente             |
+| Coordinación | documentación, evidencias, revisión independiente y checks comunes   | Agente principal                                                         |
 
 No compartir ownership de fuentes entre agentes; preservar cambios de terceros.
 No installs, Cloud, deploy, push, merge ni limpieza de recursos del mantenedor.
 
 ## Preflight y decisiones (primera implementación)
 
-| Interfaces / tareas | Contraste | Decisión |
-| --- | --- | --- |
-| Aplicación/SQL | Flag gobierna disponibilidad; RPC/RLS deben verificar roles vivos | Dos capas distintas; SQL no confía en UI/JWT antiguo |
-| Tests/implementación | Plan requiere errores module_disabled/not_authorized, sin efectos en apagado | Guard antes de crear cliente/parsear; test helper real con frontera RPC mock |
-| SQL/espejo | Historia aplicada no se reescribe; número43 y timestamp deben estar libres | Migración nueva + espejo en el mismo cambio |
-| App/E2E | E2E requiere usuario real y build/start; fixture selecciona primer contenedor | Preparar spec, no ejecutarlo sin target local identificado y gate Sentry |
+| Interfaces / tareas  | Contraste                                                                     | Decisión                                                                     |
+| -------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Aplicación/SQL       | Flag gobierna disponibilidad; RPC/RLS deben verificar roles vivos             | Dos capas distintas; SQL no confía en UI/JWT antiguo                         |
+| Tests/implementación | Plan requiere errores module_disabled/not_authorized, sin efectos en apagado  | Guard antes de crear cliente/parsear; test helper real con frontera RPC mock |
+| SQL/espejo           | Historia aplicada no se reescribe; número43 y timestamp deben estar libres    | Migración nueva + espejo en el mismo cambio                                  |
+| App/E2E              | E2E requiere usuario real y build/start; fixture selecciona primer contenedor | Preparar spec, no ejecutarlo sin target local identificado y gate Sentry     |
 
 Ruling: reutilizar el checkout actual en una rama local acotada y preservar
 los documentos de016-T1 — evita mover cambios pendientes. Coste si equivocado:
@@ -67,25 +67,23 @@ migración aplicada ni cierre del plan.
 
 ## Verificación registrada (primera implementación)
 
-| Comando / contraste | Resultado | Alcance |
-| --- | --- | --- |
-| `pnpm test src/lib/__tests__/robot-config.test.ts "dashboard/robot/__tests__"` antes del cambio | RED: 10 fallos esperados, 22 aprobados | Reporte del implementador; mock incompleto corregido antes de RED definitivo |
-| Mismo comando tras el cambio | GREEN: 2 archivos, 32 pruebas aprobadas, exit 0 | Ejecución local del implementador |
-| Migración frente a espejo | RPC y bloque de políticas idénticos | Comparación estática del implementador |
-| pgTAP | GREEN: 240 aserciones sin fallos | DB desechable identificada; ver resultados SQL posteriores |
-| Build / Playwright / Cloud | [NO VERIFICADO] | Gate Sentry y aislamiento del entorno pendientes; ninguna escritura Cloud |
+| Comando / contraste                                                                             | Resultado                                       | Alcance                                                                      |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------------- | ---------------------------------------------------------------------------- |
+| `pnpm test src/lib/__tests__/robot-config.test.ts "dashboard/robot/__tests__"` antes del cambio | RED: 10 fallos esperados, 22 aprobados          | Reporte del implementador; mock incompleto corregido antes de RED definitivo |
+| Mismo comando tras el cambio                                                                    | GREEN: 2 archivos, 32 pruebas aprobadas, exit 0 | Ejecución local del implementador                                            |
+| Migración frente a espejo                                                                       | RPC y bloque de políticas idénticos             | Comparación estática del implementador                                       |
+| pgTAP                                                                                           | GREEN: 240 aserciones sin fallos                | DB desechable identificada; ver resultados SQL posteriores                   |
+| Build / Playwright / Cloud                                                                      | [NO VERIFICADO]                                 | Gate Sentry y aislamiento del entorno pendientes; ninguna escritura Cloud    |
 
 Revisión independiente aprobada estáticamente. Verificación integrada del coordinador: No regenerar tipos: no
 cambian tablas, columnas ni firmas expuestas. T2 y T3 no se implementan en este
 lote. El flag de aplicación no revoca el acceso SQL autorizado por sí mismo.
 
-
-| Comando actual del coordinador | Resultado |
-| --- | --- |
-| `pnpm test src/lib/__tests__/robot-config.test.ts "dashboard/robot/__tests__"` | exit 0; 2 archivos/32 pruebas aprobadas; duración 6.08 s |
-| `pnpm typecheck` | exit 0, sin errores |
-| `pnpm lint` | exit 0; cero errores y cuatro warnings de non-null assertion en el spec existente `mercadopago-cloud-acceptance.spec.ts`, fuera del cambio |
-
+| Comando actual del coordinador                                                 | Resultado                                                                                                                                  |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm test src/lib/__tests__/robot-config.test.ts "dashboard/robot/__tests__"` | exit 0; 2 archivos/32 pruebas aprobadas; duración 6.08 s                                                                                   |
+| `pnpm typecheck`                                                               | exit 0, sin errores                                                                                                                        |
+| `pnpm lint`                                                                    | exit 0; cero errores y cuatro warnings de non-null assertion en el spec existente `mercadopago-cloud-acceptance.spec.ts`, fuera del cambio |
 
 ## Revisión inicial y siguiente gate (antes de runtime)
 
@@ -111,19 +109,18 @@ presentar el conteo estático como una suite aprobada.
 T1 conserva abiertos RED base de datos y GREEN/cierre. T2 y T3 quedan en su
 orden posterior, sin cambios de código en esta entrega.
 
-
 ## Extensión autorizada: aceptación aislada — 2026-10-08
 
 El mantenedor autorizó avanzar los cuatro gates y coordinar agentes especializados.
 
 - [x] Docker: comprobar stack existente y crear proyecto desechable separado,
-  puertos propios, sin .env.local/.temp/seed heredados ni jobs salientes.
+      puertos propios, sin .env.local/.temp/seed heredados ni jobs salientes.
 - [x] SQL: ejecutar fixture antes de014 (RED), aplicar únicamente a destino
-  aislado y repetir pgTAP (GREEN); contar TAP real, no solo exit de psql.
+      aislado y repetir pgTAP (GREEN); contar TAP real, no solo exit de psql.
 - [x] Sentry: modo local explícito que impida plugin/uploads e init SDK,
-  rechace destinos Cloud y preserve comportamiento normal; RED/GREEN propios.
+      rechace destinos Cloud y preserve comportamiento normal; RED/GREEN propios.
 - [x] Navegador: harness con selector exacto DB, variables locales explícitas,
-  build y URL directa/reload; cleanup de usuario incluso ante fallo.
+      build y URL directa/reload; cleanup de usuario incluso ante fallo.
 
 Ownership paralela: agente Docker solo scratch y recursos locales nuevos;
 agente Sentry config/env/init y sus pruebas; agente harness fixtures/helpers,
@@ -142,7 +139,6 @@ pura, validación y fallos explícitos; SQL: aislamiento, roles vivos y TAP real
 React/Next: sin middleware nuevo ni memoización manual; pruebas: RED/GREEN
 observable y cleanup; Realtime: sin cambios en canales. Se mantienen las
 excepciones documentadas de env.ts, CREATE OR REPLACE, diseño y recetas locales.
-
 
 ### Preflight actual de aceptación
 
@@ -164,7 +160,6 @@ Se corrigió el SHA histórico de inspección IoT en current-state: sustitución
 global del conteo231→240 lo había alterado accidentalmente. La corrección
 preserva `993ff4b5903a852231067858ee3ce9096431a651` como evidencia histórica.
 
-
 ### Reanudación tras límite de uso
 
 La revisión automática no pudo aprobar la creación de la copia temporal por
@@ -182,20 +177,19 @@ Verificación actual del coordinador:
 → exit 0, 5 archivos/74 pruebas aprobadas. `pnpm typecheck` → exit 0.
 Lint y suite unitaria completa en ejecución. Build/E2E todavía no ejecutados.
 
-
 ### Resultado SQL observado y gate de calidad
 
 Destino exacto: `supabase_db_iroko-014-20261008`, puerto55322, proyecto y
 label comprobados. Se aplicaron159 migraciones baseline antes de014.
 
-| Ejecución | Resultado observado |
-| --- | --- |
-| Fixture43 antes de014 | plan 240,240 TAP, 56 fallos; psql exit0 no representa GREEN |
-| Aplicación014 al proyecto desechable | exit0 |
-| Misma fixture43 después de014 | plan 240,240 TAP, 0 fallos; exit0, ROLLBACK |
+| Ejecución                              | Resultado observado                                                               |
+| -------------------------------------- | --------------------------------------------------------------------------------- |
+| Fixture43 antes de014                  | plan 240,240 TAP, 56 fallos; psql exit0 no representa GREEN                       |
+| Aplicación014 al proyecto desechable   | exit0                                                                             |
+| Misma fixture43 después de014          | plan 240,240 TAP, 0 fallos; exit0, ROLLBACK                                       |
 | Control posterior del proyecto aislado | cronOFF,0 jobs activos,0 Vault,0 solicitudes net pendientes,0 usuarios de fixture |
-| `pnpm test` completo actual | exit0,103 archivos/1088 pruebas aprobadas,133.23s |
-| Prettier de gate/harness | exit0 |
+| `pnpm test` completo actual            | exit0,103 archivos/1088 pruebas aprobadas,133.23s                                 |
+| Prettier de gate/harness               | exit0                                                                             |
 
 Logs locales ignorados: `.superpowers/014-validation/docker/robot43-red.log`,
 `014-apply.log`, `robot43-green.log`; el coordinador contó directamente TAP y
@@ -211,7 +205,6 @@ compatibilidad de fixture con otra versión Storage, sin alterar producción.
 CLIstart terminó exit 0 pero solo quedóDB: no declarar stack operativo por exit code.
 AgenteAPI asumió bootstrap de Auth/PostgREST/Kong/Mailpit con imágenes cacheadas,
 variables desechables y sin reejecutar migrations ni tocar stack del mantenedor.
-
 
 ### API aislada y arranque de navegador
 
@@ -237,7 +230,6 @@ canónico en checkout aislado con dependencias propias en futura integración.
 local-sentry.test.ts, más cuatro warnings previos deMercadoPago. Implementador
 corrige solo el test y repetirá verificación; no registrar lintGREEN aún.
 
-
 ### Calidad final tras corrección de lint
 
 Se corrigió únicamente el test Sentry: valor ausente nombrado conserva la
@@ -253,7 +245,6 @@ filesystem root de la copia aislada. Variante webpack en curso; no confundir
 ese límite del harness con un build canónico aprobado. Auth aislado tiene el
 hook custom_access_token activo, URI coherente con configuración y EXECUTE
 verificado para supabase_auth_admin, sin reinicios ni mutaciones adicionales.
-
 
 ### Build y primer E2E observados
 
@@ -278,7 +269,6 @@ Se autorizó fixture retirar únicamente su propia cuenta personal antesAuthdele
 probar fallos setup/cleanup, repetir E2E y comprobar todos los conteos0.
 Nueva revisión independiente del ajuste de harness en curso.
 
-
 ### Corrección de lifecycle de fixture
 
 Cuenta personal huérfana identificada como propia fixture (triggerid=NEW.id),
@@ -298,7 +288,6 @@ por implementador. Se sincronizósolofixture/helper a scratch, app/buildsin camb
 segundaE2E yconteosresiduales en curso. No es necesario recompilar aplicación
 por cambios exclusivos del harness de Playwright.
 
-
 ## Resultado de aceptación funcional local
 
 La segunda E2E aprobó 1/1 en 6.0 s con el mismo BUILD_ID. El coordinador
@@ -317,20 +306,19 @@ Recomendación siguiente: 012.1 — Grants. Inventariar privilegios efectivos en
 la DB aislada y contrastar consumidores y roles antes de proponer revokes.
 Preservar datos y recursos del mantenedor; ninguna escritura Cloud autorizada.
 
-
 ## Cierre y recomendación
 
 014-T1 cerrado para aceptación local. Checklist del plan actualizado, revisión
 independiente aprobada y evidencia actual completa para su alcance.
 
-| Check final | Resultado |
-| --- | --- |
-| `pnpm test` | exit 0; 104 archivos y 1092 pruebas aprobadas; 114.96 s |
-| `pnpm typecheck` | exit 0, sin errores |
-| `pnpm lint` | exit 0; cero errores, cuatro warnings previos fuera del lote |
-| pgTAP Robot | RED 240/56 fallos; GREEN 240/0; DB desechable |
-| Build + sitemap | Next CLI webpack y next-sitemap instalado: exit 0 |
-| E2E final | Chromium 1/1 aprobado; login real, URL directa, recarga y cleanup sin residuos |
+| Check final      | Resultado                                                                      |
+| ---------------- | ------------------------------------------------------------------------------ |
+| `pnpm test`      | exit 0; 104 archivos y 1092 pruebas aprobadas; 114.96 s                        |
+| `pnpm typecheck` | exit 0, sin errores                                                            |
+| `pnpm lint`      | exit 0; cero errores, cuatro warnings previos fuera del lote                   |
+| pgTAP Robot      | RED 240/56 fallos; GREEN 240/0; DB desechable                                  |
+| Build + sitemap  | Next CLI webpack y next-sitemap instalado: exit 0                              |
+| E2E final        | Chromium 1/1 aprobado; login real, URL directa, recarga y cleanup sin residuos |
 
 Turbopack canónico, Cloud, providers, pgTAP completo y E2E de todos los módulos:
 **[NO VERIFICADO]**. No commits, push, merge ni deploy. El proyecto desechable

@@ -28,11 +28,11 @@ without erasing the history that explains how the current system was built.
 
 The design inspection on 2026-10-05 found 422 unique files below `docs/`:
 
-| Class | Count | Meaning |
-| --- | ---: | --- |
-| Git tracked | 241 | Versioned repository documentation and assets |
-| Untracked and not ignored | 8 | Current documentation work that must be preserved and classified |
-| Ignored | 173 | Local history, private material, screenshots, generated previews and other machine-local evidence |
+| Class                     | Count | Meaning                                                                                           |
+| ------------------------- | ----: | ------------------------------------------------------------------------------------------------- |
+| Git tracked               |   241 | Versioned repository documentation and assets                                                     |
+| Untracked and not ignored |     8 | Current documentation work that must be preserved and classified                                  |
+| Ignored                   |   173 | Local history, private material, screenshots, generated previews and other machine-local evidence |
 
 Counts describe the inspected worktree and are not permanent targets. The
 implementation starts by refreshing the inventory because files can change
@@ -96,17 +96,17 @@ hierarchy or makes another document authoritative.
 
 The following ownership rules prevent duplication:
 
-| Document | Owns | Must not own |
-| --- | --- | --- |
-| `docs/index.md` | Navigation, read order and lifecycle links | A second detailed work queue |
-| `docs/current-state.md` | Verified status, evidence dates and known operational gaps | Product aspirations or historical checklists |
-| `ROADMAP.md` | Freeze scope, ordered work, exit gates and deferred boundary | Engineering rules, provider evidence or implementation prompts |
-| `docs/capabilities.md` | Declared foundation inventory and evidence boundary | Execution order |
-| `docs/architecture/` | Durable boundaries and rationale | Mutable task status |
-| `docs/exec-plans/` | Acceptance criteria for bounded work | Product-wide strategy |
-| `docs/quality/` and `docs/audits/` | Dated evidence and investigation | Authorization to implement |
-| `docs/history/` | Superseded versioned material | Current status or instructions |
-| `docs/local/` | Ignored working history and private local references | Repository authority |
+| Document                           | Owns                                                         | Must not own                                                   |
+| ---------------------------------- | ------------------------------------------------------------ | -------------------------------------------------------------- |
+| `docs/index.md`                    | Navigation, read order and lifecycle links                   | A second detailed work queue                                   |
+| `docs/current-state.md`            | Verified status, evidence dates and known operational gaps   | Product aspirations or historical checklists                   |
+| `ROADMAP.md`                       | Freeze scope, ordered work, exit gates and deferred boundary | Engineering rules, provider evidence or implementation prompts |
+| `docs/capabilities.md`             | Declared foundation inventory and evidence boundary          | Execution order                                                |
+| `docs/architecture/`               | Durable boundaries and rationale                             | Mutable task status                                            |
+| `docs/exec-plans/`                 | Acceptance criteria for bounded work                         | Product-wide strategy                                          |
+| `docs/quality/` and `docs/audits/` | Dated evidence and investigation                             | Authorization to implement                                     |
+| `docs/history/`                    | Superseded versioned material                                | Current status or instructions                                 |
+| `docs/local/`                      | Ignored working history and private local references         | Repository authority                                           |
 
 ## Target structure
 

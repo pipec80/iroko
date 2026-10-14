@@ -16,7 +16,7 @@ Módulos propuestos: src/lib/webhooks/destination.ts, transport.ts y worker.ts; 
 
 Interfaces TypeScript propuestas:
 
-~~~typescript
+```typescript
 type ValidatedDestination = Readonly<{
   hostname: string;
   port: number;
@@ -35,7 +35,7 @@ sendWebhookRequest(input: {
   headers: Readonly<Record<string, string>>;
   signal: AbortSignal;
 }): Promise<DeliveryOutcome>;
-~~~
+```
 
 Las firmas finales serán funciones exportadas con tipos explícitos, import type y validación en fronteras. El resultado validado se crea dentro del sender; un consumidor no puede suministrar una IP arbitraria a una ruta pública.
 
@@ -57,7 +57,7 @@ Node verifica sesión, cuenta/rol vivo y límites antes del DNS; tras validar em
 
 Firmas propuestas (nombres distintos para transición explícita):
 
-~~~sql
+```sql
 -- Solo service_role; issue revalida permisos de actor y contexto.
 public.reserve_webhook_url_validation(
   p_account_id uuid, p_actor_id uuid, p_operation text,
@@ -76,7 +76,7 @@ public.update_webhook_endpoint_validated(
   p_endpoint_id uuid, p_url text, p_events text[], p_enabled boolean,
   p_description text, p_expected_version bigint, p_validation_ticket uuid
 ) returns void;
-~~~
+```
 
 La UI conserva sus resultados mediante actions-webhooks.ts, incorporando validación Node + ticket + RPC autenticada. Clientes directos necesitarán un endpoint autenticado de validación y luego la nueva RPC. Las firmas antiguas rechazarán con webhook_validation_required; no se conserva fallback sin ticket. Esta transición debe aprobarse y documentarse antes de implementar. La ruta de validación y su contrato JSON se fijarán en el desglose T3; no existe aún.
 
@@ -88,7 +88,7 @@ Tabla propuesta private.webhook_url_validations sin grants a anon/authenticated,
 
 Trigger de webhook solo inserta trabajo; ninguna conexión de red dentro de la transacción de miembros/cuenta. Retirar el camino directo de send_webhook_delivery y el procesador cron antiguo; nunca habilitar dos senders simultáneamente. Endpoints existentes se revalidan por el sender en cada entrega, sin excepciones heredadas.
 
-~~~sql
+```sql
 -- Solo service_role. SQL firma con Vault y devuelve bytes exactos, no whsec_.
 public.claim_webhook_deliveries(
   p_worker_id uuid, p_batch_size integer, p_visibility_seconds integer
@@ -101,7 +101,7 @@ public.complete_webhook_delivery(
   p_delivery_id uuid, p_lease_token uuid, p_outcome text,
   p_http_status integer, p_error_code text
 ) returns void;
-~~~
+```
 
 Claim con FOR UPDATE SKIP LOCKED y fencing token; lote máximo5, concurrencia5, lease60 s y presupuesto de worker40 s. Un intento se reserva e incrementa al claim, incluso si el proceso cae antes de enviar; evita retries ilimitados. Al expirar el lease sin outcome, el intento reservado permanece consumido; liberar el lease y programar failed/backoff o exhausted al cuarto intento. Outcome usa lista cerrada success/retryable/rejected y errores controlados, nunca texto remoto. Agotamiento tras cuatro intentos; conservar backoff1m/5m/30m. No afirmar exactamente una vez: caída tras recepción remota puede producir duplicados; ID de delivery estable permite deduplicar al receptor.
 
