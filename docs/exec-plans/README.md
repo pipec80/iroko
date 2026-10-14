@@ -38,6 +38,11 @@ Plan 016 T1 has an
 for security, integrity and critical flows. It preserves the parent plan's full
 inventory and lifecycle; its task map records planning, not completed review.
 
+Plan 012 PR4 has a [proposed execution breakdown](active/012-4-csp-and-secrets.md)
+and [dated static inventory](../audits/2026-10-14-plan-012-4-readiness.md).
+These refine existing freeze scope; their presence is not implementation or
+authorization for Cloud changes.
+
 ## Deferred and completed records
 
 - [Plan 011 billing family](deferred/011-billing/README.md)

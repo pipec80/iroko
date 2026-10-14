@@ -269,6 +269,12 @@ del API.
 
 ## PR 4 — `chore/csp-and-secrets-hardening`
 
+**Preparación — 2026-10-14:** alcance contrastado con código y consumidores en
+el [inventario estático](../../audits/2026-10-14-plan-012-4-readiness.md).
+El [plan ejecutable 012.4](012-4-csp-and-secrets.md) propone tareas, contratos,
+ownership y aceptación; está preparado para revisión, no implementado.
+El gate local existente no cierra uploads normales, CSP ni secretos.
+
 **Ejecución.**
 
 1. Secretos dedicados: HMAC de impersonation con su propio secret (hoy a

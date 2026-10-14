@@ -37,6 +37,12 @@ asignen a una ejecución concreta. Al retomarlos, crear o enlazar su plan/ticket
 desde la fila correspondiente y cerrar únicamente con evidencia; no convertir
 la fecha de este documento en una nueva verificación de proveedores.
 
+NEXT-0124 ya cuenta con [propuesta ejecutable](../exec-plans/active/012-4-csp-and-secrets.md)
+e [inventario estático](2026-10-14-plan-012-4-readiness.md), preparados el
+2026-10-14. El estado sigue siendo propuesta para revisión: ninguna casilla de
+implementación se cierra con esa documentación. Los seguimientos RL-F01–RL-F07
+mantienen sus propios límites y no se dan por corregidos al redactar 012.4.
+
 ## Límites de operación
 
 - El usuario confirmó el 2026-10-14 que todos sus servicios usan planes

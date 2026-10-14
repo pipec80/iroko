@@ -95,6 +95,20 @@ See the [execution record](audits/2026-10-14-plan-012-3-cloud-execution.md).
 
 ## Product position
 
+### Plan 012.4 preparation — 2026-10-14
+
+The [static readiness inventory](audits/2026-10-14-plan-012-4-readiness.md)
+and [proposed execution plan](exec-plans/active/012-4-csp-and-secrets.md) contrast
+PR4 with current sources. Confirmed in source: impersonation HMAC reuses the
+Supabase server key; the expiry route and SQL authorization differ; mock and
+navigation lack some explicit boundaries; production CSP still permits inline
+scripts; the local Sentry gate is not a general upload authorization gate.
+These are static findings, not newly reproduced runtime failures or exploits.
+No product code, secrets, providers or dependencies were changed by planning.
+Runtime/Cloud acceptance of 012.4 remains **[NO VERIFICADO]**. The proposal keeps
+styles inline as an explicit exception and mock replay as separate follow-up;
+all services are user-declared Free, with no paid upgrade authorized.
+
 Owner clarification, 2026-10-13: all current Iroko environments and external
 integrations are MVP/test environments, including hosting environments labelled
 `production` by their providers. There is no customer production data requiring
