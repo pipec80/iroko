@@ -102,7 +102,7 @@ b43fbfffa86dfe810f3d44657d365a9513cfbc31:supabase/tests/database/44_minimum_gran
 b43fbfffa86dfe810f3d44657d365a9513cfbc31:supabase/tests/database/44_minimum_grants.test.sql:generic-api-key:187
 ```
 
-## Aceptación e integración por completar
+## Estado registrado antes de publicar el candidato
 
 El coordinador debe reemplazar cada estado pendiente solo con resultados de la
 selección exacta final, conservando los fallos y limitaciones observados.
@@ -154,6 +154,20 @@ validaciones se interrumpieron al renovar dependencias; no se cuentan como PASS.
 La aceptación final y CI permanecen pendientes hasta registrar sus resultados.
 
 ## Siguiente paso
+
+### Primer candidato publicado
+
+PR [#221](https://github.com/pipec80/iroko/pull/221), SHA `bf72cd4`.
+CI renovado aprobó Quality (typecheck, lint, formato de código y Knip),
+112 archivos/1281 unitarios, 49 archivos/999 assertions pgTAP, Database Types,
+10 pruebas Edge, CodeQL, Gitleaks y auditoría de producción. El preview Vercel
+quedó READY; ese build no constituye aceptación funcional del deployment.
+El primer check Documentation aprobó enlaces (147 documentos) y design-system,
+pero falló formato en dos documentos históricos renombrados de billing.
+Se corrigió solo su formato y se amplió la comprobación a la selección completa
+de Markdown versionado usada por CI. No se modificaron migraciones aplicadas.
+Los checks del candidato sustituto, SQL/E2E/build y merge deben observarse antes
+de aceptar integración; consultar el PR para el SHA y estado definitivos.
 
 Completar la aceptación del candidato y su PR; resolver los checks antes del
 merge y documentar el riesgo de build pendiente. Solo después partir una

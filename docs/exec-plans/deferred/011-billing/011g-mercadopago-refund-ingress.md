@@ -79,24 +79,24 @@ external_resource_id)` remains the deduplication key. Replays increment its
 
 ## File map
 
-| File                                                                       | Responsibility                                                                                             |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `src/lib/billing/types.ts`                                                 | Typed non-reducer webhook result and optional discovery anomaly collection.                                |
-| `src/lib/billing/providers/mercadopago.ts`                                 | Fresh-payment classification shared by recovery, webhook ingress, and invoice discovery.                   |
-| `src/lib/billing/providers/__tests__/mercadopago.test.ts`                  | Adapter-level identity, amount/currency, full/partial, ordinary-paid, and bounded-discovery tests.         |
-| `supabase/migrations/20260911140000_billing_financial_anomaly_ingress.sql` | Extends the service-only checkout-reference result with the exact local subscription ID.                   |
-| `supabase/schemas/public.sql`                                              | Human-readable mirror of the changed reference resolver and grants.                                        |
-| `supabase/tests/database/36_billing_checkout_intents.test.sql`             | pgTAP proof that resolver output binds account, intent and subscription without relaxing grants.           |
-| `supabase/tests/database/41_billing_financial_anomaly_detail.test.sql`     | pgTAP proof that the anomaly key distinguishes provider/type/payment and counts same-key replays.          |
-| `src/types/database.ts`                                                    | Generated TypeScript definition for the expanded resolver result.                                          |
-| `src/lib/billing/webhook-handler.ts`                                       | Resolves and persists a typed financial anomaly without entering the reducer.                              |
-| `src/lib/billing/__tests__/webhook-handler.test.ts`                        | Handler-level persistence, replay, no-reducer, no-raw-log, and failed-correlation tests.                   |
-| `src/lib/billing/reconciliation.ts`                                        | Persists discovery anomalies with a claimed account/subscription before reducing unrelated invoice events. |
-| `src/lib/billing/__tests__/reconciliation.test.ts`                         | Worker-level anomaly/no-access, failure-isolation and deadline/cursor regression tests.                    |
-| `docs/exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md`           | Records the completed ingress evidence without rewriting its historical execution record.                  |
-| `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`            | Replaces MP-10's local ingress gap with exact local evidence while retaining provider/manual gates.        |
-| `docs/exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md`            | Keeps the reliability dependency ordering aligned with the completed local ingress path.                   |
-| `docs/current-state.md`                                                    | States the local code status and preserves operational/acceptance evidence as **[NO VERIFICADO]**.         |
+| File                                                                           | Responsibility                                                                                             |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `src/lib/billing/types.ts`                                                     | Typed non-reducer webhook result and optional discovery anomaly collection.                                |
+| `src/lib/billing/providers/mercadopago.ts`                                     | Fresh-payment classification shared by recovery, webhook ingress, and invoice discovery.                   |
+| `src/lib/billing/providers/__tests__/mercadopago.test.ts`                      | Adapter-level identity, amount/currency, full/partial, ordinary-paid, and bounded-discovery tests.         |
+| `supabase/migrations/20260911140000_billing_financial_anomaly_ingress.sql`     | Extends the service-only checkout-reference result with the exact local subscription ID.                   |
+| `supabase/schemas/public.sql`                                                  | Human-readable mirror of the changed reference resolver and grants.                                        |
+| `supabase/tests/database/36_billing_checkout_intents.test.sql`                 | pgTAP proof that resolver output binds account, intent and subscription without relaxing grants.           |
+| `supabase/tests/database/41_billing_financial_anomaly_detail.test.sql`         | pgTAP proof that the anomaly key distinguishes provider/type/payment and counts same-key replays.          |
+| `src/types/database.ts`                                                        | Generated TypeScript definition for the expanded resolver result.                                          |
+| `src/lib/billing/webhook-handler.ts`                                           | Resolves and persists a typed financial anomaly without entering the reducer.                              |
+| `src/lib/billing/__tests__/webhook-handler.test.ts`                            | Handler-level persistence, replay, no-reducer, no-raw-log, and failed-correlation tests.                   |
+| `src/lib/billing/reconciliation.ts`                                            | Persists discovery anomalies with a claimed account/subscription before reducing unrelated invoice events. |
+| `src/lib/billing/__tests__/reconciliation.test.ts`                             | Worker-level anomaly/no-access, failure-isolation and deadline/cursor regression tests.                    |
+| `docs/exec-plans/deferred/011-billing/011c-mercadopago-financial-anomalies.md` | Records the completed ingress evidence without rewriting its historical execution record.                  |
+| `docs/exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md`  | Replaces MP-10's local ingress gap with exact local evidence while retaining provider/manual gates.        |
+| `docs/exec-plans/deferred/011-billing/011-mercadopago-reliability-roadmap.md`  | Keeps the reliability dependency ordering aligned with the completed local ingress path.                   |
+| `docs/current-state.md`                                                        | States the local code status and preserves operational/acceptance evidence as **[NO VERIFICADO]**.         |
 
 ---
 
