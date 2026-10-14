@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 
 import { ExcelUploadDropzone } from '@/components/dashboard/robot/excel-upload';
@@ -11,13 +11,20 @@ export const metadata: Metadata = {
 };
 
 export default async function RobotConfigPage() {
+  if (!appConfig.features.verticals.robot) notFound();
+
   const supabase = await createClient();
   const { data: authData } = await supabase.auth.getClaims();
   const accountId = authData?.claims.app_metadata?.account_id as string | undefined;
 
-  if (!accountId) {
+  if (!authData?.claims.sub || !accountId) {
     redirect('/login');
   }
+
+  const { data: role, error: roleError } = await supabase.rpc('get_my_account_role', {
+    p_account_id: accountId,
+  });
+  if (roleError || !role || !['owner', 'admin', 'member', 'viewer'].includes(role)) notFound();
 
   const [{ data: routines }, { data: contacts }, { data: memories }, { data: files }] =
     await Promise.all([

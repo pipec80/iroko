@@ -1373,8 +1373,8 @@ BEGIN
     RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501';
   END IF;
 
-  IF NOT private.user_is_member(p_account_id, v_uid) THEN
-    RAISE EXCEPTION 'not_a_member' USING ERRCODE = '42501';
+  IF NOT COALESCE(private.get_user_role(p_account_id, v_uid) IN ('owner', 'admin', 'member'), false) THEN
+    RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
   END IF;
 
   DELETE FROM public.robot_routines WHERE account_id = p_account_id;
@@ -1413,7 +1413,7 @@ $$;
 ALTER FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") IS 'Atomically replaces a tenant''s robot routines/contacts/memories in a single transaction. SECURITY DEFINER with an internal membership check. Prevents the partial-write data loss of the previous delete-then-insert client flow.';
+COMMENT ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") IS 'Atomically replaces a tenant''s robot routines/contacts/memories in a single transaction. SECURITY DEFINER with a live owner/admin/member role check. Prevents the partial-write data loss of the previous delete-then-insert client flow.';
 
 
 
@@ -4165,3 +4165,33 @@ GRANT EXECUTE ON FUNCTION public.claim_billing_reconciliation_candidates(integer
   TO service_role;
 GRANT EXECUTE ON FUNCTION public.complete_billing_reconciliation_candidate(uuid,text,text,timestamptz,text,text)
   TO service_role;
+
+-- Plan 014 T1: replace permissive membership writes in place.
+-- Reads remain scoped to live tenant memberships. JWT role claims are not authority.
+ALTER POLICY "Users can insert routines to their accounts" ON public.robot_routines
+  TO authenticated WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can update routines of their accounts" ON public.robot_routines
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can delete routines of their accounts" ON public.robot_routines
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) = 'owner');
+
+ALTER POLICY "Users can insert contacts to their accounts" ON public.robot_contacts
+  TO authenticated WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can update contacts of their accounts" ON public.robot_contacts
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can delete contacts of their accounts" ON public.robot_contacts
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) = 'owner');
+
+ALTER POLICY "Users can insert memories to their accounts" ON public.robot_memories
+  TO authenticated WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can update memories of their accounts" ON public.robot_memories
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can delete memories of their accounts" ON public.robot_memories
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) = 'owner');
+
+ALTER POLICY "Accounts can insert their own robot configs" ON storage.objects
+  TO authenticated WITH CHECK (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Accounts can delete their own robot configs" ON storage.objects
+  TO authenticated USING (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+CREATE POLICY "Accounts can update their own robot configs" ON storage.objects
+  FOR UPDATE TO authenticated USING (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));

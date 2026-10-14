@@ -3,6 +3,9 @@ import ExcelJS from 'exceljs';
 
 const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
+  createClient: vi.fn(),
+  role: 'member' as string | null,
+  roleError: null as { message: string } | null,
   storageUpload: vi.fn(),
   createSignedUrl: vi.fn(),
   storageList: vi.fn(),
@@ -11,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn().mockResolvedValue({
+  createClient: mocks.createClient.mockResolvedValue({
     auth: { getClaims: mocks.getClaims },
     storage: {
       from: () => ({
@@ -21,7 +24,10 @@ vi.mock('@/lib/supabase/server', () => ({
         remove: mocks.storageRemove,
       }),
     },
-    rpc: (fn: string, args: unknown) => mocks.rpc(fn, args),
+    rpc: (fn: string, args: unknown) =>
+      fn === 'get_my_account_role' ?
+        Promise.resolve({ data: mocks.role, error: mocks.roleError })
+      : mocks.rpc(fn, args),
   }),
 }));
 
@@ -36,6 +42,11 @@ vi.mock('@/env', () => ({
   },
 }));
 
+vi.mock('@/config/app.config', () => ({
+  appConfig: { features: { verticals: { robot: true } } },
+}));
+
+import { appConfig } from '@/config/app.config';
 import { uploadRobotConfigAction, getDownloadUrl } from '../robot-config';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -89,7 +100,9 @@ function makeUploadForm(file?: File): FormData {
 
 function mockAuthenticated() {
   mocks.getClaims.mockResolvedValue({
-    data: { claims: { sub: 'user-uuid-1', app_metadata: { account_id: ACCOUNT_ID } } },
+    data: {
+      claims: { sub: 'user-uuid-1', app_metadata: { account_id: ACCOUNT_ID, role: 'member' } },
+    },
   });
 }
 
@@ -98,11 +111,59 @@ function mockAuthenticated() {
 describe('uploadRobotConfigAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    appConfig.features.verticals.robot = true;
+    mocks.role = 'member';
+    mocks.roleError = null;
+    mocks.createSignedUrl.mockResolvedValue({ data: { signedUrl: 'signed' }, error: null });
     mockAuthenticated();
     mocks.storageUpload.mockResolvedValue({ error: null });
     mocks.storageList.mockResolvedValue({ data: [], error: null });
     mocks.storageRemove.mockResolvedValue({ error: null });
     mocks.rpc.mockResolvedValue({ error: null });
+  });
+
+  it('denies a valid upload when disabled before creating a client or parsing', async () => {
+    appConfig.features.verticals.robot = false;
+    const file = await makeXlsxFile(validSheets);
+    const form = makeUploadForm(file);
+    const readField = vi.spyOn(form, 'get');
+    const result = await uploadRobotConfigAction(PREV, form);
+    expect(result).toEqual({ error: 'module_disabled' });
+    expect(readField).not.toHaveBeenCalled();
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.storageUpload).not.toHaveBeenCalled();
+    expect(mocks.rpc).not.toHaveBeenCalled();
+  });
+
+  it.each(['viewer', null])(
+    'denies upload for live role %s despite authenticated claims',
+    async (role) => {
+      mocks.role = role;
+      const result = await uploadRobotConfigAction(
+        PREV,
+        makeUploadForm(await makeXlsxFile(validSheets)),
+      );
+      expect(result).toEqual({ error: 'not_authorized' });
+      expect(mocks.storageUpload).not.toHaveBeenCalled();
+      expect(mocks.rpc).not.toHaveBeenCalled();
+      expect(mocks.storageList).not.toHaveBeenCalled();
+      expect(mocks.storageRemove).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(['owner', 'admin', 'member'])('allows upload for live editor %s', async (role) => {
+    mocks.role = role;
+    expect(
+      await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(validSheets))),
+    ).toEqual({ success: true });
+  });
+
+  it('fails closed when the live role lookup fails', async () => {
+    mocks.roleError = { message: 'unavailable' };
+    expect(
+      await uploadRobotConfigAction(PREV, makeUploadForm(await makeXlsxFile(validSheets))),
+    ).toEqual({ error: 'not_authorized' });
+    expect(mocks.storageUpload).not.toHaveBeenCalled();
   });
 
   describe('security validation (OWASP)', () => {
@@ -260,7 +321,30 @@ describe('uploadRobotConfigAction', () => {
 describe('getDownloadUrl', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    appConfig.features.verticals.robot = true;
+    mocks.role = 'member';
+    mocks.roleError = null;
+    mocks.createSignedUrl.mockResolvedValue({ data: { signedUrl: 'signed' }, error: null });
     mockAuthenticated();
+  });
+
+  it('denies downloads when disabled without creating a client', async () => {
+    appConfig.features.verticals.robot = false;
+    expect(await getDownloadUrl(`${ACCOUNT_ID}/file.xlsx`)).toEqual({ error: 'module_disabled' });
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it('denies downloads for a removed membership', async () => {
+    mocks.role = null;
+    expect(await getDownloadUrl(`${ACCOUNT_ID}/file.xlsx`)).toEqual({ error: 'not_authorized' });
+    expect(mocks.createSignedUrl).not.toHaveBeenCalled();
+  });
+
+  it('allows viewers to download their own files', async () => {
+    mocks.role = 'viewer';
+    mocks.createSignedUrl.mockResolvedValue({ data: { signedUrl: 'signed' }, error: null });
+    expect(await getDownloadUrl(`${ACCOUNT_ID}/file.xlsx`)).toEqual({ url: 'signed' });
   });
 
   it('returns not_authenticated when claims are missing', async () => {
