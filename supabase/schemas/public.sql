@@ -144,9 +144,18 @@ DECLARE
   v_ip      inet;
   v_window  timestamptz;
   v_total   integer;
+  v_now     timestamptz;
 BEGIN
   -- GET/HEAD run on read replicas and never reach this hook.
   IF v_method IN ('GET', 'HEAD') OR v_method IS NULL THEN
+    RETURN;
+  END IF;
+
+  -- The durable admission RPC has its own IP/account budgets. Exempt only the
+  -- authenticated backend POST, never all service-role traffic.
+  IF v_method = 'POST'
+     AND current_setting('request.path', true) = '/rpc/admit_account_api_request'
+     AND (current_setting('request.jwt.claims', true)::jsonb ->> 'role') = 'service_role' THEN
     RETURN;
   END IF;
 
@@ -187,7 +196,10 @@ BEGIN
     RETURN;
   END IF;
 
-  v_window := date_trunc('minute', now());
+  -- A single lock spans all minute buckets for this IP, including rollover.
+  PERFORM pg_advisory_xact_lock(12012301, hashtext(host(v_ip)));
+  v_now := clock_timestamp();
+  v_window := date_trunc('minute', v_now);
 
   BEGIN
     INSERT INTO private.rate_limit_counters (ip, window_start, count)
@@ -201,7 +213,7 @@ BEGIN
   SELECT COALESCE(SUM(count), 0) INTO v_total
   FROM private.rate_limit_counters
   WHERE ip = v_ip
-    AND window_start >= date_trunc('minute', now()) - INTERVAL '4 minutes';
+    AND window_start >= date_trunc('minute', v_now) - INTERVAL '4 minutes';
 
   IF v_total > 100 THEN
     RAISE SQLSTATE 'PGRST' USING
@@ -212,7 +224,7 @@ BEGIN
       detail = json_build_object(
         'status',      429,
         'status_text', 'Too Many Requests',
-        'headers',     json_build_array())::text;
+        'headers',     json_build_object())::text;
   END IF;
 END;
 $$;
