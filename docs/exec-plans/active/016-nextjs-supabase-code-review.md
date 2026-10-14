@@ -1,7 +1,7 @@
 # Plan 016 — Revisión de Next.js, seguridad Supabase y arquitectura de datos
 
 - Fecha: 2026-09-29.
-- Estado: T0 cerrado; T1 parcial con dos lotes y segundas lecturas prioritarias registradas; cobertura exhaustiva y validaciones pendientes.
+- Estado: T0 cerrado; T1 cerrada como revisión estática; T2/T3 pendientes.
 - Tipo: revisión técnica, no plan de implementación ni certificación de producción.
 - Base local de planificación: `main` en `f82d2fbe381014c80a090ba3c36c99e4778111c3`.
 - Contexto: 14 documentos modificados/nuevos preexistentes; conservarlos. La
@@ -304,13 +304,18 @@ propuesto. No convertir una ausencia de prueba en una vulnerabilidad confirmada.
 
 ### T1 — Tres revisiones en lectura
 
-- [ ] Cada frente entrega criterios aplicados, referencias, archivos revisados,
+La continuación se organiza con el
+[subplan T1 — seguridad, integridad y flujos críticos](016-t1-security-integrity-critical-flows.md).
+Su mapa asigna las 947 rutas sin reducir alcance. Es planificación de las tareas
+pendientes, no evidencia de un nuevo lote ni una segunda secuencia de roadmap.
+
+- [x] Cada frente entrega criterios aplicados, referencias, archivos revisados,
       candidatos a hallazgo, fortalezas observadas y vacíos de evidencia.
-- [ ] Cubrir todos los archivos y rangos del manifiesto, incluidas configuración,
+- [x] Cubrir todos los archivos y rangos del manifiesto, incluidas configuración,
       pruebas, scripts y reglas; no cerrar lotes con archivos omitidos silenciosamente.
-- [ ] El coordinador cruza interfaces compartidas; revisar en segundo frente
+- [x] El coordinador cruza interfaces compartidas; revisar en segundo frente
       cualquier candidato P0/P1 antes de considerarlo confirmado.
-- [ ] Resolver recomendaciones contradictorias contra código, evidencia,
+- [x] Resolver recomendaciones contradictorias contra código, evidencia,
       documentación aplicable y contrato del proyecto. No decidir por votación.
 
 ### T2 — Validación común del candidato
@@ -423,3 +428,19 @@ terminar este review no declara preparación productiva ni cierra implementació
   regla. Se elimina muestreo de código propio, se añaden manifiesto por archivo,
   matrices de configuración/reglas, responsables de tooling/CI y cierre de cobertura
   exhaustiva. Esta ampliación documental no constituye lectura ya ejecutada.
+
+### Continuación T1 — 2026-10-07, lote 3
+
+[Registro y límites](../../audits/2026-10-07-plan-016-t1-batch-3.md): D-03/D-04 confirmados por código con segunda lectura; N-06 reproducido en componente aislado, impersonación E2E pendiente. Manifiesto: 947 rutas, 205 lecturas completas, 672 pendientes y 70 métodos alternativos. Sin cambios de aplicación/tests/SQL ni ejecución T2. T1 sigue abierta.
+
+### Continuación T1 — lotes 4–7
+
+[Registro](../../audits/2026-10-07-plan-016-t1-batch-7.md):425 completas,452
+pendientes,70 alternativas. D-07/D-08 estáticosP1; runtime pendiente. Matrices
+y cobertura restante abiertas. Sin aplicación/tests/SQL/Cloud ni T2.
+
+## Consolidacion de cobertura —2026-10-08
+
+[Registro](../../audits/2026-10-08-plan-016-t1-closure.md):947 rutas,874lecturas
+completas y73alternativas aplicadas;4153opciones y654normas con decisiones
+estaticas. Checkpoints anteriores conservan fecha. T2/T3/correcciones no cerradas.

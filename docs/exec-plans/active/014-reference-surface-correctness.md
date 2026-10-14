@@ -3,8 +3,8 @@
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
-**Estado:** propuesto para revisión; investigación/documentación autorizada,
-implementación no iniciada. Prioridad P0 para T1, P1 para T2/T3.
+**Estado:** T1 aceptado localmente el 2026-10-08 (SQL, build webpack y E2E). Migración SQL aplicada a Cloud el 2026-10-09 y ledger renovado el 2026-10-13; los cambios de aplicación Robot no están incluidos en el deployment selectivo de 012.2. Aceptación funcional Robot Cloud y build canónico Turbopack no verificados. T2/T3 pendientes. Véase el [contraste de integración](../../audits/2026-10-13-git-cloud-traceability.md).
+La prioridad histórica P0 no representa un P0 explotado confirmado por 016-T1.
 
 **Goal:** cerrar la exposición del ejemplo robot, la validación incorrecta de
 orígenes de imágenes y la pérdida de contexto en auditoría de plataforma.
@@ -32,6 +32,23 @@ Baseline: `f82d2fbe381014c80a090ba3c36c99e4778111c3`.
 - Cloud, pagos, push/merge/deploy requieren autorización propia.
 - Un PR por tarea; resultado RED/GREEN y revisión del diff antes del siguiente.
 
+## Reglas y prácticas obligatorias
+
+Leer las ocho reglas locales según los archivos y sus consumidores. Contrastar
+TypeScript, JavaScript, SQL, React/Next, pruebas y Realtime; registrar aplicación,
+excepciones y contradicciones. Prevalecen AGENTS y los contratos ejecutables:
+`src/env.ts`, React Compiler, `cacheComponents: false` y diseño Iroko.
+CREATE OR REPLACE conserva ACL existentes; no inferir regrants PUBLIC universales.
+
+## Ejecución autorizada — 2026-10-08
+
+- Rama local: `codex/014-t1-robot-permissions`; base actual `dfa228fb63e762a77beb291b828561d4547ed2e9`.
+- Autorización del mantenedor: comenzar 014-T1 y trabajar con agentes paralelos.
+- Preservar documentación previa de 016-T1; no incluirla silenciosamente en una corrección de Robot.
+- [Registro de ejecución](../../audits/2026-10-08-plan-014-t1-execution.md).
+- Preflight original con Docker inaccesible; superado con proyecto desechable `iroko-014-20261008`, separado del entorno del mantenedor.
+- Gate local Sentry implementado y probado; build webpack y E2E aislados aprobados sin uploads. Build canónico Turbopack y Cloud siguen no verificados.
+
 ## Review Focus
 
 1. URL directa o acción guardada con robot apagado: denegar antes de acceder a datos (T1).
@@ -48,7 +65,7 @@ Baseline: `f82d2fbe381014c80a090ba3c36c99e4778111c3`.
   `src/config/app.config.ts` (comentario de alcance).
 - Modify: `src/lib/__tests__/robot-config.test.ts`, `supabase/schemas/public.sql`.
 - Create: `src/app/[locale]/dashboard/robot/__tests__/page.test.tsx`.
-- Create: `supabase/migrations/20260924180000_robot_reference_rbac.sql` y
+- Create: `supabase/migrations/20261008120000_robot_reference_rbac.sql` y
   `supabase/tests/database/43_robot_reference_rbac.test.sql` (verificar antes
   de ejecutar que el nombre/número siga libre; si cambió, actualizar este plan).
 - Create: `src/test/e2e/robot-disabled.spec.ts`.
@@ -62,7 +79,7 @@ vivas; viewer no escribe. RPC conserva firma y transacción; denegación SQL
 Limpieza de archivos reemplazados del propio tenant: roles editores, igual que
 la subida; no generalizar esta regla a documentos de otros módulos.
 
-- [ ] **RED aplicación.** En los tests existentes añadir mock mutable de
+- [x] **RED aplicación.** En los tests existentes añadir mock mutable de
       `appConfig`, restaurarlo en `beforeEach` y fijar `robot=true` para casos que
       prueban parsing. Añadir:
 
@@ -83,7 +100,7 @@ la subida; no generalizar esta regla a documentos de otros módulos.
   Ejecutar `pnpm test src/lib/__tests__/robot-config.test.ts "dashboard/robot/__tests__"`.
   Observar el fallo por ausencia del guard, no por mocks incompletos.
 
-- [ ] **RED base de datos.** Crear fixture transaccional con cuenta A, owner,
+- [x] **RED base de datos.** Crear fixture transaccional con cuenta A, owner,
       admin, member, viewer y usuario de cuenta B siguiendo los fixtures y
       `pg_temp.act_as` de `29_rbac_matrix.test.sql`. Añadir un caso por actor para
       RPC, INSERT/UPDATE/DELETE de cada `robot_*` y `storage.objects` del bucket.
@@ -103,7 +120,7 @@ la subida; no generalizar esta regla a documentos de otros módulos.
   `finish()`/`ROLLBACK`. Probar también anon, miembro eliminado y cuenta B.
   `pnpm supa:test` sobre la base desechable debe mostrar las regresiones.
 
-- [ ] **Implementación mínima.** Guard de flag al inicio de página y de ambas
+- [x] **Implementación mínima.** Guard de flag al inicio de página y de ambas
       acciones, antes de crear cliente/parsear. Reutilizar `requireAccountRole`
       para mutaciones con roles editor; la base sigue siendo autoridad final.
       En la nueva migración reemplazar el chequeo de membresía de
@@ -113,7 +130,7 @@ la subida; no generalizar esta regla a documentos de otros módulos.
       una policy restrictiva dejando otra permisiva equivalente activa. Mantener
       lectura tenant-scoped, `search_path=''` y grants mínimos del RPC.
 
-- [ ] **GREEN y cierre.** Aplicar solo a DB desechable; probar desde navegador
+- [x] **GREEN y cierre.** Aplicar solo a DB desechable; probar desde navegador
       autenticado `/es/dashboard/robot` con flag falso y comprobar página no
       disponible, sin depender del sidebar. Repetir unit/SQL; regenerar tipos solo
       si cambió esquema expuesto. Ejecutar typecheck/lint y E2E
@@ -121,6 +138,11 @@ la subida; no generalizar esta regla a documentos de otros módulos.
       esquemas ni revoca por sí mismo el acceso SQL permitido a roles autorizados.
       Actualizar auditoría RS-01 y revisar migración/espejo. Commit local sugerido:
       `fix: enforce robot reference availability and roles`.
+
+**Evidencia de cierre local T1:** [registro](../../audits/2026-10-08-plan-014-t1-execution.md).
+SQL240/0, unitarios1092, typecheck/lint aprobados y E2E1/1; build verificado
+con webpack en copia aislada por límite del junction de Turbopack. Sin Cloud,
+merge ni deploy. Recomendación siguiente según orden acordado:012.1—Grants.
 
 ## T2 — Origen confiable de imágenes
 

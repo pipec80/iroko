@@ -79,6 +79,18 @@ No se afirma acceso entre tenants ni explotación de producción. Se confirma
 una discrepancia entre «oculto», «desactivado» y el rol viewer esperado. El
 plan debe probar SQL efectivo y llamadas directas antes de cerrar el hallazgo.
 
+### RS-01: actualización de aceptación local — 2026-10-08
+
+El hallazgo anterior describe la baseline histórica. Plan014 T1 añadió guards
+locales, roles vivos y la migración `20261008120000_robot_reference_rbac.sql` con espejo. Se observó RED
+SQL con 240 aserciones/56 fallos y GREEN con 240/0 en DB desechable; build
+webpack y E2E autenticado de URL directa/recarga aprobados. Fixture corregida
+y cleanup final sin residuos.
+RS-01 cerrado para aceptación local; revisión independiente y checks finales
+aprobados (1092 unitarios, typecheck y lint sin errores).
+Cloud no mutado ni certificado, build canónico Turbopack no verificado. Consultar
+[registro actual](2026-10-08-plan-014-t1-execution.md).
+
 ### RS-02: reproducción sin red
 
 Se leyó el módulo real `src/lib/storage.ts`, se sustituyó solo su import de

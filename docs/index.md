@@ -45,6 +45,7 @@ execution plans, evidence, runbooks and durable technical decisions.
 - [Local synchronization and Codex runbook](runbooks/local-sync-and-codex.md)
 - [Billing recovery and reconciliation runbook](runbooks/billing-reconciliation.md)
 - [Email queue worker runbook](runbooks/email-queue.md)
+- [Webhook safe delivery transition runbook](runbooks/webhook-safe-delivery.md)
 - [Sentry tunnel Cloud smoke check runbook](runbooks/sentry-tunnel-smoke.md)
 
 ## Execution support

@@ -1,10 +1,18 @@
 # Current State
 
-Last static verification: **2026-09-24** (selective reusable-foundation
+Latest exhaustive static review: **2026-10-08**, Plan016 T1, candidate
+`03ef8730560c638328c7bad12e58d50376493080`; coverage and exceptions in
+[closure record](audits/2026-10-08-plan-016-t1-closure.md). This does not renew
+the runtime, Cloud or test results recorded below. T1 static review closed; documentary checks passed.
+
+Previous recorded static verification: **2026-09-24** (selective reusable-foundation
 investigation, full Vitest 99 files/1032 tests and TypeScript passed; see the
 [audit](audits/2026-09-24-reusable-saas-readiness.md). This is not an exhaustive
 security audit or fresh Cloud/provider verification.)
-Last recorded runtime observation: **2026-09-24** (reconciliation discovery
+Latest bounded runtime observation: **2026-10-13**, authorized Plan 012.2
+Cloud/hosting acceptance; see the [dated record](audits/2026-10-13-plan-012-2-cloud-acceptance.md)
+and update below. It does not renew unrelated providers or the whole platform.
+Previous recorded runtime observation: **2026-09-24** (reconciliation discovery
 against the live subscription and a Cloud lease drill, see
 [Runtime update](#runtime-update--2026-09-23); recovery and reconciliation
 workers in Supabase Cloud, see
@@ -21,6 +29,16 @@ verified. It does not replace execution plans, architecture documents, or
 their evidence.
 
 ## Product position
+
+Owner clarification, 2026-10-13: all current Iroko environments and external
+integrations are MVP/test environments, including hosting environments labelled
+`production` by their providers. There is no customer production data requiring
+preservation. The freeze is for correcting and polishing existing capabilities.
+Approved local/test rebuilds may reset project data; pending source work,
+credentials and unrelated projects remain outside that deletion scope.
+The official local Supabase stack is `saas-boilerplate`, defined by
+`supabase/config.toml`. Inventory the existing services and consumers before
+creating another environment or changing an integration.
 
 Iroko is currently an **internal-first, reusable SaaS foundation**. It is being
 built to a quality level that may later support a commercial boilerplate or
@@ -60,12 +78,158 @@ route/actions or tighten its membership-based SQL writes; the image helper
 accepts external lookalike origins (reproduced in isolation); platform audit
 filters/pagination switch to the account query. These are proposed Plan 014
 corrections, not fixed code. Plan 015 proposes coherent minimal configuration,
-recipes and an independent install/extension/update drill. Neither plan has
-started implementation. The [audit](audits/2026-09-24-reusable-saas-readiness.md)
+recipes and an independent install/extension/update drill. At that investigation date neither plan had
+started implementation; see the current update below. The [audit](audits/2026-09-24-reusable-saas-readiness.md)
 records exact evidence and limitations. Passing unit tests do not close these
 defects or prove SQL/runtime acceptance.
 
+### Robot reference implementation — 2026-10-08
+
+Plan014 T1 now has local route/action guards, live-role checks and a new SQL
+migration with its schema mirror. Isolated SQL acceptance passed 240 assertions
+(after 56 expected failures before Plan014). An isolated webpack production build
+and authenticated direct URL/reload Chromium E2E passed. Final cleanup verified
+zero users, profiles, accounts and memberships; the temporary app server stopped.
+
+The local Sentry validation gate and exact-project test harness have independent
+static approval. Final checks passed after fixture cleanup changes: 104 unit files/1092 tests,
+typecheck and lint (zero errors, four existing warnings outside the change). Canonical Turbopack build remains **[NO VERIFICADO]** because
+its scratch dependency junction was rejected. Cloud/provider/merge/deploy were
+not performed; local acceptance does not renew historical Cloud evidence.
+Details and next recommendation 012.1 are in the
+[execution record](audits/2026-10-08-plan-014-t1-execution.md).
+
+### Grants hardening — 2026-10-09
+
+Plan 012.1 is implemented and accepted in the disposable local SQL project:
+44 pgTAP files / 884 assertions passed, including Robot 240/240. Ten private
+functions lose PUBLIC EXECUTE and 105 effective administrative table privileges
+are removed. CRUD, RLS, owners and operational defaults are preserved. Existing
+Storage policies require explicit anon EXECUTE on get_user_role; anon still has
+no private schema USAGE.
+
+Before Cloud application, a new disposable DB reproduced all 161 migrations from
+zero with official platform prerequisites. Consolidated SQL acceptance passed
+44 files / 884 assertions, with fixture42 redirected to the exact disposable DB
+for its focused replay; original sources and temporary connection configuration
+were preserved/restored. Before/after local advisor arrays
+are identical (66 findings); the three service_role SELECT grants missing in the
+earlier manual bootstrap are present and preserved. This does not establish
+Cloud parity or external operational acceptance. Evidence and next steps
+are in the [history rehearsal](audits/2026-10-09-plan-012-1-history-rehearsal.md).
+Cloud application was explicitly authorized and completed in order 014 → 012 on
+2026-10-09: 161 migrations aligned, 105 administrative privileges removed and ten
+PUBLIC EXECUTE revocations verified. The intermediate gate and independent final
+review passed; Security Advisors remained identical (57 WARN / 3 INFO). Functional
+Cloud acceptance was **[NO VERIFICADO]** at that date; no application deployment occurred.
+See the [Cloud execution record](audits/2026-10-09-plan-012-1-cloud-application.md).
+The [2026-10-11 closure review](audits/2026-10-11-plan-012-closure-review.md)
+renewed the Cloud grant checks: ten PUBLIC revocations and zero administrative
+privileges remaining in scope. The grants change is closed; functional Cloud
+acceptance and Git integration retained their separate pending status at that date.
+The bounded October 13 Auth/Storage/Realtime smoke below supersedes that runtime
+gap for its exercised cases; Billing/provider certification remains separate.
+
+### Webhook SSRF local implementation — 2026-10-09
+
+Plan 012.2 T2 verified a local Node transport mechanism: 28 HTTPS checks and6
+separate UDP DNS checks passed and were rerun by the coordinator. The vulnerable
+double-resolution comparator reached the forbidden test receiver; the pinned
+candidate made zero forbidden connections. These are scratch experiments with
+fixture IP policy and loopback mapping, not a product fix or Cloud acceptance.
+The user subsequently approved the [transport/RPC design](audits/2026-10-09-plan-012-2-transport-design.md)
+for local implementation. Product code now requires a one-use DNS validation
+ticket for create/update and sends through a Node worker with pinned IP and TLS.
+At the October 9 observation, the isolated database had migration 20261009180000
+(162 migrations); Cloud remained
+at the previously verified 161, without this change. Local acceptance passed:
+45 SQL files / 932 TAP assertions, 111 unit files / 1249 tests, 130 focused
+transport checks and concurrent lease/fencing verification. See the
+[execution record](audits/2026-10-09-plan-012-2-local-execution.md).
+Worker configuration and functional hosting/Cloud delivery were [NO VERIFICADO]
+at that observation. The October 13 update below supersedes those pending states.
+The [Cloud transition package](audits/2026-10-09-plan-012-2-cloud-preparation.md)
+is prepared with read-only preflight/postflight SQL and an operational runbook.
+A transition regression corrected historical failed deliveries retaining their
+legacy request ID; attempts and backoff are preserved. October 9 Cloud reads confirmed
+161 migrations, zero webhook endpoints/deliveries and the legacy cron active.
+Application, secrets and deploy for 012.2 were then pending authorization.
+The [selective source candidate](audits/2026-10-09-plan-012-2-release-candidate.md)
+preserves unrelated changes and passed 1190 tests, typecheck and lint. Its build
+was stopped under verified memory pressure and remains [NO VERIFICADO]; source
+packaging does not establish deployment readiness. The observed HTTP429 is a
+Vercel challenge for the inspected client; Supabase-to-worker access is pending.
+The October 11 continuation renewed local emulation (8 files / 167 tests passed)
+and independently verified all 972 sealed source entries. A bounded Turbopack
+attempt reached fifteen minutes without completing compile; both temporary
+configs were restored. Build remains unaccepted. The user deferred the external
+receiver until the final Cloud acceptance; emulation does not remove that gate.
+
+### Webhook Cloud acceptance — 2026-10-13
+
+The user authorized the MVP Cloud transition, deployment and explicit alias
+reassignment. Supabase `rgrxlygtmvavqzkjyywg` has 163 migrations, latest
+`20261013143645`: the original safe-delivery migration plus a separate minimal
+`service_role SELECT (id, account_id, version)` grant needed by the validation
+context lookup. This grants no URL, Vault secret or mutation access.
+Vercel deployment `dpl_4SXbR25CKn6VpdTzxm95LvvaGKQt` is READY and serves
+`https://project-a89lv.vercel.app`; the worker uses Node 24 with a 60-second limit.
+The sealed source candidate retains SHA256
+`c81ef6c05504513e5fcb89054a4f9390d9c9ad271dc2b4fc13236e7bbefad1d7`.
+
+Recorded acceptance passed 46 SQL files / 950 assertions, 111 unit files / 1250
+tests run serially, typecheck and lint (zero errors, four prior warnings).
+The Windows canonical build attempts remain unaccepted; the READY hosted build
+is separate provider evidence. Cloud functional smoke passed 14 checks covering
+Auth, its hook/triggers, Storage and private Realtime notification delivery.
+The outgoing smoke passed 14 checks and nine cleanup checks: a controlled
+240-byte HTTPS delivery completed HTTP 200 on attempt one, with HMAC verified
+independently in receiver logs. It used the private SQL emitter, not a business
+mutation or Mercado Pago callback; those paths are not certified by this test.
+
+The Supabase-to-worker wake returned HTTP 200 after a Vercel WAF exception
+restricted to the exact worker path, POST and the dedicated Bearer authorization.
+Other rule structure and managed rules were preserved. The fresh Data API `net`
+exposure check returned HTTP 406 / `PGRST106`. Cleanup verified zero temporary
+receiver functions/secrets, fixture tickets/accounts/customers, endpoints and
+deliveries. Cron job 9 was reactivated at 19:19:45 UTC (16:19 Chile), retaining
+its existing once-per-minute schedule. Its first scheduled run, 312227 at
+19:20 UTC, succeeded; correlated webhook wake response 118454 returned HTTP 200
+without timeout/transport error and reported zero claimed deliveries. This proves
+the scheduled wake with an empty queue; delivery/HMAC evidence comes from the
+separate controlled smoke. See the
+[acceptance record](audits/2026-10-13-plan-012-2-cloud-acceptance.md).
+This update closes only the recorded 012.2 surface; Git integration and the
+remaining Plan 012 product/security gates have their own status.
+
 ## Current technical baseline
+
+### Rate limiting local acceptance — 2026-10-13
+
+Plan 012.3 is accepted locally. Three new migrations bring the official local
+ledger to 166, including the subsequent four-column backend summary grant;
+the previously observed Cloud ledger remains 163 and was not
+modified in this execution. The hook's HTTP 500/PGRST121 and cross-minute race
+were reproduced before correction. Local GREEN verifies HTTP 429, rollback,
+serialization and independent-IP progress.
+
+The account API now uses backend-only durable admission: strict rolling
+300-second windows, 300 IP admissions before credential checks and 100 account
+admissions shared across keys. Responses distinguish 401, 429 with Retry-After,
+503 and later lookup 500. RPC HTTP tests cover concurrent final slots, expiry
+and reservations surviving a separate failed database read. Hosted canonical
+IP identity remains unverified until an authorized rollout.
+
+Recorded local checks pass: 49 SQL files/999 tests, 112 unit files/1281 tests,
+TypeScript strict, lint with four existing Mercado Pago warnings, and an
+isolated webpack build with the local Sentry gate. Actual Next HTTP verifies
+scoped 200, missing/invalid 401 and account-quota 429 with Retry-After; Chromium
+Robot acceptance passed. Fixture reservations/accounts/users were removed and
+the owned application server stopped. See the
+[execution record](audits/2026-10-13-plan-012-3-local-execution.md) for current
+E2E and Git integration status. Nine code commits now preserve the corrections
+on the local branch; their linked evidence is included in the documentary
+closure commit. There was no push, merge or change to the deployed application.
 
 - Next.js 16 App Router, React 19, strict TypeScript and React Compiler.
 - Locale-prefixed routes for `es`, `en`, `pt`, and `fr`; `es` is the default.
@@ -110,14 +274,31 @@ required before real users; they are not deferred to selling the boilerplate.
 The [root roadmap](../ROADMAP.md) owns the single execution sequence. This
 section reports evidence and lifecycle only; it does not define a second order.
 
-| Plan | Lifecycle | Current evidence meaning |
-| --- | --- | --- |
-| [011 — Billing Platform v2](exec-plans/deferred/011-billing/README.md) | Deferred | The scope required by the current freeze is satisfied. Recorded implementation and provider evidence remains bounded to its scenario and date. Renewal, refunds, an actually omitted invoice, volume drills and other provider certifications remain deferred; they are not erased or completed. |
-| [012 — Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | Active | Required security and product-truth gates remain pending. |
-| [013 — Commercial preparation](exec-plans/deferred/013-launch-readiness-roadmap.md) | Deferred | Reactivates only if the owner chooses to sell the boilerplate. |
-| [014 — Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md) | Active | Robot authorization, trusted image origins and platform audit interaction are planned corrections; implementation has not started. |
-| [015 — Reusable-foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md) | Active | Independent installation, configuration, extension and update evidence remains pending. |
-| [016 — Next.js and Supabase code review](exec-plans/active/016-nextjs-supabase-code-review.md) | Active | T0 fixed the candidate and inventories. Two T1 read-only batches found no P0 and confirmed several bounded P1 candidates, but hundreds of manifest entries, T2 validation and T3 consolidation remain pending; see the [dated handoff](audits/2026-10-07-plan-016-t1-handoff.md). |
+| Plan                                                                                               | Lifecycle | Current evidence meaning                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [011 — Billing Platform v2](exec-plans/deferred/011-billing/README.md)                             | Deferred  | The scope required by the current freeze is satisfied. Recorded implementation and provider evidence remains bounded to its scenario and date. Renewal, refunds, an actually omitted invoice, volume drills and other provider certifications remain deferred; they are not erased or completed.                                                                      |
+| [012 — Hardening and pricing truth](exec-plans/active/012-security-hardening-and-pricing-truth.md) | Active    | Required security and product-truth gates remain pending.                                                                                                                                                                                                                                                                                                             |
+| [013 — Commercial preparation](exec-plans/deferred/013-launch-readiness-roadmap.md)                | Deferred  | Reactivates only if the owner chooses to sell the boilerplate.                                                                                                                                                                                                                                                                                                        |
+| [014 — Reference-surface correctness](exec-plans/active/014-reference-surface-correctness.md)      | Active    | T1 Robot accepted in isolated local SQL, webpack build and E2E on 2026-10-08; final units/typecheck/lint passed. SQL migration applied in Cloud; Robot application changes absent from the selective 012.2 deployment. Robot Cloud functional acceptance and canonical Turbopack build unverified. T2 image origins and T3 platform audit interaction remain planned. |
+| [015 — Reusable-foundation acceptance](exec-plans/active/015-reusable-foundation-acceptance.md)    | Active    | Independent installation, configuration, extension and update evidence remains pending.                                                                                                                                                                                                                                                                               |
+| [016 — Next.js and Supabase code review](exec-plans/active/016-nextjs-supabase-code-review.md)     | Active    | 2026-10-08 static coverage consolidated:874 complete readings,73 applied alternatives,0pending;4153config/654rules decisions. T1 static review closed; documentary checks passed. Application corrections and runtime/T2/T3 remain pending. See [closure](audits/2026-10-08-plan-016-t1-closure.md).                                                                  |
+
+The historical Plan 016 T1 batch organization is preserved in the
+[security, integrity and critical-flow task breakdown](exec-plans/active/016-t1-security-integrity-critical-flows.md).
+Its planning checkpoint is superseded by the October 8 static closure;
+the recorded review coverage does not certify subsequent application changes.
+
+### Integration traceability — 2026-10-13
+
+Before the local 012.3 implementation, read-only verification matched all 163 migration version identifiers
+between the repository and Cloud; this is ledger parity, not an exhaustive
+schema comparison. Vercel's stable alias still targets the accepted 012.2
+deployment. The sealed candidate includes the webhook implementation and SQL
+migrations 014/012.1, but retains HEAD for the Robot application and local
+Sentry validation configuration. Those pending application changes were not
+deployed. Robot SQL application and Robot hosting acceptance therefore have
+separate states. The [integration inventory and source contrast](audits/2026-10-13-git-cloud-traceability.md)
+records the selective commit proposal and its remaining checks.
 
 Plan 010 closed on 2026-08-26 through PRs #139, #140, #147, #149 and #150
 (the last being the independent toolchain repair). Plans 001–010 remain under

@@ -33,6 +33,11 @@ Read the root roadmap for the single ordered queue. Maintenance records that
 change documentation structure live with completed plans after their own
 validation contract passes.
 
+Plan 016 T1 has an
+[operational task breakdown](active/016-t1-security-integrity-critical-flows.md)
+for security, integrity and critical flows. It preserves the parent plan's full
+inventory and lifecycle; its task map records planning, not completed review.
+
 ## Deferred and completed records
 
 - [Plan 011 billing family](deferred/011-billing/README.md)

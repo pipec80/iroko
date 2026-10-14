@@ -1,0 +1,348 @@
+{
+  "candidate_sha": "03ef8730560c638328c7bad12e58d50376493080",
+  "scope": "109 existing pending declarations; static documentary review only; no runtime, database, build, installation or Cloud execution. Candidate current-state EOF330; local edited document separate.",
+  "groups": [
+    {
+      "origin": "docs/current-state.md",
+      "lines": [65, 80],
+      "purpose": "Bound narrow checks and HTTP success",
+      "consumer": "reuse audit verification table; MP discovery/worker acceptance",
+      "evidence": "Documents distinguish historical checks from full lifecycle; MP discovery fresh-status gap independently reported",
+      "decision": "cumple documental",
+      "exception_reason": "No fresh execution or provider acceptance"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [70],
+      "purpose": "Framework/type/compiler baseline",
+      "consumer": "package.json; next.config.ts; tsconfig.json",
+      "evidence": "Baseline declaration reviewed; effective configuration belongs to N/C contrast",
+      "decision": "pendiente contraste N/C",
+      "exception_reason": "Document alone does not confirm installed/effective versions"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [71],
+      "purpose": "Locale contract",
+      "consumer": "src/i18n/routing.ts; locale routes",
+      "evidence": "Four-locale declaration reviewed",
+      "decision": "pendiente contraste N",
+      "exception_reason": "No browser execution"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [72],
+      "purpose": "Backend inventory",
+      "consumer": "supabase/config.toml; migrations/schemas; Edge email worker",
+      "evidence": "Repository inventory describes Auth/Postgres/RLS/migrations/Edge",
+      "decision": "cumple inventario documental",
+      "exception_reason": "Effective Cloud configuration unavailable"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [74],
+      "purpose": "Testing tools",
+      "consumer": "vitest.config.ts; playwright.config.ts; testing-strategy13-109",
+      "evidence": "Strategy distinguishes unit/component and E2E",
+      "decision": "cumple arquitectura declarada",
+      "exception_reason": "No current test success inferred"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [75],
+      "purpose": "Observability inventory",
+      "consumer": "logger.ts; analytics/client.ts/server.ts; Sentry audit",
+      "evidence": "Candidate logger and analytics producers read; Sentry historical record read",
+      "decision": "cumple presencia estatica",
+      "exception_reason": "Privacy/rollback defects reported separately; provider reception unavailable"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [76],
+      "purpose": "Historical Plan010 closure",
+      "consumer": "completed010; dated PR references",
+      "evidence": "Document attributes closure to historical regression evidence",
+      "decision": "historico",
+      "exception_reason": "Cannot recertify current isolation or concurrency findings D07-D09"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [106],
+      "purpose": "Security/operation gates before users",
+      "consumer": "active012/014/016; MP acceptance matrix",
+      "evidence": "Read-only review retains incomplete gates",
+      "decision": "cumple requisito documental",
+      "exception_reason": "This review does not satisfy implementation/runtime gates"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [115, 116],
+      "purpose": "Billing deferment and active hardening status",
+      "consumer": "deferred011 index; active012; operational39-43",
+      "evidence": "Satisfied freeze scope distinguished from pending provider scenarios and hardening",
+      "decision": "cumple limite documental",
+      "exception_reason": "Scenario/date limits remain; no feature completion claim"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [138, 152],
+      "purpose": "Discovery diagnosis and partial lease evidence",
+      "consumer": "MP adapter; operational126; runbook539-564",
+      "evidence": "Historical failure and partial drill explicitly bounded",
+      "decision": "historico",
+      "exception_reason": "Current scan health, process interruption, volume and cursor acceptance unavailable"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [156, 158, 159],
+      "purpose": "Provider behavior record",
+      "consumer": "MP reliability363-379; adapter page cap; service externalReference",
+      "evidence": "Historical measured quirks; candidate uses page cap15 and intent reference",
+      "decision": "historico con contraste estatico",
+      "exception_reason": "No fresh provider verification"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [161],
+      "purpose": "Canceled paid-through UI",
+      "consumer": "billing dashboard; dated PR198-202",
+      "evidence": "Recorded production UI observation",
+      "decision": "historico",
+      "exception_reason": "No fresh browser evidence"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [165],
+      "purpose": "Vendored-font CI change",
+      "consumer": "layout/font assets; PR207",
+      "evidence": "Historical CI assertion reviewed",
+      "decision": "pendiente contraste N",
+      "exception_reason": "CI health not verified here"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [202, 204, 205],
+      "purpose": "Sandbox lifecycle/cancellation",
+      "consumer": "operational39-40; MP normalized cancellation",
+      "evidence": "Dated correlated sandbox circuit preserved",
+      "decision": "historico",
+      "exception_reason": "Not real-money or current certification"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [208],
+      "purpose": "Repository versus Cloud migration state",
+      "consumer": "versioned migrations; dated linked comparison",
+      "evidence": "Dated Cloud drift/remediation record",
+      "decision": "historico",
+      "exception_reason": "Current linked parity unavailable"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [212],
+      "purpose": "Deployment/firewall history",
+      "consumer": "Vercel protection/firewall configuration",
+      "evidence": "September10 operational claim",
+      "decision": "historico",
+      "exception_reason": "Effective provider configuration unavailable"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [290],
+      "purpose": "Exact plan closure evidence",
+      "consumer": "exec-plans lifecycle",
+      "evidence": "Location distinguished from acceptance evidence",
+      "decision": "cumple documental",
+      "exception_reason": "No implementation completion inferred"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [293],
+      "purpose": "Checker and required branch gate",
+      "consumer": "scripts/check-docs.mjs; documentation workflow; branch protection",
+      "evidence": "Historical preparation table",
+      "decision": "historico y pendiente enforcement",
+      "exception_reason": "Live branch protection unavailable"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [304],
+      "purpose": "Single freeze sequence",
+      "consumer": "ROADMAP; freeze158-180; landscape115-121",
+      "evidence": "Landscape reverses015 versus016T2/T3 relative to freeze",
+      "decision": "incumple consumidor documental",
+      "exception_reason": "Correct landscape order; no roadmap reordering authorized"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [306],
+      "purpose": "Canonical design authority",
+      "consumer": "ADR0002; design-system root",
+      "evidence": "Generated/historical boundary explicitly declared",
+      "decision": "pendiente contraste root design-system",
+      "exception_reason": "This reader does not own design-system parity"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [309],
+      "purpose": "Dated module verification",
+      "consumer": "module introductory evidence statements",
+      "evidence": "Historical static status; current analytics/admin/announcement drift reported",
+      "decision": "historico",
+      "exception_reason": "Not current blanket guide parity"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [311],
+      "purpose": "Known platform audit interaction defect",
+      "consumer": "platform-admin92-97; reuseRS03; Plan014T3",
+      "evidence": "Initial platform query versus account interaction documented",
+      "decision": "incumple conocido",
+      "exception_reason": "Retain existing owner/finding; no duplicate"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [314, 315],
+      "purpose": "Workflow presence versus live enforcement",
+      "consumer": "documentation workflow; branch protection",
+      "evidence": "Live enforcement explicitly NO VERIFICADO",
+      "decision": "cumple limite documental",
+      "exception_reason": "Actual enforcement remains unavailable"
+    },
+    {
+      "origin": "docs/current-state.md",
+      "lines": [324, 325, 326, 327, 329],
+      "purpose": "Maintain status without duplicating task lists",
+      "consumer": "index/current-state/roadmap/active plans",
+      "evidence": "Coordinator alone owns status updates; reader changed no behavior",
+      "decision": "cumple limite de esta revision",
+      "exception_reason": "Future material changes require corresponding status update"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [17, 18, 19, 20, 21, 22, 23, 25],
+      "purpose": "Unit coverage and true-boundary mocks",
+      "consumer": "Vitest Zod/auth/billing/analytics/signature/error suites",
+      "evidence": "Strategy reviewed; producer defects contrasted",
+      "decision": "aplicable; contraste pruebas pendiente",
+      "exception_reason": "No exhaustive per-test compliance or execution claimed"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [31, 32, 33, 34, 35],
+      "purpose": "Interactive component behavior",
+      "consumer": "Testing Library form/dialog/banner suites",
+      "evidence": "Component strategy separates browser journeys",
+      "decision": "aplicable; contraste N pendiente",
+      "exception_reason": "Accessibility/browser acceptance unavailable"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [43, 44, 45, 46, 47, 48, 49],
+      "purpose": "Realistic integration boundaries",
+      "consumer": "Supabase local; provider/queue/Storage/transport integration tests",
+      "evidence": "Mocks distinguished from actual service integration",
+      "decision": "aplicable; validacion pendiente",
+      "exception_reason": "Current local runtime unavailable"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [57, 58, 59, 60, 61, 62, 63, 64, 66],
+      "purpose": "Negative DB authorization and invariants",
+      "consumer": "supabase/tests/database; privileged public/private RPCs",
+      "evidence": "D07-D09 identify concurrency/integrity gaps despite existing suites",
+      "decision": "aplicable; cobertura incompleta",
+      "exception_reason": "Negative-before-positive is local recommendation, not PostgreSQL requirement; no DB execution"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [72, 73, 74, 75, 76, 77, 78, 80],
+      "purpose": "External contracts and safe fixtures",
+      "consumer": "billing provider fixtures; email worker; Sentry/PostHog transport tests",
+      "evidence": "Document scopes independent integrations",
+      "decision": "aplicable; contraste fixtures pendiente",
+      "exception_reason": "No inferred Paddle/LemonSqueezy certification"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [82, 88, 90, 91, 95],
+      "purpose": "Observed sandbox read contracts",
+      "consumer": "MP reliability363-379; capped discovery; intent mapping",
+      "evidence": "Historical undocumented cap/identity failures motivate recorded observations",
+      "decision": "cumple justificacion historica",
+      "exception_reason": "Changed read paths need separately authorized replay; none executed here"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [101, 102, 103, 104, 105, 106, 107, 108, 109],
+      "purpose": "Critical E2E journeys",
+      "consumer": "auth/recovery/onboarding/invitation/account/billing/admin/GDPR/analytics specs",
+      "evidence": "Journey inventory reviewed; S07 and analytics races need receiver tests",
+      "decision": "aplicable; aceptacion pendiente",
+      "exception_reason": "Test existence/historical pass does not certify candidate"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [117, 118, 119, 120, 121, 122],
+      "purpose": "Cross-cutting regression/security/performance/resilience",
+      "consumer": "candidate suites/traces; query and load measurements",
+      "evidence": "Static defects delivered to receiver plans",
+      "decision": "aplicable; validacion pendiente",
+      "exception_reason": "No latency/scale/accessibility measurement inferred"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [123],
+      "purpose": "Consent and sensitive telemetry protection",
+      "consumer": "analytics sanitize/client/provider/server; email/logger",
+      "evidence": "token_hash/nestednext retained; pending SDK import can initialize after revocation; email to/subject not redacted",
+      "decision": "incumple estatico",
+      "exception_reason": "Actual external transmission unavailable; server feature rollback mismatch separately documented"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [127, 128, 129, 130, 131, 133],
+      "purpose": "Safe test environment selection",
+      "consumer": "local configs/fixtures; preview/production smoke workflows",
+      "evidence": "No runtime or production operation by this reader",
+      "decision": "cumple limite de esta revision; contraste configuracion pendiente",
+      "exception_reason": "Actual workflow compliance belongs to configuration readers"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [137, 138, 139, 140, 141, 142],
+      "purpose": "Synthetic isolated clean time-controlled fixtures",
+      "consumer": "platform-admin fixture; reconciliation drill; test setup",
+      "evidence": "Fixture strategy reviewed",
+      "decision": "aplicable; contraste por fixture pendiente",
+      "exception_reason": "No blanket fixture compliance; freeze time only where dates matter"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [146],
+      "purpose": "Required gates and skip/quarantine ownership",
+      "consumer": "CI workflows; skipped test markers",
+      "evidence": "Policy reviewed",
+      "decision": "pendiente contraste automatizacion/pruebas",
+      "exception_reason": "Historical green CI does not establish current required enforcement"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [153],
+      "purpose": "Historical isolated timeout reruns",
+      "consumer": "August11 failure record",
+      "evidence": "Original full-run failure preserved despite isolated pass",
+      "decision": "historico",
+      "exception_reason": "Does not identify cause or certify current suite"
+    },
+    {
+      "origin": "docs/quality/testing-strategy.md",
+      "lines": [166],
+      "purpose": "Preserve failure evidence",
+      "consumer": "coordinator T2 procedure",
+      "evidence": "No runtime reruns performed by reader",
+      "decision": "cumple limite de esta revision",
+      "exception_reason": "Future T2 retains candidate-level failure evidence"
+    }
+  ]
+}
