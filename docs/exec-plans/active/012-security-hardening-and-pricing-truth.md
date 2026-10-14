@@ -1,7 +1,7 @@
 # Plan 012 — Hardening de seguridad + fuente de verdad única para pricing
 
 - Priority: P1
-- Status: Activo — 012.1 grants y alcance operativo 012.2 cerrados; 012.3 aceptado localmente (2026-10-13), con código integrado en commits locales. Aplicación Cloud de 012.3, push/merge, 012.4 y pricing pendientes.
+- Status: Activo — 012.1 grants y alcances operativos 012.2/012.3 cerrados. 012.3 aplicado y desplegado con aceptación HTTPS pública del dominio estable (2026-10-14). Push/merge, 012.4 y pricing pendientes; los límites y seguimientos heredados conservan su estado explícito.
 - Baseline: `main` @ `d9e2648`
 - Orden v1: sus cambios independientes pueden avanzar sin esperar renovación
   o aceptación final de Mercado Pago. Coordinar superficies compartidas con
@@ -226,6 +226,20 @@ La lectura real detectó un grant faltante; una tercera migración local concede
 solo cuatro columnas de resumen a service_role, sin wildcard ni mutaciones.
 La aplicación Cloud y la
 aceptación de identidad del hosting no están realizadas por este cierre local.
+
+**Aplicación y aceptación Cloud — 2026-10-14:** las tres migraciones están
+aplicadas, ledger 166. Candidato selectivo READY
+`dpl_4AK3JX5bMMkgtavTnteEnr77Fcoe`, promovido a `project-a89lv.vercel.app` con
+autorización explícita. RPC Cloud: siete comprobaciones PASS. Candidato y dominio
+estable: cinco comprobaciones HTTPS públicas PASS cada uno, sin bypass,
+incluyendo identidad IP resistente a headers falsificados, aislamiento y una
+admisión/siete rechazos 429 concurrentes con Retry-After. WAF versión 6 conserva
+tres reglas; dos ramas GET/ruta/host exactos se añadieron a la última regla,
+preservando el worker y las protecciones previas. Alcance operativo cerrado;
+confianza CF/XFF del hook heredado, provocación Cloud de 500/503 y reducción de
+ACL históricas de service_role conservan sus límites/seguimientos separados.
+Evidencia y recuperación: [ejecución Cloud](../../audits/2026-10-14-plan-012-3-cloud-execution.md).
+Siguiente paso recomendado: concretar y ejecutar 012.4 desde su inventario actual.
 
 **Snapshot previo a la implementación local — 2026-10-13 (Cloud 163):** la API cuenta no tiene cuota
 propia y el hook Cloud conserva un contrato de headers 429 incompatible con

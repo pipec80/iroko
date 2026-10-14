@@ -1,7 +1,10 @@
 # Plan 012.3 — Rate limiting e integración selectiva
 
 Estado: implementación, aceptación local e integración de código aprobadas;
-cierre documental incluido en la selección final. Cloud no aplicado.
+migraciones Cloud aplicadas y candidato READY. RPC y endpoint mediante CLI
+aprobados; WAF publicado, candidato público aceptado y alias estable promovido.
+Repetición pública estable aprobada; alcance operativo Cloud 012.3 aceptado.
+Commit documental de cierre en preparación; push/merge pendientes.
 Plan padre: [012](012-security-hardening-and-pricing-truth.md).
 
 ## Contrato aprobado
@@ -21,7 +24,8 @@ Plan padre: [012](012-security-hardening-and-pricing-truth.md).
 - Hook: corregir headers de error y serializar por IP; preservar semántica de
   rollback. Excepción exacta POST/RPC/service_role verificado, no exención global.
 - Migraciones nuevas, espejos simultáneos; no reescribir historia aplicada.
-- Sin instalaciones, Cloud, deploy, push ni merge. Preservar cambios ajenos.
+- Etapa local original: sin instalaciones, Cloud, deploy, push ni merge.
+  La etapa Cloud autorizada posterior se registra abajo. Preservar cambios ajenos.
 
 ## Ownership y entregas
 
@@ -91,7 +95,7 @@ canceló y no constituye aceptación. El build webpack aislado terminó con exit
 SQL posterior. No se ejecutaron
 Turbopack canónico ni postbuild de sitemap mediante pnpm; hosting/headers
 canónicos siguen **[NO VERIFICADO]**. E2E local real aprobado: dos respuestas200
-aisladas, credenciales ausentes/inválidas401, spoof ignorado y cuenta101429 con
+aisladas, credenciales ausentes/inválidas 401, spoof ignorado y cuenta101429 con
 Retry-After válido; ChromiumRobot1PASS. El fallo500 posterior queda cubierto
 por unitarios y frontera DB REST400, sin nueva provocación Next500 tras el fix.
 
@@ -100,9 +104,72 @@ código y un commit documental final, agrupando destinos y enlaces para evitar
 estados intermedios rotos. Los nueve commits de código están confirmados con
 hooks y enumerados en el registro local; este documento forma parte de la
 selección documental final. Limpieza manual: cero eventos IP/cuenta, cuentas y
-usuarios fixture; ledger166. La migración aplicada164 conserva su SHA256 y
+usuarios fixture; ledger 166. La migración aplicada164 conserva su SHA256 y
 bytes originales; el check de diff reconoce CRLF sin desactivar espacios reales.
 
-Siguiente paso: confirmar el commit documental y preparar la etapa Cloud y
+Siguiente paso registrado al cierre local: confirmar el commit documental y preparar la etapa Cloud y
 deployment autorizada por separado. Sin push, merge ni deploy en esta etapa;
 la aceptación local no aplica estos cambios Cloud.
+
+## Etapa Cloud — 2026-10-14
+
+La etapa siguiente fue autorizada después del cierre local. Se aplicaron las
+tres migraciones exactas mediante `supabase db push --linked --yes`, exit 0,
+en `rgrxlygtmvavqzkjyywg`; ledger 166. Postflight confirmó igualdad de fuentes
+local/Cloud del hook, admisión y cleanup; ACL/RLS/índices y mantenimiento
+esperados. Los grants amplios anteriores de service_role sobre accounts en
+Cloud se preservaron; no se afirma paridad de grants mínimos con el local ni
+se ejecutan allí las assertions negativas del test49. Advisors sin nuevos WARN;
+dos INFO nuevos por tablas privadas con RLS y sin políticas, acceso denegado.
+
+La RPC Cloud aprobó siete comprobaciones y limpieza de cuentas, claves, eventos
+y counters fixture. El candidato `dpl_4AK3JX5bMMkgtavTnteEnr77Fcoe` está READY;
+build Turbopack, TypeScript y sitemap aprobados. Cinco comprobaciones mediante
+CLI oficial de Vercel confirmaron 200 por cuenta, 401, identidad canónica resistente
+a spoof y ocho solicitudes concurrentes por la última plaza con un 200/siete 429
+y Retry-After; otra cuenta siguió funcionando. Cleanup retiró cuentas, claves y
+eventos de cuenta; los eventos IP reales compartidos se conservan para TTL 300 s,
+sin purgar el bucket ni atribuir IDs por una diferencia concurrente de snapshots.
+
+El primer acceso HTTPS público sin bypass devolvió 429 HTML de Vercel Security
+Checkpoint. No es prueba del 429 de aplicación. La excepción WAF propuesta
+abarca solo GET, ruta exacta `/api/v1/account` y dos hosts revisados; nueve
+comprobaciones locales de alcance aprobadas (dos positivas y siete negativas). Su publicación y la promoción del dominio
+estable fueron autorizadas explícitamente. La primera publicación falló y el
+readback conservó versión 5, draft null y tres reglas existentes, sin cambio
+verificado. Una preflight pública obtuvo 401 JSON; el ensayo público completo
+falló en el primer identityProbe no JSON, cero checks y dos cuentas fixture
+retiradas. Se corrigió el reporte que marcaba aceptación pública antes de
+completar el ensayo; esa ejecución no es PASS. En ese momento el alias estable
+todavía servía 012.2; el CLI reportó un alias predeterminado del candidato pese a
+`--skip-domain`, efecto registrado.
+
+El diagnóstico identificó el límite de tres reglas WAF (HTTP 400): la misma
+política autorizada se incorpora como dos grupos OR adicionales en la tercera
+regla del worker, conservando íntegros su condición previa, secreto, nombre y
+acción y las otras dos reglas. No se añade una cuarta regla ni se amplía la
+ruta/método/hosts. Publicación posterior PASS, exit 0: readback versión 6,
+draft null y tres reglas; comparación completa de los branches/metadata previos,
+otras reglas y protecciones preservada. Los branches nuevos coinciden con el
+fingerprint autorizado. La aceptación pública posterior se registra abajo;
+publicación WAF por sí sola no equivale a aceptación pública de la API.
+
+La repetición posterior pública del candidato aprobó cinco comprobaciones,
+exit 0, sin bypass y cleanup true con cero cuentas fixture. El alias estable se
+promovió al candidato autorizado mediante CLI y se verificó por MCP. La misma
+suite pública sobre el dominio estable aprobó cinco comprobaciones, exit 0,
+HTTPS sin bypass y cleanup de fixtures. La correlación de bucket
+IP acredita resistencia al spoof ensayado, sin segunda fuente independiente de
+IP externa. La confianza de headers CF/XFF heredados del hook SQL en Cloud
+permanece **[NO VERIFICADO]**.
+
+Alcance operativo Cloud 012.3 aceptado. Final MCP: ACTIVE_HEALTHY, ledger 166,
+cero cuentas/claves fixture, cero eventos de cuenta huérfanos y cero deliveries;
+cleanup cron 7 succeeded a 15:20 UTC. Revisión independiente sin bloqueadores con
+consistencia documental tras el PASS estable. Quedan **[NO VERIFICADO]** los
+fallos 503/500 provocados a través de Next Cloud y la confianza CF/XFF heredada;
+el drift service_role/accounts se conserva como seguimiento separado.
+No se renueva aceptación de todos los proveedores por esta ejecución.
+Este documento forma parte del cierre local por integrar; no acredita un commit
+ya creado. Siguiente paso: concretar 012.4; push/merge pendientes.
+Evidencia y límites en el [registro Cloud](../../audits/2026-10-14-plan-012-3-cloud-execution.md).

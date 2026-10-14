@@ -9,9 +9,13 @@ Previous recorded static verification: **2026-09-24** (selective reusable-founda
 investigation, full Vitest 99 files/1032 tests and TypeScript passed; see the
 [audit](audits/2026-09-24-reusable-saas-readiness.md). This is not an exhaustive
 security audit or fresh Cloud/provider verification.)
-Latest bounded runtime observation: **2026-10-13**, authorized Plan 012.2
-Cloud/hosting acceptance; see the [dated record](audits/2026-10-13-plan-012-2-cloud-acceptance.md)
-and update below. It does not renew unrelated providers or the whole platform.
+Latest bounded runtime observation: **2026-10-14**, Plan 012.3 Cloud migrations,
+RPC acceptance and candidate endpoint through the official Vercel CLI; see
+[dated record](audits/2026-10-14-plan-012-3-cloud-execution.md). Public HTTPS
+candidate acceptance, stable-domain promotion and public stable-domain
+acceptance passed. Prior Plan 012.2
+[acceptance](audits/2026-10-13-plan-012-2-cloud-acceptance.md) retains its own
+scope. Neither observation renews unrelated providers or the whole platform.
 Previous recorded runtime observation: **2026-09-24** (reconciliation discovery
 against the live subscription and a Cloud lease drill, see
 [Runtime update](#runtime-update--2026-09-23); recovery and reconciliation
@@ -27,6 +31,65 @@ This is the operational entry point for humans and coding agents. It answers
 what Iroko is today, which work is active, and which claims have actually been
 verified. It does not replace execution plans, architecture documents, or
 their evidence.
+
+## Rate limiting Cloud update — 2026-10-14
+
+The three Plan 012.3 migrations were applied to `rgrxlygtmvavqzkjyywg` using
+`supabase db push --linked --yes`, exit 0; Cloud ledger 166. Postflight confirms
+source parity for the hook, admission RPC and cleanup; backend-only admission,
+private event tables with RLS and no direct API-role grants, valid indexes and
+preserved cron identity/schedule/previous tasks. The broader pre-existing
+service_role accounts grants in Cloud were preserved: local column-scoped ACL
+acceptance does not establish least-privilege parity for this table.
+
+Cloud RPC acceptance passed seven checks with fixture cleanup. Candidate
+`dpl_4AK3JX5bMMkgtavTnteEnr77Fcoe` is READY; Turbopack build, TypeScript and
+sitemap passed. Five endpoint checks through the official Vercel CLI observed
+account-scoped 200, invalid/missing 401, canonical IP resisting spoofed headers,
+one 200/seven 429 concurrent last-slot requests with Retry-After, and independent
+account access. Real shared IP events remain for 300-second TTL; fixture
+accounts/keys/account events were removed. Security advisors have no added WARN;
+two INFO reflect deliberately inaccessible RLS tables without policies.
+
+The earlier public HTTPS attempt without CLI bypass returned a Vercel Security Checkpoint
+HTML 429. This is not an application limiter response. A narrow GET/exact-path,
+two-host WAF exception has been prepared, reviewed and explicitly authorized,
+along with promoting `project-a89lv.vercel.app`. Its first publication attempt
+failed; readback retained version 5, no draft and three existing rules, with no
+verified change. A public preflight reached application 401, but the full public
+run failed on a non-JSON identity probe before completing any check; its two
+fixture accounts were removed. A premature acceptance flag in the harness was
+corrected; this failed run is not public acceptance.
+
+The CLI diagnosed a three-rule provider limit (HTTP 400), so no fourth rule is
+created. The approved GET/exact-path/two-host policy is being represented by
+two appended OR groups in the existing third worker rule, preserving its
+original worker condition, secret, name and action and both other rules.
+The policy was subsequently published successfully: version 6, no draft and
+three rules, with complete comparison preserving the original worker branch,
+its metadata/action, both other rules and remaining protections. Its two added
+branches match the authorized fingerprint. Public candidate testing is
+complete: five checks passed through raw HTTPS without bypass and fixtures were
+removed. The stable alias was subsequently promoted with the authorized CLI
+command and MCP confirmed `dpl_4AK3JX5bMMkgtavTnteEnr77Fcoe` as its target.
+The same public five-check suite on the stable domain passed, exit 0, without
+bypass. Final MCP checks confirmed ACTIVE_HEALTHY, ledger 166, zero fixture
+accounts/keys, zero orphan account events and zero webhook deliveries. Cron 7
+cleanup last ran successfully at 15:20 UTC. Shared real IP events retain their TTL.
+MCP runtime logs returned no error/fatal groups for the new deployment in the
+last 30 minutes. The initial one-hour query exceeded Hobby retention (HTTP 400);
+the valid 30-minute retry passed. This is a bounded observation, not global
+monitoring acceptance.
+Canonical IP evidence correlates observed DB buckets against controlled spoof
+requests; no independent external IP source was checked. Legacy CF/XFF trust
+for the SQL hook remains **[NO VERIFICADO]** in Cloud. The CLI also reported its
+default candidate alias despite `--skip-domain`; do not claim no alias effects.
+The bounded 012.3 Cloud/API acceptance is complete; Cloud 503/500 fault injection,
+legacy hook header trust, independent external-IP verification and unrelated
+provider/callback acceptance remain **[NO VERIFICADO]**. Pre-existing broad
+service_role/accounts grants remain follow-up work. Closure documentation is
+being integrated locally; push/merge remain pending. Next: concretize012.4.
+See the [execution record](audits/2026-10-14-plan-012-3-cloud-execution.md).
 
 ## Product position
 
@@ -208,7 +271,7 @@ remaining Plan 012 product/security gates have their own status.
 
 Plan 012.3 is accepted locally. Three new migrations bring the official local
 ledger to 166, including the subsequent four-column backend summary grant;
-the previously observed Cloud ledger remains 163 and was not
+the previously observed Cloud ledger remained 163 and was not
 modified in this execution. The hook's HTTP 500/PGRST121 and cross-minute race
 were reproduced before correction. Local GREEN verifies HTTP 429, rollback,
 serialization and independent-IP progress.
@@ -218,7 +281,8 @@ The account API now uses backend-only durable admission: strict rolling
 admissions shared across keys. Responses distinguish 401, 429 with Retry-After,
 503 and later lookup 500. RPC HTTP tests cover concurrent final slots, expiry
 and reservations surviving a separate failed database read. Hosted canonical
-IP identity remains unverified until an authorized rollout.
+IP identity was unverified at this local stage. The Cloud update dated
+2026-10-14 above supersedes that rollout status and retains its own limits.
 
 Recorded local checks pass: 49 SQL files/999 tests, 112 unit files/1281 tests,
 TypeScript strict, lint with four existing Mercado Pago warnings, and an
@@ -229,7 +293,8 @@ the owned application server stopped. See the
 [execution record](audits/2026-10-13-plan-012-3-local-execution.md) for current
 E2E and Git integration status. Nine code commits now preserve the corrections
 on the local branch; their linked evidence is included in the documentary
-closure commit. There was no push, merge or change to the deployed application.
+closure commit. In that local stage there was no push, merge or change to the
+deployed application; the later authorized Cloud rollout is recorded above.
 
 - Next.js 16 App Router, React 19, strict TypeScript and React Compiler.
 - Locale-prefixed routes for `es`, `en`, `pt`, and `fr`; `es` is the default.
@@ -292,13 +357,15 @@ the recorded review coverage does not certify subsequent application changes.
 
 Before the local 012.3 implementation, read-only verification matched all 163 migration version identifiers
 between the repository and Cloud; this is ledger parity, not an exhaustive
-schema comparison. Vercel's stable alias still targets the accepted 012.2
-deployment. The sealed candidate includes the webhook implementation and SQL
+schema comparison. As of this 2026-10-13 snapshot, Vercel's stable alias targeted
+the accepted 012.2 deployment. That sealed candidate included the webhook implementation and SQL
 migrations 014/012.1, but retains HEAD for the Robot application and local
 Sentry validation configuration. Those pending application changes were not
 deployed. Robot SQL application and Robot hosting acceptance therefore have
 separate states. The [integration inventory and source contrast](audits/2026-10-13-git-cloud-traceability.md)
-records the selective commit proposal and its remaining checks.
+records the selective commit proposal and its remaining checks. The subsequent
+2026-10-14 Cloud update above records the 012.3 rollout and alias promotion;
+do not treat this dated integration snapshot as the current deployment target.
 
 Plan 010 closed on 2026-08-26 through PRs #139, #140, #147, #149 and #150
 (the last being the independent toolchain repair). Plans 001–010 remain under
