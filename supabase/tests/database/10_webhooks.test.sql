@@ -105,9 +105,16 @@ SELECT throws_ok(
 );
 
 -- ── 4. Crear devuelve el secret una única vez ───────────────────────────────
+CREATE TEMP TABLE registration_ticket AS
+SELECT public.reserve_webhook_url_validation(
+  '00000000-0000-0000-0000-000000000920',
+  '00000000-0000-0000-0000-000000000821', 'create', NULL, NULL,
+  'https://example.com/hook') AS id;
+SELECT public.issue_webhook_url_validation((SELECT id FROM registration_ticket));
 CREATE TEMP TABLE ep AS
-SELECT * FROM public.create_webhook_endpoint('00000000-0000-0000-0000-000000000920',
-  'https://example.com/hook', ARRAY['member.joined', 'member.removed'], 'test endpoint');
+SELECT * FROM public.create_webhook_endpoint_validated('00000000-0000-0000-0000-000000000920',
+  'https://example.com/hook', ARRAY['member.joined', 'member.removed'], 'test endpoint',
+  (SELECT id FROM registration_ticket));
 
 SELECT ok(
   (SELECT secret LIKE 'whsec\_%' ESCAPE '\' FROM ep),
@@ -159,13 +166,19 @@ SELECT is(
 SELECT is(
   (SELECT d.attempts FROM public.webhook_deliveries d
    WHERE d.endpoint_id = (SELECT ep.id FROM ep)),
-  1,
-  'el trigger de envío incrementó attempts a 1 (http_post encolado)'
+  0,
+  'business trigger leaves delivery for Node worker'
 );
 
 -- ── 8. Endpoint deshabilitado no recibe nuevas deliveries ───────────────────
-SELECT public.update_webhook_endpoint((SELECT ep.id FROM ep),
-  'https://example.com/hook', ARRAY['member.joined'], false, 'test endpoint');
+CREATE TEMP TABLE edit_ticket AS SELECT public.reserve_webhook_url_validation(
+  '00000000-0000-0000-0000-000000000920',
+  '00000000-0000-0000-0000-000000000821', 'update', (SELECT ep.id FROM ep), 1,
+  'https://example.com/hook') AS id;
+SELECT public.issue_webhook_url_validation((SELECT id FROM edit_ticket));
+SELECT public.update_webhook_endpoint_validated((SELECT ep.id FROM ep),
+  'https://example.com/hook', ARRAY['member.joined'], false, 'test endpoint', 1,
+  (SELECT id FROM edit_ticket));
 
 SELECT private.emit_webhook_event('00000000-0000-0000-0000-000000000920',
   'member.joined', '{}'::jsonb);

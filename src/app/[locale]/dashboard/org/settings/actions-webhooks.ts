@@ -8,6 +8,10 @@ import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import {
+  prepareWebhookUrlValidation,
+  webhookRegistrationErrorCode,
+} from '@/lib/webhooks/registration';
+import {
   deliveriesQuerySchema,
   webhookEndpointSchema,
   type DeliveriesQueryInput,
@@ -67,20 +71,28 @@ export const createWebhookEndpoint = withServerAction(async function createWebho
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
 
+  let validation;
+  try {
+    validation = await prepareWebhookUrlValidation({
+      accountId,
+      operation: 'create',
+      url: parsed.data.url,
+    });
+  } catch (error) {
+    return { data: null, error: webhookRegistrationErrorCode(error) };
+  }
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc('create_webhook_endpoint', {
+  const { data, error } = await supabase.rpc('create_webhook_endpoint_validated', {
     p_account_id: accountId,
-    p_url: parsed.data.url,
-    p_description: parsed.data.description ?? undefined,
+    p_url: validation.url,
+    p_description: parsed.data.description ?? '',
     p_events: parsed.data.events,
+    p_validation_ticket: validation.ticket,
   });
 
   if (error) {
-    logger.warn(
-      { action: 'webhook.create', code: error.code, message: error.message },
-      'create_webhook_endpoint failed',
-    );
-    return { data: null, error: error.message ?? 'create_failed' };
+    logger.warn({ action: 'webhook.create', code: error.code }, 'create_webhook_endpoint failed');
+    return { data: null, error: webhookRegistrationErrorCode(error) };
   }
 
   const row = data?.[0];
@@ -112,21 +124,32 @@ export const updateWebhookEndpoint = withServerAction(async function updateWebho
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
 
+  let validation;
+  try {
+    validation = await prepareWebhookUrlValidation({
+      accountId,
+      operation: 'update',
+      endpointId: parsed.data.id,
+      url: parsed.data.url,
+    });
+  } catch (error) {
+    return { data: null, error: webhookRegistrationErrorCode(error) };
+  }
+  if (validation.version === null) return { data: null, error: 'validation_failed' };
   const supabase = await createClient();
-  const { error } = await supabase.rpc('update_webhook_endpoint', {
+  const { error } = await supabase.rpc('update_webhook_endpoint_validated', {
     p_endpoint_id: parsed.data.id,
-    p_url: parsed.data.url,
-    p_description: parsed.data.description ?? undefined,
+    p_url: validation.url,
+    p_description: parsed.data.description ?? '',
     p_events: parsed.data.events,
     p_enabled: parsed.data.enabled,
+    p_expected_version: validation.version,
+    p_validation_ticket: validation.ticket,
   });
 
   if (error) {
-    logger.warn(
-      { action: 'webhook.update', code: error.code, message: error.message },
-      'update_webhook_endpoint failed',
-    );
-    return { data: null, error: error.message ?? 'update_failed' };
+    logger.warn({ action: 'webhook.update', code: error.code }, 'update_webhook_endpoint failed');
+    return { data: null, error: webhookRegistrationErrorCode(error) };
   }
 
   return { data: true };
