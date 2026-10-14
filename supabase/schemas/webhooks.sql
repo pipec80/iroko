@@ -763,3 +763,11 @@ GRANT EXECUTE ON FUNCTION public.create_webhook_endpoint_validated(uuid,text,tex
 REVOKE EXECUTE ON FUNCTION public.create_webhook_endpoint(uuid,text,text[],text),public.update_webhook_endpoint(uuid,text,text[],boolean,text) FROM PUBLIC,anon;
 COMMENT ON FUNCTION private.send_webhook_delivery(uuid) IS 'Queue-only business trigger feature gate. Node owns final DNS, pinned TLS and delivery.';
 COMMENT ON FUNCTION private.process_webhook_deliveries() IS 'Existing cron definition wakes only the operator-configured authenticated Node worker. No configuration means no egress.';
+
+-- Plan 012.2 runtime correction: Node's update-validation lookup selects
+-- account_id/version and filters by id/account_id before reserving a DNS ticket.
+-- Column grants permit that lookup without exposing URL/signing-secret metadata
+-- or granting direct endpoint CRUD. Customer roles remain RPC-only.
+-- Mirror of 20261013143645_webhook_validation_context_columns.sql.
+GRANT SELECT (id, account_id, version)
+ON TABLE public.webhook_endpoints TO service_role;
