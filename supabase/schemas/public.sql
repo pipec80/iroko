@@ -4195,3 +4195,31 @@ ALTER POLICY "Accounts can delete their own robot configs" ON storage.objects
   TO authenticated USING (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
 CREATE POLICY "Accounts can update their own robot configs" ON storage.objects
   FOR UPDATE TO authenticated USING (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+
+-- Plan 012.1: API roles keep their existing CRUD grants and RLS contracts.
+REVOKE REFERENCES, TRIGGER, TRUNCATE, MAINTAIN ON TABLE
+  public.accounts,
+  public.accounts_memberships,
+  public.announcements,
+  public.api_keys,
+  public.auth_recovery_codes,
+  public.documents,
+  public.feature_flag_overrides,
+  public.feature_flags,
+  public.impersonation_sessions,
+  public.invitations,
+  public.memberships_history,
+  public.notifications,
+  public.platform_admins,
+  public.profiles,
+  public.projects,
+  public.robot_contacts,
+  public.robot_memories,
+  public.robot_routines,
+  public.webhook_deliveries,
+  public.webhook_endpoints
+FROM anon, authenticated;
+
+-- Apply the same boundary to tables created by postgres in this schema.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE REFERENCES, TRIGGER, TRUNCATE, MAINTAIN ON TABLES FROM anon, authenticated;

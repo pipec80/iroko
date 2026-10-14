@@ -994,3 +994,22 @@ REVOKE ALL ON FUNCTION private.resolve_billing_checkout_intent(uuid, text, text,
   FROM PUBLIC, anon, authenticated, service_role;
 
 
+
+-- Plan 012.1: private helpers are not executable through inherited PUBLIC ACLs.
+REVOKE EXECUTE ON FUNCTION private.apply_updated_at_trigger(regclass) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.deny_mutation() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.get_user_role(uuid, uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.handle_new_profile() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.handle_new_user() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.rls_auto_enable() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.set_updated_at() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.slugify(text) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION private.user_is_member(uuid, uuid) FROM PUBLIC;
+
+-- Existing Storage policies also evaluate get_user_role for anonymous reads.
+-- Keep their deny-by-RLS behavior without granting anon USAGE on private.
+GRANT EXECUTE ON FUNCTION private.get_user_role(uuid, uuid) TO anon, authenticated;
+-- Domain RLS and Realtime presence require user_is_member as authenticated only.
+GRANT EXECUTE ON FUNCTION private.user_is_member(uuid, uuid) TO authenticated;
+-- Required to resolve the RLS helpers; it does not grant access to private tables.
+GRANT USAGE ON SCHEMA private TO authenticated;
