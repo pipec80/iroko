@@ -1,13 +1,13 @@
 # Plan 012.3 — Cierre y seguimientos pendientes
 
-Actualizado: 2026-10-14. Registro documental; no autoriza cambios Cloud.
+Actualizado: 2026-10-15. Registro documental; no autoriza cambios Cloud.
 
 ## Qué está cerrado
 
 El alcance aprobado de 012.3 está implementado, aceptado localmente, aplicado
 en Supabase Cloud y desplegado en `project-a89lv.vercel.app`. Ledger 166;
 deployment `dpl_4AK3JX5bMMkgtavTnteEnr77Fcoe`; WAF versión 6. La evidencia y
-los harness se integraron en el commit local `54dba97`.
+los harness se integraron mediante PR #221, squash commit `3bac4f9b`.
 
 La [ejecución Cloud](2026-10-14-plan-012-3-cloud-execution.md) registra siete
 comprobaciones RPC y las mismas cinco comprobaciones HTTP repetidas mediante
@@ -29,18 +29,18 @@ ejecutaron; tampoco se presentan como verificadas.
 | RL-F04    | **[NO VERIFICADO]**: contrastar la IP externa observada contra una segunda fuente independiente. Lo aprobado demuestra correlación con DB, bucket estable y resistencia a headers falsificados.                                                                     | Ampliación de evidencia de identidad de red; especialmente si cambia hosting, proxy o Cloudflare.                                            | Correlación controlada de orígenes de red conocidos con sus buckets, sin publicar IPs ni confiar en headers del cliente. No contratar servicios para este ensayo.                                                                      |
 | RL-F05    | **Fuera de esta ejecución**: no se renovó aceptación funcional de todos los proveedores, callbacks de pago ni triggers de negocio. El webhook entrante Mercado Pago y la entrega saliente firmada son protocolos distintos.                                         | Plan de aceptación correspondiente a cada integración; Mercado Pago conserva sus escenarios propios de Plan 011.                             | Pruebas específicas del protocolo y consumidor con evidencia fechada. Un PASS del endpoint cuenta o del worker saliente no certifica pagos, email, analytics u observabilidad completos.                                               |
 | RL-F06    | **Restricción operativa vigente**: la excepción WAF omite managed rules solo para GET/ruta/hosts exactos. Comparte regla con el worker porque el plan permite tres reglas custom. Las condiciones originales y protecciones globales se preservaron.                | Al cambiar el deployment de prueba, dominios, secreto del worker o managed rules; incluir este inventario en 012.4.                          | Revisar grupos OR y hosts; actualizar los que correspondan con autorización, conservar autenticación del worker y comprobar diff/readback. Repetir HTTPS público sin bypass y las negativas de alcance. No desactivar WAF globalmente. |
-| RL-F07    | **Integración local realizada; push y merge pendientes**. Código previo y evidencia Cloud están en commits locales; no se publicó la rama Git. Las cuatro DB accidentales de `%SystemDrive%/` permanecen preservadas y excluidas.                                   | Etapa Git autorizada por separado.                                                                                                           | Revisar destino remoto, selección exacta e historial; ejecutar los checks exigidos por la integración. Push/merge requieren autorización. No incorporar caches, secretos ni material ignorado.                                         |
-| NEXT-0124 | **Pendiente**: concretar y ejecutar CSP/secretos desde el PR4 del Plan 012. Existe alcance y aceptación documentados; todavía no es una ejecución terminada. El gate local de Sentry ya implementado no cierra todo 012.4.                                          | Siguiente frente del freeze.                                                                                                                 | Inventario actual de CSP, Vault, impersonación, secretos dedicados, protocolos de enlaces y consumidores Sentry/PostHog; plan acotado y pruebas. Aceptación Cloud cuando corresponda y esté autorizada.                                |
+| RL-F07    | **Cerrado (integración Git)**: PR [#221](https://github.com/pipec80/iroko/pull/221) merged por squash en `3bac4f9b` el 2026-10-15; su contenido incluye código previo y evidencia Cloud. Las cuatro DB accidentales de `%SystemDrive%/` permanecen preservadas y excluidas. | No requiere retomarse. La selección de código está en `main`; mantener cualquier material accidental fuera del repositorio. | Evidencia: workflow `38752265343` completo; E2E 82 passed/2 skipped; `main` local/remoto en `3bac4f9b`, árbol limpio al verificar; no quedaron PR abiertos tras cerrar los Dependabot reemplazados. El siguiente frente es 012.4. |
+| NEXT-0124 | **Plan aprobado; implementación pendiente**: el Plan 012.4 concreta el trabajo de CSP/secretos desde PR4 del Plan 012. Existe alcance y aceptación documentados; todavía no es una ejecución terminada. El gate local de Sentry ya implementado no cierra todo 012.4. | Siguiente frente del freeze, desde rama nueva basada en `main`.                                                                            | Implementar el inventario/decisiones de CSP, Vault, impersonación, secretos dedicados, protocolos de enlaces y consumidores Sentry/PostHog; ejecutar regresiones locales y aceptación Cloud posterior cuando corresponda y esté autorizada. |
 
 Los seguimientos mantienen este registro como punto de entrada hasta que se
 asignen a una ejecución concreta. Al retomarlos, crear o enlazar su plan/ticket
 desde la fila correspondiente y cerrar únicamente con evidencia; no convertir
 la fecha de este documento en una nueva verificación de proveedores.
 
-NEXT-0124 ya cuenta con [propuesta ejecutable](../exec-plans/active/012-4-csp-and-secrets.md)
+NEXT-0124 ya cuenta con [plan ejecutable aprobado](../exec-plans/active/012-4-csp-and-secrets.md)
 e [inventario estático](2026-10-14-plan-012-4-readiness.md), preparados el
-2026-10-14. El estado sigue siendo propuesta para revisión: ninguna casilla de
-implementación se cierra con esa documentación. Los seguimientos RL-F01–RL-F07
+2026-10-14. Ninguna casilla de implementación se cierra con esa documentación.
+Los seguimientos RL-F01–RL-F06
 mantienen sus propios límites y no se dan por corregidos al redactar 012.4.
 
 ## Límites de operación

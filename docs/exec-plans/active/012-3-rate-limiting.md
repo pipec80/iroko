@@ -4,7 +4,8 @@ Estado: implementación, aceptación local e integración de código aprobadas;
 migraciones Cloud aplicadas y candidato READY. RPC y endpoint mediante CLI
 aprobados; WAF publicado, candidato público aceptado y alias estable promovido.
 Repetición pública estable aprobada; alcance operativo Cloud 012.3 aceptado.
-Evidencia y harness Cloud integrados en el commit local `54dba97`; push/merge pendientes.
+Evidencia y harness Cloud integrados mediante PR [#221](https://github.com/pipec80/iroko/pull/221),
+squash commit `3bac4f9b` (2026-10-15). Los seguimientos explícitos permanecen abajo.
 Plan padre: [012](012-security-hardening-and-pricing-truth.md).
 
 ## Contrato aprobado
@@ -170,8 +171,10 @@ consistencia documental tras el PASS estable. Quedan **[NO VERIFICADO]** los
 fallos 503/500 provocados a través de Next Cloud y la confianza CF/XFF heredada;
 el drift service_role/accounts se conserva como seguimiento separado.
 No se renueva aceptación de todos los proveedores por esta ejecución.
-Este cierre y sus harness se integraron en el commit local `54dba97`.
+Este cierre y sus harness quedaron integrados en PR #221, squash commit
+`3bac4f9b` (2026-10-15).
 Los [seguimientos pendientes](../../audits/2026-10-14-plan-012-3-follow-ups.md)
 registran qué no se ejecutó y los criterios para retomarlo.
-Siguiente paso: concretar 012.4; push/merge pendientes.
+Siguiente paso: ejecutar el [Plan 012.4](012-4-csp-and-secrets.md). La integración
+Git de este plan ya está cerrada por #221; no es una aceptación general de Iroko.
 Evidencia y límites en el [registro Cloud](../../audits/2026-10-14-plan-012-3-cloud-execution.md).

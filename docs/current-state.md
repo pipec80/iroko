@@ -88,9 +88,13 @@ The bounded 012.3 Cloud/API acceptance is complete; Cloud 503/500 fault injectio
 legacy hook header trust, independent external-IP verification and unrelated
 provider/callback acceptance remain **[NO VERIFICADO]**. Pre-existing broad
 service_role/accounts grants remain follow-up work. Closure documentation and
-the Cloud harness were committed locally as `54dba97`; push/merge remain pending.
+the Cloud harness were integrated through PR [#221](https://github.com/pipec80/iroko/pull/221),
+squash commit `3bac4f9b`, on 2026-10-15. Local `main` was synchronized to the
+same `origin/main` SHA and verified clean. This closes only Git integration;
+it does not close the remaining 012.3 follow-ups or certify all providers.
 The [follow-up register](audits/2026-10-14-plan-012-3-follow-ups.md) records each
-unexecuted check, inherited difference and condition for resuming it. Next: concretize012.4.
+unexecuted check, inherited difference and condition for resuming it. Next: execute
+the approved [Plan 012.4](exec-plans/active/012-4-csp-and-secrets.md).
 See the [execution record](audits/2026-10-14-plan-012-3-cloud-execution.md).
 
 ## Product position
@@ -98,7 +102,7 @@ See the [execution record](audits/2026-10-14-plan-012-3-cloud-execution.md).
 ### Plan 012.4 preparation — 2026-10-14
 
 The [static readiness inventory](audits/2026-10-14-plan-012-4-readiness.md)
-and [proposed execution plan](exec-plans/active/012-4-csp-and-secrets.md) contrast
+and [approved execution plan](exec-plans/active/012-4-csp-and-secrets.md) contrast
 PR4 with current sources. Confirmed in source: impersonation HMAC reuses the
 Supabase server key; the expiry route and SQL authorization differ; mock and
 navigation lack some explicit boundaries; production CSP still permits inline
