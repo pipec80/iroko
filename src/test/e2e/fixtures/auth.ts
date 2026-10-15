@@ -88,6 +88,13 @@ export const test = base.extend<AuthFixtures>({
         );
       },
       () => {
+        // E2E users are synthetic and the database is disposable. Mock billing
+        // keeps customer rows with ON DELETE RESTRICT, so remove their local
+        // invoice/customer fixtures before removing the personal account.
+        execSqlAsPostgres(
+          `DELETE FROM billing.invoices WHERE customer_id IN (SELECT id FROM billing.customers WHERE account_id = '${userId}')`,
+        );
+        execSqlAsPostgres(`DELETE FROM billing.customers WHERE account_id = '${userId}'`);
         // The personal-account trigger uses NEW.id; never remove team or other accounts.
         execSqlAsPostgres(
           `DELETE FROM public.accounts WHERE id = '${userId}' AND type = 'personal' AND created_by = '${userId}'`,
