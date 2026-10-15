@@ -10,7 +10,7 @@ contratos estrictos para impersonación; gates puros para mock/uploads; nonce
 por documento SSR; navegación validada en entrada, SQL y render. No introducir
 servicios, paquetes ni una nueva arquitectura de billing.
 
-**Tech Stack:** Next 16.3.8, React 19/Compiler, TypeScript strict, Zod, Supabase
+**Tech Stack:** Next 16.4.1, React 19/Compiler, TypeScript strict, Zod, Supabase
 Postgres, Sentry 10.67.0, PostHog, Vitest, Playwright y pgTAP instalados.
 
 **Spec:** [PR4 del Plan 012](012-security-hardening-and-pricing-truth.md#pr-4--chorecsp-and-secrets-hardening), cruzado con el
