@@ -88,26 +88,34 @@ export const test = base.extend<AuthFixtures>({
         );
       },
       () => {
-        // E2E users are synthetic and the database is disposable. Billing
-        // fixtures retain reconciliation state and invoices, so clear those
-        // local dependents before removing the personal account.
+        // E2E users and every account they created are synthetic. Remove their
+        // local billing dependents before deleting accounts and the profile.
         execSqlAsPostgres(
-          `DELETE FROM billing.invoices WHERE customer_id IN (SELECT id FROM billing.customers WHERE account_id = '${userId}')`,
+          `DELETE FROM billing.invoices WHERE customer_id IN (SELECT id FROM billing.customers WHERE account_id IN (SELECT id FROM public.accounts WHERE id = '${userId}' OR created_by = '${userId}'))`,
         );
         execSqlAsPostgres(
-          `DELETE FROM billing.reconciliation_state WHERE subscription_id IN (SELECT id FROM billing.subscriptions WHERE customer_id IN (SELECT id FROM billing.customers WHERE account_id = '${userId}'))`,
+          `DELETE FROM billing.reconciliation_state WHERE subscription_id IN (SELECT id FROM billing.subscriptions WHERE customer_id IN (SELECT id FROM billing.customers WHERE account_id IN (SELECT id FROM public.accounts WHERE id = '${userId}' OR created_by = '${userId}')))`,
         );
-        execSqlAsPostgres(`DELETE FROM billing.customers WHERE account_id = '${userId}'`);
-        // The personal-account trigger uses NEW.id; never remove team or other accounts.
         execSqlAsPostgres(
-          `DELETE FROM public.accounts WHERE id = '${userId}' AND type = 'personal' AND created_by = '${userId}'`,
+          `DELETE FROM billing.checkout_intents WHERE account_id IN (SELECT id FROM public.accounts WHERE id = '${userId}' OR created_by = '${userId}')`,
+        );
+        execSqlAsPostgres(
+          `DELETE FROM billing.customers WHERE account_id IN (SELECT id FROM public.accounts WHERE id = '${userId}' OR created_by = '${userId}')`,
+        );
+        execSqlAsPostgres(
+          `DELETE FROM public.accounts WHERE id = '${userId}' OR created_by = '${userId}'`,
         );
       },
       async () => {
         const cleanup = await request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
           headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
         });
-        if (!cleanup.ok()) throw new Error('Local test user cleanup failed');
+        if (!cleanup.ok()) {
+          const details = await cleanup.text();
+          throw new Error(
+            `Local test user cleanup failed (${cleanup.status}): ${details.slice(0, 500)}`,
+          );
+        }
       },
       () => {
         console.warn(
