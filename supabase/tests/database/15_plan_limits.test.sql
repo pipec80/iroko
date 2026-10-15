@@ -91,15 +91,21 @@ SELECT throws_like(
   '%feature_not_in_plan%', 'cuenta free no puede crear webhooks');
 RESET role;
 
--- pro sí puede crear
+-- Pro creation requires a server-validated ticket.
 SELECT set_config('request.jwt.claims',
   json_build_object('sub','00000000-0000-0000-0000-000000001002','role','authenticated')::text, true);
+CREATE TEMP TABLE pro_webhook_ticket AS SELECT public.reserve_webhook_url_validation(
+  '00000000-0000-0000-0000-000000001101',
+  '00000000-0000-0000-0000-000000001002', 'create', NULL, NULL,
+  'https://example.com/hook') AS id;
+SELECT public.issue_webhook_url_validation((SELECT id FROM pro_webhook_ticket));
+GRANT SELECT ON pro_webhook_ticket TO authenticated;
 SET LOCAL role authenticated;
 SELECT lives_ok(
-  $$SELECT * FROM public.create_webhook_endpoint(
+  $$SELECT * FROM public.create_webhook_endpoint_validated(
       '00000000-0000-0000-0000-000000001101', 'https://example.com/hook',
-      ARRAY['account.updated'])$$,
-  'cuenta pro crea webhook dentro del límite');
+      ARRAY['account.updated'], NULL, (SELECT id FROM pro_webhook_ticket))$$,
+  'pro endpoint creation requires valid ticket');
 RESET role;
 
 -- gate de entrega: delivery de cuenta free se marca exhausted sin llamar pg_net

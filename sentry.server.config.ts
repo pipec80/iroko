@@ -1,26 +1,30 @@
 import * as Sentry from '@sentry/nextjs';
 
+import { isLocalValidation } from './src/lib/local-validation';
+
 import { shouldFilterServerEvent } from '@/lib/sentry-filters';
 
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+if (!isLocalValidation(process.env)) {
+  Sentry.init({
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Separa production / preview / development en issues y alertas.
-  // Fallback 'local' (no NODE_ENV): los builds de producción locales (E2E de
-  // Playwright) no deben mezclarse con la producción real de Vercel.
-  environment: process.env.VERCEL_ENV ?? 'local',
+    // Separa production / preview / development en issues y alertas.
+    // Fallback 'local' (no NODE_ENV): los builds de producción locales (E2E de
+    // Playwright) no deben mezclarse con la producción real de Vercel.
+    environment: process.env.VERCEL_ENV ?? 'local',
 
-  tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-  tracePropagationTargets: [
-    'localhost',
-    /^https:\/\/[^/]+\.supabase\.co/,
-    /^https:\/\/iroko\.vercel\.app/,
-  ],
+    tracePropagationTargets: [
+      'localhost',
+      /^https:\/\/[^/]+\.supabase\.co/,
+      /^https:\/\/iroko\.vercel\.app/,
+    ],
 
-  beforeSend(event) {
-    return shouldFilterServerEvent(event) ? null : event;
-  },
+    beforeSend(event) {
+      return shouldFilterServerEvent(event) ? null : event;
+    },
 
-  debug: false,
-});
+    debug: false,
+  });
+}

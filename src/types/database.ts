@@ -1704,6 +1704,9 @@ export type Database = {
           id: string
           last_error: string | null
           last_status_code: number | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          lease_token: string | null
           next_retry_at: string | null
           payload: Json
           request_id: number | null
@@ -1719,6 +1722,9 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_status_code?: number | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          lease_token?: string | null
           next_retry_at?: string | null
           payload?: Json
           request_id?: number | null
@@ -1734,6 +1740,9 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_status_code?: number | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          lease_token?: string | null
           next_retry_at?: string | null
           payload?: Json
           request_id?: number | null
@@ -1767,6 +1776,7 @@ export type Database = {
           secret_id: string
           updated_at: string
           url: string
+          version: number
         }
         Insert: {
           account_id: string
@@ -1778,6 +1788,7 @@ export type Database = {
           secret_id: string
           updated_at?: string
           url: string
+          version?: number
         }
         Update: {
           account_id?: string
@@ -1789,6 +1800,7 @@ export type Database = {
           secret_id?: string
           updated_at?: string
           url?: string
+          version?: number
         }
         Relationships: [
           {
@@ -1830,6 +1842,14 @@ export type Database = {
           slug: string
           subscription_status: Database["billing"]["Enums"]["subscription_status"]
           type: Database["public"]["Enums"]["account_type"]
+        }[]
+      }
+      admit_account_api_request: {
+        Args: { p_client_ip: unknown; p_key_hash?: string }
+        Returns: {
+          account_id: string
+          decision: string
+          retry_after_seconds: number
         }[]
       }
       apply_billing_reconciliation_snapshot: {
@@ -2016,6 +2036,22 @@ export type Database = {
           resource_type: string
         }[]
       }
+      claim_webhook_deliveries: {
+        Args: {
+          p_batch_size: number
+          p_visibility_seconds: number
+          p_worker_id: string
+        }
+        Returns: {
+          attempt: number
+          body_text: string
+          canonical_url: string
+          delivery_id: string
+          endpoint_version: number
+          headers: Json
+          lease_token: string
+        }[]
+      }
       complete_billing_reconciliation_candidate: {
         Args: {
           p_error_code: string
@@ -2039,6 +2075,16 @@ export type Database = {
         }[]
       }
       complete_onboarding: { Args: never; Returns: undefined }
+      complete_webhook_delivery: {
+        Args: {
+          p_delivery_id: string
+          p_error_code?: string
+          p_http_status?: number
+          p_lease_token: string
+          p_outcome: string
+        }
+        Returns: undefined
+      }
       consume_recovery_code: { Args: { p_code: string }; Returns: boolean }
       count_unused_recovery_codes: { Args: never; Returns: number }
       create_api_key: {
@@ -2063,6 +2109,19 @@ export type Database = {
           p_description?: string
           p_events: string[]
           p_url: string
+        }
+        Returns: {
+          id: string
+          secret: string
+        }[]
+      }
+      create_webhook_endpoint_validated: {
+        Args: {
+          p_account_id: string
+          p_description: string
+          p_events: string[]
+          p_url: string
+          p_validation_ticket: string
         }
         Returns: {
           id: string
@@ -2271,6 +2330,10 @@ export type Database = {
         Args: { p_account_id: string; p_flag_name: string }
         Returns: boolean
       }
+      issue_webhook_url_validation: {
+        Args: { p_reservation_id: string }
+        Returns: string
+      }
       leave_team: { Args: { p_account_id: string }; Returns: undefined }
       list_account_invoices: {
         Args: {
@@ -2429,6 +2492,17 @@ export type Database = {
           url: string
         }[]
       }
+      reserve_webhook_url_validation: {
+        Args: {
+          p_account_id: string
+          p_actor_id: string
+          p_canonical_url?: string
+          p_endpoint_id?: string
+          p_expected_version?: number
+          p_operation: string
+        }
+        Returns: string
+      }
       resolve_billing_checkout_reference: {
         Args: {
           p_external_reference: string
@@ -2522,6 +2596,18 @@ export type Database = {
           p_endpoint_id: string
           p_events: string[]
           p_url: string
+        }
+        Returns: undefined
+      }
+      update_webhook_endpoint_validated: {
+        Args: {
+          p_description: string
+          p_enabled: boolean
+          p_endpoint_id: string
+          p_events: string[]
+          p_expected_version: number
+          p_url: string
+          p_validation_ticket: string
         }
         Returns: undefined
       }

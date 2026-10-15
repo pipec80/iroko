@@ -3,9 +3,13 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 import { withSentryConfig } from '@sentry/nextjs';
 import createNextIntlPlugin from 'next-intl/plugin';
 
+import { isLocalValidation } from './src/lib/local-validation';
+
 const withNextIntl = createNextIntlPlugin();
+const localValidation = isLocalValidation(process.env);
 
 const nextConfig: NextConfig = {
+  env: { NEXT_PUBLIC_LOCAL_VALIDATION: String(localValidation) },
   // cacheComponents (PPR) deshabilitado: incompatibilidad confirmada y documentada
   // por next-intl (github.com/amannn/next-intl/issues/1493) — con cacheComponents
   // activo, el shell estático se genera una sola vez y sirve el mismo locale para
@@ -113,26 +117,28 @@ const baseConfig = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 })(withNextIntl(nextConfig));
 
-export default withSentryConfig(baseConfig, {
-  org: 'iroko',
-  project: 'iroko',
+export default localValidation ? baseConfig : (
+  withSentryConfig(baseConfig, {
+    org: 'iroko',
+    project: 'iroko',
 
-  // Route Sentry requests through your server (avoids ad-blockers)
-  tunnelRoute: '/sentry-tunnel',
+    // Route Sentry requests through your server (avoids ad-blockers)
+    tunnelRoute: '/sentry-tunnel',
 
-  // Sube más source maps para mejor stack traces en el cliente
-  widenClientFileUpload: true,
+    // Sube más source maps para mejor stack traces en el cliente
+    widenClientFileUpload: true,
 
-  // Usa SENTRY_AUTH_TOKEN desde las variables de entorno para Vercel
-  authToken: process.env.SENTRY_AUTH_TOKEN,
+    // Usa SENTRY_AUTH_TOKEN desde las variables de entorno para Vercel
+    authToken: process.env.SENTRY_AUTH_TOKEN,
 
-  // Silencia output de Sentry en local; en CI sí muestra (para detectar errores de upload)
-  silent: process.env.CI !== 'true',
+    // Silencia output de Sentry en local; en CI sí muestra (para detectar errores de upload)
+    silent: process.env.CI !== 'true',
 
-  webpack: {
-    // Quita el logger de Sentry del bundle de cliente (~3.5KB)
-    treeshake: { removeDebugLogging: true },
-    // Monitoreo automático de cron jobs en Vercel
-    automaticVercelMonitors: true,
-  },
-});
+    webpack: {
+      // Quita el logger de Sentry del bundle de cliente (~3.5KB)
+      treeshake: { removeDebugLogging: true },
+      // Monitoreo automático de cron jobs en Vercel
+      automaticVercelMonitors: true,
+    },
+  })
+);

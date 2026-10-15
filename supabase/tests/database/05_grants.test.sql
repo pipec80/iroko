@@ -1,49 +1,13 @@
--- pgTAP test: Internal schemas are inaccessible to anon and public roles
--- The real guard is SCHEMA USAGE, not function-level EXECUTE grants.
--- Migration 001 revokes ALL on billing, audit, and private schemas from
--- public/anon/authenticated. This test verifies that protection holds.
--- Run with: pnpm supa:test
-
+-- Effective schema privileges include PUBLIC and inherited grants.
 BEGIN;
-SELECT plan(3);
+SELECT plan(5);
 
--- 1. anon has no USAGE on private schema
---    Without USAGE, anon cannot reference any function in this schema,
---    regardless of EXECUTE grants on individual functions.
-SELECT is(
-  (
-    SELECT count(*)::int
-    FROM information_schema.role_usage_grants
-    WHERE object_schema = 'private'
-      AND grantee IN ('anon', 'PUBLIC')
-  ),
-  0,
-  'anon has no USAGE privilege on private schema'
-);
-
--- 2. anon has no USAGE on billing schema
-SELECT is(
-  (
-    SELECT count(*)::int
-    FROM information_schema.role_usage_grants
-    WHERE object_schema = 'billing'
-      AND grantee IN ('anon', 'PUBLIC')
-  ),
-  0,
-  'anon has no USAGE privilege on billing schema'
-);
-
--- 3. anon has no USAGE on audit schema
-SELECT is(
-  (
-    SELECT count(*)::int
-    FROM information_schema.role_usage_grants
-    WHERE object_schema = 'audit'
-      AND grantee IN ('anon', 'PUBLIC')
-  ),
-  0,
-  'anon has no USAGE privilege on audit schema'
-);
+SELECT ok(NOT has_schema_privilege('anon', 'private', 'USAGE'), 'anon cannot use private');
+-- billing.sql grants USAGE explicitly; this does not grant table CRUD or bypass RLS.
+SELECT ok(has_schema_privilege('anon', 'billing', 'USAGE'), 'anon retains documented billing schema USAGE');
+SELECT ok(NOT has_schema_privilege('anon', 'audit', 'USAGE'), 'anon cannot use audit');
+SELECT ok(has_schema_privilege('authenticated', 'private', 'USAGE'), 'authenticated can resolve RLS helpers');
+SELECT ok(has_schema_privilege('authenticated', 'public', 'USAGE'), 'authenticated can resolve application objects');
 
 SELECT * FROM finish();
 ROLLBACK;

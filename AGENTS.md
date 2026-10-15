@@ -11,6 +11,19 @@ engineering quality and commercial optionality to become a distributable
 boilerplate later. It is not yet documented or accepted as an installable
 customer product.
 
+All current Iroko environments and integrations are MVP/test environments;
+there is no customer production data requiring preservation. The feature freeze
+exists to correct and polish existing capabilities. Approved work may reset
+project test data rather than require a production continuity procedure; preserve
+pending source changes, credentials and unrelated projects.
+
+Before changing integrations or creating environments, inventory existing
+services and consumers: Supabase, GitHub CI/CD, Cloudflare, PostHog, Resend,
+Sentry, Vercel and the billing providers actually implemented. Distinguish local
+configuration from verified provider/runtime state. The official local Supabase
+project is `saas-boilerplate`, defined by `supabase/config.toml`; reuse this stack
+and retire temporary rehearsal environments after their purpose is complete.
+
 ## Read order and authority
 
 Before changing the repository:

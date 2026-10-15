@@ -39,8 +39,9 @@ Gestionar las tareas operativas restantes con un plan y una rama/PR por tarea:
 
 ## Lee primero
 
-1. `AGENTS.md` si existe localmente; es privado e intencionalmente no versionado.
-2. `README.md`, `ROADMAP.md`, `SECURITY.md` y `docs/index.md`.
+1. `AGENTS.md`, contrato compartido y versionado del repositorio.
+2. `docs/index.md`, `docs/current-state.md`, `ROADMAP.md`,
+   `docs/capabilities.md` y `SECURITY.md`.
 3. `docs/audits/2026-08-02-full-platform-audit.md`.
 4. `docs/runbooks/email-queue.md` y `docs/runbooks/local-sync-and-codex.md`.
 5. `docs/exec-plans/completed/002-email-worker-cloud.md`,
@@ -49,9 +50,10 @@ Gestionar las tareas operativas restantes con un plan y una rama/PR por tarea:
 6. `package.json`, `.github/workflows/`, `next.config.ts`, `src/proxy.ts`,
    `supabase/config.toml`, `supabase/functions/` y sus pruebas asociadas.
 
-`ROADMAP.md`, `SECURITY.md`, el código ejecutable y la configuración actual son
-la fuente de verdad. Las auditorías y planes son evidencia histórica que debes
-revalidar, no instrucciones para repetir acciones ya cerradas.
+Aplica la jerarquía de `AGENTS.md`: código, pruebas y evidencia observada,
+configuración/migraciones, current state, arquitectura/ADRs, planes activos y
+después el roadmap. El roadmap gobierna dirección y orden; las auditorías y
+planes históricos requieren revalidación.
 
 ## Reglas obligatorias
 

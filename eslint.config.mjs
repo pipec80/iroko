@@ -140,6 +140,10 @@ const eslintConfig = defineConfig([
     '.agents/**',
     '.claude/**',
     '.gemini/**',
+    // Local rehearsals and alternate checkouts are outside this project's lint scope.
+    // Flat config does not inherit their exclusions from .gitignore.
+    '.superpowers/**',
+    '.worktrees/**',
     'out/**',
     'build/**',
     'next-env.d.ts',

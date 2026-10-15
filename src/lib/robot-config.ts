@@ -4,6 +4,8 @@ import { randomUUID } from 'crypto';
 import { Readable } from 'stream';
 import ExcelJS from 'exceljs';
 
+import { appConfig } from '@/config/app.config';
+import { requireAccountRole } from '@/lib/active-account';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
 
@@ -77,6 +79,8 @@ export async function uploadRobotConfigAction(
   _prev: RobotConfigUploadState,
   formData: FormData,
 ): Promise<RobotConfigUploadState> {
+  if (!appConfig.features.verticals.robot) return { error: 'module_disabled' };
+
   const file = formData.get('file');
 
   if (!(file instanceof File) || file.size === 0) return { error: 'no_file' };
@@ -87,6 +91,12 @@ export async function uploadRobotConfigAction(
 
   const { supabase, userId, accountId } = await requireContext();
   if (!userId || !accountId) return { error: 'not_authenticated' };
+
+  try {
+    await requireAccountRole(accountId, ['owner', 'admin', 'member']);
+  } catch {
+    return { error: 'not_authorized' };
+  }
 
   try {
     const path = `${accountId}/${randomUUID()}.xlsx`;
@@ -199,10 +209,18 @@ async function pruneOldConfigs(
 }
 
 export async function getDownloadUrl(path: string): Promise<{ url?: string; error?: string }> {
+  if (!appConfig.features.verticals.robot) return { error: 'module_disabled' };
+
   const { supabase, userId, accountId } = await requireContext();
   if (!userId || !accountId) return { error: 'not_authenticated' };
 
   if (!path.startsWith(`${accountId}/`)) return { error: 'unauthorized' };
+
+  try {
+    await requireAccountRole(accountId, ['owner', 'admin', 'member', 'viewer']);
+  } catch {
+    return { error: 'not_authorized' };
+  }
 
   const { data, error } = await supabase.storage.from('robot_configs').createSignedUrl(path, 60);
 

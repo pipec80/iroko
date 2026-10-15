@@ -44,7 +44,7 @@ export type AppConfig = {
     onboarding: boolean;
     /** Per-vertical toggles. */
     verticals: {
-      /** Demo vertical — robot configuration uploader. Set false to hide from nav. */
+      /** Robot example availability: navigation, route and actions; SQL roles remain independent. */
       robot: boolean;
     };
   };
@@ -76,10 +76,8 @@ export const appConfig: AppConfig = {
     analytics: true,
     onboarding: true,
     verticals: {
-      // Apagado en V1 (Plan 009): sus policies dejan escribir a cualquier
-      // membresía, incluido viewer, así que contradice la matriz RBAC. Es un
-      // vertical de demostración — se conserva activable en vez de rediseñar
-      // sus permisos, para que no retrase el core del boilerplate.
+      // Disabled in V1. This application flag does not revoke direct SQL access;
+      // live membership roles and tenant policies remain the database boundary.
       robot: false,
     },
   },

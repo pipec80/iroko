@@ -34,6 +34,7 @@ export const test = base.extend<PlatformAdminFixtures>({
       Boolean(process.env.PLAYWRIGHT_BASE_URL),
       'platformAdmin requiere Supabase local (127.0.0.1:54321) — no puede correr contra producción.',
     );
+    testInfo.setTimeout(Math.max(testInfo.timeout, 60_000));
 
     const hydrationErrors: string[] = [];
     page.on('pageerror', (err) => {
@@ -75,10 +76,11 @@ export const test = base.extend<PlatformAdminFixtures>({
     await expect(page.locator('#code')).toBeVisible({ timeout: 10_000 });
 
     // Evitar reusar el mismo código TOTP consumido en el verify de
-    // enrolamiento — si coinciden, esperar al siguiente step.
+    // enrolamiento y evitar enviar uno a punto de expirar.
     let loginCode = generateTotp(secret);
-    if (loginCode === enrollCode) {
-      await new Promise((r) => setTimeout(r, msUntilNextTotpStep()));
+    const remainingStepMs = msUntilNextTotpStep();
+    if (loginCode === enrollCode || remainingStepMs < 8_000) {
+      await new Promise((r) => setTimeout(r, remainingStepMs + 100));
       loginCode = generateTotp(secret);
     }
     await page.locator('#code').fill(loginCode);

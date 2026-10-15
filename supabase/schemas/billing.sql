@@ -1299,3 +1299,28 @@ REVOKE ALL ON FUNCTION private.ensure_billing_reconciliation_state()
 CREATE TRIGGER ensure_billing_reconciliation_state
   AFTER INSERT OR UPDATE OF external_subscription_id, status ON billing.subscriptions
   FOR EACH ROW EXECUTE FUNCTION private.ensure_billing_reconciliation_state();
+
+-- Plan 012.1: trigger execution does not require API-role EXECUTE.
+REVOKE EXECUTE ON FUNCTION private.sync_billing_checkout_intent() FROM PUBLIC;
+
+-- Plan 012.1: API roles keep their existing CRUD grants and RLS contracts.
+REVOKE REFERENCES, TRIGGER, TRUNCATE, MAINTAIN ON TABLE
+  billing.checkout_intents,
+  billing.customers,
+  billing.events,
+  billing.financial_anomalies,
+  billing.invoice_line_items,
+  billing.invoices,
+  billing.payment_attempts,
+  billing.payment_methods,
+  billing.plans,
+  billing.provider_prices,
+  billing.reconciliation_state,
+  billing.recovery_jobs,
+  billing.subscription_items,
+  billing.subscriptions
+FROM anon, authenticated;
+
+-- Apply the same boundary to tables created by postgres in this schema.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA billing
+  REVOKE REFERENCES, TRIGGER, TRUNCATE, MAINTAIN ON TABLES FROM anon, authenticated;

@@ -46,7 +46,7 @@ and additional hardening is tracked in
 
 - **Database**: Row Level Security (RLS) on all tables, SECURITY DEFINER RPCs with `SET search_path = ''`
 - **Auth**: Supabase Auth with MFA (TOTP; WebAuthn/phone available on Pro). MFA is enforced at the edge — a user with an enrolled factor cannot reach protected routes until the session is elevated to `aal2`.
-- **Sessions**: session timebox and inactivity timeout are configured but require the Supabase **Pro** plan; on the Free plan they are `0s` (disabled). Enable them (7d / 2h) in `supabase/config.toml` after upgrading. See the "Free tier — la verdad" section of `ROADMAP.md`.
+- **Sessions**: session timebox and inactivity timeout are configured but require the Supabase **Pro** plan; on the Free plan they are `0s` (disabled). Enable them (7d / 2h) in `supabase/config.toml` after upgrading. Treat executable configuration as current truth; [Plan 012](docs/exec-plans/active/012-security-hardening-and-pricing-truth.md) owns the pricing/security reconciliation.
 - **Leaked password protection**: HaveIBeenPwned checking on signup/password-change requires the Supabase **Pro** plan (Dashboard → Authentication → Sign In / Providers). Disabled on the Free plan — no local config equivalent.
 - **Headers**: strict CSP (`object-src 'none'`, `base-uri 'self'`, `frame-ancestors 'none'`) with `'unsafe-inline'` on `script-src` — per-request nonces are intentionally **not** used because they are incompatible with statically-generated pages. HSTS (2 years + preload), COOP, CORP.
 - **Rate limiting**: write requests to the Data API are capped per client IP (resolved from the un-spoofable `cf-connecting-ip` header) via a `db_pre_request` hook.

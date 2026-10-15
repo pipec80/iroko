@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getActiveAccountId: vi.fn(),
   getClaims: vi.fn(),
   captureServer: vi.fn(),
+  prepare: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/server', () => ({
@@ -14,6 +15,10 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/active-account', () => ({ getActiveAccountId: mocks.getActiveAccountId }));
 
 vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
+vi.mock('@/lib/webhooks/registration', () => ({
+  prepareWebhookUrlValidation: mocks.prepare,
+  webhookRegistrationErrorCode: () => 'unsafe_destination',
+}));
 
 vi.mock('@sentry/nextjs', () => ({ withScope: vi.fn(), captureException: vi.fn() }));
 
@@ -43,6 +48,11 @@ describe('webhooks server actions', () => {
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('acct-1');
     mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-1' } } });
+    mocks.prepare.mockResolvedValue({
+      url: 'https://example.com/hook',
+      ticket: 'ticket-1',
+      version: 3,
+    });
   });
 
   it('should return validation_error for an http url without calling the RPC', async () => {
@@ -74,11 +84,12 @@ describe('webhooks server actions', () => {
       events: ['member.joined'],
     });
     expect(result.data).toEqual({ id: ENDPOINT_ID, secret: 'whsec_abc' });
-    expect(mocks.rpc).toHaveBeenCalledWith('create_webhook_endpoint', {
+    expect(mocks.rpc).toHaveBeenCalledWith('create_webhook_endpoint_validated', {
       p_account_id: 'acct-1',
       p_url: 'https://example.com/hook',
       p_description: 'ci',
       p_events: ['member.joined'],
+      p_validation_ticket: 'ticket-1',
     });
     expect(mocks.captureServer).toHaveBeenCalledWith({
       event: 'webhook_created',
@@ -132,13 +143,24 @@ describe('webhooks server actions', () => {
       enabled: false,
     });
     expect(result.data).toBe(true);
-    expect(mocks.rpc).toHaveBeenCalledWith('update_webhook_endpoint', {
+    expect(mocks.rpc).toHaveBeenCalledWith('update_webhook_endpoint_validated', {
       p_endpoint_id: ENDPOINT_ID,
       p_url: 'https://example.com/hook',
-      p_description: undefined,
+      p_description: '',
       p_events: ['member.joined'],
       p_enabled: false,
+      p_validation_ticket: 'ticket-1',
+      p_expected_version: 3,
     });
+  });
+
+  it('does not mutate through RPC when destination validation fails', async () => {
+    mocks.prepare.mockRejectedValue(new Error('unsafe_destination'));
+    expect(
+      (await createWebhookEndpoint({ url: 'https://example.com/hook', events: ['member.joined'] }))
+        .error,
+    ).toBe('unsafe_destination');
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('should delete an endpoint by id', async () => {

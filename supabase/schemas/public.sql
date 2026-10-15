@@ -144,9 +144,18 @@ DECLARE
   v_ip      inet;
   v_window  timestamptz;
   v_total   integer;
+  v_now     timestamptz;
 BEGIN
   -- GET/HEAD run on read replicas and never reach this hook.
   IF v_method IN ('GET', 'HEAD') OR v_method IS NULL THEN
+    RETURN;
+  END IF;
+
+  -- The durable admission RPC has its own IP/account budgets. Exempt only the
+  -- authenticated backend POST, never all service-role traffic.
+  IF v_method = 'POST'
+     AND current_setting('request.path', true) = '/rpc/admit_account_api_request'
+     AND (current_setting('request.jwt.claims', true)::jsonb ->> 'role') = 'service_role' THEN
     RETURN;
   END IF;
 
@@ -187,7 +196,10 @@ BEGIN
     RETURN;
   END IF;
 
-  v_window := date_trunc('minute', now());
+  -- A single lock spans all minute buckets for this IP, including rollover.
+  PERFORM pg_advisory_xact_lock(12012301, hashtext(host(v_ip)));
+  v_now := clock_timestamp();
+  v_window := date_trunc('minute', v_now);
 
   BEGIN
     INSERT INTO private.rate_limit_counters (ip, window_start, count)
@@ -201,7 +213,7 @@ BEGIN
   SELECT COALESCE(SUM(count), 0) INTO v_total
   FROM private.rate_limit_counters
   WHERE ip = v_ip
-    AND window_start >= date_trunc('minute', now()) - INTERVAL '4 minutes';
+    AND window_start >= date_trunc('minute', v_now) - INTERVAL '4 minutes';
 
   IF v_total > 100 THEN
     RAISE SQLSTATE 'PGRST' USING
@@ -212,7 +224,7 @@ BEGIN
       detail = json_build_object(
         'status',      429,
         'status_text', 'Too Many Requests',
-        'headers',     json_build_array())::text;
+        'headers',     json_build_object())::text;
   END IF;
 END;
 $$;
@@ -1373,8 +1385,8 @@ BEGIN
     RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501';
   END IF;
 
-  IF NOT private.user_is_member(p_account_id, v_uid) THEN
-    RAISE EXCEPTION 'not_a_member' USING ERRCODE = '42501';
+  IF NOT COALESCE(private.get_user_role(p_account_id, v_uid) IN ('owner', 'admin', 'member'), false) THEN
+    RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
   END IF;
 
   DELETE FROM public.robot_routines WHERE account_id = p_account_id;
@@ -1413,7 +1425,7 @@ $$;
 ALTER FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") IS 'Atomically replaces a tenant''s robot routines/contacts/memories in a single transaction. SECURITY DEFINER with an internal membership check. Prevents the partial-write data loss of the previous delete-then-insert client flow.';
+COMMENT ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") IS 'Atomically replaces a tenant''s robot routines/contacts/memories in a single transaction. SECURITY DEFINER with a live owner/admin/member role check. Prevents the partial-write data loss of the previous delete-then-insert client flow.';
 
 
 
@@ -4165,3 +4177,61 @@ GRANT EXECUTE ON FUNCTION public.claim_billing_reconciliation_candidates(integer
   TO service_role;
 GRANT EXECUTE ON FUNCTION public.complete_billing_reconciliation_candidate(uuid,text,text,timestamptz,text,text)
   TO service_role;
+
+-- Plan 014 T1: replace permissive membership writes in place.
+-- Reads remain scoped to live tenant memberships. JWT role claims are not authority.
+ALTER POLICY "Users can insert routines to their accounts" ON public.robot_routines
+  TO authenticated WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can update routines of their accounts" ON public.robot_routines
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can delete routines of their accounts" ON public.robot_routines
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) = 'owner');
+
+ALTER POLICY "Users can insert contacts to their accounts" ON public.robot_contacts
+  TO authenticated WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can update contacts of their accounts" ON public.robot_contacts
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can delete contacts of their accounts" ON public.robot_contacts
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) = 'owner');
+
+ALTER POLICY "Users can insert memories to their accounts" ON public.robot_memories
+  TO authenticated WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can update memories of their accounts" ON public.robot_memories
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (private.get_user_role(account_id, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Users can delete memories of their accounts" ON public.robot_memories
+  TO authenticated USING (private.get_user_role(account_id, (SELECT auth.uid())) = 'owner');
+
+ALTER POLICY "Accounts can insert their own robot configs" ON storage.objects
+  TO authenticated WITH CHECK (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+ALTER POLICY "Accounts can delete their own robot configs" ON storage.objects
+  TO authenticated USING (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+CREATE POLICY "Accounts can update their own robot configs" ON storage.objects
+  FOR UPDATE TO authenticated USING (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member')) WITH CHECK (bucket_id = 'robot_configs' AND private.get_user_role(split_part(name, '/', 1)::uuid, (SELECT auth.uid())) IN ('owner', 'admin', 'member'));
+
+-- Plan 012.1: API roles keep their existing CRUD grants and RLS contracts.
+REVOKE REFERENCES, TRIGGER, TRUNCATE, MAINTAIN ON TABLE
+  public.accounts,
+  public.accounts_memberships,
+  public.announcements,
+  public.api_keys,
+  public.auth_recovery_codes,
+  public.documents,
+  public.feature_flag_overrides,
+  public.feature_flags,
+  public.impersonation_sessions,
+  public.invitations,
+  public.memberships_history,
+  public.notifications,
+  public.platform_admins,
+  public.profiles,
+  public.projects,
+  public.robot_contacts,
+  public.robot_memories,
+  public.robot_routines,
+  public.webhook_deliveries,
+  public.webhook_endpoints
+FROM anon, authenticated;
+
+-- Apply the same boundary to tables created by postgres in this schema.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE REFERENCES, TRIGGER, TRUNCATE, MAINTAIN ON TABLES FROM anon, authenticated;

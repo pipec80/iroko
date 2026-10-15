@@ -26,6 +26,7 @@ export const env = createEnv({
     SITE_URL: z.string().url().default('http://localhost:3000'),
     SUPABASE_SECRET_KEY: z.string().min(1),
     SENTRY_AUTH_TOKEN: z.string().min(1).optional(),
+    LOCAL_VALIDATION: z.enum(['true']).optional(),
     RESEND_API_KEY: z.string().min(1),
     FROM_EMAIL: z.string().email(),
     // Catcher de email local (Mailpit, incluido en el stack de Supabase CLI).
@@ -60,6 +61,7 @@ export const env = createEnv({
     // reachable by Mercado Pago (including a Preview protection bypass in sandbox).
     MERCADOPAGO_WEBHOOK_URL: z.string().url().optional(),
     BILLING_RECONCILIATION_SECRET: z.string().min(32).optional(),
+    WEBHOOK_WORKER_SECRET: z.string().min(32).optional(),
     // Injected automatically by Vercel — never set manually. Absent outside Vercel.
     VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
     // Server-side posthog-node client. The real ingest host — never the
@@ -70,6 +72,7 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
     NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
+    NEXT_PUBLIC_LOCAL_VALIDATION: z.enum(['true', 'false']).optional(),
     // Cloudflare Turnstile site key. When set, CAPTCHA is shown on auth forms.
     // Pair with [auth.captcha] secret in supabase/config.toml.
     // Local test key (always passes): 1x00000000000000000000AA
@@ -87,6 +90,7 @@ export const env = createEnv({
     SITE_URL: process.env.SITE_URL,
     SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    LOCAL_VALIDATION: process.env.LOCAL_VALIDATION,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     FROM_EMAIL: process.env.FROM_EMAIL,
     MAILPIT_URL: process.env.MAILPIT_URL,
@@ -99,11 +103,13 @@ export const env = createEnv({
     MERCADOPAGO_WEBHOOK_SECRET: process.env.MERCADOPAGO_WEBHOOK_SECRET,
     MERCADOPAGO_WEBHOOK_URL: process.env.MERCADOPAGO_WEBHOOK_URL,
     BILLING_RECONCILIATION_SECRET: process.env.BILLING_RECONCILIATION_SECRET,
+    WEBHOOK_WORKER_SECRET: process.env.WEBHOOK_WORKER_SECRET,
     VERCEL_ENV: process.env.VERCEL_ENV,
     POSTHOG_HOST: process.env.POSTHOG_HOST ?? 'https://us.i.posthog.com',
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
+    NEXT_PUBLIC_LOCAL_VALIDATION: process.env.NEXT_PUBLIC_LOCAL_VALIDATION,
     NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
     NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? '/ingest',

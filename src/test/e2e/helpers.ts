@@ -1,9 +1,15 @@
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
+import { requireLoopbackUrl, resolveDbTarget, validateDbContainerState } from '../local-e2e-target';
+
 export const MAILPIT_BASE = 'http://127.0.0.1:54324';
-export const SUPABASE_URL = 'http://127.0.0.1:54321';
+export const SUPABASE_URL = requireLoopbackUrl(
+  process.env.E2E_SUPABASE_URL ??
+    (process.env.LOCAL_VALIDATION === 'true' ? undefined : 'http://127.0.0.1:54321'),
+);
 
 /**
  * Inserta/actualiza filas directo en Postgres vía el contenedor Docker de Supabase.
@@ -14,43 +20,62 @@ export const SUPABASE_URL = 'http://127.0.0.1:54321';
  * postgres dentro del contenedor es la vía soportada que no relaja los grants
  * de producción.
  *
- * IMPORTANTE (Windows): pasar siempre SQL de una sola línea. Un template
- * literal multilínea combinado con paréntesis (ej. `IN (...)`) rompe el
- * parseo de `cmd.exe` — el WHERE se pierde en silencio y la query corre sin
- * filtrar, devolviendo resultados de la tabla completa sin ningún error.
+ * SQL is passed as a process argument without a shell, including multiline SQL.
  */
+function getDbContainer(): string {
+  const config = readFileSync('supabase/config.toml', 'utf8');
+  const defaultProject = config.match(/^project_id\s*=\s*"([^"]+)"/m)?.[1] ?? '';
+  const target = resolveDbTarget(process.env, defaultProject);
+  const state = execFileSync(
+    'docker',
+    [
+      'inspect',
+      '--format',
+      '{{.State.Running}}|{{index .Config.Labels "com.supabase.cli.project"}}',
+      target.container,
+    ],
+    { encoding: 'utf8' },
+  ).trim();
+  validateDbContainerState(state, target.project);
+  return target.container;
+}
+
 export function execSqlAsPostgres(sql: string): void {
-  const container = execSync('docker ps --filter "name=supabase_db" --format "{{.Names}}"')
-    .toString()
-    .trim()
-    .split('\n')[0];
-  if (!container) {
-    throw new Error('supabase_db container not found — is `supabase start` running?');
-  }
-  execSync(`docker exec ${container} psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "${sql}"`);
+  execFileSync('docker', [
+    'exec',
+    getDbContainer(),
+    'psql',
+    '-U',
+    'postgres',
+    '-d',
+    'postgres',
+    '-v',
+    'ON_ERROR_STOP=1',
+    '-c',
+    sql,
+  ]);
 }
 
-/**
- * Same container/psql plumbing as {@link execSqlAsPostgres}, but returns
- * stdout (`-tAc`: tuples-only, unaligned) so callers can assert on the
- * result instead of just running a mutation. SQL must not contain `"` —
- * it's interpolated inside a double-quoted shell argument; use single quotes.
- */
+/** Returns SQL output from the same identity-checked container used for fixture writes. */
 export function querySqlAsPostgres(sql: string): string {
-  const container = execSync('docker ps --filter "name=supabase_db" --format "{{.Names}}"')
-    .toString()
-    .trim()
-    .split('\n')[0];
-  if (!container) {
-    throw new Error('supabase_db container not found — is `supabase start` running?');
-  }
-  return execSync(
-    `docker exec ${container} psql -U postgres -d postgres -v ON_ERROR_STOP=1 -tAc "${sql}"`,
-  )
-    .toString()
-    .trim();
+  return execFileSync(
+    'docker',
+    [
+      'exec',
+      getDbContainer(),
+      'psql',
+      '-U',
+      'postgres',
+      '-d',
+      'postgres',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-tAc',
+      sql,
+    ],
+    { encoding: 'utf8' },
+  ).trim();
 }
-
 export function uniqueEmail(prefix = 'e2e'): string {
   return `${prefix}+${Date.now()}@saasboilerplate.local`;
 }

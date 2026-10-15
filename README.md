@@ -5,6 +5,13 @@ calidad y modularidad necesarias para poder convertirse más adelante en un
 boilerplate comercial. Hoy no se presenta como producto instalable, soportado
 o listo para clientes.
 
+La promesa que guía el cierre es: **«Tengo una base que ya resuelve acceso,
+cuentas, permisos y servicios comunes. Podemos dedicar el desarrollo a tu
+operación y adaptar la experiencia a lo que necesitas.»** Su uso como afirmación
+comercial depende de la evidencia del alcance ofrecido. La
+[estrategia de producto](docs/architecture/product-strategy.md) define los
+límites, las configuraciones de referencia y cómo demostrar reutilización.
+
 Antes de trabajar en el repositorio, lee [AGENTS.md](AGENTS.md) y
 [docs/current-state.md](docs/current-state.md). El mapa completo de
 documentación está en [docs/index.md](docs/index.md).
@@ -18,7 +25,7 @@ documentación está en [docs/index.md](docs/index.md).
 | Estilos         | Tailwind CSS 4 + shadcn + tokens Iroko            |
 | i18n            | next-intl (en / es / pt / fr)                     |
 | Estado servidor | TanStack Query 5                                  |
-| Observabilidad  | Sentry, Vercel Analytics, Vercel Speed Insights   |
+| Observabilidad  | Sentry, Pino, PostHog y métricas de Vercel        |
 | Tests           | Vitest (unit) + Playwright (E2E) + pgTAP (DB)     |
 | Deploy objetivo | Vercel + Supabase                                 |
 
@@ -110,7 +117,7 @@ de lectura, autoridad y ciclo de vida:
 - `docs/current-state.md` — estado vigente, prioridades y evidencia
 - `docs/architecture/` y `docs/adr/` — límites y decisiones duraderas
 - `docs/audits/` — auditorías de plataforma con hallazgos y evidencia de cierre
-- `docs/exec-plans/` — trabajo activo y registros de planes completados
+- `docs/exec-plans/` — ciclo de vida de planes activos, diferidos y completados
 - `docs/runbooks/` — guías operativas paso a paso
 - `docs/quality/` — Definition of Done y estrategia de testing
 - `docs/modules/` — guías vigentes de capacidades implementadas; cada una
@@ -118,12 +125,19 @@ de lectura, autoridad y ciclo de vida:
 - `docs/design-system/` — entrada al sistema canónico Poppy/Cobalt/Geist,
   estado, tokens, kits y clasificación de exportaciones históricas/generadas
 
-`docs/estado-fases.md` y `docs/local/` son notas de desarrollo locales o
-históricas (gitignored). No son autoridad y no existen en un checkout limpio.
+`docs/local/` conserva notas de trabajo e historia local ignorada. No es
+autoridad y no existe en un checkout limpio. El historial versionado y seguro
+de publicar está en [docs/history/](docs/history/README.md).
 
 ## Estado y alcance
 
-Los planes 010 y 011 contienen remediaciones P0 activas de aislamiento tenant
-y billing. Los planes 012 y 013 cubren hardening y preparación comercial. Una
-capacidad configurada o presente en código no implica certificación en
-producción; consulta siempre [el estado actual](docs/current-state.md).
+El [roadmap de freeze](ROADMAP.md) contiene el único orden vigente. Plan 011
+tiene el alcance requerido por este freeze satisfecho y conserva sus escenarios
+restantes como trabajo diferido; Plan 013 también queda diferido hasta decidir
+vender. Los Planes 012, 014, 015 y 016 forman el trabajo activo. Consulta el
+[índice de planes](docs/exec-plans/README.md) para su ciclo de vida y
+[el estado actual](docs/current-state.md) para evidencia verificada.
+
+Una capacidad configurada o presente en código no implica certificación en
+producción. El setup
+local de arriba no sustituye todavía el ensayo independiente de Plan 015.
