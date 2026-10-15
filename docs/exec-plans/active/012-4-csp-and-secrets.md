@@ -10,15 +10,17 @@ contratos estrictos para impersonación; gates puros para mock/uploads; nonce
 por documento SSR; navegación validada en entrada, SQL y render. No introducir
 servicios, paquetes ni una nueva arquitectura de billing.
 
-**Tech Stack:** Next 16.3.5, React 19/Compiler, TypeScript strict, Zod, Supabase
+**Tech Stack:** Next 16.3.8, React 19/Compiler, TypeScript strict, Zod, Supabase
 Postgres, Sentry 10.67.0, PostHog, Vitest, Playwright y pgTAP instalados.
 
 **Spec:** [PR4 del Plan 012](012-security-hardening-and-pricing-truth.md#pr-4--chorecsp-and-secrets-hardening), cruzado con el
 [inventario estático fechado](../../audits/2026-10-14-plan-012-4-readiness.md).
 
-**Estado:** propuesta ejecutable para revisión; ninguna tarea de implementación
-ni aceptación 012.4 completada por este documento. Baseline `fad800b`, rama
-`codex/014-t1-robot-permissions`; cuatro DB accidentales preservadas/excluidas.
+**Estado (2026-10-15):** plan aprobado para ejecución. La implementación y
+aceptación 012.4 siguen pendientes. El documento se preparó originalmente en
+`codex/014-t1-robot-permissions`; iniciar el trabajo desde una rama nueva basada
+en `main` después de integrar este handoff documental. Las cuatro DB accidentales
+permanecen preservadas/excluidas.
 
 Destinos de referencia, a renovar antes de ejecutar: local `saas-boilerplate`
 (API54321/DB54322); Supabase `rgrxlygtmvavqzkjyywg`; Vercel Iroko

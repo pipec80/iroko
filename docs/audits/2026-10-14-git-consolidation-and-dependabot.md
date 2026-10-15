@@ -1,8 +1,15 @@
 # Consolidación Git y Dependabot — 2026-10-14
 
-Estado: preparación y revisión del candidato; integración, CI del candidato y
-merge **[NO VERIFICADO]**. Este registro no acredita un nuevo deployment ni
-modificaciones de Supabase Cloud. La implementación de 012.4 sigue pendiente.
+Estado final actualizado: PR [#221](https://github.com/pipec80/iroko/pull/221)
+integrado por squash como `3bac4f9b6b8604d35ec594645a2c491d2c1ec83d` el
+2026-10-15. Todos los checks requeridos aprobaron. Los nueve PR Dependabot
+reemplazados (#212–#220) se cerraron con referencia a #221; no quedaron PR
+abiertos al verificar inmediatamente después de ese merge. En ese checkpoint,
+`main` local coincidió con `origin/main` en ese SHA y el árbol estaba limpio.
+La implementación de 012.4 sigue pendiente. El check Vercel
+de preview aprobó; aceptación de un deployment estable/producción queda
+**[NO VERIFICADO]**. La integración Git no hizo escrituras directas a Supabase
+Cloud.
 
 ## Alcance y autorización
 
@@ -35,9 +42,9 @@ la revisión consolidada final ni garantizan checks actuales.
 | [219](https://github.com/pipec80/iroko/pull/219) | `e38c5234ecec4d046ab132ace20586ce7d3abc8f` | CodeQL init 4.37.9 → 4.38.2                                       | Corregir también `analyze`, ausente del PR original.                          |
 | [220](https://github.com/pipec80/iroko/pull/220) | `292be82e96c4c76a89761478178a50842732c2fa` | Next 16.3.5 → 16.3.8                                              | Incluir manifiesto, override y lock; sustituye #212.                          |
 
-Los nueve PR originales deben cerrarse con referencia al PR consolidado
-únicamente cuando su selección equivalente haya sido integrada y verificada.
-Su cierre efectivo permanece **[NO VERIFICADO]** en este borrador.
+Los nueve PR originales (#212–#220) se cerraron el 2026-10-15 después de
+verificar el merge de #221. Cada cierre apunta al PR consolidado; sus
+actualizaciones quedan en el lock integrado.
 
 Los tags oficiales se resolvieron a estos commits:
 
@@ -104,8 +111,11 @@ b43fbfffa86dfe810f3d44657d365a9513cfbc31:supabase/tests/database/44_minimum_gran
 
 ## Estado registrado antes de publicar el candidato
 
-El coordinador debe reemplazar cada estado pendiente solo con resultados de la
-selección exacta final, conservando los fallos y limitaciones observados.
+La tabla siguiente es el snapshot previo al PR y se conserva como historial;
+sus estados pendientes quedan reemplazados por la sección de aceptación final.
+
+En esa etapa se debía reemplazar cada estado pendiente solo con resultados de
+la selección exacta final, conservando los fallos y limitaciones observados.
 
 | Comprobación                                               | Estado y evidencia                                                                 |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------------- |
@@ -124,20 +134,27 @@ selección exacta final, conservando los fallos y limitaciones observados.
 
 ## Actualización del candidato local
 
-Se actualizaron manifiesto, overrides y lock conjuntamente. Los rangos resuelven
-Supabase JS 2.117.3, next-intl 4.14.9 y Knip 6.41.0; Next queda en 16.3.8 y
-sharp en 0.35.5. Se corrigieron también transitivas de desarrollo publicadas
-(undici, ip-address, js-yaml, hono, smol-toml, proxy-addr,
-postcss-selector-parser, fast-copy y MCP SDK). Las dependencias directas
-conservan su major; Knip 6.41.0 incorpora unbash 5.1.0 frente a 4.0.3,
-por lo que el análisis Knip final sigue siendo obligatorio.
+La selección finalmente integrada conserva manifiesto, overrides y lock
+conjuntamente. `package.json` registra Next 16.3.8, Supabase JS ^2.117.2,
+next-intl ^4.14.7, `@testing-library/dom` ^10.4.2, Knip ^6.38.0 y sharp
+0.35.5. Estos son los rangos/versiones aceptados por #221; algunos valores
+mayores anotados en snapshots preliminares no pertenecen al lock final.
 
-Resultados renovados: `pnpm audit --prod --audit-level=high` exit 0, sin avisos;
-auditoría completa conserva exactamente un high (`braces`), cero critical,
-moderate o low. No se ignora ese advisory. `pnpm install --frozen-lockfile
---ignore-scripts` exit 0. Instalación sin scripts no acredita pruebas de runtime.
-El intento de instalar braces 3.0.4 falló porque esa versión no está publicada;
-el override inexistente se retiró antes de congelar el lock.
+Auditoría fresca sobre el lock integrado: `pnpm audit --prod --audit-level=high`
+terminó sin vulnerabilidades conocidas. `pnpm audit --audit-level=high`
+reportó una vulnerabilidad high de build en `braces` <=3.0.3, alcanzable desde
+eslint-config-next, next-sitemap y shadcn. `npm view braces version versions --json`
+confirmó que 3.0.3 sigue siendo la última publicada; el advisory
+GHSA-vfj7-8cjw-p6xm requiere >=3.0.4, que no estaba publicada al verificar.
+No se inventó un override ni se silenció el advisory.
+
+La API de alertas Dependabot consultada inmediatamente después del merge aún
+mostraba 16 alertas abiertas (2 critical, 4 high, 6 medium y 4 low), incluidas
+entradas cuyo rango termina antes de la versión integrada de Next 16.3.8. Su
+reconciliación contra el nuevo lock queda **[NO VERIFICADO]** hasta el siguiente
+escaneo de GitHub; esas alertas no alteran el resultado fresco de `pnpm audit`
+ni significan que haya PR Dependabot abiertos. `pnpm install --frozen-lockfile`
+también pasó en CI al instalar la selección integrada.
 
 CI usa frozen lock también para Dependabot. Su build usa el gate loopback
 existente, sin token/DSN Sentry; no implementa el gate general de 012.4.
@@ -151,11 +168,10 @@ Los cuatro DB accidentales se preservaron fuera del repositorio, en
 No se borraron credenciales ni archivos ignorados. La primera ejecución local
 Vitest sin límite saturó Windows y sufrió timeouts; fue detenida. Otras
 validaciones se interrumpieron al renovar dependencias; no se cuentan como PASS.
-La aceptación final y CI permanecen pendientes hasta registrar sus resultados.
+En esta instantánea previa al merge, la aceptación final y CI aún estaban
+pendientes; el resultado final está registrado en la sección de cierre abajo.
 
-## Siguiente paso
-
-### Primer candidato publicado
+## Primer candidato publicado (registro histórico)
 
 PR [#221](https://github.com/pipec80/iroko/pull/221), SHA `bf72cd4`.
 CI renovado aprobó Quality (typecheck, lint, formato de código y Knip),
@@ -169,9 +185,29 @@ de Markdown versionado usada por CI. No se modificaron migraciones aplicadas.
 Los checks del candidato sustituto, SQL/E2E/build y merge deben observarse antes
 de aceptar integración; consultar el PR para el SHA y estado definitivos.
 
-Completar la aceptación del candidato y su PR; resolver los checks antes del
-merge y documentar el riesgo de build pendiente. Solo después partir una
-sesión desde `main` sincronizado para ejecutar el
-[plan 012.4](../exec-plans/active/012-4-csp-and-secrets.md). Este registro no
-cierra las tareas de implementación de ese plan ni los
-[seguimientos de 012.3](2026-10-14-plan-012-3-follow-ups.md).
+## Aceptación final e integración — 2026-10-15
+
+El workflow de PR `38752265343` terminó correctamente: Quality, unitarios,
+pgTAP, tipos, Edge Functions, Security Audit, CodeQL, Gitleaks, Documentation,
+E2E, E2E Status, Build y Vercel Preview aprobaron. Playwright informó 82 passed
+y 2 skipped; el E2E smoke de WebKit también aprobó. La auditoría de producción
+del workflow no encontró vulnerabilidades conocidas. La auditoría completa
+conserva el high de build `braces`, detallado arriba.
+
+PR #221 se integró por squash a `main` con SHA
+`3bac4f9b6b8604d35ec594645a2c491d2c1ec83d`. Dependabot #212–#220 se cerraron
+tras confirmar ese merge. Antes de este follow-up documental, `gh pr list
+--state open` devolvió una lista vacía. En ese checkpoint el checkout quedó en
+`main` al mismo SHA que
+`origin/main`, con árbol limpio;
+se eliminaron la rama temporal local y las referencias remotas ya borradas.
+Los commits previos permanecen disponibles en el bundle local registrado en el
+runbook de integración, y las cuatro DB accidentales se preservaron fuera del
+repositorio.
+
+El check Vercel verificado corresponde al preview del PR. No se consultó el
+estado de un deployment estable disparado por el merge; queda **[NO VERIFICADO]**
+y no se considera aceptación funcional Cloud. La consolidación deja `main` listo
+para crear una rama dedicada y comenzar la implementación de
+[012.4](../exec-plans/active/012-4-csp-and-secrets.md). Ese plan, su aceptación
+operativa y los seguimientos RL-F01–RL-F06 continúan abiertos.

@@ -38,7 +38,7 @@ execution plans, evidence, runbooks and durable technical decisions.
 - [Operational evidence](quality/operational-evidence.md) — dated runtime,
   Cloud and release observations with validity rules.
 - [Plan 012.3 closure and follow-ups](audits/2026-10-14-plan-012-3-follow-ups.md) — accepted scope, unexecuted checks and criteria for resuming pending work.
-- [Plan 012.4 execution proposal](exec-plans/active/012-4-csp-and-secrets.md) and [static inventory](audits/2026-10-14-plan-012-4-readiness.md) — proposed tasks and verified source findings; implementation pending.
+- [Plan 012.4 execution plan](exec-plans/active/012-4-csp-and-secrets.md) and [static inventory](audits/2026-10-14-plan-012-4-readiness.md) — approved scope and source findings; implementation pending.
 - [Reusable SaaS investigation — 2026-09-24](audits/2026-09-24-reusable-saas-readiness.md)
 - [SaaS template competitive landscape — 2026-10-05](audits/2026-10-05-saas-template-competitive-landscape.md)
 - [Full platform audit — 2026-08-02](audits/2026-08-02-full-platform-audit.md)
