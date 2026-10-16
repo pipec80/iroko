@@ -138,6 +138,17 @@ sessions. No Cloud write, deployment, push or merge is established. See the
 [current local hardening ledger](audits/2026-10-15-plan-012-4-local-hardening.md)
 and [earlier task 1 attempts](audits/2026-10-15-plan-012-4-task-1-local.md).
 
+Read-only Cloud preparation on 2026-10-16 confirmed the expected healthy Free
+Supabase project, ledger 166 with exactly three reviewed migrations pending,
+zero navigation rows/open impersonations and preserved Vault consumer ACL.
+Linked dry-run selected only those three migrations. Vercel metadata identifies
+the stable deployment as main `58a00b7`; the dedicated cookie secret is absent.
+Candidate `800e439` was sealed locally, all 1080 Git blobs verified and the
+installed CLI selected 1078 upload files without network/upload/deploy. Sentry
+and PostHog read queries work with existing access; no events were generated.
+Mutation authorization, quotas/hostname/browser gates and real receipts remain
+pending in the [Cloud readiness record](audits/2026-10-16-plan-012-4-cloud-rollout-readiness.md).
+
 The [static readiness inventory](audits/2026-10-14-plan-012-4-readiness.md)
 and [approved execution plan](exec-plans/active/012-4-csp-and-secrets.md) contrast
 PR4 with the planning snapshot. That snapshot found: impersonation HMAC reused the

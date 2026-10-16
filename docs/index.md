@@ -40,6 +40,7 @@ execution plans, evidence, runbooks and durable technical decisions.
   Cloud and release observations with validity rules.
 - [Plan 012.3 closure and follow-ups](audits/2026-10-14-plan-012-3-follow-ups.md) — accepted scope, unexecuted checks and criteria for resuming pending work.
 - [Plan 012.4 execution plan](exec-plans/active/012-4-csp-and-secrets.md), [static inventory](audits/2026-10-14-plan-012-4-readiness.md) and [local execution evidence](audits/2026-10-15-plan-012-4-local-hardening.md) — local implementation, acceptance and commit complete; Cloud acceptance and Git publication/integration remain separate.
+- [Plan 012.4 Cloud rollout readiness](audits/2026-10-16-plan-012-4-cloud-rollout-readiness.md) — read-only provider preflight, exact three-migration dry-run and sealed candidate/upload selection; mutations and real receipts pending separate authorization.
 - [Reusable SaaS investigation — 2026-09-24](audits/2026-09-24-reusable-saas-readiness.md)
 - [SaaS template competitive landscape — 2026-10-05](audits/2026-10-05-saas-template-competitive-landscape.md)
 - [Full platform audit — 2026-08-02](audits/2026-08-02-full-platform-audit.md)

@@ -373,10 +373,16 @@ autorizada; el config estándar que elimina su site key no acredita esa prueba.
       comentarios CSP/webhook obsoletos, env ejemplos/CI, Plan012/current-state y
       auditoría de ejecución; integrar commits locales selectivos con hooks. No
       git add global ni archivos privados/caches. No exigir formato al generado DB.
-- [ ] Preparar una etapa Cloud separada: identidad, migraciones, matriz Vault y
+- [x] Preparar una etapa Cloud separada: identidad, migraciones, matriz Vault y
       presencia de secretos en metadatos. Nuevo secreto antes del código que lo
       requiere; cerrar sesiones activas afectadas antes de invalidar cookies.
       No escribir secretos o desplegar con la autorización de012.3.
+      Preflight de solo lectura 2026-10-16 y selección concreta en
+      [readiness Cloud](../../audits/2026-10-16-plan-012-4-cloud-rollout-readiness.md).
+      Ledger 166/169, dry-run de tres migraciones, datos/sesiones cero; falta el
+      secreto dedicado en Vercel. Candidato 800e439 sellado y selección de upload
+      local verificada, sin deploy. Lectura Sentry/PostHog disponible; cuotas,
+      hostname Turnstile y receipts reales conservan sus gates pendientes.
 - [ ] Tras autorización específica: deployment de prueba sellado, uploads off
       salvo prueba de upload expresamente habilitada, CSP browser sin violaciones
       atribuibles; un evento browserSDK Sentry y uno PostHog tras consentimiento,
