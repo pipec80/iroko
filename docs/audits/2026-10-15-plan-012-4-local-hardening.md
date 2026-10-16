@@ -166,3 +166,31 @@ it did not modify Cloud or recover evidence that was lost in the first attempt.
 Local build, SQL, browser runtime and fixture cleanup passed. Plan 012.4 remains
 active because Cloud acceptance remains **[NO VERIFICADO]** and requires
 separate authorization. No push, merge or deployment is part of local integration.
+
+## Closure status — 2026-10-16
+
+Local implementation is committed as `3ee98bd` on
+`chore/012-4-csp-and-secrets`. Typecheck, lint-staged and commitlint hooks passed;
+post-commit documentation check passed for 151 Markdown files and the working
+tree was clean. This status refresh inspected Git and existing evidence; it did
+not rerun the full suites or inspect live Cloud state. ADR 0004 is accepted;
+no additional ADR is currently required by the approved design.
+
+| Closure gate | Status | Next action / user involvement |
+| --- | --- | --- |
+| Tasks 1–5 and local part of task 6 | Passed, with recorded Vault-loss and missing HTTP RED trace exceptions | No manual implementation or local test action required from the user. |
+| Cloud preflight and exact change selection | Pending | Agent prepares a reviewable selection: target identity/access, migration parity, link normalization counts, Vault ACL/consumer metadata, secret presence and affected active impersonation sessions. No secret values in reports. |
+| Cloud SQL and secret configuration | Not authorized or executed | Separate explicit authorization for the verified Supabase/Vercel targets, three named migrations and dedicated secret configuration. Close affected impersonation sessions before invalidating old cookies; normalize links before constraints where necessary. |
+| Candidate deployment and acceptance | Not authorized or executed | Separate deployment/test authorization. Observe real Turnstile, MFA/impersonation, mock opt-in, workers, cleanup and advisor deltas; confirm one consented PostHog event and one browser Sentry event in their providers. At most three attempts per receipt test. |
+| Git publication and integration | Local commit only | Push/PR and merge require their own authorization. Any domain promotion also requires an exact target and authorization. |
+| Documentary closure | Pending Cloud evidence | Record candidate/provider evidence and exceptions, update task 6 and parent Plan 012, then move 012.4 to completed only after its acceptance gates pass. |
+
+The migration selection is `20261015185348_impersonation_expiry_contract.sql`,
+`20261015185953_navigation_link_contract.sql` and
+`20261016015800_legacy_webhook_comment_truth.sql`. Expected targets remain the
+plan's reference Supabase project `rgrxlygtmvavqzkjyywg` and Vercel Iroko project
+`prj_gEe5cFBOgMxmCCNisaRzZW2xZBiL`; live identity and migration parity are
+**[NO VERIFICADO]** in this status refresh. These references are not permission
+to mutate those targets. No paid resources, provider upgrades or installs are
+included. User involvement is authorization and, only if required by actual
+access or a non-automatable challenge, completing that login/MFA/Turnstile step.

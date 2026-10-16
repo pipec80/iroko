@@ -410,5 +410,7 @@ Sentry/PostHog y aceptación del candidato, manteniendo excepciones explícitas.
 - Rutas estáticas descubiertas, capacidad Free insuficiente o receipts inaccesibles
   son gates explícitos de revisión/evidencia, no justificación para inventar PASS.
 
-**Siguiente paso aprobado:** ajustes documentales y comenzar por la tarea1,
-con agentes por ownership, sin instalaciones ni escrituras Cloud.
+**Estado de autorización:** ejecución local y commit completados en `3ee98bd`.
+El siguiente paso es preparar el alcance Cloud separado de la tarea 6, renovar
+identidad/acceso y presentar los cambios concretos antes de solicitar autorización.
+La aprobación local no autoriza secretos Cloud, SQL linked, deploy, push ni merge.
