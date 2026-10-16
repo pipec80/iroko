@@ -10,6 +10,8 @@ import { getPaymentProvider } from '@/lib/billing/registry';
 import { mapBillingPaymentHealth, type BillingPaymentHealth } from '@/lib/billing/payment-health';
 import { cancelBillingSubscription, startBillingCheckout } from '@/lib/billing/service';
 import { signMockPayload, verifyMockPayload } from '@/lib/billing/signing';
+import { mockCheckoutSchema } from '@/lib/billing/mock-schemas';
+import { isMockBillingAllowed } from '@/lib/billing/mock-policy';
 import type { NormalizedBillingEvent } from '@/lib/billing/events';
 import type { CheckoutStartResult, SubscriptionStatus } from '@/lib/billing/types';
 import { handleProviderWebhook } from '@/lib/billing/webhook-handler';
@@ -102,14 +104,6 @@ const checkoutConfirmationSchema = z.object({
   externalSubscriptionId: z.string().trim().min(1).max(255),
 });
 
-interface MockCheckoutToken {
-  accountId: string;
-  planSlug: string;
-  interval: 'month' | 'year';
-  successUrl: string;
-  cancelUrl: string;
-}
-
 /** Inicia el checkout del plan elegido; devuelve la URL a la que redirigir. */
 export const startCheckout = withServerAction(async function startCheckout(input: {
   planSlug: string;
@@ -170,8 +164,11 @@ export const startCheckout = withServerAction(async function startCheckout(input
 export const confirmMockCheckout = withServerAction(async function confirmMockCheckout(input: {
   data: string;
 }): Promise<ActionResult<{ redirectUrl: string }>> {
-  const token = await verifyMockPayload<MockCheckoutToken>(input.data);
-  if (!token) return { data: null, error: 'invalid_token' };
+  if (!isMockBillingAllowed({ nodeEnv: env.NODE_ENV, allowMockBilling: env.ALLOW_MOCK_BILLING }))
+    return { data: null, error: 'mock_billing_disabled' };
+  const parsed = mockCheckoutSchema.safeParse(await verifyMockPayload(input.data));
+  if (!parsed.success) return { data: null, error: 'invalid_token' };
+  const token = parsed.data;
 
   const now = new Date();
   const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -243,6 +240,8 @@ export const cancelSubscription = withServerAction(async function cancelSubscrip
     return { data: true };
   }
 
+  if (!isMockBillingAllowed({ nodeEnv: env.NODE_ENV, allowMockBilling: env.ALLOW_MOCK_BILLING }))
+    return { data: null, error: 'mock_billing_disabled' };
   const now = new Date();
   const event: NormalizedBillingEvent =
     timing === 'immediate' ?

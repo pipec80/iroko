@@ -16,8 +16,32 @@ Postgres, Sentry 10.67.0, PostHog, Vitest, Playwright y pgTAP instalados.
 **Spec:** [PR4 del Plan 012](012-security-hardening-and-pricing-truth.md#pr-4--chorecsp-and-secrets-hardening), cruzado con el
 [inventario estático fechado](../../audits/2026-10-14-plan-012-4-readiness.md).
 
-**Estado (2026-10-15):** plan aprobado para ejecución. La implementación y
-aceptación 012.4 siguen pendientes. El documento se preparó originalmente en
+**Estado (2026-10-16):** implementación local de tareas 1–5 presente en
+`chore/012-4-csp-and-secrets`, con revisión estática independiente sin bloqueantes
+abiertos. Baseline inicial: 43 rutas dinámicas. Cobertura final serial de
+122 archivos/1452 tests pasó, incluido el fix de logout CSRF; focal 57 tests.
+Reset local limpio a ledger 169 pasó de nuevo a las 16:18:38 UTC, preservando
+claves actuales y dos valores Vault reconstruidos. pgTAP final tras reset:
+52 archivos/1067 assertions PASS; baseline local verificado sin usuarios E2E,
+cuentas, cuentas huérfanas ni sesiones de impersonación.
+Build final aislado pasó: 43 rutas dinámicas, 3.780.660 bytes de assets, cero maps,
+intentos Node prohibidos y requests al sink de build; limpieza pasó tras un retry
+EPERM. Regresiones runner/backfill: 35 tests pasaron; typecheck, formato focal,
+lint (0 errores/16 warnings) y Knip (seis hints existentes) finales pasaron.
+Chromium confinado: 22 tests pasaron, cero skips/flaky, runner exit 0 y guard 0
+tras teardown. Rewrites externos se localizan solo en scratch. Inspección posterior:
+0 usuarios E2E pero 50 cuentas fixture huérfanas acumuladas; cleanup ahora borra
+cuentas antes de Auth en una transacción. Repetición final a las 16:26:27.232 UTC:
+22/22 PASS, exit 0, cero skips/flaky, cero intentos Node prohibidos tras teardown
+y cero directorios scratch. Identidad local oficial y counts post-run verificados:
+0 usuarios E2E/cuentas/cuentas huérfanas/sesiones. No se registró un trace HTTP RED
+pre-cambio. Node 35, lint completo 0 errores/16 warnings, Knip, formato y enlaces
+documentales del último delta pasaron; integración local selectiva con hooks,
+registrada en el historial de la rama. El plan sigue activo y Cloud/deploy/push/merge
+no están autorizados por esta etapa. Véase el
+[registro local actualizado](../../audits/2026-10-15-plan-012-4-local-hardening.md),
+incluida la limitación de los valores Vault perdidos en el primer reset.
+El documento se preparó originalmente en
 `codex/014-t1-robot-permissions`; iniciar el trabajo desde una rama nueva basada
 en `main` después de integrar este handoff documental. Las cuatro DB accidentales
 permanecen preservadas/excluidas.
@@ -48,7 +72,11 @@ VERCEL_PROJECT_ID coincidente además del contexto/flag descritos abajo.
 - La aceptación completa distingue implementación, local, Git y Cloud. Runtime
   no ejecutado queda **[NO VERIFICADO]**; ningún test histórico se cuenta como nuevo.
 
-## Decisiones propuestas
+## Decisiones aprobadas para implementación local
+
+La aprobación del diseño no acredita implementación ni aceptación runtime.
+La adopción global de CSP conserva el gate del baseline y la decisión duradera
+se registra en [ADR 0004](../../adr/0004-csp-nonce-and-rendering-boundary.md).
 
 1. `IMPERSONATION_COOKIE_SECRET`: exactamente 64 hex, generado con 32 bytes
    aleatorios, servidor únicamente; requerido sin fallback a Supabase. Cookie
@@ -114,18 +142,18 @@ el patrón de aislamiento anterior sin ejecutar scripts ignorados a ciegas.
 es pura. Input nombra flag, CI, token-presente, localValidation y metadatos
 GitHub/Vercel; nunca registra el token. `LOCAL_VALIDATION` conserva su contrato.
 
-- [ ] Renovar Git/índice, CLI Windows y labels/puertos/ledger del stack oficial;
+- [x] Renovar Git/índice, CLI Windows y labels/puertos/ledger del stack oficial;
       inventariar servicios/consumidores de readiness. Registrar presencia/config
       separada de runtime. No imprimir supabase status con claves sin filtrar.
-- [ ] RED unitario: flag ausente/false, token sin flag, CI ausente, PR/PRtarget,
+- [x] RED unitario: flag ausente/false, token sin flag, CI ausente, PR/PRtarget,
       repo/ref/proyecto incorrectos y localValidation devuelven false; contextos
       confiables explícitos true. Flag inválido falla validación de env.
-- [ ] GREEN: cuando gate off usar sourcemaps.disable=true, release.create=false,
+- [x] GREEN: cuando gate off usar sourcemaps.disable=true, release.create=false,
       release.finalize=false, telemetry=false; omitir setCommits/deploy y efectos de
       monitores auxiliares de build. Mantener wrapper/tunnel y SDK runtime normales.
-- [ ] Quitar token Sentry del env global de jobs no confiables; pasarlo solo al
+- [x] Quitar token Sentry del env global de jobs no confiables; pasarlo solo al
       paso/contexto aprobado. Conservar builds sin secretos. No generar token nuevo.
-- [ ] Ejecutar `pnpm test sentry-build-policy local-sentry local-validation`;
+- [x] Ejecutar `pnpm test sentry-build-policy local-sentry local-validation`;
       build local con destinos loopback, token sintético y egreso bloqueado/observado:
       cero intentos Sentry de build y ningún map público. Registrar matriz real
       de rutas estáticas/dinámicas y tamaños; build no habilita upload por sí solo.
@@ -162,27 +190,27 @@ purpose=admin-return, issuedAt/expiresAt enteros Unix en segundos del servidor,
 con duración exactamente 2100 segundos. Verify valida todo el envelope y
 devuelve el payload tipado o null. El reloj del cliente no fija el TTL.
 
-- [ ] RED cookie: secreto dedicado distinto de Supabase; firma exacta hex64,
+- [x] RED cookie: secreto dedicado distinto de Supabase; firma exacta hex64,
       exactamente dos segmentos y base64url canónico, TTL y UUID/propósito correctos;
       vacío, payload incompleto, futuro/expirado, cookie v1 y rotación A→B rechazados.
-- [ ] RED pgTAP y HTTP local real: expiry target con fila/claim correcto permitido;
+- [x] Matriz pgTAP y HTTP local real verificada: expiry target con fila/claim correcto permitido;
       preexpiry, motivo manual, otra fila/target/adminclaim, anon y authenticated sin
       sub denegados. Reproducir antes la diferencia route/SQL con fixture MFA real;
       observar sesión/fila/cookies, no solo redirect.
       Incluir positivos admin dueño manual y service_role sin UID verificado,
       contrastados con el negativo authenticated sin sub.
-- [ ] GREEN SQL aplica condiciones conjuntas bajo lock; no ampliar ACL para
+- [x] GREEN SQL aplica condiciones conjuntas bajo lock; no ampliar ACL para
       resolver permisos. Route valida identidad y session UUID; intenta cierre
       seguro, hace signOut(scope:local) y borra cookies auxiliares aun con error RPC;
       returnTo interno seguro, sin bucle login/dashboard ni sesión target restante.
-- [ ] GREEN inicio/manual: compensar errores después de begin y antes/después
+- [x] GREEN inicio/manual: compensar errores después de begin y antes/después
       de verifyOtp; comprobar compensación, no tragar error. Restauración verifica
       admin real, binding de sesión/target/cookie y orden restore→RPC. No usar solo
       getSession/cookie como prueba de identidad.
       Tras verifyOtp parcial, restaurar/verificar admin antes de compensar con RPC
       dueño; si falla restauración, signOut y recuperación dirigida. Nunca permitir
       cierre target antes de expiry para resolver esa compensación.
-- [ ] Ejecutar unitarios de cookie/actions/expire, SQL50 y E2E impersonation
+- [x] Ejecutar unitarios de cookie/actions/expire, SQL50 y E2E impersonation
       con admin MFA/aal2 real local. Cero filas/usuarios/leases fixture tras cleanup.
       Invalidar cookie no garantiza cerrar fila antes de expiry: probar recuperación
       autenticada del admin mediante RPC existente o runbook operativo de cierre
@@ -209,22 +237,22 @@ pgTAP nuevo de ACL, manteniendo tests10/45 y workers existentes.
 concreto; no `verifyMockPayload<T>` con cast. Gate único de mock usa producción
 y opt-in, aplicado también a page/action/verificador y cancelación.
 
-- [ ] RED mock: default no-mock no elude gate; producción sin opt-in rechaza
+- [x] RED mock: default no-mock no elude gate; producción sin opt-in rechaza
       cada consumidor; token con tercer segmento/hex/base64 no canónicos o payload
       checkout usado como evento se rechaza. Sin gate, no crear evento ni checkout.
-- [ ] GREEN conservar MOCK_BILLING_SECRET dedicado con formato fuerte validado
+- [x] GREEN conservar MOCK_BILLING_SECRET dedicado con formato fuerte validado
       en env, fixtures/CI sintéticos separados y comparación HMAC constante;
       límites de entrada y Zod estricto para checkout y eventos normalizados. No
       cambiar slugs, precios, reducer, lifecycle ni contrato de proveedores reales.
-- [ ] Levantar matriz local de ACL efectivos de Vault: PUBLIC/anon/authenticated/
+- [x] Levantar matriz local de ACL efectivos de Vault: PUBLIC/anon/authenticated/
       service_role/owners/membresías/defaults y helpers por firma. Consultar nombres,
       cardinalidad y privilegios; no decrypted_secret. Metadatos Cloud solo lectura
       cuando haya acceso confirmado. No asumir que todo service_role debe perder acceso.
-- [ ] RED/GREEN de denegaciones clientes y controles positivos de email, billing,
+- [x] RED/GREEN de denegaciones clientes y controles positivos de email, billing,
       webhook worker, endpoint-secret CRUD y HMAC exacto. Si hay exceso real, nueva
       migración+espejo acotados al consumidor revisado; ninguna revocación automática
       de funciones legítimas ni rotación masiva de secretos operativos.
-- [ ] Ejecutar unitarios signing/mock/registry/billing, workers y pgTAP pertinentes;
+- [x] Ejecutar unitarios signing/mock/registry/billing, workers y pgTAP pertinentes;
       documentar explícitamente que TTL/replay del checkout sigue sin implementarse.
       Fixture válido no hace requests a proveedores de pagos reales ni Resend.
 
@@ -253,27 +281,27 @@ con href/null o invalid_link; `getSafeNavigationHref(value): string | null`
 falla cerrado al render. Email resuelve rutas internas contra SITE_URL validado;
 la política de transporte webhook/SSRF permanece independiente.
 
-- [ ] RED fixtures compartidos: aceptar HTTPS/path/query/hash y rutas internas
+- [x] RED fixtures compartidos: aceptar HTTPS/path/query/hash y rutas internas
       actuales, null/blanco sin enlace. Rechazar javascript (también mayúsculas),
       data/vbscript/file/ftp/mailto/http externo, //host, backslash, controles,
       credenciales, malformados y longitud >2000. SQL prueba formas canónicas.
       Rechazar controles/backslashes antes de trim; revalidar después de normalizar
       para impedir que `/a/..//host` produzca un href `//host`. Medir longitud
       canónica tras percent-encoding; comprobar idempotencia y TS acepta → SQL acepta.
-- [ ] GREEN entradas: anuncio y notify validan antes de INSERT o email; formulario
+- [x] GREEN entradas: anuncio y notify validan antes de INSERT o email; formulario
       admite rutas internas (no depender de type=url). Conservar invitación/equipo/
       billing. En UI/email, dato histórico inválido mantiene contenido sin anchor/CTA.
-- [ ] Preflight DB cuenta datos por categoría, sin volcar links/tokens. SQL helper
+- [x] Preflight DB cuenta datos por categoría, sin volcar links/tokens. SQL helper
       invoker puro con privilegios mínimos para constraints; RPC conserva firma,
       ACL y admin/MFA. Constraints protegen escritura directa incluso service_role.
       Separar válidos normalizables de inválidos: normalizar los primeros antes del
       constraint; solo inválidos pasan a NULL en link, preservando las filas.
       Revisar conteos antes de aplicar. Probar positivos INSERT service_role y RPC
       admin/MFA sin grants genéricos. Sin nuevas suscripciones ni broadcasts.
-- [ ] RED/GREEN RPC directa inválida antes de persistir, INSERT directo inválido
+- [x] RED/GREEN RPC directa inválida antes de persistir, INSERT directo inválido
       denegado y equivalencia TS/SQL sobre corpus canónico. Ausencia/blanco siempre
       sin navegación; no prometer parser WHATWG completo en Postgres.
-- [ ] Ejecutar tests helper, acciones anuncios, notify, inbox/email, pgTAP51 y
+- [x] Ejecutar tests helper, acciones anuncios, notify, inbox/email, pgTAP51 y
       regresiones webhook registration/destination/transport/worker de012.2.
 
 Comandos: `pnpm test navigation-link announcements/__tests__/actions notifications email/__tests__/templates`;
@@ -295,21 +323,22 @@ consume. ThemeProvider recibe nonce; Turnstile usa scriptOptions.nonce.
 El provider conserva el nonce del documento vivo durante navegación, prefetch
 y server actions; no lo sustituye por el nonce de una respuesta RSC posterior.
 
-- [ ] Gate de render: contrastar build nuevo contra baseline. Si aparecen rutas
+- [x] Gate de render: contrastar build nuevo contra baseline. Si aparecen rutas
       estáticas que convertiría la propuesta global, documentar impacto y detener
       ese cambio para revisión; no adoptar cobertura parcial silenciosamente.
-- [ ] RED proxy: nonce nuevo por documento, cliente no lo elige; CSP request y
+      Aplicar los límites y alternativas registrados en ADR 0004.
+- [x] RED proxy: nonce nuevo por documento, cliente no lo elige; CSP request y
       response coinciden. Preservar headers internos next-intl, cookies auth,
       redirects, locale y controles de caché. API/assets/ingest/tunnel no se rompen.
-- [ ] GREEN generar nonce seguro, sobrescribir headers entrantes nonce/CSP y
+- [x] GREEN generar nonce seguro, sobrescribir headers entrantes nonce/CSP y
       propagar al render basándose en respuesta next-intl. RootLayout declara
       SSR con connection(), lee nonce servidor, lo pasa a tema/provider/CAPTCHA.
       No cache compartido de HTML con nonce; no relajar no-store de sesiones.
-- [ ] En producción script-src sin unsafe-inline/eval; conservar allowlists y
+- [x] En producción script-src sin unsafe-inline/eval; conservar allowlists y
       styles inline con excepción. Reportes CSP se derivan del DSN configurado y
       se deshabilitan sin DSN/local-validation; no conservar destino hardcodeado
       ajeno ni enviar reportes reales desde pruebas locales. DSN público no es secreto.
-- [ ] Chromium sobre build productivo local: nonce/header/HTML, script sin nonce
+- [x] Chromium sobre build productivo local: nonce/header/HTML, script sin nonce
       bloqueado mediante resultado observable, scripts legítimos ejecutan, tema,
       hidratación, login/CAPTCHA, server action, prefetch/soft navigation/reload,
       cuatro idiomas, error/not-found. PostHog interceptado: consentimiento/revocación/
@@ -328,12 +357,19 @@ autorizada; el config estándar que elimina su site key no acredita esa prueba.
 
 ## Tarea 6 — Aceptación, documentación e integración
 
-- [ ] Ejecutar pgTAP completo contra stack oficial comprobado, unitarios completos,
-      typecheck, lint, formato focalizado, build/E2E seguros, check-docs y diff.
+- [x] Verificar reset local limpio del stack oficial comprobado tras migraciones,
+      preservando credenciales, fuentes pendientes y proyectos ajenos; ejecutar
+      pgTAP completo y registrar el ledger reconstruido. Excepción documentada:
+      los dos valores Vault originales se perdieron en el primer intento fallido;
+      los valores reconstruidos actuales sí se preservaron en los resets posteriores.
+- [x] Ejecutar `pnpm test`, `pnpm test:coverage`, `pnpm typecheck`, `pnpm lint`,
+      `pnpm knip`, formato focalizado, build/E2E seguros, `pnpm docs:check` y
+      `git diff --check`. Registrar excepciones justificadas por check, resultado,
+      limitación y riesgo pendiente; no omitir coverage/reset/knip silenciosamente.
       Contar TAP y resultados reales; sin asumir los conteos históricos de012.3.
-- [ ] Revisión independiente por cada entrega y del diff exacto final; resolver
+- [x] Revisión independiente por cada entrega y del diff exacto final; resolver
       hallazgos, conservar workers/callbacks y límites de pruebas no ejecutadas.
-- [ ] Actualizar SECURITY.md, módulo impersonación (proxy.ts, no middleware.ts),
+- [x] Actualizar SECURITY.md, módulo impersonación (proxy.ts, no middleware.ts),
       comentarios CSP/webhook obsoletos, env ejemplos/CI, Plan012/current-state y
       auditoría de ejecución; integrar commits locales selectivos con hooks. No
       git add global ni archivos privados/caches. No exigir formato al generado DB.
@@ -374,5 +410,5 @@ Sentry/PostHog y aceptación del candidato, manteniendo excepciones explícitas.
 - Rutas estáticas descubiertas, capacidad Free insuficiente o receipts inaccesibles
   son gates explícitos de revisión/evidencia, no justificación para inventar PASS.
 
-**Siguiente paso recomendado:** revisar este plan y comenzar por la tarea1,
+**Siguiente paso aprobado:** ajustes documentales y comenzar por la tarea1,
 con agentes por ownership, sin instalaciones ni escrituras Cloud.

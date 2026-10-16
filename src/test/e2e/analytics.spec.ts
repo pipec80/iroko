@@ -2,7 +2,7 @@ import { expect, test, type Page, type Route } from '@playwright/test';
 
 import { test as adminTest } from './fixtures/platform-admin';
 import {
-  deleteUserByEmail,
+  execSqlAsPostgres,
   fetchLatestMessageTo,
   querySqlAsPostgres,
   uniqueEmail,
@@ -220,6 +220,10 @@ test.describe('Analytics — consent gating', () => {
 test.describe('Analytics — signup to project funnel', () => {
   test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), 'requires local Supabase (127.0.0.1:54321)');
   test.setTimeout(120_000);
+  // The isolated runner aligns baseURL and SITE_URL with the actual GoTrue
+  // email origin. Its unlocalized confirmation link also needs an explicit
+  // browser language to match the Spanish selectors below.
+  test.use({ locale: 'es-ES' });
 
   test('signup → onboarding → project_created fire in order, with no PII in any request', async ({
     page,
@@ -231,84 +235,112 @@ test.describe('Analytics — signup to project funnel', () => {
 
     const email = uniqueEmail('e2e+analytics');
     const password = 'TestPass123!';
-    const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
+    let phase = 'consent';
+    try {
+      await page.goto('/es');
+      await page.getByTestId('cookie-consent-accept-all').click();
+      await expect
+        .poll(() => countCaptureRequests(ingest.urls), { timeout: 10_000 })
+        .toBeGreaterThan(0);
 
-    await page.goto('/es');
-    await page.getByTestId('cookie-consent-accept-all').click();
-    await expect
-      .poll(() => countCaptureRequests(ingest.urls), { timeout: 10_000 })
-      .toBeGreaterThan(0);
+      // 1. signup_started fires on submit (client) — count must grow past the
+      // fresh page load's own pageview/bootstrap baseline.
+      const beforeSignup = countCaptureRequests(ingest.urls);
+      phase = 'signup';
+      await page.goto('/es/signup');
+      await page.locator('input[name="first_name"]').fill('Ada');
+      await page.locator('input[name="last_name"]').fill('Lovelace');
+      await page.locator('input[name="email"]').fill(email);
+      await page.locator('input[name="password"]').fill(password);
+      await page.locator('form button[type="submit"]').click();
+      await page.waitForURL(/\/es\/signup\/confirmation/, { timeout: 20_000 });
+      await expect
+        .poll(() => countCaptureRequests(ingest.urls), { timeout: 10_000 })
+        .toBeGreaterThan(beforeSignup);
 
-    // 1. signup_started fires on submit (client) — count must grow past the
-    // fresh page load's own pageview/bootstrap baseline.
-    const beforeSignup = countCaptureRequests(ingest.urls);
-    await page.goto('/es/signup');
-    await page.locator('input[name="first_name"]').fill('Ada');
-    await page.locator('input[name="last_name"]').fill('Lovelace');
-    await page.locator('input[name="email"]').fill(email);
-    await page.locator('input[name="password"]').fill(password);
-    await page.locator('form button[type="submit"]').click();
-    await page.waitForURL(/\/es\/signup\/confirmation/, { timeout: 20_000 });
-    await expect
-      .poll(() => countCaptureRequests(ingest.urls), { timeout: 10_000 })
-      .toBeGreaterThan(beforeSignup);
+      // 2. Confirm via Mailpit (signup_completed + account_created fire server-side here).
+      phase = 'email confirmation';
+      const { confirmUrl } = await fetchLatestMessageTo(request, email);
+      expect(confirmUrl).not.toBeNull();
+      await page.goto(confirmUrl as string);
+      const confirmAccount = page.getByRole('button', { name: /confirmar cuenta/i });
+      await expect(confirmAccount).toBeVisible({ timeout: 10_000 });
+      await confirmAccount.click();
+      await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
 
-    // 2. Confirm via Mailpit (signup_completed + account_created fire server-side here).
-    const { confirmUrl } = await fetchLatestMessageTo(request, email);
-    expect(confirmUrl).not.toBeNull();
-    await page.goto(confirmUrl as string);
-    await page.getByRole('button', { name: /confirmar cuenta/i }).click();
-    await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+      // 3. Onboarding (onboarding_step_completed + onboarding_completed).
+      phase = 'onboarding';
+      if (page.url().includes('/dashboard/onboarding')) {
+        await page.getByLabel('Nombre de la organización').fill('Analytics E2E Org');
+        await page.getByRole('button', { name: 'Siguiente' }).click();
+        await page.getByRole('button', { name: 'Invitar después' }).click();
+        const planNext = page.getByRole('button', { name: 'Siguiente' });
+        const finish = page.getByRole('button', { name: 'Finalizar' });
+        // The invitation action advances asynchronously. Wait for the next
+        // rendered step before deciding whether a plan step is present.
+        await expect(planNext.or(finish)).toBeVisible({ timeout: 10_000 });
+        if (await planNext.isVisible()) await planNext.click();
+        await expect(finish).toBeVisible({ timeout: 10_000 });
+        await finish.click();
+        await page.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
+      }
 
-    // 3. Onboarding (onboarding_step_completed + onboarding_completed).
-    if (page.url().includes('/dashboard/onboarding')) {
-      await page.getByLabel('Nombre de la organización').fill('Analytics E2E Org');
-      await page.getByRole('button', { name: 'Siguiente' }).click();
-      await page.getByRole('button', { name: 'Invitar después' }).click();
-      const planNext = page.getByRole('button', { name: 'Siguiente' });
-      if (await planNext.isVisible().catch(() => false)) await planNext.click();
-      await page.getByRole('button', { name: 'Finalizar' }).click();
-      await page.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
+      // AnalyticsProvider persists the accepted consent to profiles.analytics_consent
+      phase = 'consent persistence';
+      // once the user is authenticated — captureServer()'s webhook fallback
+      // (src/lib/analytics/server.ts) depends on this being kept in sync, not
+      // just the cookie, since a webhook carries no browser cookie at all.
+      await expect
+        .poll(
+          () =>
+            querySqlAsPostgres(
+              `SELECT analytics_consent FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = '${email}'`,
+            ),
+          { timeout: 10_000 },
+        )
+        .toBe('t');
+
+      // 4. project_created.
+      phase = 'project creation';
+      const beforeProject = countCaptureRequests(ingest.urls);
+      await page.goto('/es/dashboard/projects');
+      const projectName = `analytics-e2e-${Date.now()}`;
+      await page
+        .getByRole('button', { name: /nuevo proyecto/i })
+        .first()
+        .click();
+      await page.locator('input[name="name"]').fill(projectName);
+      await page.getByRole('button', { name: /crear proyecto/i }).click();
+      await expect(page.getByText(projectName)).toBeVisible({ timeout: 15_000 });
+      await expect
+        .poll(() => countCaptureRequests(ingest.urls), { timeout: 10_000 })
+        .toBeGreaterThan(beforeProject);
+
+      // No PII anywhere in any intercepted request across the whole funnel —
+      // best-effort: a raw substring check, meaningful whenever the SDK sends
+      // an uncompressed body (typical for small dev/test payloads).
+      expect(requestsContain(ingest.urls, email)).toBe(false);
+      expect(requestsContain(ingest.urls, password)).toBe(false);
+      expect(requestsContain(ingest.urls, 'Ada')).toBe(false);
+      expect(requestsContain(ingest.urls, 'Lovelace')).toBe(false);
+    } catch (error) {
+      // Only a fixed phase label is added; email links and tokens stay private.
+      throw new Error(`Analytics funnel failed at phase: ${phase}`, { cause: error });
+    } finally {
+      // The test-scoped API context is already disposed on timeout. Use the
+      // identity-checked local fixture connection so cleanup still runs.
+      if (!/^e2e\+analytics\+\d+@saasboilerplate\.local$/.test(email)) {
+        throw new Error('Refusing cleanup of a non-analytics fixture');
+      }
+      execSqlAsPostgres(`
+        BEGIN;
+        DELETE FROM public.accounts
+          WHERE (type = 'team' AND created_by IN (SELECT id FROM auth.users WHERE email = '${email}'))
+             OR (type = 'personal' AND id IN (SELECT id FROM auth.users WHERE email = '${email}'));
+        DELETE FROM auth.users WHERE email = '${email}';
+        COMMIT;
+      `);
     }
-
-    // AnalyticsProvider persists the accepted consent to profiles.analytics_consent
-    // once the user is authenticated — captureServer()'s webhook fallback
-    // (src/lib/analytics/server.ts) depends on this being kept in sync, not
-    // just the cookie, since a webhook carries no browser cookie at all.
-    await expect
-      .poll(
-        () =>
-          querySqlAsPostgres(
-            `SELECT analytics_consent FROM public.profiles p JOIN auth.users u ON u.id = p.id WHERE u.email = '${email}'`,
-          ),
-        { timeout: 10_000 },
-      )
-      .toBe('t');
-
-    // 4. project_created.
-    const beforeProject = countCaptureRequests(ingest.urls);
-    await page.goto('/es/dashboard/projects');
-    const projectName = `analytics-e2e-${Date.now()}`;
-    await page
-      .getByRole('button', { name: /nuevo proyecto/i })
-      .first()
-      .click();
-    await page.locator('input[name="name"]').fill(projectName);
-    await page.getByRole('button', { name: /crear proyecto/i }).click();
-    await expect(page.getByText(projectName)).toBeVisible({ timeout: 15_000 });
-    await expect
-      .poll(() => countCaptureRequests(ingest.urls), { timeout: 10_000 })
-      .toBeGreaterThan(beforeProject);
-
-    // No PII anywhere in any intercepted request across the whole funnel —
-    // best-effort: a raw substring check, meaningful whenever the SDK sends
-    // an uncompressed body (typical for small dev/test payloads).
-    expect(requestsContain(ingest.urls, email)).toBe(false);
-    expect(requestsContain(ingest.urls, password)).toBe(false);
-    expect(requestsContain(ingest.urls, 'Ada')).toBe(false);
-    expect(requestsContain(ingest.urls, 'Lovelace')).toBe(false);
-
-    await deleteUserByEmail(request, email, serviceKey);
   });
 });
 

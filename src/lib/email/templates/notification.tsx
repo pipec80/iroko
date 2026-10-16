@@ -10,6 +10,8 @@ import {
 } from '@react-email/components';
 import React from 'react';
 
+import { getSafeNavigationHref } from '@/lib/validation/navigation-link';
+
 import { BRAND, EmailLogo, EmailOrnament, S } from './_shared';
 
 export type NotificationEmailProps = {
@@ -21,7 +23,7 @@ export type NotificationEmailProps = {
   appName?: string;
   /** Base site URL for relative links. Default shown in preview server. */
   siteUrl?: string;
-  /** Default locale used to build the dashboard fallback URL. */
+  /** Retained for caller compatibility; absent links do not create a fallback CTA. */
   defaultLocale?: string;
 };
 
@@ -40,16 +42,30 @@ export function NotificationEmail({
   link,
   appName = 'Iroko',
   siteUrl = 'http://localhost:3000',
-  defaultLocale = 'es',
 }: NotificationEmailProps): React.ReactElement {
   const accent = TYPE_COLOR[type];
 
-  const actionUrl =
-    link ?
-      link.startsWith('http') ?
-        link
-      : `${siteUrl}${link}`
-    : `${siteUrl}/${defaultLocale}/dashboard`;
+  const href = getSafeNavigationHref(link);
+  let actionUrl: string | null = null;
+  if (href) {
+    if (href.startsWith('https://')) actionUrl = href;
+    else {
+      try {
+        const base = new URL(siteUrl);
+        // HTTP is permitted for the official local environment, never remote email destinations.
+        const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname);
+        if (
+          !base.username &&
+          !base.password &&
+          (base.protocol === 'https:' || (loopback && base.protocol === 'http:'))
+        ) {
+          actionUrl = new URL(href, base.origin).href;
+        }
+      } catch {
+        // A broken base URL must not turn a valid relative link into an unsafe CTA.
+      }
+    }
+  }
 
   return (
     <Html lang="es">
@@ -73,7 +89,7 @@ export function NotificationEmail({
               {title}
             </Text>
             {body && <Text style={S.p}>{body}</Text>}
-            {link && (
+            {actionUrl && (
               <Section style={S.section}>
                 <Button href={actionUrl} style={{ ...S.button, backgroundColor: accent }}>
                   Ver detalles

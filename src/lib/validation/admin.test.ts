@@ -4,9 +4,27 @@ import {
   ADMIN_ACCOUNTS_DEFAULT_PAGE_SIZE,
   ADMIN_ACCOUNTS_MAX_PAGE_SIZE,
   adminAccountsQuerySchema,
+  announcementSchema,
   platformAlertSchema,
   platformAuditLogQuerySchema,
 } from './admin';
+
+describe('announcement navigation schema', () => {
+  it('allows and normalizes internal routes', () => {
+    expect(announcementSchema.parse({ title: 'Notice', link: '/a/../es/café' }).link).toBe(
+      '/es/caf%C3%A9',
+    );
+  });
+  it.each(['javascript:alert(1)', '//evil.example', '\n/es/dashboard', '/a/..//host'])(
+    'rejects %s',
+    (link) => {
+      expect(announcementSchema.safeParse({ title: 'Notice', link }).success).toBe(false);
+    },
+  );
+  it('maps a blank link to absence', () => {
+    expect(announcementSchema.parse({ title: 'Notice', link: '   ' }).link).toBeUndefined();
+  });
+});
 
 describe('adminAccountsQuerySchema', () => {
   it('applies defaults when given an empty object', () => {

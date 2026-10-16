@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { normalizeNavigationLink } from './navigation-link';
+
 import { AUDIT_ACTIONS, AUDIT_RESOURCE_TYPES } from './audit-log';
 
 export const ADMIN_ACCOUNTS_DEFAULT_PAGE_SIZE = 20;
@@ -60,7 +62,17 @@ export const announcementSchema = z.object({
   type: z.enum(ANNOUNCEMENT_TYPES).default('info'),
   title: z.string().trim().min(1).max(200),
   body: z.string().trim().max(2000).optional().or(z.literal('')),
-  link: z.string().trim().url().max(2000).optional().or(z.literal('')),
+  link: z
+    .string()
+    .optional()
+    .transform((value, ctx) => {
+      const result = normalizeNavigationLink(value);
+      if (!result.valid) {
+        ctx.addIssue({ code: 'custom', message: 'invalid_link' });
+        return z.NEVER;
+      }
+      return result.href ?? undefined;
+    }),
 });
 
 export type AnnouncementInput = z.input<typeof announcementSchema>;

@@ -177,8 +177,9 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     // HTTP status to any client checking it. So non-admins are NOT
     // intercepted at the edge for this route: the request passes through
     // unchanged (same URL, no redirect) and AdminLayout's own `notFound()`
-    // call produces a genuine 404 status once it re-derives the claim
-    // server-side. This block only handles the admin-but-unenrolled case.
+    // call denies access with not-found content after re-deriving the claim.
+    // If the shell already streamed, HTTP may remain 200; it is not evidence
+    // of authorized content. This block handles the admin-but-unenrolled case.
     if (claims.app_metadata?.mfa_enrolled !== true) {
       const url = request.nextUrl.clone();
       url.pathname = `/${locale}/dashboard/account`;

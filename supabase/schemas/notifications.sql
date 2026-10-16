@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
   link       text,
   read_at    timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT notifications_navigation_link_check CHECK (private.is_safe_navigation_link(link)),
   CONSTRAINT notifications_type_check CHECK (type IN ('info', 'success', 'warning', 'error')),
   CONSTRAINT notifications_user_id_fkey
     FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE

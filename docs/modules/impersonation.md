@@ -1,256 +1,96 @@
 # Impersonation — "Ver como" (`impersonation_sessions`)
 
-> **Tarea F3-C2** · PR [#64](https://github.com/pipec80/iroko/pull/64) · Rama histórica `feat/f3-c2-impersonation`
-> Estado actual: implementación y especificación E2E verificadas estáticamente el 2026-08-20;
-> el PR está mergeado. El flujo con admin real, MFA y `aal2` no se ejecutó en esta revisión y
-> está **[NO VERIFICADO]**.
+Updated locally on 2026-10-15 under [Plan 012.4](../exec-plans/active/012-4-csp-and-secrets.md).
+The original F3-C2 implementation was integrated through [PR #64](https://github.com/pipec80/iroko/pull/64).
+Current local changes are not deployment or Cloud acceptance. Real-browser admin
+MFA/aal2 acceptance remains **[NO VERIFICADO]**; see the
+[local hardening evidence](../audits/2026-10-15-plan-012-4-local-hardening.md).
 
-## 1. Qué es esto
+## Behavior and authorization
 
-Extiende el back-office de super-admin ([`platform-admin.md`](platform-admin.md), tarea C1) con
-la posibilidad de que un admin inicie sesión **como si fuera** un usuario no-admin, para
-resolver tickets de soporte sin pedirle la contraseña ni tocar la base de datos a mano.
+A platform admin with verified MFA/aal2 starts a real target session through
+`generateLink` and `verifyOtp`; RLS continues to see the target identity.
+`begin_impersonation_session` checks the live admin/MFA authorization and target
+eligibility, records the reason and opens a 30-minute SQL row. Self-impersonation,
+another platform admin, an unknown target and a second active row for the same
+admin are rejected. Existing audit attribution is preserved.
 
-No es JWT spoofing: es una **sesión real** del target (`auth.admin.generateLink` + `verifyOtp`),
-así que RLS y todo el resto de la app ven al target genuinamente logueado. Tiene un cap duro de
-30 minutos, un banner permanente que no se puede ocultar mientras dura, y cada acción que el
-admin hace durante la impersonation queda registrada en `audit.logs` con el admin real
-identificado (sin romper el visor de auditoría por cuenta, que sigue viendo al target como
-actor).
+The proxy implementation is `src/proxy.ts`, with session checks in
+`src/lib/supabase/middleware.ts`; there is no repository `middleware.ts` entry.
+The dashboard banner exposes the manual return action. The signed return cookie
+has a 35-minute lifetime to allow restoration around the SQL session boundary;
+that does not extend the 30-minute impersonation cap.
 
-## 2. Cómo usarlo (como admin)
+## Return cookie and recovery contract
 
-1. Requisitos previos: estar en `platform_admins` y tener MFA inscripto (ver
-   [`platform-admin.md` §2-3](platform-admin.md)).
-2. Andá a `/dashboard/admin/accounts`, entrá al detalle de la cuenta del usuario que necesitás
-   ver.
-3. Clic en **"Ver como {email}"**. Se abre un diálogo pidiendo un motivo (mínimo 3 caracteres,
-   ej. "ticket de soporte #123") — queda guardado en `audit.logs` junto con el resto.
-4. Confirmá. Quedás logueado como ese usuario, con un banner naranja fijo arriba de todo:
-   _"Estás viendo como {nombre} ({email}) · N min restantes"_.
-5. Navegá la app normalmente — cualquier cambio que hagas queda auditado como si lo hubiera
-   hecho el target, pero con `impersonator_id` apuntando a vos.
-6. Clic en **"Salir"** del banner en cualquier momento para volver a tu propia sesión de admin.
-   Si no salís antes de los 30 minutos, la próxima navegación te redirige automáticamente a
-   `/login` y cierra la sesión de impersonation del lado del servidor.
+`src/lib/impersonation-cookie.ts` signs a canonical two-segment HMAC-SHA256
+cookie using a dedicated server-only `IMPERSONATION_COOKIE_SECRET`, validated
+in `src/env.ts`. It does not fall back to a Supabase key. The strict v2 envelope
+binds purpose, admin, target and SQL session IDs, server issue/expiry times and
+the admin restoration tokens. Legacy, malformed, expired and rotated cookies
+fail closed. Cookie flags are HttpOnly, Secure, SameSite=Lax and path `/`.
+Tokens and signed cookie values must never enter logs, screenshots or Git.
 
-### Quién puede ser impersonado
+Start verifies the admin identity before opening the row. Failures after opening
+trigger owner-authorized compensation. If OTP may already have changed the
+identity, restore and verify the real admin first; never close an unexpired row
+as the target to compensate a failed swap. A failed restoration signs out locally
+and requires authenticated owner recovery. SQL close failure is reported rather
+than presented as successful cleanup.
 
-Cualquier usuario **no-admin** que exista. `begin_impersonation_session` rechaza:
+Manual return verifies the cookie/session binding and current target or admin
+identity, restores and verifies the signed admin, and only then closes that
+admin's SQL row. Failed closure remains a recovery condition.
 
-- Impersonarte a vos mismo (`cannot_impersonate_self`).
-- Impersonar a otro admin (`cannot_impersonate_admin`) — ni siquiera otro super-admin puede ser
-  target, para evitar que un admin comprometido escale a otro.
-- Un `target_user_id` que no existe (`target_not_found`).
-- Tener ya una sesión de impersonation activa (el índice único `idx_impersonation_one_active_per_admin`
-  lo impide a nivel de base de datos — hay que salir de la actual antes de abrir otra).
+Expiry attempts SQL closure through the authenticated target only when target,
+signed `app_metadata.impersonated_by`, expired reason and elapsed SQL expiry
+all match under the row lock. It signs out locally and clears return/session and
+current-project auth cookies even when backend closure fails. Safe return targets
+lead through a localized login/dashboard flow rather than back into expiry.
+Clearing a browser session does not prove the SQL row is closed.
+Cleanup requires an auxiliary impersonation cookie or signed impersonation
+marker. A top-level GET with a normal verified identity and no such evidence
+preserves that session and redirects to the safe dashboard destination.
 
----
+The shipped SQL function preserves its existing ACL: `authenticated` may invoke
+it, while `anon` and `service_role` have no EXECUTE grant. The backend body branch
+requires both the caller role and JWT role to be `service_role`; its positive
+pgTAP case uses a temporary grant inside a rolled-back test transaction. That
+case does not establish a callable backend path in the shipped ACL.
 
-## 3. Cómo funciona por dentro (arquitectura)
+## Recovery and dedicated-key rotation runbook
 
-```
-┌──────────────────────────────────────────────────────────────────────────┐
-│ 1. Admin hace clic en "Ver como" → startImpersonation(targetUserId, reason)│
-│    a) RPC begin_impersonation_session: valida, inserta la fila en         │
-│       impersonation_sessions (expires_at = now() + 30 min), audita        │
-│       impersonate_start.                                                  │
-│    b) Guarda la sesión ACTUAL del admin en la cookie admin_return_session │
-│       (firmada con HMAC-SHA256, ver §5).                                  │
-│    c) Guarda el id de la sesión en la cookie impersonation_session_id     │
-│       (plana, no sensible — solo un UUID, no un token).                   │
-│    d) service_role: auth.admin.generateLink('magiclink', target.email)    │
-│       + supabase.auth.verifyOtp(hashed_token) → sesión REAL del target.   │
-│    e) redirect a /dashboard.                                              │
-└──────────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────────────────┐
-│ 2. custom_access_token_hook agrega, mientras la sesión esté activa:        │
-│      app_metadata.impersonated_by = <uuid del admin>                      │
-│      app_metadata.impersonation_expires_at = <timestamp>                  │
-│    (consulta impersonation_sessions WHERE target_user_id = ... AND        │
-│     ended_at IS NULL — se resuelve en cada mint de token, no en vivo)     │
-└──────────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────────────────┐
-│ 3. private.audit_log() (el trigger genérico que ya existía) lee el claim  │
-│    impersonated_by del JWT y lo guarda en audit.logs.impersonator_id en   │
-│    CADA mutación mientras dura la impersonation. actor_id sigue siendo    │
-│    auth.uid() (el target) — RLS y visores por cuenta no cambian.          │
-└──────────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────────────────┐
-│ 4. middleware.ts chequea, en cada request a /dashboard/*:                 │
-│    impersonation_expires_at <= now() → redirect a                         │
-│    /api/impersonation/expire?returnTo=<path actual>                       │
-└──────────────────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────────────────┐
-│ 5. Salida — endImpersonation() (botón "Salir") o el route handler de      │
-│    expiración automática, EN ESE ORDEN:                                   │
-│    a) Verifica la cookie admin_return_session. Si falta o es inválida     │
-│       (tamperada, corrupta): signOut() completo, nunca se deja al admin   │
-│       atrapado en la sesión del target.                                   │
-│    b) setSession() con el access/refresh token del admin — RESTAURA       │
-│       primero.                                                            │
-│    c) RECIÉN AHORA, con auth.uid() = admin: RPC end_impersonation_session │
-│       (marca ended_at, audita impersonate_end). El orden importa: el RPC  │
-│       exige que el caller sea el admin dueño de la sesión.                │
-│    d) Borra ambas cookies, redirect.                                      │
-└──────────────────────────────────────────────────────────────────────────┘
-```
+1. Identify the exact environment and the affected admin/session IDs using
+   metadata only. Preserve credentials and pending sources. Local authorization
+   does not authorize linked SQL writes, secret changes or deployment.
+2. Before introducing or rotating the dedicated key in an authorized target,
+   have each active owner manually return and verify that the corresponding SQL
+   row has `ended_at` set. Check active rows explicitly; waiting for `expires_at`
+   or deleting cookies alone does not mark a row closed.
+3. If the signed cookie is unavailable, invalid or rotated, clear the local target
+   identity and sign in again as the original admin, including required MFA.
+   Use the existing owner-authorized `end_impersonation_session(session_id,
+   'manual')` RPC for that exact row through an authenticated operational path.
+   Verify closure and the single end-audit record. Do not grant generic backend
+   EXECUTE or accept an unsigned cookie UUID to bypass authorization.
+4. If owner login, restoration or SQL closure fails, stop the rotation/deployment
+   until the failure and directed recovery are resolved. Record the affected row
+   and error category without tokens. A signed-in admin with a stale active row
+   may remain blocked from starting another impersonation until closure succeeds.
+5. After all affected rows are closed, apply the specifically authorized secret
+   configuration and compatible code. Previously signed cookies are intentionally
+   invalid; do not re-sign them using the old Supabase server key.
+6. Verify real MFA start, manual return, expiry, backend-failure logout and fixture
+   cleanup in the authorized environment. Rollback must retain compatibility with
+   the dedicated secret; it must not restore Supabase-key cookie signing.
 
-### Por qué una sesión real y no un JWT falsificado
+The application can report that directed recovery is required; this runbook does
+not claim an additional recovery UI or an executed Cloud recovery drill.
 
-La alternativa obvia — mintear un JWT con `sub` = target sin pasar por Auth — rompería
-silenciosamente cualquier lógica que dependa de `auth.uid()` teniendo una sesión GoTrue
-legítima detrás (refresh tokens, `auth.mfa_factors`, revocación de sesiones, etc.). Usar
-`generateLink` + `verifyOtp` es más código, pero el target queda con una sesión indistinguible
-de si hubiera iniciado sesión él mismo.
+## Verification boundary
 
-### Por qué el cap de 30 min se basa en el claim, no en una consulta en vivo
-
-El middleware corre en el edge y no tiene un cliente completo de Postgres — solo puede leer el
-JWT ya minteado. Esto significa que **actualizar `expires_at` en la base de datos no afecta una
-sesión ya iniciada** hasta que el token se refresque (Supabase refresca automáticamente antes de
-que expire el access token, típicamente dentro de la hora). El cap real y confiable es el que
-impone `begin_impersonation_session` al insertar la fila con `expires_at = now() + 30 min`, y el
-claim simplemente refleja ese valor en cada mint. Para QA/debugging, forzar la expiración
-requiere provocar un refresh de token, no alcanza con un `UPDATE` a la tabla.
-
-### Por qué `end_impersonation_session` es idempotente
-
-El cierre automático por expiración (route handler) y el cierre manual (botón "Salir") pueden
-superponerse — por ejemplo, si el token se refresca justo cuando el admin hace clic en "Salir".
-La RPC no falla si la sesión ya tiene `ended_at`: el `UPDATE ... WHERE ended_at IS NULL` de la
-segunda llamada simplemente no encuentra filas para actualizar.
-
----
-
-## 4. Referencia técnica
-
-### Tabla
-
-```sql
-public.impersonation_sessions (
-  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  admin_id       uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  target_user_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  reason         text NOT NULL,
-  started_at     timestamptz NOT NULL DEFAULT now(),
-  expires_at     timestamptz NOT NULL,
-  ended_at       timestamptz,
-  ended_reason   text,
-  ip_address     inet,
-  user_agent     text,
-  CONSTRAINT impersonation_target_not_admin CHECK (admin_id <> target_user_id)
-)
-```
-
-RLS: **deny-all total** (mismo patrón que `platform_admins`). Índice único parcial
-`idx_impersonation_one_active_per_admin ON (admin_id) WHERE ended_at IS NULL` — a nivel de base
-de datos, un admin no puede tener dos sesiones activas simultáneas.
-
-### RPCs públicos
-
-**`public.begin_impersonation_session(p_target_user_id uuid, p_reason text)`**
-
-Devuelve la fila insertada (`impersonation_sessions`). Requiere `platform_admin` + aal2 real
-(vía `assert_platform_admin()`). Lanza `reason_required` (motivo < 3 caracteres),
-`cannot_impersonate_self`, `cannot_impersonate_admin`, `target_not_found`, o el error de
-duplicate-key del índice único si ya hay una sesión activa.
-
-**`public.end_impersonation_session(p_session_id uuid, p_reason text DEFAULT 'manual')`**
-
-`void`. Invocable por el admin dueño de la sesión, o sin `auth.uid()` (contexto `service_role`,
-para el cierre automático). Lanza `session_not_found` o `not_authorized` (un tercer admin
-intentando cerrar la sesión de otro). Idempotente ante `session_id` ya cerrado.
-
-### Claims JWT
-
-`app_metadata.impersonated_by: string | undefined` y
-`app_metadata.impersonation_expires_at: string | undefined`, agregados en
-`public.custom_access_token_hook` solo cuando el usuario actual es el **target** de una sesión
-activa.
-
-### Cookie de retorno del admin
-
-`src/lib/impersonation-cookie.ts` — `signImpersonationCookie` / `verifyImpersonationCookie`.
-Formato: `base64url(JSON payload) + '.' + HMAC-SHA256-hex`, firmada con
-`env.SUPABASE_SECRET_KEY` (ya existe como secreto solo-servidor, no se agregó ninguna
-dependencia nueva como `jose` o `iron-session`). Firmada, no cifrada — el payload no es secreto
-para el propio admin (son sus tokens), pero la firma evita que un payload tamperado (ej. un
-`adminUserId` forjado) sea aceptado. Verificación con `crypto.timingSafeEqual`, nunca `===`
-sobre el HMAC.
-
-### Archivos del feature
-
-```
-supabase/migrations/20260721221310_f3_c2_impersonation_enum.sql   ← audit.action_type +2 valores
-supabase/migrations/20260721221410_f3_c2_impersonation.sql        ← tabla, RPCs, claims, trigger
-supabase/schemas/{public,private,audit}.sql                       ← espejo declarativo
-supabase/tests/database/20_impersonation.test.sql                 ← 20 tests pgTAP
-
-src/lib/impersonation-cookie.ts                                   ← firma/verifica la cookie de retorno
-src/lib/supabase/middleware.ts                                    ← cap de 30 min en el edge
-
-src/app/api/impersonation/expire/route.ts                         ← cierre automático por expiración
-
-src/app/[locale]/dashboard/admin/accounts/[accountId]/
-├── impersonation-actions.ts      ← startImpersonation() / endImpersonation()
-├── impersonate-button.tsx        ← botón + diálogo de motivo
-└── page.tsx                      ← botón "Ver como" (usa account.ownerId)
-
-src/components/layout/
-├── impersonation-banner.tsx      ← banner con countdown + botón "Salir"
-└── dashboard-layout.tsx          ← acepta prop impersonationBanner
-
-src/app/[locale]/dashboard/layout.tsx  ← arma el banner leyendo los claims
-```
-
-### i18n
-
-Namespace `Impersonation` en `messages/{en,es,pt,fr}.json`. También se agregaron
-`action_impersonate_start`/`action_impersonate_end` al namespace `ActivityLog` (visor de
-auditoría) en los 4 locales.
-
----
-
-## 5. Cómo probarlo en local
-
-```bash
-pnpm supa:start   # si no está corriendo ya
-pnpm dev
-```
-
-Necesitás **dos usuarios**: un admin (en `platform_admins`, con MFA inscripto — ver
-[`platform-admin.md` §6](platform-admin.md)) y un target (cualquier usuario normal, no-admin).
-
-1. Registrá ambos usuarios normal, vía `/signup` (confirmá los correos en Mailpit,
-   `http://127.0.0.1:54324`).
-2. Insertá al admin en `platform_admins` e inscribile MFA (ver `platform-admin.md`).
-3. Logueado como admin, con aal2, andá a `/dashboard/admin/accounts` → entrá a la cuenta del
-   target → **"Ver como {email}"**.
-4. Confirmá el diálogo con un motivo. Verificá el banner y que la sesión sea la del target
-   (nombre/avatar cambian en el sidebar).
-5. Hacé algún cambio (ej. renombrar el perfil en `Mi cuenta`) y verificá en
-   `/dashboard/admin/audit` que la fila tenga "Suplantado por" = tu email de admin.
-6. Clic en "Salir" — confirmá que volviste a tu sesión de admin.
-
-### Tests automáticos
-
-```bash
-pnpm supa:test                         # 20 tests pgTAP de este feature (archivo 20)
-pnpm test "impersonation-actions"      # server actions startImpersonation/endImpersonation
-pnpm test "impersonation-cookie"       # firma/verificación de la cookie
-```
-
----
-
-## 6. Evidencia pendiente
-
-- El E2E automatizado existe en `src/test/e2e/impersonation.spec.ts` y usa el fixture
-  `platform-admin`; ya no está marcado con `test.skip`. Su ejecución actual no formó parte de
-  esta revisión y permanece **[NO VERIFICADO]**.
-- GDPR fue implementado posteriormente mediante PR #75; no es trabajo pendiente de este
-  módulo.
+Unit tests cover cookie parsing, rotation, compensation/restoration ordering,
+identity binding and expiry failures. SQL tests independently cover role/claim
+and expiry authorization. Focused tests, SQL body tests and static review do not
+substitute for real-browser MFA, session/cookie persistence or Cloud execution.
+The dated execution audit records actual commands and unresolved acceptance gates.

@@ -271,9 +271,15 @@ del API.
 
 **Preparación — 2026-10-14:** alcance contrastado con código y consumidores en
 el [inventario estático](../../audits/2026-10-14-plan-012-4-readiness.md).
-El [plan ejecutable 012.4](012-4-csp-and-secrets.md) propone tareas, contratos,
-ownership y aceptación; está preparado para revisión, no implementado.
-El gate local existente no cierra uploads normales, CSP ni secretos.
+El [plan ejecutable 012.4](012-4-csp-and-secrets.md) registra tareas, contratos,
+ownership y aceptación. Actualización local 2026-10-16: secretos dedicados,
+gates de uploads/mock, enlaces y nonce CSP implementados; build aislado,
+cobertura 1452 tests, pgTAP 1067 assertions y Chromium 22/22 pasaron, con
+cero residuos fixture tras teardown. Véase el
+[registro de ejecución](../../audits/2026-10-15-plan-012-4-local-hardening.md),
+incluida la pérdida y reconstrucción de dos valores Vault locales en un reset
+fallido. Recepción Sentry/PostHog, Turnstile real y aceptación del candidato
+Cloud siguen pendientes y requieren autorización separada; PR4 no está cerrado.
 
 **Ejecución.**
 

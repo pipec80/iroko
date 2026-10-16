@@ -188,7 +188,7 @@ COMMENT ON FUNCTION private.emit_webhook_event(uuid, text, jsonb) IS
 REVOKE EXECUTE ON FUNCTION private.emit_webhook_event(uuid, text, jsonb) FROM PUBLIC;
 
 -- ============================================================================
--- Envío vía pg_net
+-- Helper legado: solo feature gate, sin entrega de red
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION private.send_webhook_delivery(p_delivery_id uuid)
@@ -199,7 +199,7 @@ BEGIN
 END; $$;
 
 COMMENT ON FUNCTION private.send_webhook_delivery(uuid) IS
-  'Encola el POST firmado en pg_net e incrementa attempts. Lee el secret desde vault.decrypted_secrets (F3-3H-3) — ningún rol de API tiene grant sobre Vault. Sin la feature webhooks_enabled, marca exhausted sin llamar pg_net (F3-3H-1).';
+  'Legacy feature gate: marks a delivery exhausted when webhooks are outside the plan. Does not send network requests or read Vault. Authorized Node-worker claims use public.claim_webhook_deliveries for exact-body signing; reviewed backend Vault capabilities are preserved, while anon/authenticated cannot access Vault directly.';
 REVOKE EXECUTE ON FUNCTION private.send_webhook_delivery(uuid) FROM PUBLIC;
 
 CREATE OR REPLACE FUNCTION private.trg_send_webhook_delivery()

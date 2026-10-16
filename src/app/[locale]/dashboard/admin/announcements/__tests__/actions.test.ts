@@ -25,6 +25,28 @@ vi.mock('@/env', () => ({
 import { publishAnnouncement } from '../actions';
 
 describe('publishAnnouncement', () => {
+  it('accepts and canonicalizes internal navigation before the RPC', async () => {
+    mocks.rpc.mockResolvedValue({ data: {}, error: null });
+    const result = await publishAnnouncement({
+      type: 'info',
+      title: 'Notice',
+      link: '/a/../es/café',
+    });
+    expect(result.error).toBeUndefined();
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'publish_announcement',
+      expect.objectContaining({ p_link: '/es/caf%C3%A9' }),
+    );
+  });
+
+  it.each(['javascript:alert(1)', '//example.com', '\n/es/dashboard'])(
+    'rejects unsafe navigation %s',
+    async (link) => {
+      const result = await publishAnnouncement({ type: 'info', title: 'Notice', link });
+      expect(result.error).toBe('validation_error');
+      expect(mocks.rpc).not.toHaveBeenCalled();
+    },
+  );
   beforeEach(() => vi.clearAllMocks());
 
   it('returns validation_error for an empty title without calling the RPC', async () => {

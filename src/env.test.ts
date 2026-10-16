@@ -52,7 +52,6 @@ describe('billing environment validation', () => {
     expect(
       isMockBillingAllowed({
         nodeEnv: 'test',
-        provider: 'mock',
         allowMockBilling: undefined,
       }),
     ).toBe(true);

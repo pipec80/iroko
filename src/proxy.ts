@@ -1,5 +1,5 @@
 import createMiddleware from 'next-intl/middleware';
-import type { NextRequest } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 import { env } from '@/env';
 import { routing } from './i18n/routing';
@@ -7,8 +7,40 @@ import { updateSession } from './lib/supabase/middleware';
 
 const intlMiddleware = createMiddleware(routing);
 
-const SENTRY_INGEST_ORIGIN = 'https://o4511537461067776.ingest.us.sentry.io';
-const SENTRY_REPORT_URI = `${SENTRY_INGEST_ORIGIN}/api/4511537462771713/security/?sentry_key=f88007bc87fbd834a3f62bfc0d256a7e`;
+export type CspOptions = {
+  nonce: string;
+  isDev: boolean;
+  isPreview: boolean;
+  supabaseUrl: string;
+  sentryDsn?: string;
+  localValidation?: boolean;
+};
+
+function sentryDestination(dsn: string | undefined): { origin: string; report?: string } | null {
+  if (!dsn) return null;
+  try {
+    const url = new URL(dsn);
+    const segments = url.pathname.split('/').filter(Boolean);
+    const project = segments.pop();
+    const loopback = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+    if (
+      (url.protocol !== 'https:' && !(loopback && url.protocol === 'http:')) ||
+      !url.username ||
+      url.password ||
+      !project ||
+      !/^\d+$/.test(project)
+    )
+      return null;
+    if (loopback) return { origin: url.origin };
+    const prefix = segments.length ? `/${segments.join('/')}` : '';
+    return {
+      origin: url.origin,
+      report: `${url.origin}${prefix}/api/${project}/security/?sentry_key=${encodeURIComponent(url.username)}`,
+    };
+  } catch {
+    return null;
+  }
+}
 
 // Image origins the template itself needs in production: our own Supabase
 // Storage CDN, Google OAuth avatars, flag icons, and Vercel/Google static assets.
@@ -48,7 +80,10 @@ function localSupabaseOrigin(supabaseUrl: string): { http: string; ws: string } 
   }
 }
 
-export function buildCspHeader(isDev: boolean, isPreview: boolean, supabaseUrl: string): string {
+export function buildCspHeader(options: CspOptions): string {
+  const { nonce, isDev, isPreview, supabaseUrl } = options;
+  const sentry = sentryDestination(options.sentryDsn);
+  const report = !options.localValidation ? sentry?.report : undefined;
   const local = localSupabaseOrigin(supabaseUrl);
   const localOrigin = local?.http ?? '';
   const localWsOrigin = local?.ws ?? '';
@@ -63,19 +98,11 @@ export function buildCspHeader(isDev: boolean, isPreview: boolean, supabaseUrl: 
     // event ingestion are all same-origin ('self'). No *.posthog.com entry
     // is needed anywhere in this policy — see docs/modules/analytics.md.
     "default-src 'self'",
-    // NOTE: 'unsafe-inline' (no per-request nonce) — decisión heredada de cuando
-    // cacheComponents estaba activo (nonces forzaban dynamic rendering en todas
-    // las páginas estáticas). cacheComponents está deshabilitado ahora (ver
-    // next.config.ts, incompatibilidad con next-intl), así que adoptar nonces ya
-    // no chocaría con generación estática — queda como mejora de seguridad futura,
-    // fuera de scope de este fix. Mientras tanto, los directivas de abajo
-    // (object-src 'none', base-uri, frame-ancestors) más React's auto-escaping y
-    // cero dangerouslySetInnerHTML mantienen la superficie de XSS residual mínima.
-    // See SECURITY.md.
+    // Request-time documents and explicit consumers share this nonce (ADR 0004).
     isDev ?
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:"
+      `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https:`
     : [
-        "script-src 'self' 'unsafe-inline'",
+        `script-src 'self' 'nonce-${nonce}'`,
         'https://va.vercel-scripts.com',
         'https://vitals.vercel-insights.com',
         'https://challenges.cloudflare.com',
@@ -95,7 +122,7 @@ export function buildCspHeader(isDev: boolean, isPreview: boolean, supabaseUrl: 
       'https://challenges.cloudflare.com',
       'https://vitals.vercel-insights.com',
       'https://va.vercel-scripts.com',
-      SENTRY_INGEST_ORIGIN,
+      sentry?.origin ?? '',
       vercelLiveOrigin,
       localOrigin,
       localWsOrigin,
@@ -111,24 +138,32 @@ export function buildCspHeader(isDev: boolean, isPreview: boolean, supabaseUrl: 
     "form-action 'self'",
     "frame-ancestors 'none'",
     'upgrade-insecure-requests',
-    `report-uri ${SENTRY_REPORT_URI}`,
-    'report-to csp-endpoint',
+    ...(report ? [`report-uri ${report}`, 'report-to csp-endpoint'] : []),
   ];
 
   return directives.join('; ');
 }
 
-function applySecurityHeaders(response: { headers: Headers }, cspHeader: string): void {
-  const reportToValue = JSON.stringify({
-    group: 'csp-endpoint',
-    max_age: 10886400,
-    endpoints: [{ url: SENTRY_REPORT_URI }],
-    include_subdomains: true,
-  });
-
+function applySecurityHeaders(
+  response: { headers: Headers },
+  cspHeader: string,
+  report?: string,
+): void {
   response.headers.set('Content-Security-Policy', cspHeader);
-  response.headers.set('Report-To', reportToValue);
-  response.headers.set('Reporting-Endpoints', `csp-endpoint="${SENTRY_REPORT_URI}"`);
+  if (report) {
+    const reportToValue = JSON.stringify({
+      group: 'csp-endpoint',
+      max_age: 10886400,
+      endpoints: [{ url: report }],
+      include_subdomains: true,
+    });
+
+    response.headers.set('Report-To', reportToValue);
+    response.headers.set('Reporting-Endpoints', `csp-endpoint="${report}"`);
+  } else {
+    response.headers.delete('Report-To');
+    response.headers.delete('Reporting-Endpoints');
+  }
   response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains; preload');
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
@@ -141,62 +176,122 @@ function applySecurityHeaders(response: { headers: Headers }, cspHeader: string)
   response.headers.set('Cross-Origin-Resource-Policy', 'same-origin');
 }
 
+/** Infrastructure still receives CSP so error documents render with a nonce, without locale rewrites. */
+function isInfrastructurePath(path: string): boolean {
+  return (
+    ['/api', '/ingest', '/sentry-tunnel', '/_next'].some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    ) ||
+    [
+      '/favicon.ico',
+      // Keep this inventory aligned with public/; proxy tests check every actual file.
+      '/wordmark-iroko.svg',
+      '/wordmark-iroko-dark.svg',
+      '/window.svg',
+      '/vercel.svg',
+      '/sitemap-0.xml',
+      '/ornament-iroko.svg',
+      '/next.svg',
+      '/mark-iroko.svg',
+      '/mark-iroko-light.svg',
+      '/logo-microsoft.svg',
+      '/logo-google.svg',
+      '/lockup-iroko.svg',
+      '/icon-maskable-512.svg',
+      '/icon-512.svg',
+      '/icon-192.svg',
+      '/globe.svg',
+      '/file.svg',
+      '/favicon-light.svg',
+      '/favicon-32.svg',
+      '/favicon-16.svg',
+      '/apple-touch-icon.svg',
+      '/favicon.svg',
+      '/favicon-32.png',
+      '/favicon-16.png',
+      '/favicon-48.png',
+      '/favicon-64.png',
+      '/icon-192.png',
+      '/icon-512.png',
+      '/icon-maskable-512.png',
+      '/og-image-mark.png',
+      '/apple-touch-icon.png',
+      '/manifest.json',
+      '/site.webmanifest',
+      '/robots.txt',
+      '/sitemap.xml',
+    ].includes(path)
+  );
+}
+
+function forwardNonce(response: NextResponse, nonce: string, csp: string): void {
+  const overrides = new Set(
+    (response.headers.get('x-middleware-override-headers') ?? '')
+      .split(',')
+      .map((name) => name.trim())
+      .filter(Boolean),
+  );
+  const nonceHeaders: ReadonlyArray<readonly [string, string]> = [
+    ['x-nonce', nonce],
+    ['content-security-policy', csp],
+  ];
+  for (const [name, value] of nonceHeaders) {
+    overrides.add(name);
+    response.headers.set(`x-middleware-request-${name}`, value);
+  }
+  response.headers.set('x-middleware-override-headers', [...overrides].join(','));
+}
+
 export async function proxy(request: NextRequest) {
-  const isDev = env.NODE_ENV === 'development';
-  const isPreview = env.VERCEL_ENV === 'preview';
-  const cspHeader = buildCspHeader(isDev, isPreview, env.NEXT_PUBLIC_SUPABASE_URL);
+  const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+  const options: CspOptions = {
+    nonce,
+    isDev: env.NODE_ENV === 'development',
+    isPreview: env.VERCEL_ENV === 'preview',
+    supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+    sentryDsn: env.NEXT_PUBLIC_SENTRY_DSN,
+    localValidation: env.LOCAL_VALIDATION === 'true' || env.NEXT_PUBLIC_LOCAL_VALIDATION === 'true',
+  };
+  const csp = buildCspHeader(options);
+  const report = options.localValidation ? undefined : sentryDestination(options.sentryDsn)?.report;
+  request.headers.set('x-nonce', nonce);
+  request.headers.set('content-security-policy', csp);
 
-  const supabaseResponse = await updateSession(request);
-  if (supabaseResponse.status >= 300 && supabaseResponse.status < 400) {
-    applySecurityHeaders(supabaseResponse, cspHeader);
-    return supabaseResponse;
+  if (isInfrastructurePath(request.nextUrl.pathname)) {
+    const localeSegment = request.nextUrl.pathname.split('/')[1];
+    const locale =
+      routing.locales.find((value) => value === localeSegment) ?? routing.defaultLocale;
+    request.headers.set('x-next-intl-locale', locale);
+    const response = NextResponse.next({ request: { headers: request.headers } });
+    if (
+      request.headers.get('sec-fetch-dest') === 'document' ||
+      request.headers.get('accept')?.includes('text/html')
+    ) {
+      response.headers.set('Cache-Control', 'private, no-store');
+    }
+    forwardNonce(response, nonce, csp);
+    applySecurityHeaders(response, csp, report);
+    return response;
   }
 
-  const intlResponse = intlMiddleware(request);
-
-  // updateSession solo setea Cache-Control cuando hay sesión que proteger
-  // (claims != null o se refrescó la cookie) — dejar páginas anónimas
-  // cacheables normalmente. La respuesta final es intlResponse, no
-  // supabaseResponse, así que esa decisión debe propagarse explícitamente
-  // igual que las cookies más abajo, o se pierde en silencio.
-  const cacheControl = supabaseResponse.headers.get('Cache-Control');
-  if (cacheControl) intlResponse.headers.set('Cache-Control', cacheControl);
-
-  if (intlResponse.status >= 300 && intlResponse.status < 400) {
-    applySecurityHeaders(intlResponse, cspHeader);
-    return intlResponse;
+  const session = await updateSession(request);
+  const response =
+    session.status >= 300 && session.status < 400 ? session : intlMiddleware(request);
+  if (response !== session) {
+    for (const cookie of session.cookies.getAll())
+      response.cookies.set(cookie.name, cookie.value, cookie);
   }
-
-  // Base the final response on intlResponse, not a fresh NextResponse.next().
-  // next-intl's middleware sets an internal request header (x-next-intl-locale)
-  // on its own NextResponse.next({request: {headers}}) so getRequestConfig can
-  // read the resolved locale downstream via headers(). A bare NextResponse.next()
-  // silently drops that header, making every non-default locale fall back to
-  // defaultLocale ('es') for the actual page render (confirmed bug, F3-C5).
-  for (const cookie of supabaseResponse.cookies.getAll()) {
-    intlResponse.cookies.set(cookie.name, cookie.value, cookie);
-  }
-
-  applySecurityHeaders(intlResponse, cspHeader);
-  return intlResponse;
+  // Nonce-bearing HTML cannot enter shared caches; retain stronger session protections.
+  response.headers.set(
+    'Cache-Control',
+    session.headers.get('Cache-Control') ?? 'private, no-store',
+  );
+  forwardNonce(response, nonce, csp);
+  applySecurityHeaders(response, csp, report);
+  return response;
 }
 
 export const config = {
-  matcher: [
-    {
-      // sentry-tunnel excluido: es el tunnelRoute de withSentryConfig (ver
-      // next.config.ts) — si next-intl lo intercepta, redirige el POST del SDK
-      // a /es/sentry-tunnel donde el rewrite del túnel no existe (404) y los
-      // eventos del navegador se pierden. ingest excluido por el mismo motivo:
-      // es el reverse proxy first-party de PostHog (rewrites en next.config.ts)
-      // — un intercept de next-intl redirigiría el POST de captura a /es/ingest,
-      // donde el rewrite no existe (404) y los eventos se pierden.
-      source:
-        '/((?!api|sentry-tunnel|ingest|_next/static|_next/image|favicon.ico|manifest.json|.*\\..*).*)',
-      missing: [
-        { type: 'header', key: 'next-router-prefetch' },
-        { type: 'header', key: 'purpose', value: 'prefetch' },
-      ],
-    },
-  ],
+  // No extension, API-prefix or prefetch exclusions: unknown paths can render HTML errors.
+  matcher: [{ source: '/(.*)' }],
 };

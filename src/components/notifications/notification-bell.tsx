@@ -11,6 +11,7 @@ import {
 import type { InboxItem } from '@/hooks/use-inbox-items';
 import { useInboxItems } from '@/hooks/use-inbox-items';
 import { logClient } from '@/lib/logger-client';
+import { getSafeNavigationHref } from '@/lib/validation/navigation-link';
 
 type ItemType = InboxItem['data']['type'];
 
@@ -70,8 +71,9 @@ function InboxRow({ item }: { item: InboxItem }) {
     </div>
   );
 
-  if (item.data.link) {
-    return <a href={item.data.link}>{inner}</a>;
+  const href = getSafeNavigationHref(item.data.link);
+  if (href) {
+    return <a href={href}>{inner}</a>;
   }
   return inner;
 }

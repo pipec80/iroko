@@ -1,16 +1,7 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
-
-/** Allows Mock billing in production only when deployment configuration opts in explicitly. */
-export function isMockBillingAllowed(input: {
-  nodeEnv: string | undefined;
-  provider: string;
-  allowMockBilling: string | undefined;
-}): boolean {
-  return (
-    input.nodeEnv !== 'production' || input.provider !== 'mock' || input.allowMockBilling === 'true'
-  );
-}
+import { isMockBillingAllowed } from '@/lib/billing/mock-policy';
+export { isMockBillingAllowed } from '@/lib/billing/mock-policy';
 
 export const env = createEnv({
   // GitHub Actions passes unset secrets as empty strings.
@@ -25,7 +16,9 @@ export const env = createEnv({
       .default('info'),
     SITE_URL: z.string().url().default('http://localhost:3000'),
     SUPABASE_SECRET_KEY: z.string().min(1),
+    IMPERSONATION_COOKIE_SECRET: z.string().regex(/^[0-9a-f]{64}$/i),
     SENTRY_AUTH_TOKEN: z.string().min(1).optional(),
+    SENTRY_UPLOAD_SOURCE_MAPS: z.enum(['true', 'false']).optional(),
     LOCAL_VALIDATION: z.enum(['true']).optional(),
     RESEND_API_KEY: z.string().min(1),
     FROM_EMAIL: z.string().email(),
@@ -42,9 +35,9 @@ export const env = createEnv({
       .default('mock')
       .refine(
         (provider) =>
+          provider !== 'mock' ||
           isMockBillingAllowed({
             nodeEnv: process.env.NODE_ENV,
-            provider,
             allowMockBilling: process.env.ALLOW_MOCK_BILLING,
           }),
         {
@@ -52,7 +45,7 @@ export const env = createEnv({
         },
       ),
     ALLOW_MOCK_BILLING: z.enum(['true']).optional(),
-    MOCK_BILLING_SECRET: z.string().min(1),
+    MOCK_BILLING_SECRET: z.string().regex(/^[0-9a-f]{64}$/i),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
     MERCADOPAGO_ACCESS_TOKEN: z.string().min(1).optional(),
@@ -89,7 +82,9 @@ export const env = createEnv({
     LOG_LEVEL: process.env.LOG_LEVEL ?? 'info',
     SITE_URL: process.env.SITE_URL,
     SUPABASE_SECRET_KEY: process.env.SUPABASE_SECRET_KEY,
+    IMPERSONATION_COOKIE_SECRET: process.env.IMPERSONATION_COOKIE_SECRET,
     SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    SENTRY_UPLOAD_SOURCE_MAPS: process.env.SENTRY_UPLOAD_SOURCE_MAPS,
     LOCAL_VALIDATION: process.env.LOCAL_VALIDATION,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     FROM_EMAIL: process.env.FROM_EMAIL,

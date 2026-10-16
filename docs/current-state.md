@@ -99,17 +99,57 @@ See the [execution record](audits/2026-10-14-plan-012-3-cloud-execution.md).
 
 ## Product position
 
-### Plan 012.4 preparation — 2026-10-14
+### Plan 012.4 local execution — updated 2026-10-16
+
+Local implementation advanced on 2026-10-15 on `chore/012-4-csp-and-secrets`:
+dedicated impersonation cookies/recovery, mock gates and strict schemas, navigation
+validation/backfill tooling and nonce CSP are present. The final isolated production
+build passed with 43 dynamic routes, 3,780,660 static asset bytes, zero forbidden
+Node attempts, zero public maps and zero synthetic build-sink requests. Cleanup
+passed after one EPERM retry. Final serial unit coverage passed
+122 files / 1452 tests at the original thresholds, including the logout-CSRF
+regressions (57 focused impersonation tests also passed). Final serial lint passed
+with zero errors / 16 warnings; TypeScript, focused formatting and Knip passed
+(six existing Knip configuration hints). Runner/backfill regressions passed 35 tests.
+The confined production Chromium run passed all 22 tests with zero skips or
+flaky tests, runner exit 0 and zero guard events through server teardown.
+Scratch external rewrites now target the local synthetic sink, preserving the
+product configuration and guard. Post-run inspection found zero E2E users but
+50 accumulated ownerless MFA fixture accounts; transactional teardown now removes
+accounts before Auth users. The final repeat after a clean reset passed all 22
+tests with runner exit 0, zero skips/flaky cases, zero forbidden Node egress/child
+attempts through teardown and zero scratch build directories. Verified post-run
+counts were zero E2E users, accounts, ownerless accounts and impersonation
+sessions. Local Auth origin attestation now
+keeps the email confirmation, browser and application on the same host; no Cloud
+or private environment configuration was changed.
+
+The official local reset failed before seed completion at ledger 167 / Vault 0.
+Two prior Vault values held only in RAM were not preserved after a missing-row
+UPDATE no-op and process exit. Pending sources and `.env` credentials remain
+intact. Local values were reconstructed from seed and existing Edge configuration;
+their equality with the original lost values remains **[NO VERIFICADO]**. The
+reset replay defect was corrected by making the navigation migration's lock,
+preflight and constraints atomic. The latest clean reset passed at ledger 169,
+preserving reconstructed credentials by RAM comparison at 16:18:38 UTC.
+Fresh post-reset pgTAP passed 52 files / 1067 assertions; the verified official
+local baseline has zero E2E users, accounts, ownerless accounts and impersonation
+sessions. No Cloud write, deployment, push or merge is established. See the
+[current local hardening ledger](audits/2026-10-15-plan-012-4-local-hardening.md)
+and [earlier task 1 attempts](audits/2026-10-15-plan-012-4-task-1-local.md).
 
 The [static readiness inventory](audits/2026-10-14-plan-012-4-readiness.md)
 and [approved execution plan](exec-plans/active/012-4-csp-and-secrets.md) contrast
-PR4 with current sources. Confirmed in source: impersonation HMAC reuses the
-Supabase server key; the expiry route and SQL authorization differ; mock and
-navigation lack some explicit boundaries; production CSP still permits inline
-scripts; the local Sentry gate is not a general upload authorization gate.
+PR4 with the planning snapshot. That snapshot found: impersonation HMAC reused the
+Supabase server key; the expiry route and SQL authorization differed; mock and
+navigation lacked some explicit boundaries; production CSP permitted inline
+scripts; the local Sentry gate was not a general upload authorization gate.
 These are static findings, not newly reproduced runtime failures or exploits.
 No product code, secrets, providers or dependencies were changed by planning.
-Runtime/Cloud acceptance of 012.4 remains **[NO VERIFICADO]**. The proposal keeps
+Local browser and fixture cleanup acceptance passed; final delta checks,
+documentation checks and local Git closure remain pending. No pre-change HTTP
+RED trace was recorded. Cloud acceptance of 012.4 remains **[NO VERIFICADO]**.
+The implementation keeps
 styles inline as an explicit exception and mock replay as separate follow-up;
 all services are user-declared Free, with no paid upgrade authorized.
 

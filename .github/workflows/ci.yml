@@ -60,6 +60,10 @@ permissions:
 
 env:
   NODE_VERSION: '24'
+  # Validation jobs never upload maps or create Sentry releases; no upload token is passed.
+  SENTRY_UPLOAD_SOURCE_MAPS: 'false'
+  # Synthetic local-test key; deployment secrets are configured separately.
+  IMPERSONATION_COOKIE_SECRET: 'abababababababababababababababababababababababababababababababab'
 
 jobs:
   # ─────────────────────────────────────────────
@@ -433,7 +437,7 @@ jobs:
           # Los E2E no envían emails reales; Mailpit captura los de auth.
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
-          MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
+          MOCK_BILLING_SECRET: 'cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd'
           # E2E ejecuta `next build && next start`, por lo que requiere opt-in
           # explícito para el fixture MockProvider en NODE_ENV=production.
           ALLOW_MOCK_BILLING: 'true'
@@ -550,7 +554,7 @@ jobs:
           SITE_URL: http://localhost:3000
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
           FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
-          MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
+          MOCK_BILLING_SECRET: 'cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd'
           # WebKit también arranca Next en modo producción contra Supabase local.
           ALLOW_MOCK_BILLING: 'true'
 
@@ -602,7 +606,7 @@ jobs:
       SITE_URL: http://127.0.0.1:3000
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_ci_placeholder_000000000000' }}
       FROM_EMAIL: ${{ secrets.FROM_EMAIL || 'ci@example.com' }}
-      MOCK_BILLING_SECRET: ${{ secrets.MOCK_BILLING_SECRET || 'mock_secret_for_ci' }}
+      MOCK_BILLING_SECRET: 'cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd'
       # El build de CI valida la app con el fixture mock; los deploys reales
       # siguen requiriendo su provider configurado en el entorno del proveedor.
       ALLOW_MOCK_BILLING: 'true'

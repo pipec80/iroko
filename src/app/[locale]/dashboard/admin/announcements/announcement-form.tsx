@@ -102,11 +102,11 @@ export function AnnouncementForm() {
         <Label htmlFor="announcement-link">{t('announcements_link_label')}</Label>
         <Input
           id="announcement-link"
-          type="url"
+          type="text"
           value={link}
           onChange={(e) => setLink(e.target.value)}
           maxLength={2000}
-          placeholder="https://…"
+          placeholder="https://… /es/dashboard"
         />
       </div>
       {error && (
