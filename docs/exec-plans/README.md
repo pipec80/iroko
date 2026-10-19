@@ -38,10 +38,12 @@ Plan 016 T1 has an
 for security, integrity and critical flows. It preserves the parent plan's full
 inventory and lifecycle; its task map records planning, not completed review.
 
-Plan 012 PR4 has a [proposed execution breakdown](active/012-4-csp-and-secrets.md)
-and [dated static inventory](../audits/2026-10-14-plan-012-4-readiness.md).
-These refine existing freeze scope; their presence is not implementation or
-authorization for Cloud changes.
+Plan 012 PR4 has a [completed bounded execution record](completed/012-4-csp-and-secrets.md)
+and [Cloud closure evidence](../audits/2026-10-19-plan-012-4-cloud-closure.md).
+The implementation merged through PR #229; actual provider/browser acceptance
+and cleanup retain the audit's explicit exceptions. This closes neither pricing
+nor the parent Plan 012. The earlier [static inventory](../audits/2026-10-14-plan-012-4-readiness.md)
+is historical evidence, not a fresh runtime check.
 
 ## Deferred and completed records
 

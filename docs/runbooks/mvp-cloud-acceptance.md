@@ -49,6 +49,18 @@ authorize unrelated provider changes, paid resources, weakening protections,
 or Git push/merge. Keep those action-specific boundaries without imposing a
 customer-production continuity process on this construction-stage project.
 
+## Plan 012.4 result - 2026-10-19
+
+PR #229 merged source `1a8474968e6c861c985f45b48d552a44adbfd98d` after green
+CI. The Git integration produced READY `dpl_3ySKYADzZGhWWvcJABoTjiEYcytb` and
+automatically assigned the fixed domain; no manual deployment/promotion was
+needed. Post-merge CI also passed. Real provider receipts, owner Firefox
+Turnstile/login/MFA/impersonation, recovery retries and fixture cleanup are
+recorded in the [closure audit](../audits/2026-10-19-plan-012-4-cloud-closure.md).
+The following initial inspection/candidate entries are historical, preceding
+that merge and deployment. Future releases still renew identity/configuration;
+this dated observation is not a blanket provider-health guarantee.
+
 ## Evidence at the decision
 
 Recorded on 2026-10-16 Chile: Cloud migrations reached ledger 169 with SQL

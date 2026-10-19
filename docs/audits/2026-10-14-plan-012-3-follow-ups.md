@@ -37,7 +37,7 @@ asignen a una ejecución concreta. Al retomarlos, crear o enlazar su plan/ticket
 desde la fila correspondiente y cerrar únicamente con evidencia; no convertir
 la fecha de este documento en una nueva verificación de proveedores.
 
-NEXT-0124 ya cuenta con [plan ejecutable aprobado](../exec-plans/active/012-4-csp-and-secrets.md)
+NEXT-0124 ya cuenta con [plan ejecutable aprobado](../exec-plans/completed/012-4-csp-and-secrets.md)
 e [inventario estático](2026-10-14-plan-012-4-readiness.md), preparados el
 2026-10-14. Ninguna casilla de implementación se cierra con esa documentación.
 Los seguimientos RL-F01–RL-F06

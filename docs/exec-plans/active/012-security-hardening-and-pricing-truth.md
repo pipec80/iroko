@@ -1,7 +1,7 @@
 # Plan 012 — Hardening de seguridad + fuente de verdad única para pricing
 
 - Priority: P1
-- Status: Activo — 012.1 grants y alcances operativos 012.2/012.3 cerrados; integración 012.3 registrada en PR #221. 012.4 implementado y validado localmente, SQL Cloud aplicado; integración Git y aceptación Cloud de 012.4 pendientes y autorizadas. Pricing pendiente; los límites y seguimientos heredados conservan su estado explícito.
+- Status: Active - operational scopes 012.1/012.2/012.3 and bounded 012.4 acceptance closed; pricing and inherited follow-ups remain pending. 012.4 source integrated in PR #229; dated closure evidence preserves all exceptions.
 - Baseline: `main` @ `d9e2648`
 - Orden v1: sus cambios independientes pueden avanzar sin esperar renovación
   o aceptación final de Mercado Pago. Coordinar superficies compartidas con
@@ -269,57 +269,25 @@ del API.
 
 ## PR 4 — `chore/csp-and-secrets-hardening`
 
-**Preparación — 2026-10-14:** alcance contrastado con código y consumidores en
-el [inventario estático](../../audits/2026-10-14-plan-012-4-readiness.md).
-El [plan ejecutable 012.4](012-4-csp-and-secrets.md) registra tareas, contratos,
-ownership y aceptación. Actualización local 2026-10-16: secretos dedicados,
-gates de uploads/mock, enlaces y nonce CSP implementados; build aislado,
-cobertura 1452 tests, pgTAP 1067 assertions y Chromium 22/22 pasaron, con
-cero residuos fixture tras teardown. Véase el
-[registro de ejecución](../../audits/2026-10-15-plan-012-4-local-hardening.md),
-incluida la pérdida y reconstrucción de dos valores Vault locales en un reset
-fallido. La etapa Cloud fue autorizada y ejecutada parcialmente el 2026-10-16:
-tres migraciones aplicadas, ledger 169 y postflight SQL/ACL aprobados; clave
-dedicada preview configurada y uploads desactivados. El candidato 800e439 fue
-creado y falló inicialmente el build por MOCK_BILLING_SECRET incompatible con
-64-hex. La
-[recuperación limitada a preview](../../audits/2026-10-16-plan-012-4-preview-mock-key-recovery.md)
-fue autorizada explícitamente y ejecutada; el segundo candidato
-`dpl_7jRQgrvKsBrraSEA94BdcAWfuyfp` quedó READY, CLI exit 0. La prueba de navegador
-recibió Vercel Security Checkpoint 429 antes de Iroko; el usuario confirmó código 21. No se crearon fixtures de aceptación ni eventos sintéticos.
+**Bounded acceptance completed - 2026-10-19.** The
+[completed execution plan](../completed/012-4-csp-and-secrets.md) and
+[closure evidence](../../audits/2026-10-19-plan-012-4-cloud-closure.md) record
+PR #229, exact merged SHA/READY Git deployment on the fixed MVP domain, green
+PR/post-merge CI, local and Cloud acceptance, provider receipts, real owner MFA,
+impersonation/recovery results and zero fixture residue after cleanup.
 
-**Decisión y autorización actualizadas — 2026-10-19:** Iroko está en
-construcción; preview y producción se tratan como un mismo entorno MVP/test.
-Todas las pruebas Cloud usan `https://project-a89lv.vercel.app/`. El usuario
-confirma valores iguales entre alcances; no se compararon secretos de forma
-independiente. No se exige otro preview ni otro hostname. El usuario autorizó
-completar los pendientes de 012.4: consolidar cambios, push/PR, CI, merge y deploy
-automático mediante la integración GitHub/Vercel existente; después verificar
-SHA/READY en el dominio fijo y ejecutar aceptación. Véase el
-[runbook MVP](../../runbooks/mvp-cloud-acceptance.md).
-La última lectura del dominio fijo aún correspondía a `58a00b7`, anterior a
-012.4; renovar esa evidencia antes de acreditar el código nuevo. Recepción
-Sentry/PostHog, CSP/navegación, Turnstile/MFA real, impersonación, controles
-mock/workers y limpieza Cloud siguen pendientes. PR4 no está cerrado y la
-autorización no acredita push, merge, deployment ni pruebas ya ejecutados.
+Dedicated signing secrets, strict mock/navigation contracts, Sentry upload gates
+and nonce CSP are implemented. Preview/production share the approved signing
+configuration; no separate preview acceptance is required during construction.
+The earlier failed candidate and authorized key reconciliation remain dated in
+[the candidate record](../../audits/2026-10-16-plan-012-4-candidate-execution.md).
 
-**Ejecución.**
-
-1. Secretos dedicados: HMAC de impersonation con su propio secret (hoy a
-   verificar si reusa `SUPABASE_SECRET_KEY`), `MOCK_BILLING_SECRET` ya es
-   dedicado (confirmar que no se reusa en otro lado).
-2. CSP: reducir/eliminar `'unsafe-inline'` donde Next.js lo permita sin
-   romper Sentry/PostHog. Según la decisión MVP de 2026-10-19, verificar en el
-   dominio fijo tras CI/merge/deploy autorizado; no exigir un preview separado.
-3. Revisar exposición de links ingresados por usuarios/admin en
-   notifications/announcements/webhooks — validar que no se acepten
-   `javascript:`/protocolos inesperados donde el link se renderiza clickeable.
-
-**Acceptance criteria — actualizados por decisión MVP 2026-10-19.** Sentry y
-PostHog siguen reportando con el CSP nuevo en `project-a89lv.vercel.app`, tras
-verificar que el deploy automático sirve el SHA integrado de 012.4. Completar
-además las pruebas y limpieza del plan ejecutable. La aceptación local y un
-deployment READY no sustituyen estos resultados Cloud.
+Explicit exceptions: style inline, caught nonfatal Zod eval probe (no unsafe-eval
+allowance), mock token TTL/jti, Vercel consent policy, original lost local Vault
+values and the stated Cloud TTL/recovery attribution limits. These are not
+promises of unexecuted validation. The requested external-service map remains
+[separate follow-up](../deferred/external-services-map.md). Parent Plan 012 and
+pricing remain active; do not infer their completion from PR4.
 
 ---
 

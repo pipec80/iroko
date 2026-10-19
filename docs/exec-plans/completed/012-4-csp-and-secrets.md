@@ -1,5 +1,12 @@
 # Plan 012.4 — CSP y secretos
 
+**Closure record - 2026-10-19:** implementation integrated through PR #229,
+fixed-domain Git deployment READY, bounded local/Cloud acceptance complete.
+[Closure evidence](../../audits/2026-10-19-plan-012-4-cloud-closure.md) records
+actual provider receipts, owner-performed MFA/impersonation, RPC retries and
+zero fixture residue. This completed record preserves the bounded closure evidence; it does not
+close pricing or the parent Plan 012.
+
 **Decisión vigente del propietario — 2026-10-19:** Iroko está en construcción;
 preview y production se tratan como el mismo entorno MVP. Toda aceptación Cloud
 se ejecuta en **https://project-a89lv.vercel.app/**. El propietario confirma
@@ -25,7 +32,7 @@ servicios, paquetes ni una nueva arquitectura de billing.
 **Tech Stack:** Next 16.4.1, React 19/Compiler, TypeScript strict, Zod, Supabase
 Postgres, Sentry 10.67.0, PostHog, Vitest, Playwright y pgTAP instalados.
 
-**Spec:** [PR4 del Plan 012](012-security-hardening-and-pricing-truth.md#pr-4--chorecsp-and-secrets-hardening), cruzado con el
+**Spec:** [PR4 del Plan 012](../active/012-security-hardening-and-pricing-truth.md#pr-4--chorecsp-and-secrets-hardening), cruzado con el
 [inventario estático fechado](../../audits/2026-10-14-plan-012-4-readiness.md).
 
 **Estado (2026-10-16):** implementación local de tareas 1–5 presente en
@@ -416,15 +423,15 @@ vigente debe ejecutar ese paso completo antes del merge.
       recibió Vercel Security Checkpoint 429 antes de Iroko; no es aceptación.
       Lectura Sentry/PostHog disponible; saldos Free no accesibles,
       hostname Turnstile, browser/MFA y receipts reales siguen pendientes.
-- [ ] Tras autorización específica: deployment de prueba sellado, uploads off
-      salvo prueba de upload expresamente habilitada, CSP browser sin violaciones
-      atribuibles; un evento browserSDK Sentry y uno PostHog tras consentimiento,
+- [x] Tras autorización específica: deployment de prueba sellado, uploads off
+      salvo prueba de upload expresamente habilitada, CSP browser accepted with the explicit blocked-Zod-probe
+      exception below; un evento browserSDK Sentry y uno PostHog tras consentimiento,
       confirmados en los proveedores con ID saneado. Máximo tres intentos por prueba,
       sin PII ni volumen continuo. Verificar herramientas Free; recepción no
       accesible queda NO VERIFICADO, nunca sustituirla por envelope200.
-- [ ] Comprobar Turnstile real y navegación/login bajo CSP en el candidato;
+- [x] Comprobar Turnstile real y navegación/login bajo CSP en el candidato;
       no desactivar Bot Protection o ampliar WAF globalmente para aprobar el ensayo.
-- [ ] Verificar impersonación MFA real, mock solo opt-in, workers y cleanup;
+- [x] Verificar impersonación MFA real, mock solo opt-in, workers y cleanup;
       comparar advisors con baseline, clasificar avisos intencionales. Reasignación
       de dominio requiere destino concreto y autorización; rollback conserva un
       deployment compatible con el secreto nuevo, no vuelve a firmar con Supabase.
@@ -432,6 +439,38 @@ vigente debe ejecutar ese paso completo antes del merge.
 **Resultado esperado:** implementación y aceptación local primero; Cloud y Git
 registrados por separado. No declarar cierre012.4 hasta recepción observable de
 Sentry/PostHog y aceptación del candidato, manteniendo excepciones explícitas.
+
+### Aceptación manual Cloud — 2026-10-19
+
+El propietario completó Turnstile y login en Firefox y confirmó habilitar MFA
+y volver a entrar con el código. Consulta Cloud de solo lectura a las
+16:09:53Z confirmó un factor TOTP verificado, una sesión AAL2 y un registro
+AMR TOTP para el usuario manual exacto. No se leyeron secretos ni códigos.
+Esto acredita login/MFA en ese ensayo; no acredita todavía impersonación,
+recuperación del owner ni cleanup final. Evidencia en la
+[auditoría de cierre en curso](../../audits/2026-10-19-plan-012-4-cloud-closure.md).
+
+### Final Cloud postflight and accepted limits
+
+Sentry event `2f6346e5c4f64b70973be87336d795b2` and PostHog pageview
+`01a154ec-16c3-7241-aa89-0cb55392dc9a` were confirmed in the providers.
+The owner completed real Firefox Turnstile/login and MFA; Cloud confirmed a
+verified TOTP factor, AAL2 session and TOTP authentication claim. Ver como/Salir
+produced a closed manual row and one start/end audit. Missing return-cookie
+sign-out preserved the independent admin session. Two Firefox owner-RPC calls
+returned 204, with no extra end audit. Their row was already closed before those
+two calls: they prove authorized retries, not its first closing transition.
+Pre-cleanup totals: two sessions closed, two start/two end audits, zero open.
+Exact-fixture cleanup at 16:42:33Z returned zero users/accounts/admin grants,
+Auth sessions/MFA factors and open impersonations.
+
+Ruling: the caught Zod Function capability probe is a nonfatal CSP console
+exception, with strict policy preserved and actual validation/login working.
+Do not claim zero violations or add unsafe-eval. Jitless consumer configuration
+is a deferred minor; cost if wrong is a hidden consumer dependency, requiring a
+separate focused regression before any configuration change. Cloud elapsed TTL
+and synthetic SSR-error injection were not tested; their local evidence keeps
+its separate scope. See the closure record for all limits and advisor counts.
 
 ## Seguimientos y excepciones que no se esconden
 

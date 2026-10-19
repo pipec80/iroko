@@ -209,5 +209,5 @@ El check Vercel verificado corresponde al preview del PR. No se consultó el
 estado de un deployment estable disparado por el merge; queda **[NO VERIFICADO]**
 y no se considera aceptación funcional Cloud. La consolidación deja `main` listo
 para crear una rama dedicada y comenzar la implementación de
-[012.4](../exec-plans/active/012-4-csp-and-secrets.md). Ese plan, su aceptación
+[012.4](../exec-plans/completed/012-4-csp-and-secrets.md). Ese plan, su aceptación
 operativa y los seguimientos RL-F01–RL-F06 continúan abiertos.
