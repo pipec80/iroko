@@ -8,7 +8,7 @@ de proveedor, deployment, push o merge. La aceptación local registrada en
 ## Alcance y autorización pendiente
 
 Este protocolo concreta la tarea 6 del
-[plan activo](../exec-plans/active/012-4-csp-and-secrets.md) y
+[plan activo](../exec-plans/completed/012-4-csp-and-secrets.md) y
 [ADR 0004](../adr/0004-csp-nonce-and-rendering-boundary.md).
 Requiere autorización separada para el candidato exacto, sus escrituras de
 prueba y cleanup. Máximo tres intentos por prueba; detenerse al primer PASS.

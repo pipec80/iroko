@@ -1,10 +1,15 @@
 # Impersonation — "Ver como" (`impersonation_sessions`)
 
-Updated locally on 2026-10-15 under [Plan 012.4](../exec-plans/active/012-4-csp-and-secrets.md).
+Updated locally on 2026-10-15 under [Plan 012.4](../exec-plans/completed/012-4-csp-and-secrets.md).
 The original F3-C2 implementation was integrated through [PR #64](https://github.com/pipec80/iroko/pull/64).
-Current local changes are not deployment or Cloud acceptance. Real-browser admin
-MFA/aal2 acceptance remains **[NO VERIFICADO]**; see the
-[local hardening evidence](../audits/2026-10-15-plan-012-4-local-hardening.md).
+The implementation merged through PR #229 and the fixed-domain Git deployment.
+Owner-performed Firefox MFA/aal2, Ver como/Salir, missing-cookie sign-out with a
+preserved independent admin, authorized owner-RPC retries and exact-fixture
+cleanup were confirmed on 2026-10-19. See the
+[closure evidence](../audits/2026-10-19-plan-012-4-cloud-closure.md) for timestamps,
+audits and the already-closed-row/elapsed-TTL limits. Earlier
+[local hardening evidence](../audits/2026-10-15-plan-012-4-local-hardening.md)
+retains its own scope.
 
 ## Behavior and authorization
 

@@ -18,10 +18,11 @@ Filename convention: `NNNN-short-title.md`, numbered sequentially.
   — **Accepted**, 2026-09-09. Durable checkout coordination and recovery through
   the existing billing reducer; not implementation or runtime evidence.
 
-- [0004 — CSP nonce and rendering boundary](0004-csp-nonce-and-rendering-boundary.md)
-  — **Accepted**, 2026-10-15. Local nonce design conditional on the rendering
-  baseline; local evidence is recorded in the active plan, while Cloud
-  acceptance remains unverified.
+- [0004 - CSP nonce and rendering boundary](0004-csp-nonce-and-rendering-boundary.md)
+  - **Accepted**, 2026-10-15. The rendering baseline and bounded local/Cloud
+    acceptance were completed under Plan 012.4; the
+    [closure record](../audits/2026-10-19-plan-012-4-cloud-closure.md) preserves
+    the nonfatal Zod probe, inline-style and other acceptance limits.
 
 Use `Proposed`, `Accepted`, `Superseded`, or `Deprecated` as the status. Do not
 rewrite an accepted decision to hide a change in direction: add a new ADR and

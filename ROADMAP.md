@@ -42,7 +42,8 @@ This is the single execution sequence for the freeze:
    implementation boundary before changing behavior.
 6. **Plan 012.2 — SSRF.** Close outbound request risks.
 7. **Plan 012.4 — CSP and secrets.** Align browser policy and secret handling
-   with the deployed configuration.
+   with the deployed configuration. Bounded acceptance completed 2026-10-19;
+   [closure and exceptions](docs/audits/2026-10-19-plan-012-4-cloud-closure.md).
 8. **Plan 012.5 — pricing truth.** Make plan names, limits and product surfaces
    consistent with current configuration.
 9. **Plan 014 T2/T3.** Correct trusted image origins and platform audit

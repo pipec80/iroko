@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-10-15
-- Plan: [012.4 — CSP and secrets](../exec-plans/active/012-4-csp-and-secrets.md)
+- Plan: [012.4 — CSP and secrets](../exec-plans/completed/012-4-csp-and-secrets.md)
 
 ## Context
 

@@ -175,6 +175,6 @@ Este cierre y sus harness quedaron integrados en PR #221, squash commit
 `3bac4f9b` (2026-10-15).
 Los [seguimientos pendientes](../../audits/2026-10-14-plan-012-3-follow-ups.md)
 registran qué no se ejecutó y los criterios para retomarlo.
-Siguiente paso: ejecutar el [Plan 012.4](012-4-csp-and-secrets.md). La integración
+Siguiente paso: ejecutar el [Plan 012.4](../completed/012-4-csp-and-secrets.md). La integración
 Git de este plan ya está cerrada por #221; no es una aceptación general de Iroko.
 Evidencia y límites en el [registro Cloud](../../audits/2026-10-14-plan-012-3-cloud-execution.md).

@@ -9,7 +9,15 @@ Previous recorded static verification: **2026-09-24** (selective reusable-founda
 investigation, full Vitest 99 files/1032 tests and TypeScript passed; see the
 [audit](audits/2026-09-24-reusable-saas-readiness.md). This is not an exhaustive
 security audit or fresh Cloud/provider verification.)
-Latest bounded runtime observation: **2026-10-14**, Plan 012.3 Cloud migrations,
+Latest bounded runtime observation: **2026-10-19**, Plan 012.4 acceptance on
+`project-a89lv.vercel.app`, Git source `1a8474968e6c861c985f45b48d552a44adbfd98d`,
+READY deployment `dpl_3ySKYADzZGhWWvcJABoTjiEYcytb`. Provider-correlated Sentry
+and consented PostHog receipts, owner-performed Firefox MFA/impersonation,
+authorized recovery retries and exact-fixture cleanup are recorded in the
+[closure audit](audits/2026-10-19-plan-012-4-cloud-closure.md). Explicit limits
+include the blocked nonfatal Zod probe and Cloud TTL not waited out.
+
+Previous bounded runtime observation: **2026-10-14**, Plan 012.3 Cloud migrations,
 RPC acceptance and candidate endpoint through the official Vercel CLI; see
 [dated record](audits/2026-10-14-plan-012-3-cloud-execution.md). Public HTTPS
 candidate acceptance, stable-domain promotion and public stable-domain
@@ -94,12 +102,31 @@ same `origin/main` SHA and verified clean. This closes only Git integration;
 it does not close the remaining 012.3 follow-ups or certify all providers.
 The [follow-up register](audits/2026-10-14-plan-012-3-follow-ups.md) records each
 unexecuted check, inherited difference and condition for resuming it. Next: execute
-the approved [Plan 012.4](exec-plans/active/012-4-csp-and-secrets.md).
+the approved [Plan 012.4](exec-plans/completed/012-4-csp-and-secrets.md).
 See the [execution record](audits/2026-10-14-plan-012-3-cloud-execution.md).
 
 ## Product position
 
-### Plan 012.4 execution — updated 2026-10-19
+### Plan 012.4 closure - 2026-10-19
+
+Implementation merged through [PR #229](https://github.com/pipec80/iroko/pull/229),
+with PR CI and post-merge CI green, exact-source Git deployment READY and the
+fixed domain automatically assigned. The [completed execution record](exec-plans/completed/012-4-csp-and-secrets.md)
+and [Cloud closure](audits/2026-10-19-plan-012-4-cloud-closure.md) retain the actual
+counts and scope. Browser baseline passed 39 controls; actual provider receipts
+and manual Firefox Turnstile/login/MFA were confirmed. Two impersonation rows
+closed with two start/two end audits. Owner-authenticated RPC retries returned
+204 without duplicating the audit. Final cleanup returned zero fixture users,
+accounts, temporary admin grants, Auth sessions, MFA factors and open
+impersonations. Shared preview/production signing-secret records and uploads
+false were verified through metadata, without reading secret contents.
+
+The caught Zod eval-capability probe remains a nonfatal CSP console exception;
+no unsafe-eval allowance was added. Cloud elapsed TTL was not exercised, and
+an already-closed row limits attribution of the console recovery's first close.
+Pricing, the service map and other parent-plan work are not closed here.
+
+### Dated Plan 012.4 local/preview execution history — updated 2026-10-19
 
 Owner decision, 2026-10-19: Iroko is still under construction; preview and
 production are treated as one MVP/test environment. All Cloud acceptance uses
@@ -109,7 +136,7 @@ an isolated preview or changing candidate hostnames. The
 [MVP acceptance runbook](runbooks/mvp-cloud-acceptance.md) supersedes the earlier
 preview-only destination requirement for approved work. Renew the deployed
 revision/configuration on the fixed domain before crediting it with 012.4;
-current fixed-domain acceptance remains **[NO VERIFICADO]**.
+that pre-closure boundary is superseded by the dated acceptance above.
 
 Local implementation advanced on 2026-10-15 on `chore/012-4-csp-and-secrets`:
 dedicated impersonation cookies/recovery, mock gates and strict schemas, navigation
@@ -182,7 +209,7 @@ events were created. Remaining free-quota balances are not exposed by available
 access; this does not authorize paid resources or changing billing.
 
 The [static readiness inventory](audits/2026-10-14-plan-012-4-readiness.md)
-and [approved execution plan](exec-plans/active/012-4-csp-and-secrets.md) contrast
+and [approved execution plan](exec-plans/completed/012-4-csp-and-secrets.md) contrast
 PR4 with the planning snapshot. That snapshot found: impersonation HMAC reused the
 Supabase server key; the expiry route and SQL authorization differed; mock and
 navigation lacked some explicit boundaries; production CSP permitted inline
@@ -191,7 +218,7 @@ These are static findings, not newly reproduced runtime failures or exploits.
 No product code, secrets, providers or dependencies were changed by planning.
 Local browser and fixture cleanup acceptance passed; final delta checks,
 documentation checks and local Git closure remain pending. No pre-change HTTP
-RED trace was recorded. Cloud acceptance of 012.4 remains **[NO VERIFICADO]**.
+RED trace was recorded. Cloud acceptance was not established by that local/planning snapshot; see the closure above.
 The implementation keeps
 styles inline as an explicit exception and mock replay as separate follow-up;
 all services are user-declared Free, with no paid upgrade authorized.

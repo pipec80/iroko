@@ -90,4 +90,4 @@ a middleware.ts en documentación de impersonación requieren corrección.
 
 La documentación Next actual puede describir una revisión posterior a la
 instalada 16.3.5; se cruzó con los paquetes instalados, sin actualizarlos.
-Siguiente paso: revisar el [plan ejecutable propuesto](../exec-plans/active/012-4-csp-and-secrets.md).
+Siguiente paso: revisar el [plan ejecutable propuesto](../exec-plans/completed/012-4-csp-and-secrets.md).
