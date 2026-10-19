@@ -1,5 +1,17 @@
 # Plan 012.4 — CSP y secretos
 
+**Decisión vigente del propietario — 2026-10-19:** Iroko está en construcción;
+preview y production se tratan como el mismo entorno MVP. Toda aceptación Cloud
+se ejecuta en **https://project-a89lv.vercel.app/**. El propietario confirma
+valores iguales entre ambos scopes; no se ha comparado el contenido de secretos.
+No exigir preview separado ni nuevos hostnames. Esta decisión sustituye las
+restricciones anteriores de destino preview-only para el trabajo ya aprobado.
+Orden operativo y límites en el
+[runbook MVP](../../runbooks/mvp-cloud-acceptance.md): comprobar revisión/config
+del dominio fijo, desplegar el código compatible dentro del alcance aprobado,
+ejecutar aceptación real y cerrar documentación. Los resultados históricos de
+preview no acreditan que ese dominio sirva 012.4.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement task-by-task. Checkboxes track execution, not planning approval.
 
 **Goal:** aislar secretos, cerrar recuperaciones inseguras y endurecer scripts y
@@ -379,10 +391,19 @@ autorizada; el config estándar que elimina su site key no acredita esa prueba.
       No escribir secretos o desplegar con la autorización de012.3.
       Preflight de solo lectura 2026-10-16 y selección concreta en
       [readiness Cloud](../../audits/2026-10-16-plan-012-4-cloud-rollout-readiness.md).
-      Ledger 166/169, dry-run de tres migraciones, datos/sesiones cero; falta el
-      secreto dedicado en Vercel. Candidato 800e439 sellado y selección de upload
-      local verificada, sin deploy. Lectura Sentry/PostHog disponible; cuotas,
-      hostname Turnstile y receipts reales conservan sus gates pendientes.
+      Preflight inicial: ledger 166/169, dry-run de tres migraciones y datos/sesiones
+      cero. Tras autorización específica, tres migraciones aplicadas, ledger 169
+      y postflight de funciones/ACL/CHECK/Vault aprobados; véase la
+      [ejecución DB](../../audits/2026-10-16-plan-012-4-cloud-db-execution.md).
+      Secreto dedicado preview aprovisionado y uploads false. Candidato 800e439
+      desplegado a preview, build ERROR invalid_env_var por MOCK_BILLING_SECRET;
+      dominio estable sin promoción. La
+      [recuperación preview](../../audits/2026-10-16-plan-012-4-preview-mock-key-recovery.md)
+      fue autorizada adicionalmente y ejecutada; segundo candidato
+      dpl_7jRQgrvKsBrraSEA94BdcAWfuyfp READY, build exit 0. El navegador preview
+      recibió Vercel Security Checkpoint 429 antes de Iroko; no es aceptación.
+      Lectura Sentry/PostHog disponible; saldos Free no accesibles,
+      hostname Turnstile, browser/MFA y receipts reales siguen pendientes.
 - [ ] Tras autorización específica: deployment de prueba sellado, uploads off
       salvo prueba de upload expresamente habilitada, CSP browser sin violaciones
       atribuibles; un evento browserSDK Sentry y uno PostHog tras consentimiento,
@@ -402,6 +423,10 @@ Sentry/PostHog y aceptación del candidato, manteniendo excepciones explícitas.
 
 ## Seguimientos y excepciones que no se esconden
 
+- Inventario unificado de servicios externos/conectores solicitado 2026-10-19:
+  [seguimiento separado](../deferred/external-services-map.md), posterior al
+  cierre de 012.4. No añadirlo a los gates de aceptación de este plan.
+
 - style-src unsafe-inline se conserva; eliminar atributos style/librerías es
   trabajo posterior, no motivo para afirmar que ya desapareció esa excepción.
 - Checkout mock sigue como token bearer sin TTL/jti ni promesa de un solo uso.
@@ -417,6 +442,13 @@ Sentry/PostHog y aceptación del candidato, manteniendo excepciones explícitas.
   son gates explícitos de revisión/evidencia, no justificación para inventar PASS.
 
 **Estado de autorización:** ejecución local y commit completados en `3ee98bd`.
-El siguiente paso es preparar el alcance Cloud separado de la tarea 6, renovar
-identidad/acceso y presentar los cambios concretos antes de solicitar autorización.
-La aprobación local no autoriza secretos Cloud, SQL linked, deploy, push ni merge.
+La etapa Cloud y la corrección de clave mock fueron autorizadas; SQL aplicado,
+configuración preview ejecutada y segundo candidato READY. Desde 2026-10-19,
+el propietario dirige las pruebas al dominio fijo de production como entorno
+MVP compartido. No solicitar nuevamente permiso solo por esa etiqueta; renovar
+revisión/configuración y ejecutar el trabajo aprobado conforme al runbook.
+Cambios ajenos al alcance, recursos pagados, debilitamiento de protecciones y
+push/merge conservan autorización específica para otros trabajos. El propietario
+autorizó completar todos los pendientes de 012.4, incluidos push, PR, merge y
+despliegue automático, el 2026-10-19. Ejecutar CI y aceptación real antes de
+afirmar cierre; no debilitar protecciones ni ampliar el alcance a otros planes.

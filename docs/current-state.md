@@ -99,7 +99,17 @@ See the [execution record](audits/2026-10-14-plan-012-3-cloud-execution.md).
 
 ## Product position
 
-### Plan 012.4 local execution — updated 2026-10-16
+### Plan 012.4 execution — updated 2026-10-19
+
+Owner decision, 2026-10-19: Iroko is still under construction; preview and
+production are treated as one MVP/test environment. All Cloud acceptance uses
+**https://project-a89lv.vercel.app/**. The owner confirms equal values across
+both scopes; secret equality has not been independently compared. Do not require
+an isolated preview or changing candidate hostnames. The
+[MVP acceptance runbook](runbooks/mvp-cloud-acceptance.md) supersedes the earlier
+preview-only destination requirement for approved work. Renew the deployed
+revision/configuration on the fixed domain before crediting it with 012.4;
+current fixed-domain acceptance remains **[NO VERIFICADO]**.
 
 Local implementation advanced on 2026-10-15 on `chore/012-4-csp-and-secrets`:
 dedicated impersonation cookies/recovery, mock gates and strict schemas, navigation
@@ -146,8 +156,30 @@ the stable deployment as main `58a00b7`; the dedicated cookie secret is absent.
 Candidate `800e439` was sealed locally, all 1080 Git blobs verified and the
 installed CLI selected 1078 upload files without network/upload/deploy. Sentry
 and PostHog read queries work with existing access; no events were generated.
-Mutation authorization, quotas/hostname/browser gates and real receipts remain
-pending in the [Cloud readiness record](audits/2026-10-16-plan-012-4-cloud-rollout-readiness.md).
+That preflight snapshot was followed by explicit authorization and bounded
+execution on 2026-10-16 (Chile). Exactly three migrations were applied; Cloud
+ledger 169, four function definitions/ACL/comments and two validated CHECKs
+match the accepted local state. Vault ACL was preserved and navigation/open
+impersonation counts remain 0/0/0. Advisor aggregate counts are unchanged;
+identical pre/post finding fingerprints were not established. See the
+[DB execution record](audits/2026-10-16-plan-012-4-cloud-db-execution.md).
+
+Vercel preview now has the dedicated impersonation key and source-map uploads
+explicitly false. The sealed candidate `800e439` created preview deployment
+`dpl_28u87ioWbhRRUdPgqxhXS69Bn5qk`, but its build failed with `invalid_env_var`
+for `MOCK_BILLING_SECRET`, which must satisfy the 64-hex contract. The stable
+alias still targets `dpl_5uU8Fr1qKw4d2nRyKgyk32vpgCUN`; no promotion occurred.
+The [candidate execution record](audits/2026-10-16-plan-012-4-candidate-execution.md)
+and [preview-only recovery proposal](audits/2026-10-16-plan-012-4-preview-mock-key-recovery.md)
+record the initial blocker. The owner subsequently authorized the correction:
+the original production record was retained and a new sensitive preview key
+created. Recorded redeploy `dpl_7jRQgrvKsBrraSEA94BdcAWfuyfp` reached READY,
+CLI exit 0, but the browser received Vercel Security Checkpoint 429 before Iroko.
+These are 2026-10-16 observations, not fresh Cloud verification today.
+Real browser/CAPTCHA/MFA and provider
+receipts remain **[NO VERIFICADO]**. No acceptance fixtures or synthetic receipt
+events were created. Remaining free-quota balances are not exposed by available
+access; this does not authorize paid resources or changing billing.
 
 The [static readiness inventory](audits/2026-10-14-plan-012-4-readiness.md)
 and [approved execution plan](exec-plans/active/012-4-csp-and-secrets.md) contrast

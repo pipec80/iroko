@@ -46,7 +46,76 @@ metadata/retención y ejecutar una consulta sin datos personales (por ejemplo
 constante, tras confirmar schema). No basta que `execute-sql` aparezca en catálogo.
 Si receipts no son accesibles, detener la aceptación como **[NO VERIFICADO]**.
 
+## Destino vigente — decisión del propietario 2026-10-19
+
+Aplicar este protocolo a **https://project-a89lv.vercel.app/** como único destino
+Cloud del MVP. Preview/production son el mismo entorno operativo durante la
+construcción; el propietario confirma valores iguales. El
+[runbook vigente](../runbooks/mvp-cloud-acceptance.md) sustituye los requisitos
+anteriores de preview aislado/hostname de candidato. Verificar la revisión y
+configuración efectiva del dominio fijo antes de atribuir resultados a 012.4.
+Las observaciones de acceso y selección preview de abajo son históricas.
+
 ## Preparación del candidato
+
+### Renovación de acceso y prerrequisitos — 2026-10-16, 21:00 Chile
+
+El propietario autorizó posteriormente la selección de tres migraciones,
+clave preview/uploads false, candidato sellado `800e439` y pruebas reales
+acotadas con cleanup. Las mutaciones y emisiones corresponden al coordinador;
+esta renovación se limitó a lecturas y no acredita su ejecución.
+
+- PostHog `organization-get {}` confirma `Pipeclabs`, slug `pipeclabs`, ID
+  `019fc0ed-ff4a-0000-2718-ed5e3399f589` y único proyecto `538546`.
+  `search billing` identifica `billing-overview-get`, `billing-usage-get` y
+  `billing-spend-get` ocultos por falta de scope **billing:read**. La skill
+  autoritativa `posthog:understanding-billing-usage`, cargada con `learn`, dice
+  “billing usage investigation is not enabled” cuando esas herramientas no
+  están disponibles. No sustituir cuota restante por counts SQL de eventos.
+  Inspeccionar Billing en sesión UI existente; reautorizar OAuth solo si se
+  elige esa vía. La falta de scope no demuestra falta de rol Billing del usuario.
+- Sentry a **2026-10-17 00:00:47.849 UTC**: GET de organización aceptado,
+  ID `4511537461067776`, slug `iroko`, estado active. GET público `stats_v2`
+  agregado de 24h también aceptado: error accepted 1, transaction accepted 367,
+  span accepted 939 y span_indexed accepted 944. No se devolvieron grupos
+  rate_limited; eso no demuestra cuota restante. Hay client_discard por
+  network_error en session 274/transaction 4 y por sample_rate transaction
+  7601; no interpretar estos agregados como salud global o fallos del candidato.
+  Metadata no devolvió cuota ni retención. Script y JSON saneado quedan en
+  artifacts ignorados, sin eventos ni acceso a PII.
+- La documentación actual Sentry indica “check your usage in Settings →
+  Subscription”; la migración de planes legacy de septiembre2026 cambia
+  transactions a spans y no reinicia uso ni ciclo. Verificar ahí asignación,
+  consumo y retención efectivos antes de las emisiones; no derivar capacidad
+  restante de un catálogo histórico de Free. Fuente:
+  [Sentry Developer plan changes](https://www.sentry.help/en/articles/16738709-changes-to-legacy-developer-plans-september-2026).
+  Endpoint consultado: [stats_v2](https://docs.sentry.io/api/organizations/retrieve-event-counts-for-an-organization-v2/).
+- Cloudflare: no MCP en el catálogo disponible; `Get-Command wrangler -All` y
+  `where.exe wrangler` sin ejecutable, sin variables de proceso `CF_*` o
+  `CLOUDFLARE_*`. La aplicación sí tiene sitekey configurada localmente; eso no
+  acredita allowlist del widget. No se instaló CLI ni solicitó un token nuevo.
+  Usar la sesión UI existente para inspección de solo lectura del widget.
+- Turnstile Free documenta diez hostnames por widget. Hostnames cubren sus
+  subdominios, pero no hermanos: `project-a89lv.vercel.app` no cubre otro
+  hostname preview bajo `vercel.app`. No añadir `vercel.app` ni “Any Hostname”
+  como atajo. Allowlist real del widget sigue **[NO VERIFICADO]**. Fuente:
+  [hostname management](https://developers.cloudflare.com/turnstile/additional-configuration/hostname-management/).
+
+Tras crear el candidato exacto, primero inspeccionar hostname/allowlist y
+protección. El widget debe completar challenge real y el login debe validar
+token servidor. Código `110200` significa dominio no autorizado; conservar
+fallo y detener esa fila, sin deshabilitar widget ni añadir hostname sin
+selección autorizada. El sitekey del candidato debe coincidir con el widget
+inspeccionado mediante comparación privada; no usar un dummy sitekey.
+
+Para Vercel protegido, la skill `access-protected-vercel-deployment` usa
+autenticación existente: `vercel curl` con URL completa para HTTP y token OIDC
+local de corta duración, header `x-vercel-trusted-oidc-idp-token` limitado al
+origen del candidato, para navegador. Preview del mismo proyecto puede usar
+Trusted Sources sin desactivar protección. No enviar ese header a Cloudflare,
+Sentry, PostHog u otros orígenes, ni imprimir/persistir el token. La navegación
+protegida real aún queda **[NO VERIFICADO]** hasta existir el candidato; una
+respuesta de autenticación Vercel se distingue del 401 de la aplicación.
 
 1. Registrar deployment ID, SHA, URL exacta y alias sin promocionar; confirmar
    configuración aplicada y uploads deshabilitados. No utilizar el dominio

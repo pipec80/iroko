@@ -23,6 +23,7 @@ execution plans, evidence, runbooks and durable technical decisions.
   before making product claims.
 - [System overview](architecture/system-overview.md) — system context,
   architectural boundaries and change map.
+- [External services/connector map follow-up](exec-plans/deferred/external-services-map.md) — deferred until after 012.4; consolidate actual services, connections, automation and verification evidence.
 - [ADR index](adr/README.md) — accepted decisions and trade-offs.
 - [Module catalog](modules/README.md) — detailed implementation guides and
   their verification boundaries.
@@ -34,13 +35,15 @@ execution plans, evidence, runbooks and durable technical decisions.
 
 ## Evidence and operations
 
+- [MVP Cloud acceptance target](runbooks/mvp-cloud-acceptance.md) — owner decision 2026-10-19: use `project-a89lv.vercel.app` for all Cloud tests; preview/production separation is not required during construction. Renew deployed revision/configuration before acceptance.
+
 - [Git consolidation and Dependabot review](audits/2026-10-14-git-consolidation-and-dependabot.md) — exact updates, checks and integration state before 012.4.
 - [Next.js 16.4.1 security update](audits/2026-10-15-next-16-4-1-security-update.md) — critical advisory remediation and local verification.
 - [Operational evidence](quality/operational-evidence.md) — dated runtime,
   Cloud and release observations with validity rules.
 - [Plan 012.3 closure and follow-ups](audits/2026-10-14-plan-012-3-follow-ups.md) — accepted scope, unexecuted checks and criteria for resuming pending work.
 - [Plan 012.4 execution plan](exec-plans/active/012-4-csp-and-secrets.md), [static inventory](audits/2026-10-14-plan-012-4-readiness.md) and [local execution evidence](audits/2026-10-15-plan-012-4-local-hardening.md) — local implementation, acceptance and commit complete; Cloud acceptance and Git publication/integration remain separate.
-- [Plan 012.4 Cloud rollout readiness](audits/2026-10-16-plan-012-4-cloud-rollout-readiness.md) — read-only provider preflight, exact three-migration dry-run and sealed candidate/upload selection; mutations and real receipts pending separate authorization.
+- [Plan 012.4 Cloud rollout readiness](audits/2026-10-16-plan-012-4-cloud-rollout-readiness.md), [DB execution](audits/2026-10-16-plan-012-4-cloud-db-execution.md) and [candidate execution](audits/2026-10-16-plan-012-4-candidate-execution.md) — SQL postflight passed, [authorized mock recovery](audits/2026-10-16-plan-012-4-preview-mock-key-recovery.md) executed and second candidate READY. Final integration and real browser/provider acceptance use the fixed MVP domain through GitHub/Vercel.
 - [Reusable SaaS investigation — 2026-09-24](audits/2026-09-24-reusable-saas-readiness.md)
 - [SaaS template competitive landscape — 2026-10-05](audits/2026-10-05-saas-template-competitive-landscape.md)
 - [Full platform audit — 2026-08-02](audits/2026-08-02-full-platform-audit.md)

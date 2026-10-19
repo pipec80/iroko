@@ -3,6 +3,50 @@
 Date: 2026-10-16. Local implementation: `3ee98bd`; local closure status:
 `800e439`. This is preparation evidence, not authorization or Cloud acceptance.
 
+**Superseding owner decision, 2026-10-19:** use the fixed
+`https://project-a89lv.vercel.app/` for all Cloud acceptance. Preview and production
+are one MVP/test environment during construction; the owner reports equal
+configuration values; their equality has not been independently compared.
+Follow the [MVP runbook](../runbooks/mvp-cloud-acceptance.md)
+instead of requiring a separate preview. This document retains its dated
+preparation/approval snapshots; later mock recovery was authorized and the second
+preview reached READY, with browser access blocked by Vercel Security Checkpoint.
+
+## Subsequent authorized execution — 2026-10-16 Chile
+
+The user approved the concrete selection below. The coordinator applied exactly
+the three migrations; ledger 169 and source/function/ACL/CHECK postflight passed,
+with Vault permissions preserved and 0/0/0 navigation/open impersonation counts.
+See the [DB execution record](2026-10-16-plan-012-4-cloud-db-execution.md).
+Preview received the dedicated impersonation key and explicit uploads false.
+Deployment `dpl_28u87ioWbhRRUdPgqxhXS69Bn5qk`, source `800e439`, was created but
+failed build validation for `MOCK_BILLING_SECRET` (ERROR / invalid_env_var).
+The stable alias remained on the preceding deployment at that observation; no
+promotion occurred.
+See [candidate execution](2026-10-16-plan-012-4-candidate-execution.md).
+
+That failure triggered the explicit nonconforming-key stop condition. The owner
+then authorized the [bounded preview recovery](2026-10-16-plan-012-4-preview-mock-key-recovery.md):
+the existing entry was retained for production and a new sensitive preview-only
+key was created. Redeployment of the same source produced
+`dpl_7jRQgrvKsBrraSEA94BdcAWfuyfp`, confirmed READY with CLI exit 0 at
+2026-10-17T00:23:54.212Z (2026-10-16 Chile). Its browser probe received Vercel
+Security Checkpoint 429 before Iroko; the owner subsequently reported code 21.
+No acceptance fixtures or synthetic receipt events were created. Cloud
+acceptance remains open. The preparation snapshots below retain their original
+scope/date; they are not current secret-presence or migration-state claims.
+
+## Current delivery order — 2026-10-19
+
+The owner explicitly authorized completing the pending 012.4 work, including
+push, PR, merge and the existing Git-triggered Vercel deployment. Consolidate the
+tested branch, pass required CI, merge and verify the merged SHA/READY deployment
+on `project-a89lv.vercel.app` before running the pending Cloud acceptance there.
+This replaces the earlier preview-first delivery requirement; another manual
+candidate deployment or isolated preview is not required. Authorization is not
+evidence that those actions or acceptance have already succeeded. It does not
+extend to unrelated provider changes, paid resources or weakening protections.
+
 ## Verified preparation
 
 The [database preflight](2026-10-16-plan-012-4-cloud-db-preflight.md) renewed
@@ -20,7 +64,7 @@ announcements, notifications and open impersonation counts were all zero. No
 backfill or directed session closure is needed for that snapshot; these counts
 must be refreshed immediately before any authorized mutation.
 
-## Execution order and stop conditions
+## Original approved execution order and stop conditions — 2026-10-16 snapshot
 
 1. Renew target identity, ledger, migration hashes and data/session gates.
    Stop if the pending migration set differs, sessions are open or links need
@@ -59,7 +103,7 @@ history repair or a dropped CHECK used to force acceptance. Stop a failed
 candidate before promotion; retain the failed attempt as evidence. Never disable
 Bot Protection, broaden WAF or weaken CSP to make acceptance pass.
 
-## Candidate and receipt access
+## Candidate and receipt access — preparation snapshot
 
 The [deployment preflight](2026-10-16-plan-012-4-deployment-preflight.md) confirms
 the stable alias targets `dpl_5uU8Fr1qKw4d2nRyKgyk32vpgCUN`, READY production,
@@ -90,7 +134,7 @@ DSN/token correspondence, quotas, Turnstile hostname permission, protected
 browser access and real receipts remain acceptance preconditions. Readable
 provider queries do not establish those facts.
 
-## Concrete mutation selection for separate approval
+## Original concrete mutation selection — subsequently authorized
 
 - Supabase target `rgrxlygtmvavqzkjyywg`: apply exactly the three named/hash-checked
   migrations after renewing empty data/session gates. No seed, roles, resets,
@@ -106,8 +150,9 @@ provider queries do not establish those facts.
   push or merge is included in this selection. Promotion requires extending the
   dedicated key configuration to the approved production scope first.
 
-The source directory and upload selection are already prepared locally;
-mutations await approval and their remaining operational gates still require
+At this preparation snapshot, the source directory and upload selection were
+prepared locally and mutations awaited approval. The authorized execution and
+later recovery are recorded above; remaining operational gates still require
 verification. Approval does not waive those gates. Recheck source/upload manifests immediately
 before execution. Any further change to product source requires a new seal and
 proportional validation. Subsequent documentation-only commits do not enter the
