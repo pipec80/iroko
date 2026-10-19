@@ -70,7 +70,7 @@ case does not establish a callable backend path in the shipped ACL.
 3. If the signed cookie is unavailable, invalid or rotated, clear the local target
    identity and sign in again as the original admin, including required MFA.
    Use the existing owner-authorized `end_impersonation_session(session_id,
-   'manual')` RPC for that exact row through an authenticated operational path.
+'manual')` RPC for that exact row through an authenticated operational path.
    Verify closure and the single end-audit record. Do not grant generic backend
    EXECUTE or accept an unsigned cookie UUID to bypass authorization.
 4. If owner login, restoration or SQL closure fails, stop the rotation/deployment

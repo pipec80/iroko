@@ -286,8 +286,7 @@ creado y falló inicialmente el build por MOCK_BILLING_SECRET incompatible con
 [recuperación limitada a preview](../../audits/2026-10-16-plan-012-4-preview-mock-key-recovery.md)
 fue autorizada explícitamente y ejecutada; el segundo candidato
 `dpl_7jRQgrvKsBrraSEA94BdcAWfuyfp` quedó READY, CLI exit 0. La prueba de navegador
-recibió Vercel Security Checkpoint 429 antes de Iroko; el usuario confirmó código
-21. No se crearon fixtures de aceptación ni eventos sintéticos.
+recibió Vercel Security Checkpoint 429 antes de Iroko; el usuario confirmó código 21. No se crearon fixtures de aceptación ni eventos sintéticos.
 
 **Decisión y autorización actualizadas — 2026-10-19:** Iroko está en
 construcción; preview y producción se tratan como un mismo entorno MVP/test.

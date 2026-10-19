@@ -31,7 +31,7 @@ the operation below explicitly separates scopes.
 ## Concrete operation — subsequently approved and executed
 
 1. Renew the exact project, variable ID/type, targets exactly `[preview,
-   production]`, stable alias and absence of concurrent changes. Require no
+production]`, stable alias and absence of concurrent changes. Require no
    branch or custom-environment override. Abort on drift; preserve all non-target
    metadata in the original record.
 2. PATCH only the existing variable's target to `[production]`, omitting its

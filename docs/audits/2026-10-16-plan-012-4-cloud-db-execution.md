@@ -54,15 +54,15 @@ Security observed **2026-10-17T00:01:58.704Z**: **59 WARN / 6 INFO**.
 Performance observed **2026-10-17T00:01:58.776Z**: **40 INFO**. Group counts equal
 the earlier documented preflight; no aggregate increase was observed.
 
-| Group | Postflight count |
-| --- | --- |
-| rls_enabled_no_policy | INFO 6 |
-| function_search_path_mutable | WARN 1 |
-| anon_security_definer_function_executable | WARN 2 |
-| authenticated_security_definer_function_executable | WARN 55 |
-| auth_leaked_password_protection | WARN 1 |
-| no_primary_key | INFO 1 |
-| unused_index | INFO 39 |
+| Group                                              | Postflight count |
+| -------------------------------------------------- | ---------------- |
+| rls_enabled_no_policy                              | INFO 6           |
+| function_search_path_mutable                       | WARN 1           |
+| anon_security_definer_function_executable          | WARN 2           |
+| authenticated_security_definer_function_executable | WARN 55          |
+| auth_leaked_password_protection                    | WARN 1           |
+| no_primary_key                                     | INFO 1           |
+| unused_index                                       | INFO 39          |
 
 Sanitized after-state SHA-256 identity fingerprints:
 
@@ -92,11 +92,11 @@ both navigation CHECK constraints absent. No data, function, role or secret was
 mutated by this reviewer. SQL inspection paused when the coordinator announced
 application to avoid mixing baseline and postflight observations.
 
-| Function | Before definition MD5 | Before source MD5 |
-| --- | --- | --- |
-| public.end_impersonation_session(uuid,text) | `5fa8d30288f4b4614bcdf03a4e137cbc` | `25888a5aed20ec527f1a48dad065250c` |
+| Function                                         | Before definition MD5              | Before source MD5                  |
+| ------------------------------------------------ | ---------------------------------- | ---------------------------------- |
+| public.end_impersonation_session(uuid,text)      | `5fa8d30288f4b4614bcdf03a4e137cbc` | `25888a5aed20ec527f1a48dad065250c` |
 | public.publish_announcement(text,text,text,text) | `9be52edc30a08755469b95398be016c1` | `4e7f69c3cbc3595481a8ffdb58f3bc87` |
-| private.send_webhook_delivery(uuid) | `3cc4ef84972ab59e73212af31e9c5a43` | `2fb75d4774ec37ada747a282ca557b54` |
+| private.send_webhook_delivery(uuid)              | `3cc4ef84972ab59e73212af31e9c5a43` | `2fb75d4774ec37ada747a282ca557b54` |
 
 MD5 here is a compact equality fingerprint of catalog definitions, not a security
 signature. All three functions are SECURITY DEFINER with empty search_path.
@@ -111,12 +111,12 @@ Official local read-only catalog reference completed at
 `docker exec supabase_db_saas-boilerplate psql ...` (exit 0). Expected definition
 fingerprints:
 
-| Function | Local accepted definition MD5 | Local accepted source MD5 |
-| --- | --- | --- |
-| public.end_impersonation_session(uuid,text) | `0585b26d10a579ec90cb0fe7e3cc0c58` | `cde5bfcb6906225688714deb87e8d7f5` |
-| private.is_safe_navigation_link(text) | `4ed3333a6c210760a0a0a4f879396739` | `3c240867172cf79a5739a4e34683004b` |
+| Function                                         | Local accepted definition MD5      | Local accepted source MD5          |
+| ------------------------------------------------ | ---------------------------------- | ---------------------------------- |
+| public.end_impersonation_session(uuid,text)      | `0585b26d10a579ec90cb0fe7e3cc0c58` | `cde5bfcb6906225688714deb87e8d7f5` |
+| private.is_safe_navigation_link(text)            | `4ed3333a6c210760a0a0a4f879396739` | `3c240867172cf79a5739a4e34683004b` |
 | public.publish_announcement(text,text,text,text) | `00de06a0a1bf2c3b4fe10707277057fe` | `059bed3d4e11227c8f30f9161e01fb10` |
-| private.send_webhook_delivery(uuid) | `3cc4ef84972ab59e73212af31e9c5a43` | `2fb75d4774ec37ada747a282ca557b54` |
+| private.send_webhook_delivery(uuid)              | `3cc4ef84972ab59e73212af31e9c5a43` | `2fb75d4774ec37ada747a282ca557b54` |
 
 Local constraints both report `CHECK (private.is_safe_navigation_link(link))`
 and `convalidated=true`. Cloud now matches both at the dated postflight above.
