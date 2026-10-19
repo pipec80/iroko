@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { env } from '@/env';
 
 const mocks = vi.hoisted(() => ({
   getActiveAccountId: vi.fn(),
@@ -43,7 +44,7 @@ vi.mock('@/env', () => ({
     SITE_URL: 'http://localhost:3000',
     LOG_LEVEL: 'silent',
     NODE_ENV: 'test',
-    MOCK_BILLING_SECRET: 't',
+    MOCK_BILLING_SECRET: 'cd'.repeat(32),
     BILLING_DEFAULT_PROVIDER: 'mock',
     SUPABASE_SECRET_KEY: 'k',
     NEXT_PUBLIC_SUPABASE_URL: 'http://localhost:54321',
@@ -61,6 +62,55 @@ import {
 } from '../actions';
 
 describe('billing actions', () => {
+  afterEach(() => {
+    Object.assign(env, {
+      NODE_ENV: 'test',
+      ALLOW_MOCK_BILLING: undefined,
+      BILLING_DEFAULT_PROVIDER: 'mock',
+    });
+  });
+  it('blocks mock confirmation before verification or event creation in production with a real default', async () => {
+    Object.assign(env, { NODE_ENV: 'production', BILLING_DEFAULT_PROVIDER: 'stripe' });
+    expect(await confirmMockCheckout({ data: 'token' })).toEqual({
+      data: null,
+      error: 'mock_billing_disabled',
+    });
+    expect(mocks.verify).not.toHaveBeenCalled();
+    expect(mocks.sign).not.toHaveBeenCalled();
+    expect(mocks.handle).not.toHaveBeenCalled();
+  });
+  it('blocks cancellation of an existing mock subscription without opt-in', async () => {
+    Object.assign(env, { NODE_ENV: 'production', BILLING_DEFAULT_PROVIDER: 'stripe' });
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          provider: 'mock',
+          status: 'active',
+          plan_interval: 'month',
+          external_subscription_id: 'sub_1',
+        },
+      ],
+      error: null,
+    });
+    expect(await cancelSubscription()).toEqual({ data: null, error: 'mock_billing_disabled' });
+    expect(mocks.sign).not.toHaveBeenCalled();
+    expect(mocks.handle).not.toHaveBeenCalled();
+  });
+  it('rejects a signed event supplied as checkout before event creation', async () => {
+    mocks.verify.mockResolvedValue({
+      provider: 'mock',
+      type: 'subscription_canceled',
+      accountId: 'a1',
+      externalEventId: 'evt_1',
+      externalSubscriptionId: 'sub_1',
+      raw: {},
+    });
+    expect(await confirmMockCheckout({ data: 'token' })).toEqual({
+      data: null,
+      error: 'invalid_token',
+    });
+    expect(mocks.sign).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('a1');
@@ -206,13 +256,13 @@ describe('billing actions', () => {
       accountId: 'a1',
       planSlug: 'pro',
       interval: 'month',
-      successUrl: 'http://ok',
-      cancelUrl: 'http://no',
+      successUrl: 'http://localhost:3000/ok',
+      cancelUrl: 'http://localhost:3000/no',
     });
     mocks.sign.mockResolvedValue('signed-event');
     mocks.handle.mockResolvedValue({ status: 200, body: { result: 'applied' } });
     const res = await confirmMockCheckout({ data: 'token' });
-    expect(res.data?.redirectUrl).toBe('http://ok');
+    expect(res.data?.redirectUrl).toBe('http://localhost:3000/ok');
     expect(mocks.handle).toHaveBeenCalledWith('mock', 'signed-event', 'mock');
   });
 
@@ -228,8 +278,8 @@ describe('billing actions', () => {
       accountId: 'a1',
       planSlug: 'pro',
       interval: 'month',
-      successUrl: 'http://ok',
-      cancelUrl: 'http://no',
+      successUrl: 'http://localhost:3000/ok',
+      cancelUrl: 'http://localhost:3000/no',
     });
     mocks.sign.mockResolvedValue('signed-event');
     mocks.handle.mockResolvedValue({ status: 500, body: { error: 'boom' } });

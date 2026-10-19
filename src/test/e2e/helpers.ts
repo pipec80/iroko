@@ -138,7 +138,6 @@ export async function fetchLatestMessageTo(
               u.includes('/auth/confirm') ||
               u.includes('/auth/click'),
           ) ?? null;
-        console.log('EXTRACTED URL:', confirmUrl);
         return { subject: msg.Subject, confirmUrl };
       }
     }

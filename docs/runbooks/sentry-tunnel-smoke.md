@@ -40,8 +40,9 @@ Next.js's own 404 (`__next_error__` shell), which is exactly what an earlier
 version of this check hit before that mechanism was understood (see the
 "First version got this wrong" note below). Once the query params are
 present and correct, Next.js's rewrite forwards the body to Sentry's real
-ingest and returns Sentry's own response — a `200` here is Sentry's own
-confirmation the event was accepted, not something our own code fabricates.
+ingest in the configured design. A `200` records a successful transport response;
+independent provider lookup is still required to establish event receipt, and
+the request client does not establish execution of the browser SDK.
 
 ### First version got this wrong (2026-08-11)
 
@@ -83,8 +84,10 @@ required.
 
 From `nightly.yml`'s `smoke` job logs:
 
-- **Pass** (`200`): the tunnel rewrite is matching and Sentry's ingest
-  accepted the event — the full path from browser SDK to Sentry is intact.
+- **Pass** (`200`): the manually constructed envelope received a successful
+  transport response through the tunnel. This test uses Playwright's request
+  client; it does not execute the browser SDK or establish that the event is
+  queryable in Sentry. Provider receipt must be verified independently.
 - **404 with Next.js's own `__next_error__` shell** (check the response
   body, not just the status): either the proxy is intercepting/redirecting
   `/sentry-tunnel` again (the AUD-005 regression — check `src/proxy.ts`'s
@@ -93,13 +96,22 @@ From `nightly.yml`'s `smoke` job logs:
   the test's query params still match what the installed `@sentry/nextjs`
   version's rewrite expects — that shape is not a stable public contract,
   it has changed across SDK versions before).
-- **Any other non-200** (401/403/429): Sentry rejected the envelope after a
-  successful rewrite match — check `NEXT_PUBLIC_SENTRY_DSN` validity,
-  org/project status, or rate limiting before assuming a code regression.
+- **Any other non-200** (401/403/429): first identify the responding layer from
+  safe response headers/body and correlated logs. Vercel protection, WAF, auth
+  or Sentry may reject the request; the status alone does not prove a successful
+  rewrite match or a Sentry rejection. Then investigate the identified layer,
+  including DSN/project validity or rate limiting where applicable.
 
 To confirm delivery independently, search Sentry for the issue with
 fingerprint `sentry-tunnel-cloud-smoke-check` and check its `lastSeen`
 timestamp against the latest nightly run.
+
+For Plan 012.4 acceptance, additionally trigger one synthetic event through the
+candidate's actual browser SDK, observe its tunnel request under the deployed
+CSP, and correlate its event ID and timestamp with the provider receipt. The
+manual-envelope smoke check alone does not satisfy that gate. Follow the active
+plan's separate authorization and maximum-three-attempt limit; do not generate
+events during a read-only preflight.
 
 ## Incident response
 

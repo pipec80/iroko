@@ -4,9 +4,28 @@ import { withSentryConfig } from '@sentry/nextjs';
 import createNextIntlPlugin from 'next-intl/plugin';
 
 import { isLocalValidation } from './src/lib/local-validation';
+import { isSentryUploadAuthorized } from './src/lib/sentry-build-policy';
 
 const withNextIntl = createNextIntlPlugin();
 const localValidation = isLocalValidation(process.env);
+if (
+  process.env.SENTRY_UPLOAD_SOURCE_MAPS !== undefined &&
+  !['true', 'false'].includes(process.env.SENTRY_UPLOAD_SOURCE_MAPS)
+) {
+  throw new Error('SENTRY_UPLOAD_SOURCE_MAPS must be true, false or absent.');
+}
+const sentryUploadAuthorized = isSentryUploadAuthorized({
+  uploadSourceMaps: process.env.SENTRY_UPLOAD_SOURCE_MAPS,
+  ci: process.env.CI,
+  tokenPresent: Boolean(process.env.SENTRY_AUTH_TOKEN),
+  localValidation,
+  githubRepository: process.env.GITHUB_REPOSITORY,
+  githubRef: process.env.GITHUB_REF,
+  githubEvent: process.env.GITHUB_EVENT_NAME,
+  vercel: process.env.VERCEL,
+  vercelEnv: process.env.VERCEL_ENV,
+  vercelProjectId: process.env.VERCEL_PROJECT_ID,
+});
 
 const nextConfig: NextConfig = {
   env: { NEXT_PUBLIC_LOCAL_VALIDATION: String(localValidation) },
@@ -128,8 +147,13 @@ export default localValidation ? baseConfig : (
     // Sube más source maps para mejor stack traces en el cliente
     widenClientFileUpload: true,
 
-    // Usa SENTRY_AUTH_TOKEN desde las variables de entorno para Vercel
-    authToken: process.env.SENTRY_AUTH_TOKEN,
+    // An inherited token alone never authorizes build-time provider effects.
+    authToken: sentryUploadAuthorized ? process.env.SENTRY_AUTH_TOKEN : undefined,
+    sourcemaps: { disable: !sentryUploadAuthorized },
+    release: { create: sentryUploadAuthorized, finalize: sentryUploadAuthorized },
+    telemetry: sentryUploadAuthorized,
+    // Turbopack otherwise initializes the native CLI even with all effects off.
+    useRunAfterProductionCompileHook: sentryUploadAuthorized,
 
     // Silencia output de Sentry en local; en CI sí muestra (para detectar errores de upload)
     silent: process.env.CI !== 'true',
@@ -138,7 +162,8 @@ export default localValidation ? baseConfig : (
       // Quita el logger de Sentry del bundle de cliente (~3.5KB)
       treeshake: { removeDebugLogging: true },
       // Monitoreo automático de cron jobs en Vercel
-      automaticVercelMonitors: true,
+      automaticVercelMonitors: sentryUploadAuthorized,
+      unstable_sentryWebpackPluginOptions: { disable: !sentryUploadAuthorized },
     },
   })
 );

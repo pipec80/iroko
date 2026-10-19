@@ -1,4 +1,9 @@
 # Falsos positivos verificados — ver PR y análisis en el historial.
+# Plan 012.4: the fixed synthetic-0124 literal is a public SQL test fixture,
+# created inside BEGIN/ROLLBACK; no provider credential is stored here.
+3ee98bdf9a4ddc657a61589430d351967f368925:supabase/tests/database/52_vault_consumer_boundary.test.sql:generic-api-key:29
+# The previous explanatory comment quoted that public SQL comparison.
+955a43b35dfa9bed8e2a9121d983e9c9a3328142:.gitleaksignore:generic-api-key:2
 # irk_abc12345: prefijo de API key ficticio usado en fixtures de test.
 803de8ee0c2c885c5a6de28858ee68ef9f936bdf:src/app/[locale]/dashboard/org/settings/__tests__/actions-api-keys.test.ts:generic-api-key:69
 803de8ee0c2c885c5a6de28858ee68ef9f936bdf:src/app/[locale]/dashboard/org/settings/__tests__/actions-api-keys.test.ts:generic-api-key:82

@@ -71,6 +71,43 @@ describe('InvitationEmail', () => {
 });
 
 describe('NotificationEmail', () => {
+  it.each(['https://user:pass@app.example', 'javascript:alert(1)', 'http://remote.example'])(
+    'omits a relative-link CTA when the site base is unsafe %s',
+    async (siteUrl) => {
+      const { NotificationEmail } = await import('../templates/notification');
+      expect(
+        JSON.stringify(
+          NotificationEmail({ type: 'info', title: 'Notice', link: '/es/dashboard', siteUrl }),
+        ),
+      ).not.toContain('Ver detalles');
+    },
+  );
+
+  it('supports official loopback HTTP email previews', async () => {
+    const { NotificationEmail } = await import('../templates/notification');
+    expect(
+      JSON.stringify(
+        NotificationEmail({
+          type: 'info',
+          title: 'Notice',
+          link: '/es/dashboard',
+          siteUrl: 'http://localhost:3000/path',
+        }),
+      ),
+    ).toContain('http://localhost:3000/es/dashboard');
+  });
+  it.each(['javascript:alert(1)', '//evil.example', '/a/..//evil.example'])(
+    'preserves message content without a CTA for unsafe link %s',
+    async (link) => {
+      const { NotificationEmail } = await import('../templates/notification');
+      const tree = NotificationEmail({ type: 'info', title: 'Notice', body: 'Details', link });
+      const serialized = JSON.stringify(tree);
+      expect(serialized).toContain('Notice');
+      expect(serialized).toContain('Details');
+      expect(serialized).not.toContain('Ver detalles');
+      expect(serialized).not.toContain(link);
+    },
+  );
   it('renderiza sin lanzar error con todos los campos', async () => {
     const { NotificationEmail } = await import('../templates/notification');
     const element = React.createElement(NotificationEmail, {

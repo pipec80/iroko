@@ -25,6 +25,9 @@ delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
  */
 export default defineConfig({
   testDir: './src/test/e2e',
+  // Requires the confined runner's synthetic error route and Turnstile fixture.
+  // CI runs this suite in its own mandatory step, without remote provider egress.
+  testIgnore: '**/csp.spec.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

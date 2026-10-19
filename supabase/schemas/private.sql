@@ -1013,3 +1013,65 @@ GRANT EXECUTE ON FUNCTION private.get_user_role(uuid, uuid) TO anon, authenticat
 GRANT EXECUTE ON FUNCTION private.user_is_member(uuid, uuid) TO authenticated;
 -- Required to resolve the RLS helpers; it does not grant access to private tables.
 GRANT USAGE ON SCHEMA private TO authenticated;
+
+
+-- Plan 012.4 canonical navigation policy (separate from webhook transport).
+CREATE OR REPLACE FUNCTION private.is_safe_navigation_link(p_link text)
+RETURNS boolean
+LANGUAGE plpgsql IMMUTABLE SECURITY INVOKER
+SET search_path = ''
+AS $$
+DECLARE
+  v_authority text;
+  v_host text;
+  v_port text;
+  v_path text;
+BEGIN
+  IF p_link IS NULL THEN RETURN true; END IF;
+  IF length(p_link) NOT BETWEEN 1 AND 2000
+    OR p_link ~ '[^!-~]' OR position(chr(92) IN p_link) > 0
+    OR p_link ~ '%([^0-9A-Fa-f]|[0-9A-Fa-f]([^0-9A-Fa-f]|$)|$)'
+  THEN RETURN false; END IF;
+
+  IF left(p_link, 1) = '/' AND left(p_link, 2) <> '//' THEN
+    v_path := split_part(split_part(p_link, '?', 1), '#', 1);
+  ELSIF p_link LIKE 'https://%' THEN
+    v_authority := substring(p_link FROM '^https://([^/?#]+)');
+    v_path := substring(p_link FROM '^https://[^/?#]+(/[^?#]*)');
+    IF v_authority IS NULL OR v_path IS NULL THEN RETURN false; END IF;
+    IF left(v_authority, 1) = '[' THEN
+      v_host := substring(v_authority FROM '^\[([0-9a-f:]+)\]');
+      IF v_host IS NULL THEN RETURN false; END IF;
+      IF family(v_host::inet) <> 6 THEN RETURN false; END IF;
+      v_port := substring(v_authority FROM '^\[[0-9a-f:]+\](.*)$');
+      IF v_port <> '' AND v_port !~ '^:[0-9]+$' THEN RETURN false; END IF;
+      v_port := nullif(substr(v_port, 2), '');
+    ELSE
+      -- WHATWG permits ASCII punctuation in hostnames beyond DNS labels.
+      -- Credentials and host delimiters are excluded here, not in the path.
+      v_host := split_part(v_authority, ':', 1);
+      IF v_host !~ '^[a-z0-9.!"$&''()*+,;=_`{}~-]+$' THEN RETURN false; END IF;
+      IF position(':' IN v_authority) > 0 THEN
+        v_port := substring(v_authority FROM ':([0-9]+)$');
+        IF v_port IS NULL OR v_authority <> v_host || ':' || v_port THEN RETURN false; END IF;
+      END IF;
+    END IF;
+    IF v_port IS NOT NULL AND (
+      length(v_port) > 5 OR v_port::integer > 65535
+      OR (length(v_port) > 1 AND left(v_port, 1) = '0') OR v_port = '443'
+    ) THEN RETURN false; END IF;
+  ELSE
+    RETURN false;
+  END IF;
+
+  -- Check the path only: dots, slashes and @ in query/fragment are harmless.
+  IF v_path ~* '(^|/)(\.|%2e){1,2}(/|$)' THEN RETURN false; END IF;
+  RETURN true;
+EXCEPTION WHEN invalid_text_representation OR numeric_value_out_of_range THEN
+  RETURN false;
+END;
+$$;
+REVOKE ALL ON FUNCTION private.is_safe_navigation_link(text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION private.is_safe_navigation_link(text) TO authenticated, service_role;
+COMMENT ON FUNCTION private.is_safe_navigation_link(text) IS
+  'Pure invoker navigation validator for canonical TS href output: NULL, single-slash internal paths or absolute HTTPS; no credentials, controls, backslashes, malformed percent escapes or path dot segments. Not a transport/SSRF policy or WHATWG normalizer.';

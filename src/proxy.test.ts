@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { readdirSync } from 'node:fs';
 import { NextRequest, NextResponse } from 'next/server';
 
 // next-intl/middleware resolves a bare "next/server" specifier internally,
@@ -40,7 +41,11 @@ vi.mock('@/config/app.config', () => ({
   appConfig: { features: { onboarding: true } },
 }));
 
-import { buildCspHeader, config, proxy } from './proxy';
+import { buildCspHeader as buildPolicy, config, proxy } from './proxy';
+
+function buildCspHeader(isDev: boolean, isPreview: boolean, supabaseUrl: string) {
+  return buildPolicy({ nonce: 'fixture-nonce', isDev, isPreview, supabaseUrl });
+}
 
 function makeRequest(path: string): NextRequest {
   return new NextRequest(`http://localhost:3000${path}`);
@@ -56,45 +61,71 @@ function matchesProxy(path: string): boolean {
 }
 
 describe('proxy matcher', () => {
-  it('should exclude /sentry-tunnel so next-intl cannot locale-redirect the Sentry POST', () => {
-    expect(matchesProxy('/sentry-tunnel')).toBe(false);
+  it.each([
+    '/sentry-tunnel',
+    '/ingest/e',
+    '/_next/static/chunk.js',
+    '/api/missing',
+    '/favicon.ico',
+    '/unknown.file',
+    '/api-like-error',
+    '/es/dashboard',
+    '/',
+  ])('covers potential HTML documents at %s', (path) => {
+    expect(matchesProxy(path)).toBe(true);
   });
-
-  it('should exclude /ingest so next-intl cannot locale-redirect PostHog capture requests', () => {
-    expect(matchesProxy('/ingest')).toBe(false);
-    expect(matchesProxy('/ingest/e')).toBe(false);
-    expect(matchesProxy('/ingest/static/array.js')).toBe(false);
-  });
-
-  it('should intercept normal app routes', () => {
-    expect(matchesProxy('/dashboard')).toBe(true);
-    expect(matchesProxy('/es/dashboard')).toBe(true);
-    expect(matchesProxy('/')).toBe(true);
-  });
-
-  it('should exclude API routes', () => {
-    expect(matchesProxy('/api/webhook')).toBe(false);
-  });
-
-  it('should exclude Next.js internals', () => {
-    expect(matchesProxy('/_next/static/chunk.js')).toBe(false);
-    expect(matchesProxy('/_next/image')).toBe(false);
-  });
-
-  it('should exclude favicon and manifest', () => {
-    expect(matchesProxy('/favicon.ico')).toBe(false);
-    expect(matchesProxy('/manifest.json')).toBe(false);
-  });
-
-  it('should exclude any path with a file extension', () => {
-    expect(matchesProxy('/logo.png')).toBe(false);
+  it('does not omit prefetch requests', () => {
+    expect(config.matcher[0]).not.toHaveProperty('missing');
   });
 });
-
 const CLOUD_SUPABASE_URL = 'https://xxxx.supabase.co';
 const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
 
 describe('buildCspHeader', () => {
+  const options = {
+    nonce: 'fixture-nonce',
+    isDev: false,
+    isPreview: false,
+    supabaseUrl: CLOUD_SUPABASE_URL,
+  };
+  it('removes inline/eval script execution while retaining the style exception', () => {
+    const policy = buildPolicy(options);
+    const scripts = policy.split('; ').find((value) => value.startsWith('script-src'));
+    expect(scripts).toContain("'nonce-fixture-nonce'");
+    expect(scripts).not.toContain('unsafe-inline');
+    expect(scripts).not.toContain('unsafe-eval');
+    expect(policy).toContain("style-src 'self' 'unsafe-inline'");
+    expect(policy).not.toContain('strict-dynamic');
+  });
+  it('derives report destination from the configured DSN', () => {
+    const policy = buildPolicy({
+      ...options,
+      sentryDsn: 'https://public-key@errors.example/prefix/123',
+    });
+    expect(policy).toContain(
+      'report-uri https://errors.example/prefix/api/123/security/?sentry_key=public-key',
+    );
+    expect(policy).toContain('report-to csp-endpoint');
+    expect(policy).not.toContain('o4511537461067776');
+  });
+  it.each([
+    undefined,
+    'bad-dsn',
+    'http://public-key@127.0.0.1:9/123',
+    'https://public-key@localhost/123',
+  ])('omits reporting for missing, malformed or loopback DSN %s', (sentryDsn) => {
+    expect(buildPolicy({ ...options, sentryDsn })).not.toContain('report-uri');
+    expect(buildPolicy({ ...options, sentryDsn })).not.toContain('report-to');
+  });
+  it('disables reporting during local validation with any configured DSN', () => {
+    expect(
+      buildPolicy({
+        ...options,
+        localValidation: true,
+        sentryDsn: 'https://public-key@errors.example/123',
+      }),
+    ).not.toContain('report-uri');
+  });
   it('should NOT allow vercel.live in production (isPreview=false)', () => {
     const csp = buildCspHeader(false, false, CLOUD_SUPABASE_URL);
     expect(csp).not.toContain('vercel.live');
@@ -116,7 +147,7 @@ describe('buildCspHeader', () => {
   it('should still allow vercel.live in dev regardless of isPreview (dev already allows https:)', () => {
     const csp = buildCspHeader(true, false, LOCAL_SUPABASE_URL);
     const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src'));
-    expect(scriptSrc).toBe("script-src 'self' 'unsafe-inline' 'unsafe-eval' https:");
+    expect(scriptSrc).toBe("script-src 'self' 'nonce-fixture-nonce' 'unsafe-eval' https:");
   });
 
   // AUD-0XX: the E2E suite runs `next build && next start` (NODE_ENV=production),
@@ -158,6 +189,64 @@ describe('buildCspHeader', () => {
 });
 
 describe('proxy', () => {
+  it('preserves pass-through for every existing public asset', async () => {
+    const files = readdirSync('public', { recursive: true });
+    for (const file of files) {
+      if (typeof file !== 'string' || !file.includes('.')) continue;
+      const response = await proxy(makeRequest(`/${file.replaceAll('\\', '/')}`));
+      expect(response.status).toBe(200);
+      expect(intlMiddlewareMock).not.toHaveBeenCalled();
+      expect(getClaimsMock).not.toHaveBeenCalled();
+    }
+  });
+  it('prevents caching infrastructure HTML documents without changing asset caching', async () => {
+    const document = makeRequest('/api/missing.file');
+    document.headers.set('accept', 'text/html');
+    expect((await proxy(document)).headers.get('cache-control')).toBe('private, no-store');
+    expect(
+      (await proxy(makeRequest('/_next/static/chunk.js'))).headers.get('cache-control'),
+    ).toBeNull();
+  });
+  it('overwrites untrusted nonce/CSP and forwards a unique nonce preserving intl overrides', async () => {
+    getClaimsMock.mockResolvedValue({ data: null });
+    const request = makeRequest('/en/missing.file');
+    request.headers.set('x-nonce', 'attacker');
+    request.headers.set('content-security-policy', 'attacker');
+    const forwarded = new Headers(request.headers);
+    forwarded.set('x-next-intl-locale', 'en');
+    intlMiddlewareMock.mockReturnValue(NextResponse.next({ request: { headers: forwarded } }));
+    const response = await proxy(request);
+    const nonce = response.headers.get('x-middleware-request-x-nonce');
+    expect(nonce).toMatch(/^[A-Za-z0-9+/]{22}==$/);
+    expect(nonce).not.toBe('attacker');
+    expect(response.headers.get('x-middleware-request-content-security-policy')).toBe(
+      response.headers.get('content-security-policy'),
+    );
+    expect(response.headers.get('content-security-policy')).toContain(`'nonce-${nonce}'`);
+    expect(response.headers.get('x-middleware-request-x-next-intl-locale')).toBe('en');
+    expect(response.headers.get('x-middleware-override-headers')).toContain('x-next-intl-locale');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    intlMiddlewareMock.mockReturnValue(NextResponse.next());
+    const second = await proxy(makeRequest('/en/missing.file'));
+    expect(second.headers.get('x-middleware-request-x-nonce')).not.toBe(nonce);
+  });
+
+  it.each([
+    '/api/missing',
+    '/sentry-tunnel',
+    '/ingest/e',
+    '/_next/static/chunk.js',
+    '/favicon.ico',
+  ])(
+    'passes infrastructure %s without intl redirects while forwarding CSP for error documents',
+    async (path) => {
+      const response = await proxy(makeRequest(path));
+      expect(response.status).toBe(200);
+      expect(intlMiddlewareMock).not.toHaveBeenCalled();
+      expect(getClaimsMock).not.toHaveBeenCalled();
+      expect(response.headers.get('x-middleware-request-x-nonce')).toBeTruthy();
+    },
+  );
   function mockIntlPassThrough(request: NextRequest): void {
     intlMiddlewareMock.mockReturnValue(NextResponse.next({ request }));
   }
@@ -199,18 +288,16 @@ describe('proxy', () => {
     expect(response.headers.get('X-Frame-Options')).toBe('DENY');
   });
 
-  // AUD-0XX: applySecurityHeaders used to overwrite Cache-Control unconditionally
-  // on all 3 exit paths, and the final response is built from intlResponse (not
-  // supabaseResponse), so updateSession's own conditional header never survived
-  // either way — anonymous marketing pages never regained CDN caching.
-  it('does NOT force Cache-Control: private on an anonymous page (no session to protect)', async () => {
+  // ADR 0004: every nonce-bearing document is request-specific, including
+  // anonymous pages; shared HTML caching would reuse a document nonce.
+  it('prevents shared HTML caching on anonymous nonce-bearing pages', async () => {
     getClaimsMock.mockResolvedValue({ data: null });
     const request = makeRequest('/es/pricing');
     mockIntlPassThrough(request);
 
     const response = await proxy(request);
 
-    expect(response.headers.get('Cache-Control')).not.toBe('private, no-store');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
   });
 
   it('propagates Cache-Control: private from updateSession onto the final intlResponse when authenticated', async () => {

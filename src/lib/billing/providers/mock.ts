@@ -1,16 +1,9 @@
 import { env } from '@/env';
 
 import { signMockPayload, verifyMockPayload } from '../signing';
-import type { NormalizedBillingEvent } from '../events';
+import { assertMockBillingAllowed } from '../mock-policy';
+import { mockCheckoutSchema, mockEventSchema } from '../mock-schemas';
 import type { CheckoutParams, PaymentProvider } from '../types';
-
-interface MockCheckoutToken {
-  accountId: string;
-  planSlug: string;
-  interval: 'month' | 'year';
-  successUrl: string;
-  cancelUrl: string;
-}
 
 /**
  * Proveedor de pago simulado (F2-2A-core). No usa credenciales: createCheckout
@@ -29,27 +22,31 @@ export const mockProvider: PaymentProvider = {
   },
 
   async createCheckout(params: CheckoutParams): Promise<{ url: string }> {
-    const token = await signMockPayload({
-      accountId: params.accountId,
-      planSlug: params.planSlug,
-      interval: params.interval,
-      successUrl: params.successUrl,
-      cancelUrl: params.cancelUrl,
-    } satisfies MockCheckoutToken);
+    assertMockBillingAllowed({ nodeEnv: env.NODE_ENV, allowMockBilling: env.ALLOW_MOCK_BILLING });
+    const token = await signMockPayload(
+      mockCheckoutSchema.parse({
+        accountId: params.accountId,
+        planSlug: params.planSlug,
+        interval: params.interval,
+        successUrl: params.successUrl,
+        cancelUrl: params.cancelUrl,
+      }),
+    );
     const base = new URL('/es/billing/mock-checkout', env.SITE_URL ?? 'http://localhost:3000');
     base.searchParams.set('data', token);
     return { url: base.toString() };
   },
 
   async cancelSubscription(): Promise<void> {
+    assertMockBillingAllowed({ nodeEnv: env.NODE_ENV, allowMockBilling: env.ALLOW_MOCK_BILLING });
     // No-op: la cancelación del mock se materializa vía webhook (ver actions).
   },
 
-  async verifyWebhook(rawBody: string, signature: string): Promise<NormalizedBillingEvent | null> {
+  async verifyWebhook(rawBody: string, signature: string) {
     // El mock firma el body completo como token; signature es redundante pero
     // se mantiene por paridad con la interfaz. Validamos el token del body.
-    const event = await verifyMockPayload<NormalizedBillingEvent>(rawBody);
-    if (!event || signature !== 'mock') return null;
-    return event;
+    if (signature !== 'mock') return null;
+    const event = mockEventSchema.safeParse(await verifyMockPayload(rawBody));
+    return event.success ? event.data : null;
   },
 };

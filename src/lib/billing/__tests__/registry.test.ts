@@ -1,8 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { env } from '@/env';
 
 vi.mock('@/env', () => ({
   env: {
-    MOCK_BILLING_SECRET: 'test-secret',
+    MOCK_BILLING_SECRET: 'cd'.repeat(32),
     BILLING_DEFAULT_PROVIDER: 'mock',
     STRIPE_SECRET_KEY: 'sk_test_x',
     STRIPE_WEBHOOK_SECRET: 'whsec_test_x',
@@ -16,6 +17,22 @@ vi.mock('@/env', () => ({
 import { getPaymentProvider, availableProviders, hasProviderCredentials } from '../registry';
 
 describe('payment provider registry', () => {
+  afterEach(() => {
+    Object.assign(env, {
+      NODE_ENV: 'test',
+      ALLOW_MOCK_BILLING: undefined,
+      BILLING_DEFAULT_PROVIDER: 'mock',
+    });
+  });
+  it('hides and denies explicit mock access in production with a real default', () => {
+    Object.assign(env, { NODE_ENV: 'production', BILLING_DEFAULT_PROVIDER: 'stripe' });
+    expect(availableProviders()).not.toContain('mock');
+    expect(() => getPaymentProvider('mock')).toThrow('mock_billing_disabled');
+    expect(getPaymentProvider().name).toBe('stripe');
+    Object.assign(env, { ALLOW_MOCK_BILLING: 'true' });
+    expect(availableProviders()).toContain('mock');
+    expect(getPaymentProvider('mock').name).toBe('mock');
+  });
   it('should always expose the mock provider', () => {
     expect(availableProviders()).toContain('mock');
   });

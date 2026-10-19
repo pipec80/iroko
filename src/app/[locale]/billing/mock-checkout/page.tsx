@@ -3,14 +3,9 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { MockCheckoutForm } from '@/components/dashboard/org/mock-checkout-form';
 import { verifyMockPayload } from '@/lib/billing/signing';
-
-interface MockCheckoutToken {
-  accountId: string;
-  planSlug: string;
-  interval: 'month' | 'year';
-  successUrl: string;
-  cancelUrl: string;
-}
+import { mockCheckoutSchema } from '@/lib/billing/mock-schemas';
+import { isMockBillingAllowed } from '@/lib/billing/mock-policy';
+import { env } from '@/env';
 
 export default async function MockCheckoutPage({
   params,
@@ -22,8 +17,11 @@ export default async function MockCheckoutPage({
   const { locale } = await params;
   setRequestLocale(locale);
   const { data } = await searchParams;
-  const token = data ? await verifyMockPayload<MockCheckoutToken>(data) : null;
-  if (!token) notFound();
+  if (!isMockBillingAllowed({ nodeEnv: env.NODE_ENV, allowMockBilling: env.ALLOW_MOCK_BILLING }))
+    notFound();
+  const parsed = mockCheckoutSchema.safeParse(data ? await verifyMockPayload(data) : null);
+  if (!parsed.success) notFound();
+  const token = parsed.data;
 
   const t = await getTranslations('Billing');
 

@@ -1,9 +1,12 @@
 import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
+import { headers } from 'next/headers';
+import { connection } from 'next/server';
 import { getLocale } from 'next-intl/server';
 
 import { env } from '@/env';
 import { ThemeProvider } from '@/components/providers/theme-provider';
+import { CspNonceProvider } from '@/components/providers/csp-nonce-provider';
 import { appConfig } from '@/config/app.config';
 
 import './globals.css';
@@ -55,6 +58,8 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  await connection();
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   const locale = await getLocale();
 
   return (
@@ -63,13 +68,16 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning>
       <body className="flex min-h-full flex-col">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange>
-          {children}
-        </ThemeProvider>
+        <CspNonceProvider nonce={nonce}>
+          <ThemeProvider
+            nonce={nonce}
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange>
+            {children}
+          </ThemeProvider>
+        </CspNonceProvider>
       </body>
     </html>
   );

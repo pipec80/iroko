@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS public.announcements (
   link       text,
   created_by uuid        REFERENCES auth.users(id) ON DELETE SET NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT announcements_navigation_link_check CHECK (private.is_safe_navigation_link(link)),
   CONSTRAINT announcements_type_check CHECK (type IN ('info', 'success', 'warning', 'error'))
 );
 
@@ -77,38 +78,29 @@ REVOKE SELECT, INSERT, UPDATE, DELETE ON public.announcements FROM anon;
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION public.publish_announcement(
-  p_type  text,
-  p_title text,
-  p_body  text DEFAULT NULL,
-  p_link  text DEFAULT NULL
+  p_type text, p_title text, p_body text DEFAULT NULL, p_link text DEFAULT NULL
 )
 RETURNS public.announcements
-LANGUAGE plpgsql
-SECURITY DEFINER
+LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = ''
 AS $$
 DECLARE
   v_row public.announcements;
+  v_link text := nullif(btrim(p_link, ' '), '');
 BEGIN
   PERFORM private.assert_platform_admin();
-
   IF p_title IS NULL OR length(trim(p_title)) = 0 THEN
     RAISE EXCEPTION 'title_required';
   END IF;
   IF p_type IS NULL OR p_type NOT IN ('info', 'success', 'warning', 'error') THEN
     RAISE EXCEPTION 'invalid_type';
   END IF;
-
+  IF NOT private.is_safe_navigation_link(v_link) THEN
+    RAISE EXCEPTION 'invalid_link';
+  END IF;
   INSERT INTO public.announcements (type, title, body, link, created_by)
-  VALUES (
-    p_type,
-    trim(p_title),
-    NULLIF(trim(p_body), ''),
-    NULLIF(trim(p_link), ''),
-    (SELECT auth.uid())
-  )
+  VALUES (p_type, trim(p_title), nullif(trim(p_body), ''), v_link, (SELECT auth.uid()))
   RETURNING * INTO v_row;
-
   RETURN v_row;
 END;
 $$;

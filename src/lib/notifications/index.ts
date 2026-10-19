@@ -3,6 +3,7 @@ import { after } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
 import { sendNotificationEmail } from '@/lib/email';
+import { normalizeNavigationLink } from '@/lib/validation/navigation-link';
 
 /** Tipo de notificación. Controla el color del ícono en el cliente. */
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
@@ -30,16 +31,19 @@ export type NotificationPayload = {
  *
  * @param userId - UUID del usuario destinatario (`auth.users.id`)
  * @param payload - Contenido y opciones de entrega
- * @throws si Supabase devuelve un error al insertar la notificación in-app
+ * @throws invalid_link antes de persistir o programar email; también propaga errores de INSERT
  */
 export async function notify(userId: string, payload: NotificationPayload): Promise<void> {
+  const navigation = normalizeNavigationLink(payload.link);
+  if (!navigation.valid) throw new Error(navigation.error);
+  const link = navigation.href ?? undefined;
   const supabase = createAdminClient();
   const { error } = await supabase.from('notifications').insert({
     user_id: userId,
     type: payload.type,
     title: payload.title,
     body: payload.body,
-    link: payload.link,
+    link,
   });
 
   if (error) {
@@ -59,7 +63,7 @@ export async function notify(userId: string, payload: NotificationPayload): Prom
             type: payload.type,
             title: payload.title,
             body: payload.body,
-            link: payload.link,
+            link,
           });
         }
       } catch (err: unknown) {

@@ -33,6 +33,34 @@ import { notify } from '../index';
 const USER_ID = 'user-uuid-123';
 
 describe('notify', () => {
+  it('rejects unsafe links before inserting or scheduling email', async () => {
+    vi.clearAllMocks();
+    await expect(
+      notify(USER_ID, {
+        type: 'info',
+        title: 'Notice',
+        link: 'javascript:alert(1)',
+        emailDelivery: true,
+      }),
+    ).rejects.toThrow('invalid_link');
+    expect(mocks.insert).not.toHaveBeenCalled();
+    expect(mocks.mockSendNotificationEmail).not.toHaveBeenCalled();
+  });
+
+  it('persists the same canonical link used in notification email', async () => {
+    mocks.mockGetUserById.mockResolvedValue({ data: { user: { email: 'user@example.com' } } });
+    await notify(USER_ID, {
+      type: 'info',
+      title: 'Notice',
+      link: '/a/../es/café',
+      emailDelivery: true,
+    });
+    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ link: '/es/caf%C3%A9' }));
+    expect(mocks.mockSendNotificationEmail).toHaveBeenCalledWith(
+      'user@example.com',
+      expect.objectContaining({ link: '/es/caf%C3%A9' }),
+    );
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.insertResult.current = { error: null };
