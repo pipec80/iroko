@@ -26,7 +26,7 @@ SELECT ok(has_table_privilege('service_role','vault.decrypted_secrets','SELECT')
 SELECT ok((SELECT bool_and(pg_get_userbyid(proowner)='postgres') FROM pg_proc WHERE oid IN ('private.project_url()'::regprocedure,'private.email_worker_secret()'::regprocedure,'private.invoke_billing_worker(text)'::regprocedure)),'application helpers retain their reviewed owner');
 
 CREATE TEMP TABLE vault_0124_fixture ON COMMIT DROP AS SELECT vault.create_secret('synthetic-0124','plan0124-transaction-only') AS id;
-SELECT ok((SELECT decrypted_secret='synthetic-0124' FROM vault.decrypted_secrets WHERE id=(SELECT id FROM vault_0124_fixture)),'owner-managed consumer can decrypt synthetic value without exposing it');
+SELECT ok((SELECT decrypted_secret='synthetic-0124' FROM vault.decrypted_secrets WHERE id=(SELECT id FROM vault_0124_fixture)),'owner-managed consumer can decrypt synthetic value without exposing it'); -- gitleaks:allow public transaction-only fixture
 DELETE FROM vault.secrets WHERE id=(SELECT id FROM vault_0124_fixture);
 SELECT is((SELECT count(*) FROM vault.secrets WHERE id=(SELECT id FROM vault_0124_fixture)),0::bigint,'owner cleanup removes synthetic secret');
 SELECT * FROM finish();
