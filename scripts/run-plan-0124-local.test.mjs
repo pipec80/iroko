@@ -1,5 +1,80 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+
+test('isolated acceptance rejects partial, duplicated, skipped and flaky coverage', async () => {
+  const { assertCompleteE2eAcceptance } = await import('./run-plan-0124-local.mjs');
+  assert.equal(typeof assertCompleteE2eAcceptance, 'function');
+  const cases = Object.entries({
+    'csp.spec.ts': 10,
+    'analytics.spec.ts': 7,
+    'impersonation.spec.ts': 4,
+    'sentry-tunnel.spec.ts': 1,
+  }).flatMap(([file, count]) =>
+    Array.from({ length: count }, (_, index) => ({
+      file,
+      title: `${file} case ${index}`,
+      statuses: ['passed'],
+    })),
+  );
+  const stats = { expected: 22, skipped: 0, unexpected: 0, flaky: 0 };
+  assert.doesNotThrow(() => assertCompleteE2eAcceptance(stats, cases));
+  assert.throws(() => assertCompleteE2eAcceptance({ ...stats, expected: 1 }, cases.slice(-1)));
+  assert.throws(() => assertCompleteE2eAcceptance(stats, [...cases.slice(1), cases.at(-1)]));
+  for (const field of ['skipped', 'unexpected', 'flaky'])
+    assert.throws(() => assertCompleteE2eAcceptance({ ...stats, [field]: 1 }, cases));
+  assert.throws(() =>
+    assertCompleteE2eAcceptance(
+      stats,
+      cases.map((entry, index) => (index ? entry : { ...entry, statuses: ['skipped'] })),
+    ),
+  );
+});
+
+test('generated isolated suite rejects an actual test.only during discovery', async () => {
+  const { writeE2eHarness, requiredE2eSpecs } = await import('./run-plan-0124-local.mjs');
+  const { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  const { createRequire } = await import('node:module');
+  const { resolve } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const require = createRequire(import.meta.url);
+  const scratch = mkdtempSync(resolve(tmpdir(), 'plan0124-focused-'));
+  try {
+    const folder = resolve(scratch, 'src/test/e2e');
+    mkdirSync(folder, { recursive: true });
+    for (const name of requiredE2eSpecs)
+      writeFileSync(
+        resolve(folder, name),
+        name === 'csp.spec.ts' ?
+          "import {test} from '@playwright/test'; test.only('focused fixture',()=>{});"
+        : "import {test} from '@playwright/test';",
+      );
+    symlinkSync(
+      resolve('node_modules'),
+      resolve(scratch, 'node_modules'),
+      process.platform === 'win32' ? 'junction' : 'dir',
+    );
+    const config = writeE2eHarness(
+      scratch,
+      'http://127.0.0.1:3000',
+      resolve(scratch, 'egress.log'),
+    );
+    let rejection;
+    try {
+      execFileSync(
+        process.execPath,
+        [require.resolve('@playwright/test/cli'), 'test', '--config', config, '--list'],
+        { cwd: scratch, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 30000 },
+      );
+    } catch (error) {
+      rejection = error;
+    }
+    assert(rejection, 'test.only must fail discovery rather than shrink acceptance');
+    assert.match(String(rejection.stdout) + String(rejection.stderr), /test\.only/);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
 import {
   parseMode,
   assertLocalParent,

@@ -369,6 +369,18 @@ autorizada; el config estándar que elimina su site key no acredita esa prueba.
 
 ## Tarea 6 — Aceptación, documentación e integración
 
+Corrección de integración CI, 2026-10-19: `csp.spec.ts` necesita el error SSR y
+Turnstile sintéticos del runner confinado, ausentes en la suite estándar.
+La configuración estándar deriva únicamente ese spec al paso CI obligatorio
+`node scripts/run-plan-0124-local.mjs --e2e`; no se omite su aceptación.
+El paso reconstruye contexto local con `env -i PATH="$PATH" HOME="$HOME"`,
+conservando la prohibición de contexto padre CI/proveedores y todos los guards.
+Dos regresiones nuevas fallaron antes de la corrección: aceptación parcial y
+`test.only` real durante discovery. Tras corregirlas, Node 37/37 pasó; el runner
+exige exactamente 22 casos, distribución 10 CSP/7 analytics/4 impersonación/1
+tunnel, sin skips/flaky/retries/duplicados y con `forbidOnly`. El CI Ubuntu
+vigente debe ejecutar ese paso completo antes del merge.
+
 - [x] Verificar reset local limpio del stack oficial comprobado tras migraciones,
       preservando credenciales, fuentes pendientes y proyectos ajenos; ejecutar
       pgTAP completo y registrar el ledger reconstruido. Excepción documentada:

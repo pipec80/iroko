@@ -487,6 +487,41 @@ export const requiredE2eSpecs = [
   'analytics.spec.ts',
   'sentry-tunnel.spec.ts',
 ];
+
+/** Fail closed when an isolated run silently narrows the accepted scenario set. */
+export function assertCompleteE2eAcceptance(stats, cases) {
+  const expectedByFile = {
+    'csp.spec.ts': 10,
+    'analytics.spec.ts': 7,
+    'impersonation.spec.ts': 4,
+    'sentry-tunnel.spec.ts': 1,
+  };
+  if (
+    stats.expected !== 22 ||
+    stats.skipped ||
+    stats.unexpected ||
+    stats.flaky ||
+    cases.length !== 22
+  )
+    throw new Error('All 22 isolated E2E cases must pass without skips or retries');
+  const counts = {};
+  const seen = new Set();
+  for (const entry of cases) {
+    const file = entry.file.replaceAll('\\', '/').split('/').at(-1);
+    const identity = `${file}:${entry.title}`;
+    if (
+      !Object.hasOwn(expectedByFile, file) ||
+      seen.has(identity) ||
+      entry.statuses.length !== 1 ||
+      entry.statuses[0] !== 'passed'
+    )
+      throw new Error('Isolated E2E coverage contains missing, repeated or unsuccessful cases');
+    seen.add(identity);
+    counts[file] = (counts[file] ?? 0) + 1;
+  }
+  for (const [file, count] of Object.entries(expectedByFile))
+    if (counts[file] !== count) throw new Error(`Incomplete isolated E2E coverage: ${file}`);
+}
 export const turnstileStub = String.raw`(()=>{const widgets=new Map();let sequence=0;const token='plan0124-local-captcha';const complete=id=>{widgets.get(id)?.callback?.(token);};window.turnstile={ready:callback=>callback(),render:(_element,options={})=>{const id='local-'+(++sequence);widgets.set(id,options);setTimeout(()=>complete(id),0);return id;},reset:id=>setTimeout(()=>complete(id),0),getResponse:()=>token,isExpired:()=>false,remove:id=>widgets.delete(id),execute:id=>setTimeout(()=>complete(id),0)};const source=document.currentScript?.src;const callback=source?new URL(source).searchParams.get('onload'):null;if(callback)setTimeout(()=>window[callback]?.(),0);})();`;
 
 /** Creates only scratch configuration; original Playwright env loading is never imported. */
@@ -518,7 +553,7 @@ export function writeE2eHarness(scratch, baseURL, guardLog) {
   const config = resolve(scratch, 'plan0124-playwright.config.ts');
   writeFileSync(
     config,
-    `import {defineConfig,devices} from '@playwright/test';\nexport default defineConfig({testDir:'./src/test/e2e',testMatch:${JSON.stringify(requiredE2eSpecs)},fullyParallel:false,workers:1,retries:0,timeout:120000,grepInvert:/Cloud @smoke: a real envelope through \\/sentry-tunnel reaches Sentry$/,reporter:[['json',{outputFile:'plan0124-results.json'}]],use:{...devices['Desktop Chrome'],baseURL:${JSON.stringify(baseURL)},serviceWorkers:'block',trace:'off',screenshot:'off',launchOptions:{executablePath:process.env.PLAN0124_BROWSER_EXECUTABLE,args:['--disable-background-networking','--disable-component-update','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1']}}});\n`,
+    `import {defineConfig,devices} from '@playwright/test';\nexport default defineConfig({testDir:'./src/test/e2e',testMatch:${JSON.stringify(requiredE2eSpecs)},forbidOnly:true,fullyParallel:false,workers:1,retries:0,timeout:120000,grepInvert:/Cloud @smoke: a real envelope through \\/sentry-tunnel reaches Sentry$/,reporter:[['json',{outputFile:'plan0124-results.json'}]],use:{...devices['Desktop Chrome'],baseURL:${JSON.stringify(baseURL)},serviceWorkers:'block',trace:'off',screenshot:'off',launchOptions:{executablePath:process.env.PLAN0124_BROWSER_EXECUTABLE,args:['--disable-background-networking','--disable-component-update','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1']}}});\n`,
   );
   const fixture = resolve(scratch, 'src/app/[locale]/csp-runtime-error/page.tsx');
   mkdirSync(dirname(fixture), { recursive: true });
@@ -645,8 +680,7 @@ async function runE2e(scratch, source, dependencies, env, scratchBase) {
     writeFileSync(resolve(scratchBase, 'e2e-results.json'), JSON.stringify(evidence, null, 2));
     console.log('E2E actual counts: ' + JSON.stringify(result.stats));
     if (failure) throw failure;
-    if (result.stats.skipped || result.stats.unexpected || !result.stats.expected)
-      throw new Error('Skipped/failed/zero E2E tests do not meet acceptance');
+    assertCompleteE2eAcceptance(result.stats, cases);
     if (
       !cases.some(
         (test) =>

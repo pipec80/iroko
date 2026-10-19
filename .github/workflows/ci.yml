@@ -448,6 +448,14 @@ jobs:
           # y captchaReady arranca en true → botones habilitados desde el inicio.
           # Turnstile headless no dispara onSuccess aunque uses la test key.
 
+      - name: Test confined acceptance runner
+        run: node --test scripts/run-plan-0124-local.test.mjs scripts/normalize-navigation-links-local.test.mjs
+
+      - name: Run confined CSP and consumer acceptance
+        # Preserve the runner's rejection of CI/provider parent context. It
+        # rebuilds only local fixture credentials from the verified CLI stack.
+        run: env -i PATH="$PATH" HOME="$HOME" node scripts/run-plan-0124-local.mjs --e2e
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
