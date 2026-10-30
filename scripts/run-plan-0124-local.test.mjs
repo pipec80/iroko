@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 test('core harness fulfills exact country flags locally and rejects decorated or unrelated URLs', async () => {
-  const { writeE2eHarness, requiredE2eSpecs, guardBrowserContexts } =
+  const { writeE2eHarness, requiredE2eSpecs, guardBrowserContexts, assertScratchPath } =
     await import('./run-plan-0124-local.mjs');
   const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } = await import('node:fs');
   const { resolve } = await import('node:path');
@@ -77,6 +77,7 @@ test('core harness fulfills exact country flags locally and rejects decorated or
       assert.equal(aborted, !allowed);
     }
   } finally {
+    assertScratchPath(scratch, tmpdir(), 'plan0124-assets-');
     rmSync(scratch, { recursive: true, force: true });
   }
 });
