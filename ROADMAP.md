@@ -8,8 +8,9 @@ path for reuse. It is not yet accepted as an installable customer product.
 Direction accepted 2026-10-28: [ADR 0005](docs/adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 Deliver the replicable SaaS core before a Robot/client vertical. Editor R02 and
 its development runner are outside the MVP critical path; effective exclusion
-has local guards/unit evidence as of2026-10-29, with browser acceptance still an
-obligation of015-T1. This does not complete reuse or the017 local milestone.
+has local guards/unit evidence and bounded browser acceptance as of2026-10-29.
+The exclusion prerequisite of015-T1 is satisfied locally; composition/billing,
+reuse and remaining017 tasks stay open. See the dated current state and register.
 
 ## Authority boundary
 

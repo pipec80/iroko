@@ -8,8 +8,8 @@ execution plans, evidence, runbooks and durable technical decisions.
 Direction accepted 2026-10-28: [replicable SaaS MVP and bounded acceptance,
 ADR0005](adr/0005-replicable-saas-mvp-and-bounded-acceptance.md). Core first,
 then optional verticals. Editor runner is not on the MVP critical path; its
-effective exclusion now has local guards/unit evidence (2026-10-29), with browser
-acceptance blocked; independent reuse remains pending. See the dated current state.
+effective exclusion now has local guards/unit and bounded browser acceptance
+(2026-10-29); composition and independent reuse remain pending. See the dated current state.
 
 1. [Current state](current-state.md) — implemented behavior, dated evidence,
    operational gaps and verification boundaries. The [freeze progress table](current-state.md#freeze-work-status) summarizes completed scopes and remaining work.

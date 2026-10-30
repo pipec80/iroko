@@ -14,6 +14,12 @@
 
 ## Entendimiento aprobado y alcance
 
+Actualización de exclusión2026-10-29: prerrequisito015-T1 aceptado localmente
+con navegador2/2 y cleanup, complementando guards unitarios/revisión. No quedan
+filasP1 pendientes del núcleo017 en CSV; se habilita012.5 según el paso4 de la
+cola. RS-05 global sigue pendiente por composición/billingT0/T1; no cierra015
+ni017 P2 ni certifica build/Cloud. Véase la evidencia más reciente enlazada arriba.
+
 Actualización2026-10-29: implementación consolidada localmente en
 `634ad4918809141b0d63c3f00bf368cc8b829b02`; documentación/evidencia en consolidación
 separada. Sustituye «cambios sin commit» del estado histórico anterior. S-05/S-06
@@ -24,7 +30,7 @@ satisfacen el contrato localT10; Actions/protección de rama siguen
 El resultado de017 es cerrar defectos del núcleo ofrecido, no perfeccionar un
 runner ni construir una vertical. Editor N04/N05/R02 queda diferido; su exclusión
 efectiva pertenece a RS-05/015-T1: guards y regresiones unitarias implementados
-el29/10; aceptación browser bloqueada, no declarada. La disposición individual
+el29/10; aceptación browser de exclusión2/2 completada después ese día. La disposición individual
 actualizada está en la evidenciaP1, sin borrar resultados históricos.
 Robot no condiciona replicar la base. Las secciones técnicas de tareas diferidas
 se conservan para su retorno, sin constituir una orden de ejecutarlas ahora.
@@ -250,7 +256,8 @@ subplan. Si una tarea independiente queda bloqueada,
 anotar la desviación y tomar la siguiente habilitada sin alterar el roadmap.
 R02 conserva su riesgo y evidencia, con phase=post-mvp por ADR0005. No bloquea
 los demás lotes; sí bloquea ofrecer editor hasta su aceptación. La exclusión
-pendiente de015-T1 mantiene un gate de seguridad sobre rutas/acciones accesibles.
+de015-T1 conserva su gate sobre rutas/acciones; el prerrequisito de exclusión fue
+aceptado localmente el29/10, sin aceptar la composición/billing restante.
 
 ## Seguimientos que requieren disposición, no un cierre ficticio
 

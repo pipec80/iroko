@@ -2,6 +2,12 @@
 
 ## Contrato vigente de producto — 2026-10-28
 
+**Actualización2026-10-29:** prerrequisito de exclusión aceptado localmente:
+guards unitarios/revisión y navegador2/2, cleanup verificado. Ver resultado más
+reciente en [evidencia017](../../audits/2026-10-20-017-p1-execution.md).
+RS-05 global mantiene `evidence-pending` por composición/billingT0/T1. No acepta
+el resto de015, buildproduction ni Cloud; los bloqueos previos quedan históricos.
+
 [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md) fija el
 resultado: replicar una base SaaS, cambiar marca/configuración y añadir un caso
 de negocio pequeño. Robot no es requisito ni primer consumidor obligatorio.
@@ -12,7 +18,7 @@ no construir cosmética, tarot e IoT para probar la misma base.
 configuraciones ofrecidas, en paralelo lógico con la disposición de P1 del núcleo,
 pero nunca pruebas mutantes simultáneas. El código ahora fija
 `features.projects=false` y conserva Robot=false, con guards y regresiones locales;
-ver [evidencia y bloqueo browser](../../audits/2026-10-20-017-p1-execution.md).
+ver [evidencia browser y límites](../../audits/2026-10-20-017-p1-execution.md).
 Esto no acepta el resto deT1 ni inicia los ensayos de015. Antes de ofrecer
 el MVP verificar páginas, URLs profundas, acciones y accesos del inicio. Usar
 configuración existente; retirar la referencia Projects completa si es la forma
@@ -53,8 +59,8 @@ local; el resto deT1 y los ensayos siguen sin iniciar.
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
-**Estado:** prerrequisito de exclusión implementado localmente, aceptación browser
-pendiente; resto del plan y ensayos no iniciados. P1 para uso propio;
+**Estado:** prerrequisito de exclusión aceptado localmente, incluido navegador;
+resto del plan y ensayos no iniciados. P1 para uso propio;
 no depende de decidir vender. Baseline: `f82d2fbe381014c80a090ba3c36c99e4778111c3`.
 
 **Goal:** demostrar que una instalación nueva puede configurarse, extenderse y

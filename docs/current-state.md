@@ -1,5 +1,21 @@
 # Current State
 
+## Exclusión RS-05 aceptada localmente — 2026-10-29
+
+Projects/editor y Robot tienen aceptación local acotada de exclusión: navegador
+2/2 sin skips/reintentos/flaky, guards unitarios y revisión independiente.
+Candidato `558ad5c`, código `634ad491`; sin cambios de producto nuevos.
+Fixtures retiradas, scratch/procesos propios ausentes y puerto3000 disponible.
+[Resultado, comandos y límites](audits/2026-10-20-017-p1-execution.md).
+
+RS-05 global sigue `evidence-pending` por composición/billing de015: sólo se
+acepta su prerrequisito adelantado. El evento sanitizado server-error queda
+registrado sin causa; no se afirma salud general ni capacidad sostenida.
+No quedan filasP1 pendientes del núcleo017 en CSV; se habilita012.5 según roadmap.
+017 P2, resto015 y016 siguen abiertos. Editor N04/N05/R02 continúa diferido.
+Buildproduction/GitHub/Cloud **[NO VERIFICADO]**. Los bloqueos browser descritos
+abajo conservan su fecha histórica y quedan superados sólo para esta exclusión.
+
 ## Consolidación local de017 — 2026-10-29
 
 Código consolidado en `634ad4918809141b0d63c3f00bf368cc8b829b02`:
