@@ -6,6 +6,10 @@
 
 ## Context
 
+Related later decision: [ADR0005](0005-replicable-saas-mvp-and-bounded-acceptance.md),
+2026-10-28, changes MVP scope/acceptance while preserving this authority contract.
+This record remains accepted; historical reasoning is not rewritten as runtime proof.
+
 The repository accumulated useful audits, roadmaps, execution plans, local
 notes, and tool-specific instructions. Several sources now disagree about the
 active phase, billing providers, architecture coverage, and completion status.

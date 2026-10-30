@@ -6,6 +6,10 @@
 
 ## Contexto
 
+Decisión posterior relacionada: [ADR0005](0005-replicable-saas-mvp-and-bounded-acceptance.md),
+2026-10-28, prioriza réplica/cambio de marca y no otro sistema visual. Conserva
+esta autoridad de diseño; adaptar look and feel no introduce una tercera paleta.
+
 `docs/design-system/` acumuló una versión vigente, prototipos anteriores, una
 exportación descargada que replica gran parte del árbol y un PDF. Algunas guías
 todavía describían la paleta y tipografías retiradas, mientras los tokens y el

@@ -1,5 +1,22 @@
 # Operational Evidence Register
 
+## Consolidated pointers — 2026-10-20
+
+The table below is a historical snapshot from September, not a claim of current provider health. All time-bound rows older than 48 hours are expired unless a newer record is linked. Old CURRENT labels refer to their observation date. This consolidation performed no Cloud/provider check.
+
+| Scope                     | Latest linked record                                                              | Evidence boundary                                                                         |
+| ------------------------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 012.1 grants              | [Application/postflight](../audits/2026-10-09-plan-012-1-cloud-application.md)    | Dated ACL scope; not universal least privilege or fresh runtime                           |
+| 012.2 outbound HTTP       | [Bounded acceptance](../audits/2026-10-13-plan-012-2-cloud-acceptance.md)         | Validated sender/delivery scope; no acceptance of every trigger                           |
+| 012.3 rate limit          | [Execution/follow-ups](../audits/2026-10-14-plan-012-3-follow-ups.md)             | Dated local/Cloud/API scope; inherited RL-F conditions remain                             |
+| 012.4 CSP/secrets         | [Closure](../audits/2026-10-19-plan-012-4-cloud-closure.md)                       | Browser/provider/owner actions observed; explicit exceptions retained                     |
+| Code/quality revalidation | [19/10 audit](../audits/2026-10-19-freeze-code-and-documentation-revalidation.md) | Typecheck/lint and 122 unit files/1452 tests with threads; no SQL/E2E/build/Cloud renewal |
+| Final MVP candidate       | [Validation protocol](../runbooks/freeze-candidate-validation.md)                 | Planned after all corrections/configuration; not executed                                 |
+
+The [central register](../exec-plans/active/freeze-remediation-register.csv) owns unresolved evidence dispositions. Current Cloud health, SMTP/queue health and migration parity remain [NO VERIFICADO] until renewed for the relevant candidate.
+
+## Historical snapshot
+
 Last updated: **2026-09-24** (first real reconciliation-discovery scans, Cloud
 lease drill and measured provider behaviors; provider acceptance remains
 separate)
@@ -26,7 +43,7 @@ the rule that determines when it expires.
 - **Time-bound:** production smoke, email-worker health, and scheduled database
   monitoring expire after 48 hours.
 
-## Current register
+## Register as observed on 2026-09-24
 
 | Capability                       | Environment                                         | Latest inspected evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Verified at (UTC)    | Validity                         | Status                                                                                                                                                                                                              |
 | -------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

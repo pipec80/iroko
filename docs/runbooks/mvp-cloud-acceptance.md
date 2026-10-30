@@ -1,5 +1,10 @@
 # Iroko MVP: Cloud acceptance target
 
+MVP scope update2026-10-28: [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+The target below remains; accept the deployed replicable-core configuration,
+including effective deferred-module exclusion, not a mandatory Robot/editor
+vertical. This documentation grants no new provider-write or deploy authority.
+
 Updated: 2026-10-19. Explicit owner decision.
 
 Iroko is under construction. Preview and production are treated as the same

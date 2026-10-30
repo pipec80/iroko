@@ -1,5 +1,7 @@
 # Module Catalog
 
+Consolidation **2026-10-20**: use the [audit/register](../exec-plans/active/017-freeze-remediation.md) for current repair disposition. Robot route/action/live-role SQL guards are incorporated; 014-T2/T3 and the remaining 017 tasks are still planned. Dated module/runtime evidence below retains its own scope.
+
 Catalog cross-check: **2026-09-24**, baseline
 `f82d2fbe381014c80a090ba3c36c99e4778111c3`. The eight detailed guides retain
 their own 2026-08-20 verification boundaries; this catalog update does not
@@ -24,19 +26,19 @@ observed checks and defects. Active
 the extension recipes and independent acceptance; no recipe execution is
 claimed by this map.
 
-| Capability                             | Code / schema entry point                                                             | Current boundary                                                                                                                               |
-| -------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auth and recovery                      | `src/app/[locale]/(auth)/actions.ts`, `src/lib/supabase/middleware.ts`                | Auth flows exist; provider/SMTP/redirect configuration needs candidate-specific verification                                                   |
-| Accounts and RBAC                      | `src/lib/active-account.ts`, `src/lib/permissions.ts`, `supabase/schemas/public.sql`  | Live role checks and RLS; core Plan 010 closed, robot example has separate RS-01                                                               |
-| Files                                  | `dashboard/account/actions.ts`, `src/lib/project-documents.ts`, `src/lib/storage.ts`  | Public avatars and private documents are different contracts; RS-02 origin check open                                                          |
-| Notifications and presence             | `src/hooks/use-notifications.ts`, `use-presence.ts`, notifications/presence SQL       | Realtime patterns present; not a generic collaboration platform                                                                                |
-| Email and jobs                         | `src/lib/email/index.tsx`, `supabase/functions/process-email-queue/handler.ts`        | Inline mail, Auth SMTP and queued Edge mail differ; [worker runbook](../runbooks/email-queue.md)                                               |
-| API keys and outbound webhooks         | `src/lib/api-keys/index.ts`, `src/app/api/v1/account/route.ts`, API keys/webhooks SQL | Example API and outbound delivery; Plan 012 owns rate limit/egress review                                                                      |
-| Feature flags and module configuration | `src/lib/flags/index.ts`, `src/config/app.config.ts`                                  | Product flags, menu visibility, availability and authorization are distinct                                                                    |
-| Billing and entitlements               | `src/lib/billing/`, `src/app/api/internal/billing/worker/`                            | [MP matrix](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md) owns acceptance; other providers not inferred from code |
-| Observability                          | `src/lib/logger.ts`, `src/lib/analytics/`, Sentry and nightly workflow                | Telemetry code exists; [operational register](../quality/operational-evidence.md) bounds actual observations                                   |
-| Robot example                          | `src/lib/robot-config.ts`, `dashboard/robot/page.tsx`                                 | Hidden in navigation; that does not close route/actions/SQL. Active Plan 014 owns remediation                                                  |
-| Vector extension                       | `supabase/migrations/20260610120000_advanced_extensions.sql`                          | Extension enabled by migration; no complete AI vertical claimed                                                                                |
+| Capability                             | Code / schema entry point                                                             | Current boundary                                                                                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth and recovery                      | `src/app/[locale]/(auth)/actions.ts`, `src/lib/supabase/middleware.ts`                | Auth flows exist; provider/SMTP/redirect configuration needs candidate-specific verification                                                                  |
+| Accounts and RBAC                      | `src/lib/active-account.ts`, `src/lib/permissions.ts`, `supabase/schemas/public.sql`  | Live role checks and RLS; core Plan 010 closed, robot example has separate RS-01                                                                              |
+| Files                                  | `dashboard/account/actions.ts`, `src/lib/project-documents.ts`, `src/lib/storage.ts`  | Public avatars and private documents are different contracts; RS-02 origin check open                                                                         |
+| Notifications and presence             | `src/hooks/use-notifications.ts`, `use-presence.ts`, notifications/presence SQL       | Realtime patterns present; not a generic collaboration platform                                                                                               |
+| Email and jobs                         | `src/lib/email/index.tsx`, `supabase/functions/process-email-queue/handler.ts`        | Inline mail, Auth SMTP and queued Edge mail differ; [worker runbook](../runbooks/email-queue.md)                                                              |
+| API keys and outbound webhooks         | `src/lib/api-keys/index.ts`, `src/app/api/v1/account/route.ts`, API keys/webhooks SQL | Example API and outbound delivery; Plan 012 owns rate limit/egress review                                                                                     |
+| Feature flags and module configuration | `src/lib/flags/index.ts`, `src/config/app.config.ts`                                  | Product flags, menu visibility, availability and authorization are distinct                                                                                   |
+| Billing and entitlements               | `src/lib/billing/`, `src/app/api/internal/billing/worker/`                            | [MP matrix](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md) owns acceptance; other providers not inferred from code                |
+| Observability                          | `src/lib/logger.ts`, `src/lib/analytics/`, Sentry and nightly workflow                | Telemetry code exists; [operational register](../quality/operational-evidence.md) bounds actual observations                                                  |
+| Robot example                          | `src/lib/robot-config.ts`, `dashboard/robot/page.tsx`                                 | Route/action/SQL guards incorporated under 014-T1; D-06 concurrent replacement belongs to 017.2-T5. Robot-specific Cloud functional acceptance is not renewed |
+| Vector extension                       | `supabase/migrations/20260610120000_advanced_extensions.sql`                          | Extension enabled by migration; no complete AI vertical claimed                                                                                               |
 
 ## Detailed module guides
 

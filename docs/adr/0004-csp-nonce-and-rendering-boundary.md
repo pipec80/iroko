@@ -6,6 +6,10 @@
 
 ## Context
 
+Related later decision: [ADR0005](0005-replicable-saas-mvp-and-bounded-acceptance.md),
+2026-10-28. Editor-runner deferral does not remove CSP, nonce propagation,
+secret confinement or the need for real offered-surface browser acceptance.
+
 The current script policy permits inline scripts. Removing that permission must
 preserve Next.js hydration, locale routing, theme initialization, CAPTCHA and
 existing observability consumers. A nonce policy also affects document rendering

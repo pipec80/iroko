@@ -7,6 +7,10 @@ from `docs/exec-plans/` (bounded, time-boxed implementation plans) and from
 
 ## Documents
 
+- [Replicable SaaS MVP, ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md)
+  — accepted product boundary and bounded final re-audit; Robot/editor deferred,
+  exclusion and reuse proof still pending execution.
+
 - [System overview](system-overview.md) — context, building blocks, runtime
   boundaries, and a change map.
 - [Billing Platform v2 design](billing-platform-v2-design.md) — target billing

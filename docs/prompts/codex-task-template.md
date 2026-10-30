@@ -2,6 +2,13 @@
 
 Use this template after the master reconnaissance has selected and a human has approved one execution plan.
 
+For Plan 017, use its [shared execution contract](../exec-plans/active/017-freeze-remediation.md)
+and the selected child task instead of the generic process/checklist below.
+Its outcome, scope, focused validation, batch gates and stop conditions apply
+regardless of model. Do not install dependencies, create a PR, rerun every gate
+or ask for renewed approval merely because this generic template lists them;
+follow the actual task authorization and repository rules.
+
 ````md
 # Task: <bounded title>
 
@@ -11,7 +18,7 @@ Repository: `pipec80/iroko`
 Plan: `docs/exec-plans/active/<plan>.md`
 Audit finding IDs: `<AUD-...>`
 
-Read `AGENTS.md` (local, no versionado — if absent in your checkout, skip it), the plan, the audit and the Definition of Done before acting.
+Read the versioned root `AGENTS.md` (required; if absent, report the missing repository contract), the plan, the audit and the Definition of Done before acting.
 
 ## Goal
 
@@ -38,7 +45,7 @@ Read `AGENTS.md` (local, no versionado — if absent in your checkout, skip it),
 - no secrets or personal data in Git/logs;
 - no direct push to `main`;
 - no weakening checks to make CI pass;
-- follow all stop conditions in `AGENTS.md` when present (local, no versionado).
+- follow all stop conditions in the versioned root `AGENTS.md`.
 
 ## Required process
 

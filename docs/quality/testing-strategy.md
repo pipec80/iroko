@@ -2,6 +2,18 @@
 
 ## Principle
 
+MVP scope accepted 2026-10-28: [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+Acceptance verifies the offered configuration, not every reference feature or a
+particular runner. Define the scenario manifest before running; deferred modules
+require exclusion checks and retain their tests for return, never fabricated PASS.
+Editor development-runner optimization is off the critical path. Keep attested
+SQL isolation, positive/negative authorization tests and existing coverage floors.
+For bounded real journeys a reproducible manual browser check may replace a costly
+automation method, with candidate/target/expected/observed/cleanup evidence. It
+does not replace SQL/security gates or validate unexecuted CI. Final016 re-audit
+uses falsifiable findings and independent review; do not repeat full suites at
+every task or treat agreement between models as operational evidence.
+
 Iroko uses a test pyramid with cross-cutting quality dimensions. Edge cases and regression are not separate levels after E2E; they belong throughout unit, integration, database and E2E testing.
 
 This document defines durable strategy. The repository-root

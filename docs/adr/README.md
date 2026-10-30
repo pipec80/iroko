@@ -14,6 +14,10 @@ and be lost to future sessions.
 
 Filename convention: `NNNN-short-title.md`, numbered sequentially.
 
+- [0005 — Replicable SaaS MVP and bounded acceptance](0005-replicable-saas-mvp-and-bounded-acceptance.md)
+  — **Accepted**,2026-10-28. Core replication before optional verticals;
+  editor runner off critical path; scope exclusion and runtime acceptance pending.
+
 - [0003 — Mercado Pago reliability boundaries](0003-mercadopago-reliability-boundaries.md)
   — **Accepted**, 2026-09-09. Durable checkout coordination and recovery through
   the existing billing reducer; not implementation or runtime evidence.

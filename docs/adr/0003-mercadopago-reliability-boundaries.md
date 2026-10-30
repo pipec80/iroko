@@ -7,6 +7,10 @@
 
 ## Context
 
+Related later decision: [ADR0005](0005-replicable-saas-mvp-and-bounded-acceptance.md),
+2026-10-28. One offered provider and a coherent no-new-purchases configuration;
+this reliability/security decision and existing subscription processing remain.
+
 Hosted subscription checkout can succeed remotely while local confirmation
 is incomplete. Retrying creation risks duplicate subscriptions, while merely
 logging an uncorrelated payment or financial divergence loses actionable work.

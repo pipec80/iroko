@@ -1,4 +1,12 @@
-# Piloto IoT — primer producto derivado de la base SaaS
+# Piloto IoT — vertical opcional posterior a la base SaaS
+
+**Disposición vigente 2026-10-28:** [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+Este documento conserva una propuesta e inspección históricas. Robot no es el
+SaaS base ni una dependencia de015/016. Primero demostrar réplica, marca,
+configuración, extensión neutral y actualización; luego decidir la vertical que
+aporte al cliente. Cosmética/tarot son otros ejemplos, no implementaciones nuevas.
+Las referencias siguientes a primer consumidor describen aquella propuesta,
+no una obligación ni autorización actual sobre el repositorio del robot.
 
 Fecha: 2026-09-24. Estado: dirección aportada por el mantenedor y propuesta de
 acotación; no es un ADR aceptado, un plan de implementación aprobado ni una

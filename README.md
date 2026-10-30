@@ -1,5 +1,10 @@
 # Iroko — SaaS Foundation
 
+Dirección del MVP,2026-10-28: [base SaaS replicable y aceptación acotada](docs/adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+Primero demostrar configuración, marca, extensión y actualización del núcleo;
+después una vertical cliente/Robot. No hay aceptación nueva de producto por
+actualizar esta documentación. Estado y siguiente trabajo en [current-state](docs/current-state.md).
+
 Base SaaS interna y reutilizable para los proyectos de pipec, construida con la
 calidad y modularidad necesarias para poder convertirse más adelante en un
 boilerplate comercial. Hoy no se presenta como producto instalable, soportado
@@ -134,7 +139,7 @@ de publicar está en [docs/history/](docs/history/README.md).
 El [roadmap de freeze](ROADMAP.md) contiene el único orden vigente. Plan 011
 tiene el alcance requerido por este freeze satisfecho y conserva sus escenarios
 restantes como trabajo diferido; Plan 013 también queda diferido hasta decidir
-vender. Los Planes 012, 014, 015 y 016 forman el trabajo activo. Consulta el
+vender. Los Planes 012, 014, 015, 016 y 017 forman el trabajo activo. Consulta el
 [índice de planes](docs/exec-plans/README.md) para su ciclo de vida y
 [el estado actual](docs/current-state.md) para evidencia verificada.
 

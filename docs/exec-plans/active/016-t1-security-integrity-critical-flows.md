@@ -1,5 +1,10 @@
 # 016-T1 — Seguridad, integridad y flujos críticos
 
+Dirección posterior,2026-10-28: [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+Este desgloseT1 y su evidencia histórica se conservan. La reauditoría nueva del
+candidato ocurre en016-T2/T3 después de015, con alcance ofrecido y exclusiones
+verificadas; no reactivar tareas históricas ni editor/Robot por recorrer esta lista.
+
 > **Para agentes:** ejecutar como revisión en lectura dentro del Plan 016,
 > con coordinación principal y contraste N/S/D. Usar
 > `superpowers:executing-plans` para seguimiento por tareas y `clean-code`

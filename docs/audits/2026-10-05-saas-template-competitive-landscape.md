@@ -1,5 +1,7 @@
 # Panorama competitivo de plantillas SaaS — 2026-10-05
 
+**Sequence notice — 2026-10-20:** recommendations below are historical. The [root roadmap](../../ROADMAP.md) owns the current sequence: P1 remediation before 012.5, independent reuse before final integrated validation. Do not use the older ordering as execution authorization.
+
 ## Alcance y método
 
 Esta investigación compara Iroko con referentes públicos que resuelven partes

@@ -1,5 +1,44 @@
 # Plan 016 — Revisión de Next.js, seguridad Supabase y arquitectura de datos
 
+## Reauditoría final vigente — 2026-10-28
+
+[ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md) fija
+el alcance deT2/T3 después de015: base replicable y configurable, sin obligación
+de construir Robot ni aceptar editor avanzado. Conservar el manifiesto/revisiónT1
+históricos; crear o renovar inventario del candidato final con hashes de fuentes
+propias y revisar consumidores/riesgos. No declarar lectura actual a partir del
+informe viejo. Los accesos de módulos excluidos sí se revisan para comprobar
+exclusión efectiva; no se exige aceptar funcionalidades que no se ofrecen.
+
+Método: hipótesis falsables, evidencia específica, controles positivos/negativos,
+reproducción proporcional al riesgo, severidad y certeza explícitas; separar
+producto/prueba/entorno/desconocido. Contraste independiente de aplicación,
+seguridad/datos e integración. Modelos/herramientas son apoyo, no certificación.
+Una revisión final con reparación de bloqueantes confirmados y retest afectado;
+no nueva ronda completa automática ni ampliación de producto. Gates integrados
+una vez sobre candidato identificado, con reuso justificado de evidencia vigente.
+Aplicar el runbook final actualizado; un bloqueo no se convierte en PASS.
+
+## Disposición vigente — 2026-10-20
+
+La [auditoría dirigida](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md)
+y el [registro central](freeze-remediation-register.csv) consolidan los 53 IDs
+históricos y sus alias/seguimientos. Las reparaciones están asignadas a
+[017](017-freeze-remediation.md), 012.5, 014 o 015; 016 conserva revisión,
+validación y disposición, sin implementar esas reparaciones.
+Esta asignación documentada no cierra todo T3 ni renueva la lectura exhaustiva
+T1 del candidato histórico. Final T2/T3 sucede después de los últimos cambios
+de 015 según el roadmap actualizado; precondiciones y comandos en el
+[runbook final](../../runbooks/freeze-candidate-validation.md).
+
+El helper E2E ya identifica proyecto/contenedor exactos: el párrafo histórico
+que advierte selección del primer contenedor está superado por S-08 corregido.
+Persisten otros requisitos de target/cleanup, especialmente el dblink de D-09.
+Los gates Sentry actuales permiten validación confinada; no mantener el bloqueo
+histórico absoluto como si la implementación no existiera.
+
+## Contrato original y evidencia histórica
+
 - Fecha: 2026-09-29.
 - Estado: T0 cerrado; T1 cerrada como revisión estática; T2/T3 pendientes.
 - Tipo: revisión técnica, no plan de implementación ni certificación de producción.

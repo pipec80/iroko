@@ -1,5 +1,10 @@
 # Plan 012 — Hardening de seguridad + fuente de verdad única para pricing
 
+**Dirección vigente 2026-10-28:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+Conservar cierres de seguridad y su evidencia;012.5 ofrece catálogo fiel a la
+base SaaS. No repetir cierres012 por diferir editor/Robot ni convertir esa
+decisión en aceptación Cloud. No añadir servicios/proveedores durante el freeze.
+
 - Priority: P1
 - Status: Active - operational scopes 012.1/012.2/012.3 and bounded 012.4 acceptance closed; pricing and inherited follow-ups remain pending. 012.4 source integrated in PR #229; dated closure evidence preserves all exceptions.
 - Baseline: `main` @ `d9e2648`
@@ -311,6 +316,11 @@ no inferir cierre de012.4 a partir de este gate. Evidencia en el
 [registro014](../../audits/2026-10-08-plan-014-t1-execution.md).
 
 ## PR 5 — `feat/pricing-single-source-of-truth`
+
+**Execution plan — 2026-10-20:** [012.5 pricing truth](012-5-pricing-truth.md)
+details this scope. It remains part of Plan 012; it is not split into 017 or 015. The approved roadmap places 017 P1 repairs first. Source-of-truth,
+commercial naming and evidence-based copy stay together; unrelated Auth/data
+repairs use 017 and billing-disabled availability uses 015.
 
 **Pendiente para v1:** conectar landing, `/pricing`, checkout y entitlements
 al catálogo vigente, sin modificar precios ni slugs durante el cierre MP.

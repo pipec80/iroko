@@ -1,5 +1,19 @@
 # Plan 014 — Corrección de superficies de referencia
 
+**Dirección vigente 2026-10-28:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+Preservar cierre RBAC deRobotT1 y sus límites, sin implementar una vertical para
+aceptar el núcleo. T2 imágenes/T3 auditoría se exigen en las superficies ofrecidas.
+015-T1 comprueba exclusión de editor/Robot en rutas/acciones; ocultar navegación
+no basta. No reabrir las reparaciones aceptadas sólo por esta decisión documental.
+
+**Coordinación vigente — 2026-10-20:** T2/T3 conservan las tareas de este
+documento y sus criterios; el [registro central](freeze-remediation-register.csv)
+las vincula a RS-02/S-04 y RS-03. Se ejecutan después de 017 P1 y 012.5;
+016 valida el candidato integrado después de 015. El estado Cloud y los
+builds descritos más abajo son observaciones fechadas; no renovar aceptación
+funcional Robot por una validación global posterior. D-06 (reemplazo concurrente
+Robot) tiene reparación separada en 017.2-T5; no reabre el cierre RBAC de T1.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 

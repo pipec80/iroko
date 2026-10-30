@@ -1,5 +1,7 @@
 # Plan 012.3 — Cierre y seguimientos pendientes
 
+**Resolution pointer — 2026-10-20:** NEXT-0124 below is historical: [012.4 closed with bounded acceptance on 19/10](2026-10-19-plan-012-4-cloud-closure.md). RL-F01–F06 retain their own conditions. Current task disposition is in the [central register](../exec-plans/active/freeze-remediation-register.csv); no new provider acceptance is claimed here.
+
 Actualizado: 2026-10-15. Registro documental; no autoriza cambios Cloud.
 
 ## Qué está cerrado

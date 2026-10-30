@@ -5,8 +5,14 @@ execution plans, evidence, runbooks and durable technical decisions.
 
 ## Start here
 
+Direction accepted 2026-10-28: [replicable SaaS MVP and bounded acceptance,
+ADR0005](adr/0005-replicable-saas-mvp-and-bounded-acceptance.md). Core first,
+then optional verticals. Editor runner is not on the MVP critical path; its
+effective exclusion now has local guards/unit evidence (2026-10-29), with browser
+acceptance blocked; independent reuse remains pending. See the dated current state.
+
 1. [Current state](current-state.md) — implemented behavior, dated evidence,
-   operational gaps and verification boundaries.
+   operational gaps and verification boundaries. The [freeze progress table](current-state.md#freeze-work-status) summarizes completed scopes and remaining work.
 2. [MVP freeze roadmap](../ROADMAP.md) — allowed work, the single execution
    order, exit gates and deferred scope.
 3. [Capability inventory](capabilities.md) — the declared SaaS surface and the
@@ -15,6 +21,20 @@ execution plans, evidence, runbooks and durable technical decisions.
    completed plan locations and their meaning.
 5. [Documentation history](history/README.md) — superseded versioned material,
    including the exact pre-freeze roadmap; non-authoritative.
+
+## Freeze remediation — 2026-10-20
+
+Execution simplification, 2026-10-27: the existing 017 parent owns the shared
+model-independent contract and re-entry queue; its five children own technical
+task outcomes. The CSV remains the single disposition register. Local repair
+milestones are separate from final integrated freeze acceptance; no additional
+plan directory or parallel status inventory is introduced.
+
+- [Code/documentation revalidation](audits/2026-10-19-freeze-code-and-documentation-revalidation.md) — 53 historical IDs revalidated with evidence boundaries.
+- [017 specification and child plans](exec-plans/active/017-freeze-remediation.md) and [central disposition register](exec-plans/active/freeze-remediation-register.csv) — P1 and P2 local implementation in progress; [execution evidence](audits/2026-10-20-017-p1-execution.md) records task results and pending acceptance separately. [Environment triage](audits/2026-10-27-017-environment-triage.md) distinguishes local candidate checks from Cloud acceptance.
+- [012.5 pricing execution plan](exec-plans/active/012-5-pricing-truth.md) — preserved as its own work item after 017 P1.
+- [Final candidate validation](runbooks/freeze-candidate-validation.md) — local, SQL, browser, provider and documentary gates after the final product changes. The root roadmap owns the sequence.
+- [Planning review and delivery](audits/2026-10-20-freeze-remediation-planning-review.md) — independent review, corrections to the plans and documentary checks; product implementation remains pending.
 
 ## Product and architecture
 
