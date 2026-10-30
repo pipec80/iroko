@@ -9,5 +9,11 @@ export default async function OnboardingPage({ params }: { params: Promise<{ loc
 
   const { name, accountId } = await getOnboardingOrg();
 
-  return <OnboardingWizard initialOrgName={name} initialAccountId={accountId ?? null} />;
+  return (
+    <OnboardingWizard
+      key={accountId ?? 'personal'}
+      initialOrgName={name}
+      initialAccountId={accountId ?? null}
+    />
+  );
 }
