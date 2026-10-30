@@ -1,6 +1,7 @@
 'use client';
 import React, { useActionState, useState, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Lock, Mail, WandSparkles } from 'lucide-react';
 
@@ -10,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from '@/i18n/routing';
+import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 
 import type { AuthActionState } from '../actions';
 import {
@@ -24,6 +26,9 @@ const initialState: AuthActionState = {};
 
 export default function LoginPage() {
   const t = useTranslations('Auth');
+  const locale = useLocale();
+  const searchParams = useSearchParams();
+  const next = safeRedirectPath(searchParams.get('next'), locale);
   const [email, setEmail] = useState('');
   const [signInState, signInForm, signInPending] = useActionState(signInAction, initialState);
   const [mfaState, mfaForm, mfaPending] = useActionState(verifyMfaAction, initialState);
@@ -40,6 +45,14 @@ export default function LoginPage() {
     initialState,
   );
   const [magicState, magicForm, magicPending] = useActionState(magicLinkAction, initialState);
+  const [prevMagicState, setPrevMagicState] = useState(magicState);
+  const [magicCaptchaResetKey, setMagicCaptchaResetKey] = useState(0);
+  const [magicCaptchaReady, setMagicCaptchaReady] = useState(!env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  if (prevMagicState !== magicState) {
+    setPrevMagicState(magicState);
+    setMagicCaptchaResetKey((key) => key + 1);
+    setMagicCaptchaReady(false);
+  }
   const [oauthPending, startOAuth] = useTransition();
   const [showRecovery, setShowRecovery] = useState(false);
 
@@ -78,6 +91,7 @@ export default function LoginPage() {
 
         {!showRecovery ?
           <form action={mfaForm} className="space-y-6">
+            <input type="hidden" name="next" value={next} readOnly />
             <input type="hidden" name="factorId" value={mfaFactorId} />
             <div className="space-y-2">
               <Label className="text-foreground block text-sm font-semibold" htmlFor="code">
@@ -121,6 +135,7 @@ export default function LoginPage() {
             </button>
           </form>
         : <form action={recoveryForm} className="space-y-6">
+            <input type="hidden" name="next" value={next} readOnly />
             <div className="space-y-2">
               <Label
                 className="text-foreground block text-sm font-semibold"
@@ -173,6 +188,7 @@ export default function LoginPage() {
       </div>
 
       <form action={signInForm} className="space-y-5" noValidate>
+        <input type="hidden" name="next" value={next} readOnly />
         <div className="space-y-1.5">
           <Label className="text-foreground block text-sm font-semibold" htmlFor="email">
             {t('email')}
@@ -260,11 +276,12 @@ export default function LoginPage() {
 
       <form action={magicForm} className="mt-3" noValidate>
         <input type="hidden" name="email" value={email} readOnly />
+        <CaptchaField resetKey={magicCaptchaResetKey} onReadyChange={setMagicCaptchaReady} />
         <Button
           variant="outline"
           className="h-11 w-full gap-2"
           type="submit"
-          disabled={magicPending || !email}>
+          disabled={magicPending || !email || !magicCaptchaReady}>
           <WandSparkles size={14} strokeWidth={1.5} />
           {t('magic_link')}
         </Button>

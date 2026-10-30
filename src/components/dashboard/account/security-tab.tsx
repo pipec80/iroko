@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useActionState, useState, useTransition } from 'react';
+import React, { useActionState, useEffect, useRef, useState, useTransition } from 'react';
 import { CheckCircle, Download, Mail } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -100,8 +100,34 @@ export function SecurityTab() {
   );
   const [delState, delAction, delPending] = useActionState(deleteAccountAction, initialState);
 
+  const [passwordFields, setPasswordFields] = useState({
+    current: '',
+    password: '',
+    confirm: '',
+  });
   const [isPwDirty, setIsPwDirty] = useState(false);
+  const passwordRevision = useRef(0);
+  const submittedPasswordRevision = useRef<number | null>(null);
+  const lastPasswordResult = useRef(pwState);
   const [isDelDirty, setIsDelDirty] = useState(false);
+
+  useEffect(() => {
+    if (lastPasswordResult.current === pwState) return;
+    lastPasswordResult.current = pwState;
+    if (
+      pwState.success === 'password_updated' &&
+      submittedPasswordRevision.current === passwordRevision.current
+    ) {
+      setPasswordFields({ current: '', password: '', confirm: '' });
+      setIsPwDirty(false);
+    }
+  }, [pwState]);
+
+  function editPassword(field: keyof typeof passwordFields, value: string) {
+    passwordRevision.current++;
+    setPasswordFields((previous) => ({ ...previous, [field]: value }));
+    setIsPwDirty(true);
+  }
 
   const pwError = translateError(t, pwState.error);
   const resetError = translateError(t, resetState.error);
@@ -123,13 +149,17 @@ export function SecurityTab() {
             action={pwAction}
             noValidate
             className="grid gap-4 md:grid-cols-3"
-            onChange={() => setIsPwDirty(true)}>
+            onSubmit={() => {
+              submittedPasswordRevision.current = passwordRevision.current;
+            }}>
             <div className="space-y-1.5">
               <Label htmlFor="current_password">{t('security.current_password')}</Label>
               <Input
                 id="current_password"
                 name="current_password"
                 type="password"
+                value={passwordFields.current}
+                onChange={(event) => editPassword('current', event.target.value)}
                 required
                 aria-invalid={!!pwState.fieldErrors?.current_password}
               />
@@ -150,6 +180,8 @@ export function SecurityTab() {
                 id="password"
                 name="password"
                 type="password"
+                value={passwordFields.password}
+                onChange={(event) => editPassword('password', event.target.value)}
                 required
                 minLength={10}
                 aria-invalid={!!pwState.fieldErrors?.password}
@@ -170,6 +202,8 @@ export function SecurityTab() {
                 id="confirm_password"
                 name="confirm_password"
                 type="password"
+                value={passwordFields.confirm}
+                onChange={(event) => editPassword('confirm', event.target.value)}
                 required
                 minLength={10}
                 aria-invalid={!!pwState.fieldErrors?.confirm_password}

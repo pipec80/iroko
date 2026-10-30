@@ -12,6 +12,8 @@ vi.mock('@/lib/logger', () => ({ logger: { error: mocks.logError } }));
 vi.mock('@/lib/supabase/admin', () => ({ createAdminClient: vi.fn(() => ({ rpc: mocks.rpc })) }));
 vi.mock('../registry', () => ({ getPaymentProvider: mocks.getProvider }));
 vi.mock('../reducer', () => ({ reduceBillingEvent: mocks.reduce }));
+vi.mock('@/env', () => ({ env: { MERCADOPAGO_ACCESS_TOKEN: 'TEST-fixture' } }));
+import { mercadopagoProvider } from '../providers/mercadopago';
 import { reconcileNonTerminalSubscriptions } from '../reconciliation';
 
 const candidate = {
@@ -57,6 +59,53 @@ describe('reconcileNonTerminalSubscriptions', () => {
       providerWatermark: '2026-09-11T12:00:00Z',
     });
     mocks.reduce.mockResolvedValue({ status: 'applied' });
+  });
+
+  it('rejects an actual adapter page before invoice reduction and records the classified failure without progress', async () => {
+    mocks.getProvider.mockReturnValue({
+      getSubscriptionSnapshot: mocks.snapshot,
+      discoverSubscriptionInvoices: mercadopagoProvider.discoverSubscriptionInvoices,
+    });
+    const fetch = vi.fn().mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url.includes('/v1/payments/') ?
+          { id: 'payment-1', status: 'rejected', transaction_amount: 19990, currency_id: 'CLP' }
+        : {
+            paging: { offset: 0, limit: 15, total: 1 },
+            results: [
+              {
+                id: 'invoice-1',
+                preapproval_id: 'pa-1',
+                external_reference: 'reference',
+                transaction_amount: 19990,
+                currency_id: 'CLP',
+                date_created: '2026-09-11T12:00:00Z',
+                payment: { id: 'payment-1', status: 'approved' },
+              },
+            ],
+          },
+    }));
+    vi.stubGlobal('fetch', fetch);
+    try {
+      await expect(
+        reconcileNonTerminalSubscriptions({ batchSize: 20, maxDurationMs: 45000 }),
+      ).resolves.toMatchObject({ failed: 1 });
+      expect(
+        mocks.reduce.mock.calls.every(([event]) => event.type === 'subscription_updated'),
+      ).toBe(true);
+      expect(completionCalls()[0]?.[1]).toMatchObject({
+        p_outcome: 'failed',
+        p_error_code: 'provider_discovery_payment_status_divergence',
+        p_next_cursor: null,
+        p_provider_watermark: null,
+      });
+      expect(
+        mocks.rpc.mock.calls.some(([name]) => name === 'upsert_billing_financial_anomaly'),
+      ).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it('claims a UUID-owned batch and completes a stable snapshot so it cannot remain leased', async () => {

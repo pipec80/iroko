@@ -7,6 +7,7 @@ import {
   passwordGrant,
   restRequest,
   rowCount,
+  SUPABASE_URL,
 } from './helpers';
 
 /**
@@ -26,13 +27,8 @@ import {
  *   (canManageBilling en dashboard/billing/actions.ts), no en RLS/RPC —
  *   ya cubierto por su propio test unitario
  *   (dashboard/billing/__tests__/actions.test.ts).
- * - "Subir a Storage documents": el bucket 'documents' existe en
- *   supabase/config.toml pero, a diferencia de 'org-assets', no tiene
- *   ninguna policy de Storage escrita todavía — deny-all real para TODOS
- *   los roles hoy, incluido el owner. No coincide con la matriz del plan
- *   (owner/admin/member ✅, viewer ❌) porque esa fila describe una
- *   feature aún no conectada, no un bug de este PR. Se testea el
- *   comportamiento actual (deny-all), no el aspiracional.
+ * - Storage documents: la ruta incluye cuenta y usuario editor; se prueba
+ *   creación/lectura positiva antes de los rechazos de viewer y otra cuenta.
  * - "Cambiar rol / Transferir ownership / Salir del team": el detalle
  *   caso por caso (rechazos, mensajes, efectos) ya está cubierto
  *   exhaustivamente en pgTAP (30_membership_lifecycle.test.sql, 25
@@ -70,7 +66,8 @@ test.describe('RBAC matrix', () => {
   let smallAdmin: SeededUser;
   const allSeeded: SeededUser[] = [];
 
-  test.beforeAll(async ({ request }) => {
+  test.beforeAll(async ({ request }, testInfo) => {
+    testInfo.setTimeout(180_000);
     serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
     const stamp = Date.now();
 
@@ -162,8 +159,19 @@ test.describe('RBAC matrix', () => {
     addMembership(accountSmallId, smallAdmin.id, 'admin');
   });
 
-  test.afterAll(async ({ request }) => {
-    await Promise.all(allSeeded.map((u) => deleteUserById(request, u.id, serviceKey)));
+  test.afterAll(({}, testInfo) => {
+    testInfo.setTimeout(180_000);
+    if (allSeeded.length === 0) return;
+    const ids = allSeeded.map((user) => `'${user.id}'`).join(',');
+    // Team owners cannot be removed while their team exists. Delete only
+    // accounts created by this suite, then its exact users, in one transaction.
+    execSqlAsPostgres(
+      `BEGIN; ` +
+        `DELETE FROM billing.customers WHERE account_id IN ` +
+        `(SELECT id FROM public.accounts WHERE created_by IN (${ids})); ` +
+        `DELETE FROM public.accounts WHERE created_by IN (${ids}); ` +
+        `DELETE FROM auth.users WHERE id IN (${ids}); COMMIT;`,
+    );
   });
 
   test('ver account: los 4 roles pueden leer la cuenta', async ({ request }) => {
@@ -462,28 +470,61 @@ test.describe('RBAC matrix', () => {
     expect(rowCount(ownerAttempt), 'el owner sí puede borrar projects').toBe(1);
   });
 
-  test('subir a Storage documents: deny-all real hoy, incluido el owner (gap vs. la matriz del plan)', async ({
+  test('Storage documents: editor escribe y lee; viewer y otra cuenta no escriben ni sobrescriben', async ({
     request,
   }) => {
-    // El bucket 'documents' existe en config.toml pero, a diferencia de
-    // 'org-assets', no tiene ninguna policy de Storage — ver el comentario
-    // de cabecera de este archivo. Esto documenta el comportamiento REAL,
-    // no lo que la matriz del plan aspira a que sea.
-    for (const [label, user] of Object.entries(users)) {
-      const res = await request.post(
-        `${process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321'}/storage/v1/object/documents/${accountAId}/probe-${label}.txt`,
-        {
-          headers: {
-            apikey: serviceKey,
-            Authorization: `Bearer ${user.token}`,
-            'Content-Type': 'text/plain',
-          },
-          data: 'probe',
-        },
-      );
-      expect(res.ok(), `${label}: subir a Storage documents debería fallar hoy (sin policy)`).toBe(
-        false,
-      );
+    const baseUrl = SUPABASE_URL;
+    const path = `${accountAId}/${users.member.id}/probe-${Date.now()}.txt`;
+    const objectUrl = `${baseUrl}/storage/v1/object/documents/${path}`;
+    const headers = (token: string) => ({
+      apikey: serviceKey,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'text/plain',
+    });
+
+    const createdUrls: string[] = [];
+    try {
+      const created = await request.post(objectUrl, {
+        headers: headers(users.member.token),
+        data: 'editor original',
+      });
+      if (created.ok()) createdUrls.push(objectUrl);
+      expect(created.ok(), `member editor upload: ${await created.text()}`).toBe(true);
+
+      const read = await request.get(objectUrl, { headers: headers(users.member.token) });
+      expect(read.ok(), `member editor read: ${await read.text()}`).toBe(true);
+      const readBody = await read.text();
+      expect(readBody).toBe('editor original');
+
+      for (const [label, user] of [
+        ['viewer', users.viewer],
+        ['other-account', ownerB],
+      ] as const) {
+        const foreignPath = `${accountAId}/${user.id}/probe-${Date.now()}.txt`;
+        const foreignUrl = `${baseUrl}/storage/v1/object/documents/${foreignPath}`;
+        const deniedCreate = await request.post(foreignUrl, {
+          headers: headers(user.token),
+          data: 'foreign create',
+        });
+        if (deniedCreate.ok()) createdUrls.push(foreignUrl);
+        expect(deniedCreate.ok(), `${label}: create should be denied`).toBe(false);
+
+        const deniedOverwrite = await request.put(objectUrl, {
+          headers: headers(user.token),
+          data: 'foreign overwrite',
+        });
+        expect(deniedOverwrite.ok(), `${label}: overwrite should be denied`).toBe(false);
+      }
+
+      const unchanged = await request.get(objectUrl, { headers: headers(users.member.token) });
+      expect(await unchanged.text()).toBe('editor original');
+    } finally {
+      for (const url of createdUrls) {
+        const removed = await request.delete(url, {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+        });
+        expect(removed.ok(), `Storage fixture cleanup failed: ${await removed.text()}`).toBe(true);
+      }
     }
   });
 

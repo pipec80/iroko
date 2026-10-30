@@ -1,5 +1,26 @@
 # Estrategia de producto — base SaaS reutilizable
 
+## Dirección vigente — 2026-10-28
+
+[ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md) formaliza
+la prioridad del mantenedor: primero un núcleo SaaS replicable y adaptable;
+después la vertical que lo consuma. La propuesta es reutilizar capacidades
+comunes para dedicar el trabajo al dominio del cliente y su look and feel.
+Cosmética, tarot y Robot ilustran usos futuros, no son tres productos comprometidos.
+
+El criterio de MVP es una base segura con ejemplos mínimos de Auth/Postgres/RLS,
+Storage, Realtime, Edge/correo y suscripciones en el alcance ofrecido. Demostrar
+una instalación derivada, cambio de marca, una extensión y actualización; no
+perseguir paridad de catálogo ni preparar aún distribución comercial del kit.
+La comparación competitiva permanece como evidencia fechada, no como backlog.
+
+Robot/IoT y editor Markdown avanzado salen del camino crítico. Su exclusión
+debe ser efectiva y comprobada por015-T1 antes de ofrecer el candidato. No
+se borra su trabajo, no se declara runtime aceptado y no se abandonan datos/jobs.
+No sacrificar seguridad de superficies accesibles para acortar pruebas.
+La reauditoría final016 verifica el candidato después de015 con evidencia
+reproducible y revisión independiente; no añade funciones ni ciclos infinitos.
+
 Fecha: 2026-09-24. Ampliaciones documentales de referentes: 2026-09-25 y
 2026-10-05.
 Dirección acordada con el mantenedor; contratos de
@@ -94,8 +115,9 @@ botón de compra. Los flags nunca sustituyen autorización/RLS.
 
 El cierre propuesto comprueba dos configuraciones acotadas:
 
-- **Actual:** cuentas personales/equipos, proyectos y billing según el proveedor
-  aceptado; robot oculto y su superficie tratada explícitamente.
+- **MVP a demostrar:** cuentas personales/equipos, servicios mínimos y billing
+  según el proveedor aceptado; Projects/editor y Robot efectivamente excluidos
+  en UI/rutas/acciones por015-T1. No describe todavía la configuración runtime.
 - **Sin venta de suscripciones:** mismo modelo de cuentas, sin navegación,
   onboarding de plan ni nuevas compras; sin credenciales de pagos en una
   instalación nueva. Conservar el catálogo Free para límites internos cuando
@@ -208,8 +230,8 @@ la clasificación no obliga a construir dos verticales nuevas.
 
 Llegar a una pantalla de bienvenida no acepta los tres recorridos. La evidencia
 debe identificar qué recorrido se ejecutó, por quién y con qué resultado.
-La vertical IoT puede demostrar el tercero con un dispositivo y una señal real;
-su chatbot remoto no es condición para aceptar la base común.
+Una extensión neutral puede demostrar el tercero. IoT queda como consumidor
+posterior opcional; ni dispositivo, señal real ni chatbot bloquean la base.
 
 Para una entrega adaptada, registrar versión base, diferencias del derivado,
 configuración no secreta, responsables de infraestructura/datos, verificaciones,
@@ -229,7 +251,8 @@ Plazos, precio y SLA se acuerdan al ofrecer el servicio; no se inventan aquí.
 - **011/012/014:** mantienen su prioridad y criterios de aceptación. Una guía
   atractiva o un instalador no corrigen permisos ni certifican billing.
 
-La recomendación es probar primero una vertical y su mantenimiento. Un
+La decisión vigente es probar primero la base con una extensión neutral y su
+mantenimiento. Una vertical completa no es precondición. Un
 asistente de instalación, un generador, un editor de dashboards o más proveedores
 solo se priorizan si esa prueba revela un coste repetido que justifique hacerlo.
 

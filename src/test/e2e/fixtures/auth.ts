@@ -1,6 +1,7 @@
 import { expect, test as base, type Page } from '@playwright/test';
 
 import { requireUserUuid, withAuthCleanup } from '../../local-auth-cleanup';
+import { localE2eBudget } from '../../local-e2e-target';
 import { execSqlAsPostgres, SUPABASE_URL } from '../helpers';
 
 type AuthFixtures = {
@@ -17,6 +18,7 @@ type AuthFixtures = {
  */
 export const test = base.extend<AuthFixtures>({
   authenticatedPage: async ({ page, request }, provide, testInfo) => {
+    testInfo.setTimeout(localE2eBudget(testInfo.timeout));
     // Guard: contra producción (nightly define PLAYWRIGHT_BASE_URL) no existe
     // el Supabase local — saltar con causa explícita en vez de ECONNREFUSED.
     testInfo.skip(
@@ -79,7 +81,7 @@ export const test = base.extend<AuthFixtures>({
         await page.locator('input[name="email"][type="email"]').fill(email);
         await page.locator('input[name="password"]').fill(password);
         await page.getByRole('button', { name: /iniciar sesión/i }).click();
-        await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+        await page.waitForURL(/\/es\/dashboard/, { timeout: localE2eBudget(20_000, 'navigation') });
 
         await provide(page);
 
@@ -111,15 +113,22 @@ export const test = base.extend<AuthFixtures>({
           headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
         });
         if (!cleanup.ok()) {
-          const details = await cleanup.text();
-          throw new Error(
-            `Local test user cleanup failed (${cleanup.status}): ${details.slice(0, 500)}`,
-          );
+          throw new Error(`Local test user cleanup failed (${cleanup.status()})`);
         }
       },
-      () => {
+      (error) => {
+        const failures: unknown[] = error instanceof AggregateError ? error.errors : [error];
+        const diagnostics = failures.map((failure) => {
+          if (!(failure instanceof Error)) return 'unknown';
+          const status = failure.message.match(/^Local test user cleanup failed \((\d{3})\)$/)?.[1];
+          if (status) return `http-${status}`;
+          if (/context.*closed|disposed/i.test(failure.message)) return 'context-closed';
+          return ['Error', 'TimeoutError', 'TargetClosedError'].includes(failure.name) ?
+              failure.name
+            : 'unknown';
+        });
         console.warn(
-          'Local authenticated fixture cleanup failed; disposable database cleanup is required',
+          `Local authenticated fixture cleanup failed (${diagnostics.join(',')}); disposable database cleanup is required`,
         );
       },
     );

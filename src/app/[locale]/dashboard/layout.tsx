@@ -4,6 +4,8 @@ import { DashboardLayout } from '@/components/layout/dashboard-layout';
 import { ImpersonationBanner } from '@/components/layout/impersonation-banner';
 import { redirect } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/server';
+import { IdentityScopeProvider } from '@/components/providers/query-provider';
+import { DocumentDraftProvider } from '@/components/providers/document-draft-provider';
 
 export default async function DashboardRouteLayout({
   children,
@@ -43,5 +45,17 @@ export default async function DashboardRouteLayout({
     );
   }
 
-  return <DashboardLayout impersonationBanner={banner}>{children}</DashboardLayout>;
+  const userId = data!.claims.sub;
+  const accountId = (data!.claims.app_metadata?.account_id as string | undefined) ?? null;
+  const scope = { userId, accountId: accountId ?? '', impersonatedBy: impersonatedBy ?? null };
+  return (
+    <IdentityScopeProvider scope={scope}>
+      <DocumentDraftProvider
+        key={`${userId}:${accountId ?? ''}:${impersonatedBy ?? ''}`}
+        userId={userId}
+        accountId={accountId}>
+        <DashboardLayout impersonationBanner={banner}>{children}</DashboardLayout>
+      </DocumentDraftProvider>
+    </IdentityScopeProvider>
+  );
 }

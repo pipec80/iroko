@@ -21,11 +21,13 @@ interface ProjectDetailPageProps {
 }
 
 export async function generateMetadata({ params }: ProjectDetailPageProps): Promise<Metadata> {
+  if (!appConfig.features.projects) notFound();
   const { slug } = await params;
   return { title: `${slug} — ${appConfig.brand}` };
 }
 
 export default async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
+  if (!appConfig.features.projects) notFound();
   const { locale, slug } = await params;
   setRequestLocale(locale);
 

@@ -28,7 +28,27 @@ const MAX_NOTIFICATIONS = 50;
  * @returns Estado de notificaciones, contador de no-leídas y helpers para marcarlas.
  */
 export function useNotifications(userId: string) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [owned, setOwned] = useState<{ userId: string; items: Notification[] }>({
+    userId,
+    items: [],
+  });
+  const notifications = owned.userId === userId ? owned.items : [];
+  const ownerRef = useRef(userId);
+  useEffect(() => {
+    ownerRef.current = userId;
+  }, [userId]);
+  function setNotifications(
+    update: Notification[] | ((previous: Notification[]) => Notification[]),
+  ) {
+    if (ownerRef.current !== userId) return;
+    setOwned((previous) => ({
+      userId,
+      items:
+        typeof update === 'function' ?
+          update(previous.userId === userId ? previous.items : [])
+        : update,
+    }));
+  }
   const channelRef = useRef<RealtimeChannel | null>(null);
   const supabase = createClient();
 
@@ -51,7 +71,7 @@ export function useNotifications(userId: string) {
         return;
       }
       if (!cancelled && data) {
-        setNotifications(data as Notification[]);
+        setOwned({ userId, items: data as Notification[] });
       }
     }
 
@@ -62,31 +82,46 @@ export function useNotifications(userId: string) {
   }, [userId, supabase]);
 
   useEffect(() => {
-    if (channelRef.current?.state === 'joined') return;
-
+    let active = true;
     const channel = supabase.channel(`user:${userId}:notifications`, {
       config: { private: true },
     });
 
     channelRef.current = channel;
 
-    void supabase.realtime.setAuth().then(() => {
-      channel
-        .on(
-          'broadcast',
-          { event: 'notification_created' },
-          (message: { payload: Notification }) => {
-            setNotifications((prev) => [message.payload, ...prev].slice(0, MAX_NOTIFICATIONS));
-          },
-        )
-        .subscribe();
-    });
+    void supabase.realtime
+      .setAuth()
+      .then(() => {
+        if (!active || ownerRef.current !== userId) return;
+        channel
+          .on(
+            'broadcast',
+            { event: 'notification_created' },
+            (message: { payload: Notification }) => {
+              if (!active || ownerRef.current !== userId) return;
+              setOwned((previous) => ({
+                userId,
+                items: [
+                  message.payload,
+                  ...(previous.userId === userId ? previous.items : []),
+                ].slice(0, MAX_NOTIFICATIONS),
+              }));
+            },
+          )
+          .subscribe();
+      })
+      .catch(() => {
+        if (active)
+          logClient.warn(
+            { action: 'realtime_auth', component: 'useNotifications' },
+            'Realtime authentication failed',
+          );
+      });
 
     return () => {
-      if (channelRef.current) {
-        void supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      active = false;
+      void supabase.removeChannel(channel);
+      if (channelRef.current === channel) channelRef.current = null;
     };
   }, [userId, supabase]);
 

@@ -1,5 +1,16 @@
 type TargetEnv = Record<string, string | undefined>;
 
+/** Cold development compilation has a separate budget; production timings stay exact. */
+export function localE2eBudget(
+  base: number,
+  kind: 'test' | 'navigation' = 'test',
+  env: TargetEnv = process.env,
+): number {
+  return env.LOCAL_VALIDATION === 'true' && env.NODE_ENV === 'development' ?
+      Math.max(base, kind === 'test' ? 300_000 : 90_000)
+    : base;
+}
+
 /** Rejects remote endpoints before authenticated acceptance can mutate data. */
 export function requireLoopbackUrl(value: string | undefined): string {
   if (!value) throw new Error('An explicit loopback URL is required');

@@ -237,7 +237,7 @@ enable_signup = true
 double_confirm_changes = true
 # LOCAL = true para probar flow real con Inbucket (emails en :54324).
 enable_confirmations = true
-# Obliga a ingresar password actual al cambiarlo.
+# Requires recent-session/nonce reauthentication; current-password enforcement is a separate Auth setting.
 secure_password_change = true
 # Anti-spam: minimo entre requests de email al mismo user.
 max_frequency = "1m"

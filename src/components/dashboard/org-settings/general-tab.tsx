@@ -18,6 +18,7 @@ import {
   type OrgLogoActionState,
 } from '@/app/[locale]/dashboard/org/settings/actions-logo';
 import { storageUrl } from '@/lib/storage';
+import { validateOrgLogoFile } from '@/lib/validation/profile';
 
 const INFO_ERROR_KEYS: Record<string, string> = {
   name_required: 'general_error_name_required',
@@ -37,13 +38,50 @@ export function GeneralTab() {
   const t = useTranslations('OrgSettings');
   const tSettings = useTranslations('Settings');
   const [logoState, logoAction, logoPending] = useActionState<OrgLogoActionState, FormData>(
-    updateOrgLogo,
+    async (previous, formData) => {
+      try {
+        const result = await updateOrgLogo(previous, formData);
+        if (result.success === 'logo_updated') {
+          hasLogoMutationCompleted.current = true;
+          savedLogoPreview.current = submittedLogoPreviewRef.current;
+          setConfirmedLogoRevision(submittedLogoRevisionRef.current);
+          if (submittedLogoRevisionRef.current === logoRevisionRef.current && logoInputRef.current)
+            logoInputRef.current.value = '';
+        }
+        return result;
+      } finally {
+        setSubmissionInFlight(false);
+      }
+    },
     {},
   );
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const savedLogoPreview = useRef<string | null>(null);
+  const hasLogoMutationCompleted = useRef(false);
+  const hasValidLogoSelection = useRef(false);
+  const logoRevisionRef = useRef(0);
+  const submittedLogoRevisionRef = useRef<number | null>(null);
+  const submittedLogoPreviewRef = useRef<string | null>(null);
   const [hasFile, setHasFile] = useState(false);
+  const [logoRevision, setLogoRevision] = useState(0);
+  const [submittedLogoRevision, setSubmittedLogoRevision] = useState<number | null>(null);
+  const [confirmedLogoRevision, setConfirmedLogoRevision] = useState<number | null>(null);
+  const [submittedLogoPreview, setSubmittedLogoPreview] = useState<string | null>(null);
+  const [submissionInFlight, setSubmissionInFlight] = useState(false);
+  const [localLogoError, setLocalLogoError] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
   const [removePending, setRemovePending] = useState(false);
+  const hasUnsavedFile =
+    hasFile &&
+    (submissionInFlight ||
+      !(confirmedLogoRevision === submittedLogoRevision && submittedLogoRevision === logoRevision));
+  const showConfirmedLogo =
+    logoState.success === 'logo_updated' &&
+    confirmedLogoRevision === submittedLogoRevision &&
+    submittedLogoPreview !== null &&
+    !submissionInFlight &&
+    !hasUnsavedFile;
+  const displayedLogoPreview = showConfirmedLogo ? submittedLogoPreview : logoPreview;
 
   const [infoState, infoAction, infoPending] = useActionState<OrgInfoActionState, FormData>(
     updateOrgInfo,
@@ -54,7 +92,10 @@ export function GeneralTab() {
   useEffect(() => {
     let cancelled = false;
     void getOrgLogo().then((result) => {
-      if (!cancelled && result.data) setLogoPreview(storageUrl(result.data.logoUrl));
+      if (!cancelled && result.data && !hasLogoMutationCompleted.current) {
+        savedLogoPreview.current = storageUrl(result.data.logoUrl);
+        if (!hasValidLogoSelection.current) setLogoPreview(savedLogoPreview.current);
+      }
     });
     void getOrgInfo().then((result) => {
       if (!cancelled && result.data) setOrgInfo(result.data);
@@ -64,17 +105,29 @@ export function GeneralTab() {
     };
   }, []);
 
-  const [prevLogoSuccess, setPrevLogoSuccess] = useState(logoState.success);
-  if (logoState.success !== prevLogoSuccess) {
-    setPrevLogoSuccess(logoState.success);
-    if (logoState.success === 'logo_updated') setHasFile(false);
-  }
-
   const handleRemove = async () => {
     setRemovePending(true);
-    await removeOrgLogo();
-    setLogoPreview(null);
-    setRemovePending(false);
+    setLocalLogoError(null);
+    try {
+      const result = await removeOrgLogo();
+      if (result.error) {
+        setLocalLogoError(result.error);
+        return;
+      }
+      // A confirmed removal must supersede the initial read and earlier uploads.
+      // eslint-disable-next-line react-hooks/immutability
+      savedLogoPreview.current = null;
+      // The initial read may resolve after this confirmed mutation.
+      // eslint-disable-next-line react-hooks/immutability
+      hasLogoMutationCompleted.current = true;
+      setConfirmedLogoRevision(null);
+      setSubmittedLogoPreview(null);
+      setLogoPreview(null);
+    } catch {
+      setLocalLogoError('upload_failed');
+    } finally {
+      setRemovePending(false);
+    }
   };
 
   return (
@@ -82,10 +135,25 @@ export function GeneralTab() {
       <div className="card space-y-5 p-6">
         <h2 className="text-foreground text-[14px] font-semibold">{t('general_logo_heading')}</h2>
         <p className="text-muted-foreground text-[12px]">{t('general_logo_hint')}</p>
-        <form action={logoAction} className="flex flex-col items-center gap-6 sm:flex-row">
+        <form
+          action={logoAction}
+          onSubmit={() => {
+            submittedLogoRevisionRef.current = logoRevision;
+            submittedLogoPreviewRef.current = logoPreview;
+            setSubmissionInFlight(true);
+            setSubmittedLogoRevision(logoRevision);
+            setSubmittedLogoPreview(logoPreview);
+          }}
+          className="flex flex-col items-center gap-6 sm:flex-row">
           <div className="bg-muted relative size-16 overflow-hidden rounded-lg ring-2 ring-white">
-            {logoPreview ?
-              <Image src={logoPreview} alt="logo" fill unoptimized className="object-cover" />
+            {displayedLogoPreview ?
+              <Image
+                src={displayedLogoPreview}
+                alt="logo"
+                fill
+                unoptimized
+                className="object-cover"
+              />
             : <div className="flex size-full items-center justify-center">
                 <span className="text-muted-foreground text-xs">—</span>
               </div>
@@ -100,8 +168,20 @@ export function GeneralTab() {
               className="hidden"
               onChange={(e) => {
                 const f = e.target.files?.[0];
-                setHasFile(Boolean(f));
-                if (f) setLogoPreview(URL.createObjectURL(f));
+                logoRevisionRef.current += 1;
+                setLogoRevision(logoRevisionRef.current);
+                const result = f ? validateOrgLogoFile(f) : null;
+                hasValidLogoSelection.current = Boolean(result?.ok);
+                if (!f || !result?.ok) {
+                  e.target.value = '';
+                  setHasFile(false);
+                  setLogoPreview(savedLogoPreview.current);
+                  setLocalLogoError(result && !result.ok ? result.error : null);
+                  return;
+                }
+                setLocalLogoError(null);
+                setHasFile(true);
+                setLogoPreview(URL.createObjectURL(f));
               }}
             />
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -114,23 +194,23 @@ export function GeneralTab() {
               </button>
               <button
                 type="submit"
-                disabled={logoPending || !hasFile}
+                disabled={logoPending || !hasUnsavedFile}
                 className="rounded-lg px-4 py-2 text-[13px] font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{ background: 'var(--color-cobalt)' }}>
                 {logoPending ? t('general_logo_saving') : t('general_save_btn')}
               </button>
-              {logoPreview && !hasFile && (
+              {displayedLogoPreview && !hasUnsavedFile && (
                 <button
                   type="button"
                   onClick={() => void handleRemove()}
-                  disabled={removePending}
+                  disabled={removePending || logoPending || submissionInFlight}
                   className="rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
                   style={{ borderColor: 'var(--color-poppy)', color: 'var(--color-poppy)' }}>
                   {t('general_logo_remove_btn')}
                 </button>
               )}
             </div>
-            {logoState.success === 'logo_updated' && !hasFile && (
+            {showConfirmedLogo && (
               <div
                 role="status"
                 className="mt-3 flex items-center gap-2 text-[12px]"
@@ -139,11 +219,14 @@ export function GeneralTab() {
                 {t('general_logo_success')}
               </div>
             )}
-            {logoState.error && (
+            {(localLogoError || logoState.error) && (
               <p role="alert" className="text-destructive mt-3 text-[12px]">
-                {tSettings(`errors.${logoState.error}` as 'errors.generic', {
-                  default: tSettings('errors.generic'),
-                })}
+                {(localLogoError || logoState.error) === 'file_too_large' ?
+                  t('general_logo_hint')
+                : tSettings(`errors.${localLogoError || logoState.error}` as 'errors.generic', {
+                    default: tSettings('errors.generic'),
+                  })
+                }
               </p>
             )}
           </div>

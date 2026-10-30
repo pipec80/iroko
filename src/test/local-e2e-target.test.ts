@@ -1,6 +1,26 @@
 import { describe, expect, it } from 'vitest';
 
-import { requireLoopbackUrl, resolveDbTarget, validateDbContainerState } from './local-e2e-target';
+import {
+  localE2eBudget,
+  requireLoopbackUrl,
+  resolveDbTarget,
+  validateDbContainerState,
+} from './local-e2e-target';
+
+it('raises only explicit local-development budgets and preserves longer limits', () => {
+  const dev = { LOCAL_VALIDATION: 'true', NODE_ENV: 'development' };
+  expect(localE2eBudget(60_000, 'test', dev)).toBe(300_000);
+  expect(localE2eBudget(20_000, 'navigation', dev)).toBe(90_000);
+  expect(localE2eBudget(600_000, 'test', dev)).toBe(600_000);
+  for (const env of [
+    {},
+    { NODE_ENV: 'development' },
+    { LOCAL_VALIDATION: 'true', NODE_ENV: 'production' },
+  ]) {
+    expect(localE2eBudget(60_000, 'test', env)).toBe(60_000);
+    expect(localE2eBudget(20_000, 'navigation', env)).toBe(20_000);
+  }
+});
 
 const isolated = {
   LOCAL_VALIDATION: 'true',

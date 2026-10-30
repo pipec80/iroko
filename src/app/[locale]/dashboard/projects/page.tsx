@@ -1,4 +1,5 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
 import { Folder } from 'lucide-react';
 import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
 import { listByAccount } from '@/lib/projects';
@@ -12,6 +13,7 @@ import type { Project } from '@/lib/projects';
 import { appConfig } from '@/config/app.config';
 
 export async function generateMetadata(): Promise<Metadata> {
+  if (!appConfig.features.projects) notFound();
   return { title: `Proyectos — ${appConfig.brand}` };
 }
 
@@ -34,6 +36,7 @@ const ENV_FG: Record<string, string> = {
 };
 
 export default async function ProjectsPage({ params }: { params: Promise<{ locale: string }> }) {
+  if (!appConfig.features.projects) notFound();
   const { locale } = await params;
   setRequestLocale(locale);
 

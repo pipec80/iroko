@@ -3,7 +3,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { captureException, withScope } from '@sentry/nextjs';
 
 import type { NormalizedBillingEvent } from './events';
-import { reduceBillingEvent } from './reducer';
+import { serializeRecoveryResult } from './recovery-result';
+import type { RecoveryResultInput } from './recovery-result';
 import { getPaymentProvider } from './registry';
 
 interface RecoveryJob {
@@ -13,6 +14,8 @@ interface RecoveryJob {
   resource_id: string;
   reason: 'unlinked_payment' | 'payment_pending';
   attempt_count: number;
+  lease_token: string;
+  lease_expires_at: string;
 }
 
 interface CompletionRow {
@@ -34,24 +37,21 @@ function safeRecoveryErrorCode(error: unknown): string {
   return 'provider_recovery_failed';
 }
 
-async function completeJob(
-  jobId: string,
-  outcome: 'event' | 'unrelated' | 'anomaly' | 'pending' | 'error',
-  errorCode: string | null,
-): Promise<CompletionRow> {
+async function applyResult(job: RecoveryJob, result: RecoveryResultInput): Promise<CompletionRow> {
   const admin = createAdminClient();
-  const { data, error } = await admin.rpc('complete_billing_recovery_job', {
-    p_job_id: jobId,
-    p_last_error_code: errorCode ?? undefined,
-    p_outcome: outcome,
+  const { data, error } = await admin.rpc('apply_billing_recovery_result', {
+    p_job_id: job.id,
+    p_lease_token: job.lease_token,
+    p_result: serializeRecoveryResult(result),
   });
+  if (error?.message.includes('billing_recovery_lease_not_owned')) {
+    throw new Error('billing_recovery_lease_not_owned');
+  }
   const row = data?.[0];
-  if (error || !row || !['pending', 'resolved', 'exhausted'].includes(row.status))
+  if (error || !row || !['pending', 'resolved', 'exhausted'].includes(row.status)) {
     throw new Error('billing_recovery_completion_failed');
-  return {
-    status: row.status as CompletionRow['status'],
-    anomaly_created: row.anomaly_created,
-  };
+  }
+  return { status: row.status as CompletionRow['status'], anomaly_created: row.anomaly_created };
 }
 
 async function correlateRecoveredEvent(
@@ -86,64 +86,38 @@ async function processRecoveryJob(
   job: RecoveryJob,
 ): Promise<Omit<BillingRecoverySummary, 'claimed'>> {
   const result = { resolved: 0, retried: 0, exhausted: 0, anomalous: 0, skipped: 0 };
-  let provider: ReturnType<typeof getPaymentProvider>;
+  let recovered: RecoveryResultInput;
   try {
-    provider = getPaymentProvider(job.provider);
-  } catch {
-    await completeJob(job.id, 'unrelated', 'provider_not_configured');
-    result.skipped = 1;
-    return result;
-  }
-  if (!provider.recoverResource) {
-    await completeJob(job.id, 'unrelated', 'provider_recovery_unsupported');
-    result.skipped = 1;
-    return result;
-  }
-
-  try {
-    const recovered = await provider.recoverResource({
-      resourceType: job.resource_type,
-      resourceId: job.resource_id,
-    });
-    if (recovered.kind === 'event') {
-      const event = await correlateRecoveredEvent(recovered.event);
-      await reduceBillingEvent(event);
-      await completeJob(job.id, 'event', null);
-      result.resolved = 1;
-    } else if (recovered.kind === 'unrelated') {
-      await completeJob(job.id, 'unrelated', null);
-      result.resolved = 1;
-    } else if (recovered.kind === 'anomaly') {
-      const admin = createAdminClient();
-      const anomalyArgs = {
-        p_account_id: undefined,
-        p_anomaly_type: recovered.observation.anomalyType,
-        p_affected_amount: recovered.observation.affectedAmount,
-        p_currency: recovered.observation.currency,
-        p_external_resource_id: recovered.observation.externalResourceId,
-        p_observed_status: recovered.observation.observedStatus,
-        p_original_amount: recovered.observation.originalAmount,
-        p_provider: job.provider,
-        p_subscription_id: undefined,
-      };
-      const { error } = await admin.rpc('upsert_billing_financial_anomaly', anomalyArgs);
-      if (error) throw new Error('billing_anomaly_persistence_failed');
-      await completeJob(job.id, 'anomaly', null);
-      result.anomalous = 1;
-      result.resolved = 1;
+    const provider = getPaymentProvider(job.provider);
+    if (!provider.recoverResource) {
+      recovered = { kind: 'unrelated' };
+      result.skipped = 1;
     } else {
-      const completion = await completeJob(job.id, 'pending', 'payment_still_pending');
-      if (completion.status === 'exhausted') {
-        result.exhausted = 1;
-        if (completion.anomaly_created) alertExhausted(job.provider);
-      } else result.retried = 1;
+      recovered = await provider.recoverResource({
+        resourceType: job.resource_type,
+        resourceId: job.resource_id,
+      });
+      if (recovered.kind === 'event')
+        recovered = { kind: 'event', event: await correlateRecoveredEvent(recovered.event) };
     }
   } catch (error) {
-    const completion = await completeJob(job.id, 'error', safeRecoveryErrorCode(error));
+    recovered = { kind: 'error', errorCode: safeRecoveryErrorCode(error) };
+  }
+  // Persistence failures never fall back to another write: only this token may commit effects.
+  try {
+    const completion = await applyResult(job, recovered);
     if (completion.status === 'exhausted') {
       result.exhausted = 1;
       if (completion.anomaly_created) alertExhausted(job.provider);
-    } else result.retried = 1;
+    } else if (completion.status === 'pending') result.retried = 1;
+    else if (!result.skipped) {
+      result.resolved = 1;
+      if (recovered.kind === 'anomaly') result.anomalous = 1;
+    }
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== 'billing_recovery_lease_not_owned')
+      throw error;
+    result.skipped = 1;
   }
   return result;
 }

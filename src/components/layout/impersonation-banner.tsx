@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { endImpersonation } from '@/app/[locale]/dashboard/admin/accounts/[accountId]/impersonation-actions';
 import { Button } from '@/components/ui/button';
+import { useDocumentDraftTransition } from '@/components/providers/document-draft-provider';
 
 const REFRESH_INTERVAL_MS = 30_000;
 const MS_PER_MINUTE = 60_000;
@@ -21,9 +22,20 @@ function minutesLeftFor(expiresAt: string): number {
 
 export function ImpersonationBanner({ targetName, targetEmail, expiresAt }: Props) {
   const t = useTranslations('Impersonation');
+  const { confirmTransition, cancelTransition } = useDocumentDraftTransition();
   const [minutesLeft, setMinutesLeft] = useState(() => minutesLeftFor(expiresAt));
   const [state, action, isPending] = useActionState(
-    async () => await endImpersonation(),
+    async () => {
+      if (!(await confirmTransition())) return {};
+      try {
+        const result = await endImpersonation();
+        if (result.error) cancelTransition();
+        return result;
+      } catch (error) {
+        cancelTransition(error);
+        throw error;
+      }
+    },
     {} as { error?: string },
   );
 

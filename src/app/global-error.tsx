@@ -4,7 +4,13 @@ import * as Sentry from '@sentry/nextjs';
 import { useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
 
-export default function GlobalError({ error }: { error: Error & { digest?: string } }) {
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
   useEffect(() => {
     Sentry.captureException(error);
   }, [error]);
@@ -23,6 +29,12 @@ export default function GlobalError({ error }: { error: Error & { digest?: strin
             <p className="text-on-surface-variant max-w-md text-sm">
               An unexpected error occurred.
             </p>
+            <button
+              type="button"
+              onClick={reset}
+              className="bg-primary text-on-primary mt-4 rounded-md px-4 py-2 text-sm font-medium">
+              Retry
+            </button>
           </div>
         </div>
       </body>

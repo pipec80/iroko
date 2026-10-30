@@ -42,6 +42,10 @@ import { updateLocalePreferenceAction } from '@/app/[locale]/dashboard/account/a
 import { routing } from '@/i18n/routing-config';
 import { Link, usePathname, useRouter } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
+import { createClient } from '@/lib/supabase/client';
+import { useDocumentDraftTransition } from '@/components/providers/document-draft-provider';
+import { useIdentityScope } from '@/components/providers/query-provider';
+import { toast } from 'sonner';
 
 const LOCALE_LABELS: Record<(typeof routing.locales)[number], string> = {
   es: 'Español',
@@ -98,8 +102,11 @@ function getPageTitle(
   for (const [route, key] of Object.entries(ADMIN_PAGE_TITLE_KEYS)) {
     if (pathname.startsWith(route)) return tAdmin(key);
   }
-  if (pathname.startsWith('/dashboard/robot')) return `${appConfig.brand} Robot`;
+  if (appConfig.features.verticals.robot && pathname.startsWith('/dashboard/robot')) {
+    return `${appConfig.brand} Robot`;
+  }
   for (const [route, key] of Object.entries(PAGE_TITLE_KEYS)) {
+    if (route === '/dashboard/projects' && !appConfig.features.projects) continue;
     if (pathname === route || (route !== '/dashboard' && pathname.startsWith(route))) {
       return tNav(key);
     }
@@ -117,6 +124,8 @@ function userInitials(displayName: string): string {
 }
 
 export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) {
+  const drafts = useDocumentDraftTransition();
+  const identity = useIdentityScope();
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('UserMenu');
@@ -144,10 +153,17 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
 
   useShortcut('e', () => setCreateTeamOpen(true), { ctrlOrMeta: true, shift: true });
 
-  useShortcut('p', () => router.push({ pathname: '/dashboard/projects', query: { new: '1' } }), {
-    ctrlOrMeta: true,
-    shift: true,
-  });
+  useShortcut(
+    'p',
+    () => {
+      if (appConfig.features.projects)
+        router.push({ pathname: '/dashboard/projects', query: { new: '1' } });
+    },
+    {
+      ctrlOrMeta: true,
+      shift: true,
+    },
+  );
 
   function handleChangeLocale(next: string) {
     if (next === locale) return;
@@ -243,7 +259,7 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
           </div>
 
           {/* Bell */}
-          <NotificationBell userId={user.id} />
+          {identity?.userId === user.id && <NotificationBell userId={user.id} />}
 
           {/* Avatar dropdown */}
           <DropdownMenu>
@@ -396,7 +412,29 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
 
               <DropdownMenuSeparator style={{ margin: '4px -2px' }} />
 
-              <form action={`/${locale}/auth/logout`} method="POST">
+              <form
+                action={`/${locale}/auth/logout`}
+                method="POST"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void (async () => {
+                    try {
+                      if (!(await drafts.confirmTransition())) return;
+                      const { error } = await createClient().auth.signOut();
+                      if (error) {
+                        drafts.cancelTransition();
+                        toast.error(t('logout_failed'));
+                        return;
+                      }
+                      drafts.clear();
+                      router.replace('/login');
+                      router.refresh();
+                    } catch {
+                      drafts.cancelTransition();
+                      toast.error(t('logout_failed'));
+                    }
+                  })();
+                }}>
                 <button
                   type="submit"
                   className="flex w-full cursor-pointer items-center rounded-sm px-[10px] py-[7px] text-left transition-colors hover:bg-red-50"

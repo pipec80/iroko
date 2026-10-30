@@ -7,7 +7,13 @@ export default async function OnboardingPage({ params }: { params: Promise<{ loc
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { name } = await getOnboardingOrg();
+  const { name, accountId } = await getOnboardingOrg();
 
-  return <OnboardingWizard initialOrgName={name} />;
+  return (
+    <OnboardingWizard
+      key={accountId ?? 'personal'}
+      initialOrgName={name}
+      initialAccountId={accountId ?? null}
+    />
+  );
 }

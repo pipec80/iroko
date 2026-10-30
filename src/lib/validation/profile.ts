@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MAX_UPLOAD_BYTES } from './upload-limits';
 
 import { routing } from '@/i18n/routing-config';
 
@@ -87,7 +88,7 @@ export function validateAvatarFile(file: File): { ok: true } | { ok: false; erro
 }
 
 // Organization logo upload: validated client-side before FormData is sent.
-export const ORG_LOGO_MAX_BYTES = 5 * 1024 * 1024; // 5 MiB — límite del bucket org-assets
+export { MAX_UPLOAD_BYTES as ORG_LOGO_MAX_BYTES } from './upload-limits';
 export const ORG_LOGO_ALLOWED_MIME = [
   'image/png',
   'image/jpeg',
@@ -99,7 +100,7 @@ export function validateOrgLogoFile(file: File): { ok: true } | { ok: false; err
   if (!(ORG_LOGO_ALLOWED_MIME as readonly string[]).includes(file.type)) {
     return { ok: false, error: 'invalid_mime' };
   }
-  if (file.size > ORG_LOGO_MAX_BYTES) {
+  if (file.size > MAX_UPLOAD_BYTES) {
     return { ok: false, error: 'file_too_large' };
   }
   return { ok: true };

@@ -16,6 +16,7 @@ import {
 } from '@/lib/analytics/client';
 import { hasConsent, subscribeToConsent } from '@/lib/cookie-consent';
 import { createClient } from '@/lib/supabase/client';
+import { IDENTITY_SCOPE_CHANGED_EVENT } from '@/lib/query-identity';
 
 function getAnalyticsConsentSnapshot(): boolean {
   return hasConsent('analytics');
@@ -28,7 +29,7 @@ function getAnalyticsConsentServerSnapshot(): boolean {
   return false;
 }
 
-type SyncedIdentity = { userId: string | null; impersonated: boolean };
+type SyncedIdentity = { userId: string | null; accountId?: string | null; impersonated: boolean };
 type SyncedConsent = { userId: string | null; consent: boolean | null };
 
 /**
@@ -67,11 +68,13 @@ export function AnalyticsProvider(): null {
   // hasAnalyticsConsent is false, and shouldn't re-run on every navigation.
   useEffect(() => {
     let cancelled = false;
+    let generation = 0;
     const supabase = createClient();
 
     async function syncConsentToDb(): Promise<void> {
+      const request = ++generation;
       const { data } = await supabase.auth.getClaims();
-      if (cancelled) return;
+      if (cancelled || request !== generation) return;
       const claims = data?.claims;
       // No session, or impersonating: this browser's cookie doesn't belong
       // to the target user's own choice — never overwrite their record.
@@ -82,11 +85,12 @@ export function AnalyticsProvider(): null {
       ) {
         return;
       }
-      lastSyncedConsentRef.current = { userId: claims.sub, consent: hasAnalyticsConsent };
-      await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({ analytics_consent: hasAnalyticsConsent })
         .eq('id', claims.sub);
+      if (!cancelled && request === generation && !error)
+        lastSyncedConsentRef.current = { userId: claims.sub, consent: hasAnalyticsConsent };
     }
 
     void syncConsentToDb();
@@ -118,9 +122,11 @@ export function AnalyticsProvider(): null {
       capturePageview();
     }
 
+    let generation = 0;
     async function syncIdentity(): Promise<void> {
+      const request = ++generation;
       const { data } = await supabase.auth.getClaims();
-      if (cancelled) return;
+      if (cancelled || request !== generation) return;
       // supabase.auth.onAuthStateChange fires its callback immediately and
       // synchronously with the current session — before initAnalytics's
       // dynamic import can possibly resolve. Bail out without touching any
@@ -151,16 +157,24 @@ export function AnalyticsProvider(): null {
       // Only re-identify when the person actually changed — identify() sends
       // its own network event, so calling it on every navigation would spam
       // duplicate $identify captures for the same, unchanged user.
-      if (lastSyncedRef.current.userId !== claims.sub) {
+      const changedUser = lastSyncedRef.current.userId !== claims.sub;
+      if (changedUser) {
+        if (lastSyncedRef.current.userId !== null) resetAnalytics();
         identifyUser(claims.sub);
-        const accountId = claims.app_metadata?.account_id as string | undefined;
-        if (accountId) setAccountGroup(accountId);
       }
-      lastSyncedRef.current = { userId: claims.sub, impersonated: false };
+      const accountId = claims.app_metadata?.account_id as string | undefined;
+      if (accountId && (changedUser || lastSyncedRef.current.accountId !== accountId))
+        setAccountGroup(accountId);
+      lastSyncedRef.current = { userId: claims.sub, accountId, impersonated: false };
       maybeCapturePageview();
     }
 
     void initAnalytics().then(syncIdentity);
+
+    const onIdentityScopeChanged = () => {
+      void syncIdentity();
+    };
+    window.addEventListener(IDENTITY_SCOPE_CHANGED_EVENT, onIdentityScopeChanged);
 
     const {
       data: { subscription },
@@ -169,6 +183,7 @@ export function AnalyticsProvider(): null {
     return () => {
       cancelled = true;
       subscription.unsubscribe();
+      window.removeEventListener(IDENTITY_SCOPE_CHANGED_EVENT, onIdentityScopeChanged);
     };
   }, [hasAnalyticsConsent, pathname]);
 

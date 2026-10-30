@@ -419,18 +419,16 @@ describe('updatePasswordFromSettingsAction', () => {
     expect(result.error).toBe('invalid_credentials');
   });
 
-  it('should pass currentPassword to enforce secure_password_change and succeed', async () => {
+  it('sends current_password to Auth', async () => {
     mocks.updateUser.mockResolvedValue({ error: null });
     const fd = makeFormData(validPasswords);
     const result = await updatePasswordFromSettingsAction(PREV, fd);
 
     expect(result.success).toBe('password_updated');
-    expect(mocks.updateUser).toHaveBeenCalledWith(
-      expect.objectContaining({
-        password: 'NewPass1234',
-        currentPassword: 'OldPass1234',
-      }),
-    );
+    expect(mocks.updateUser).toHaveBeenCalledWith({
+      password: 'NewPass1234',
+      current_password: 'OldPass1234',
+    });
   });
 });
 
@@ -556,11 +554,10 @@ describe('listMySessions', () => {
     expect(result).toEqual([]);
   });
 
-  it('should return empty array when the RPC fails', async () => {
+  it('should distinguish an RPC failure from a valid empty session list', async () => {
     mockAuthenticated();
     mocks.rpc.mockResolvedValue({ data: null, error: { code: 'P0001' } });
-    const result = await listMySessions();
-    expect(result).toEqual([]);
+    await expect(listMySessions()).rejects.toThrow('session_list_failed');
   });
 
   it('should return the session rows on success', async () => {

@@ -46,6 +46,8 @@ const logger = pino({
       '*Token*',
       '*Secret*',
       'email',
+      'to',
+      'subject',
       'key',
       'authorization',
       'cookie',
@@ -54,6 +56,8 @@ const logger = pino({
       'headers.authorization',
       // Nested sensitive fields (SECURITY_AUDIT F-09)
       '*.email',
+      '*.to',
+      '*.subject',
       '*.password',
       '*.token',
       '*.secret',

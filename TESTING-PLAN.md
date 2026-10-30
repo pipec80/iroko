@@ -1,5 +1,12 @@
 # Plan de Testing — Iroko
 
+**Alcance vigente 2026-10-28:** [ADR0005](docs/adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+El inventario conserva tests de módulos diferidos; su presencia no obliga a
+ofrecerlos en el MVP. Fijar selección por configuración antes de ejecutar y
+alinearla con CI mediante015-T1/017.5-T10, sin omitir fallos a posteriori ni bajar
+umbrales. Editor/Robot requieren negativos de exclusión, no aceptación de su
+vertical. No ejecutar automáticamente el runner development del editor.
+
 > Estrategia e inventario histórico de cobertura. Las fases 1–4 se cerraron el
 > 2026-06-12, pero las cantidades y cobertura descritas aquí no reemplazan una
 > ejecución actual. Los planes activos son autoridad para nueva cobertura P0/P1.
@@ -94,7 +101,7 @@ Leyenda: ✅ cubierto · 🟡 parcial · ❌ sin tests · P0/P1/P2 prioridad
 
 ## 4. Coverage: configuración vigente
 
-`vitest.config.ts` mide **solo código con lógica**: `src/lib/**` + `src/app/**/actions.ts`.
+`vitest.config.ts` mide **código con lógica**: `src/lib/**`, `src/app/**/actions.ts`, `src/app/api/**/route.ts` y `src/proxy.ts`. La configuración ejecutable es la autoridad; esta descripción se sincronizó el 2026-10-20.
 La UI (shadcn, layouts, providers) se cubre vía E2E y está excluida a propósito.
 
 Valores reales al calibrar (2026-06-12): **96.5 / 83.8 / 96 / 97**.

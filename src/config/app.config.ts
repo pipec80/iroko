@@ -30,7 +30,7 @@ export type AppConfig = {
   features: {
     /** Show the Billing module (plan + invoices page). */
     billing: boolean;
-    /** Show the Projects module. */
+    /** Projects availability at navigation, page and action boundaries; SQL/RLS remains independent. */
     projects: boolean;
     /** Show the Members module. */
     members: boolean;
@@ -69,7 +69,8 @@ export const appConfig: AppConfig = {
   locales: routing.locales,
   features: {
     billing: true,
-    projects: true,
+    // ADR 0005 defers the reference Projects/editor surface until its own acceptance.
+    projects: false,
     members: true,
     activityLog: true,
     cookieConsent: true,

@@ -10,17 +10,17 @@ import {
   revokeApiKey,
   type ApiKey,
 } from '@/app/[locale]/dashboard/org/settings/actions-api-keys';
+import { useIdentityQueryKey } from '@/components/providers/query-provider';
 import { useOrgEntitlements } from '@/hooks/use-org-entitlements';
 import { Link } from '@/i18n/routing';
 import { LIMIT_KEYS } from '@/lib/billing/entitlement-keys';
 import { RevealCard } from './reveal-card';
 
-const QUERY_KEY = ['org-settings', 'api-keys'];
-
 /** Tab de administración de API keys en org/settings (F2-2D). */
 export function ApiKeysTab() {
   const t = useTranslations('OrgSettings');
   const queryClient = useQueryClient();
+  const { scope, queryKey: QUERY_KEY } = useIdentityQueryKey('api-keys');
   const [name, setName] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [createdKey, setCreatedKey] = useState<string | null>(null);
@@ -29,6 +29,7 @@ export function ApiKeysTab() {
 
   const { data, isPending, error } = useQuery({
     queryKey: QUERY_KEY,
+    enabled: !!scope,
     queryFn: async () => {
       const result = await listApiKeys();
       if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
@@ -65,6 +66,8 @@ export function ApiKeysTab() {
     },
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
   });
+
+  if (!scope) return null;
 
   if (error?.message === 'not_authorized') {
     return <PermissionNotice message={t('api_keys_not_authorized')} />;

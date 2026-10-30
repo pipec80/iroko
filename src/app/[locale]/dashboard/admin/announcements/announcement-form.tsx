@@ -48,7 +48,7 @@ export function AnnouncementForm() {
     startTransition(async () => {
       const result = await publishAnnouncement({ type, title, body, link });
       if (result.error) {
-        setError(t((ERROR_KEYS[result.error] ?? 'error_not_platform_admin') as never));
+        setError(t((ERROR_KEYS[result.error] ?? 'error_generic') as never));
         return;
       }
       setSuccess(true);

@@ -1,8 +1,18 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ switchAccount: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  switchAccount: vi.fn(),
+  confirmTransition: vi.fn(),
+  cancelTransition: vi.fn(),
+}));
+vi.mock('@/components/providers/document-draft-provider', () => ({
+  useDocumentDraftTransition: () => ({
+    confirmTransition: mocks.confirmTransition,
+    cancelTransition: mocks.cancelTransition,
+  }),
+}));
 
 vi.mock('@/app/[locale]/dashboard/actions', () => ({
   switchAccount: mocks.switchAccount,
@@ -30,7 +40,28 @@ function renderWithIntl(ui: React.ReactElement) {
 }
 
 describe('OrgSwitchButton', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.confirmTransition.mockResolvedValue(true);
+    mocks.switchAccount.mockResolvedValue({ error: 'switch_failed' });
+  });
+
+  it('does not switch accounts when the draft transition is cancelled', async () => {
+    mocks.confirmTransition.mockResolvedValue(false);
+    renderWithIntl(<OrgSwitchButton org={ORG} index={0} isSelected={false} />);
+    fireEvent.click(screen.getByRole('option', { name: /acme/i }));
+    await vi.waitFor(() => expect(mocks.confirmTransition).toHaveBeenCalledOnce());
+    expect(mocks.switchAccount).not.toHaveBeenCalled();
+  });
+
+  it('does not lock drafts or switch when the selected account is already active', async () => {
+    renderWithIntl(<OrgSwitchButton org={ORG} index={0} isSelected />);
+    await act(async () => {
+      fireEvent.click(screen.getByRole('option', { name: /acme/i }));
+    });
+    expect(mocks.confirmTransition).not.toHaveBeenCalled();
+    expect(mocks.switchAccount).not.toHaveBeenCalled();
+  });
 
   it('should show a translated alert when switchAccount returns not_a_member', async () => {
     mocks.switchAccount.mockResolvedValue({ error: 'not_a_member' });

@@ -36,224 +36,158 @@ describe('recoverBillingResources', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getPaymentProvider.mockReturnValue({ recoverResource: mocks.recoverResource });
-    mocks.reduceBillingEvent.mockResolvedValue({ status: 'applied' });
-    mocks.rpc.mockImplementation((name: string, args?: Record<string, unknown>) => {
-      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
-      if (name === 'resolve_billing_checkout_reference') {
-        return { data: [{ account_id: 'account-1', checkout_intent_id: null }], error: null };
-      }
-      if (name === 'complete_billing_recovery_job') {
-        return { data: [{ status: 'resolved', anomaly_created: false }], error: null };
-      }
-      if (name === 'upsert_billing_financial_anomaly') {
-        const expectedKeys = [
-          'p_account_id',
-          'p_affected_amount',
-          'p_anomaly_type',
-          'p_currency',
-          'p_external_resource_id',
-          'p_observed_status',
-          'p_original_amount',
-          'p_provider',
-          'p_subscription_id',
-        ];
-        if (JSON.stringify(Object.keys(args ?? {}).sort()) !== JSON.stringify(expectedKeys)) {
-          return { data: null, error: { code: 'rpc_signature_mismatch' } };
-        }
-      }
-      return { data: 'anomaly-id', error: null };
+    mocks.rpc.mockImplementation((name: string) => {
+      if (name === 'claim_billing_recovery_jobs')
+        return {
+          data: [{ ...job, lease_token: '00000000-0000-4000-8000-000000000372' }],
+          error: null,
+        };
+      if (name === 'resolve_billing_checkout_reference')
+        return { data: [{ account_id: '00000000-0000-4000-8000-000000000373' }], error: null };
+      return { data: [{ status: 'resolved', anomaly_created: false }], error: null };
     });
   });
-
-  it('routes a recovered payment through the shared reducer before resolving the job', async () => {
+  it('applies correlated recovered events exclusively through the token-owned transaction', async () => {
     const event = {
-      provider: 'mercadopago' as const,
-      externalEventId: 'authorized_payment:invoice:payment:approved',
-      type: 'invoice_paid' as const,
-      accountId: 'account-1',
-      externalSubscriptionId: 'preapproval-1',
-      externalInvoiceId: 'invoice-1',
-      externalPaymentId: 'payment-371',
+      provider: 'mercadopago',
+      type: 'invoice_paid',
+      accountId: 'checkout-reference',
+      externalEventId: 'event',
+      externalSubscriptionId: 'subscription',
+      externalInvoiceId: 'invoice',
+      externalPaymentId: job.resource_id,
       amountPaid: 19990,
       currency: 'CLP',
       paidAt: '2026-09-09T12:00:00Z',
-      raw: { never: 'logged' },
+      raw: {},
     };
     mocks.recoverResource.mockResolvedValue({ kind: 'event', event });
-
     await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ claimed: 1, resolved: 1 }));
-    expect(mocks.reduceBillingEvent).toHaveBeenCalledWith(event);
-    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45000 }),
+    ).resolves.toMatchObject({ resolved: 1 });
+    expect(mocks.rpc).toHaveBeenCalledWith('apply_billing_recovery_result', {
       p_job_id: job.id,
-      p_last_error_code: undefined,
-      p_outcome: 'event',
+      p_lease_token: '00000000-0000-4000-8000-000000000372',
+      p_result: {
+        kind: 'event',
+        event: { ...event, accountId: '00000000-0000-4000-8000-000000000373' },
+      },
     });
+    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+    expect(mocks.rpc.mock.calls.some(([name]) => name === 'complete_billing_recovery_job')).toBe(
+      false,
+    );
   });
-
-  it('persists one partial-refund observation without reducing subscription access', async () => {
+  it.each(['pending', 'event', 'anomaly', 'error'])(
+    'skips lost lease for %s without a second persistence attempt',
+    async (kind) => {
+      mocks.recoverResource.mockResolvedValue(
+        kind === 'anomaly' ?
+          { kind, observation: { anomalyType: 'refund', externalResourceId: job.resource_id } }
+        : kind === 'event' ?
+          {
+            kind,
+            event: {
+              provider: 'mercadopago',
+              type: 'invoice_paid',
+              accountId: 'reference',
+              externalEventId: 'event',
+              externalSubscriptionId: 'subscription',
+              externalInvoiceId: 'invoice',
+              externalPaymentId: job.resource_id,
+              amountPaid: 19990,
+              currency: 'CLP',
+              paidAt: '2026-09-09T12:00:00Z',
+              raw: {},
+            },
+          }
+        : { kind },
+      );
+      if (kind === 'error') mocks.recoverResource.mockRejectedValue(new Error('provider timeout'));
+      mocks.rpc.mockImplementation((name: string) =>
+        name === 'resolve_billing_checkout_reference' ?
+          { data: [{ account_id: '00000000-0000-4000-8000-000000000373' }], error: null }
+        : name === 'claim_billing_recovery_jobs' ?
+          { data: [{ ...job, lease_token: '00000000-0000-4000-8000-000000000372' }], error: null }
+        : { data: null, error: { message: 'billing_recovery_lease_not_owned' } },
+      );
+      await expect(
+        recoverBillingResources({ batchSize: 20, maxDurationMs: 45000 }),
+      ).resolves.toMatchObject({ skipped: 1, resolved: 0, retried: 0 });
+      expect(
+        mocks.rpc.mock.calls.filter(([name]) => name === 'apply_billing_recovery_result'),
+      ).toHaveLength(1);
+      expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
+    },
+  );
+  it('persists an anomaly atomically without directly mutating access', async () => {
     mocks.recoverResource.mockResolvedValue({
       kind: 'anomaly',
       observation: {
         anomalyType: 'partial_refund',
-        externalResourceId: 'pay-partial',
-        observedStatus: 'approved',
+        externalResourceId: job.resource_id,
         originalAmount: 19990,
         affectedAmount: 5000,
         currency: 'CLP',
       },
     });
-
     await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(
-      expect.objectContaining({ anomalous: 1, resolved: 1, retried: 0, exhausted: 0 }),
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45000 }),
+    ).resolves.toMatchObject({ anomalous: 1, resolved: 1 });
+    expect(mocks.rpc.mock.calls.some(([name]) => name === 'upsert_billing_financial_anomaly')).toBe(
+      false,
     );
-    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
-    expect(mocks.rpc).toHaveBeenCalledWith('upsert_billing_financial_anomaly', {
-      p_account_id: undefined,
-      p_anomaly_type: 'partial_refund',
-      p_affected_amount: 5000,
-      p_currency: 'CLP',
-      p_external_resource_id: 'pay-partial',
-      p_observed_status: 'approved',
-      p_original_amount: 19990,
-      p_provider: 'mercadopago',
-      p_subscription_id: undefined,
-    });
-    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
-      p_job_id: job.id,
-      p_last_error_code: undefined,
-      p_outcome: 'anomaly',
-    });
-    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
   });
-
-  it('alerts once only when SQL reports a newly exhausted anomaly', async () => {
-    mocks.recoverResource.mockRejectedValue(new Error('provider_down secret-body'));
-    mocks.rpc.mockImplementation((name: string) => {
-      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
-      return { data: [{ status: 'exhausted', anomaly_created: true }], error: null };
-    });
-
-    await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ exhausted: 1 }));
-    expect(mocks.captureException).toHaveBeenCalledTimes(1);
-    expect(JSON.stringify(mocks.logger.error.mock.calls)).not.toContain('secret-body');
+  it.each(['pending', 'unrelated'])('submits %s through the atomic operation', async (kind) => {
+    mocks.recoverResource.mockResolvedValue({ kind });
+    await recoverBillingResources({ batchSize: 20, maxDurationMs: 45000 });
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'apply_billing_recovery_result',
+      expect.objectContaining({ p_result: { kind } }),
+    );
   });
-
-  it('resolves a payment that the provider proves is unrelated without reducing billing state', async () => {
-    mocks.recoverResource.mockResolvedValue({ kind: 'unrelated' });
-
+  it('retries provider errors with the current token and a safe error code', async () => {
+    mocks.recoverResource.mockRejectedValue(new Error('secret provider response'));
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_recovery_jobs' ?
+        { data: [{ ...job, lease_token: '00000000-0000-4000-8000-000000000372' }], error: null }
+      : { data: [{ status: 'pending', anomaly_created: false }], error: null },
+    );
     await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ resolved: 1 }));
-    expect(mocks.reduceBillingEvent).not.toHaveBeenCalled();
-    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
-      p_job_id: job.id,
-      p_last_error_code: undefined,
-      p_outcome: 'unrelated',
-    });
-  });
-
-  it('releases a still-pending payment for a later retry', async () => {
-    mocks.recoverResource.mockResolvedValue({ kind: 'pending' });
-    mocks.rpc.mockImplementation((name: string) => {
-      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
-      return { data: [{ status: 'pending', anomaly_created: false }], error: null };
-    });
-
-    await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ retried: 1, exhausted: 0 }));
-    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
-      p_job_id: job.id,
-      p_last_error_code: 'payment_still_pending',
-      p_outcome: 'pending',
-    });
-  });
-
-  it('alerts when a still-pending payment exhausts its durable retry budget', async () => {
-    mocks.recoverResource.mockResolvedValue({ kind: 'pending' });
-    mocks.rpc.mockImplementation((name: string) => {
-      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
-      return { data: [{ status: 'exhausted', anomaly_created: true }], error: null };
-    });
-
-    await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ retried: 0, exhausted: 1 }));
-    expect(mocks.captureException).toHaveBeenCalledTimes(1);
-  });
-
-  it('skips a configured provider that does not implement payment recovery', async () => {
-    mocks.getPaymentProvider.mockReturnValue({});
-
-    await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ skipped: 1 }));
-    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
-      p_job_id: job.id,
-      p_last_error_code: 'provider_recovery_unsupported',
-      p_outcome: 'unrelated',
-    });
-  });
-
-  it('skips a provider that is not configured for the worker', async () => {
-    mocks.getPaymentProvider.mockImplementation(() => {
-      throw new Error('provider_not_configured');
-    });
-
-    await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ skipped: 1 }));
-    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
-      p_job_id: job.id,
-      p_last_error_code: 'provider_not_configured',
-      p_outcome: 'unrelated',
-    });
-  });
-
-  it('classifies provider timeouts without persisting the provider error message', async () => {
-    const timeout = new Error('secret provider response');
-    timeout.name = 'TimeoutError';
-    mocks.recoverResource.mockRejectedValue(timeout);
-    mocks.rpc.mockImplementation((name: string) => {
-      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
-      return { data: [{ status: 'pending', anomaly_created: false }], error: null };
-    });
-
-    await expect(
-      recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 }),
-    ).resolves.toEqual(expect.objectContaining({ retried: 1 }));
-    expect(mocks.rpc).toHaveBeenCalledWith('complete_billing_recovery_job', {
-      p_job_id: job.id,
-      p_last_error_code: 'provider_timeout',
-      p_outcome: 'error',
-    });
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45000 }),
+    ).resolves.toMatchObject({ retried: 1 });
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      'apply_billing_recovery_result',
+      expect.objectContaining({
+        p_result: { kind: 'error', errorCode: 'provider_recovery_failed' },
+      }),
+    );
     expect(JSON.stringify(mocks.rpc.mock.calls)).not.toContain('secret provider response');
   });
-
-  it('fails closed when claiming durable recovery jobs fails', async () => {
-    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'db_unavailable' } });
-
-    await expect(recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 })).rejects.toThrow(
-      'billing_recovery_claim_failed',
+  it('alerts only for newly created exhaustion anomalies', async () => {
+    mocks.recoverResource.mockResolvedValue({ kind: 'pending' });
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_recovery_jobs' ?
+        { data: [{ ...job, lease_token: '00000000-0000-4000-8000-000000000372' }], error: null }
+      : { data: [{ status: 'exhausted', anomaly_created: true }], error: null },
     );
-    expect(mocks.recoverResource).not.toHaveBeenCalled();
+    await expect(
+      recoverBillingResources({ batchSize: 20, maxDurationMs: 45000 }),
+    ).resolves.toMatchObject({ exhausted: 1 });
+    expect(mocks.captureException).toHaveBeenCalledTimes(1);
   });
-
-  it('fails closed when SQL returns an invalid job completion result', async () => {
+  it('fails closed on invalid SQL completion without resubmitting', async () => {
     mocks.recoverResource.mockResolvedValue({ kind: 'unrelated' });
-    mocks.rpc.mockImplementation((name: string) => {
-      if (name === 'claim_billing_recovery_jobs') return { data: [job], error: null };
-      return { data: [], error: null };
-    });
-
-    await expect(recoverBillingResources({ batchSize: 20, maxDurationMs: 45_000 })).rejects.toThrow(
+    mocks.rpc.mockImplementation((name: string) =>
+      name === 'claim_billing_recovery_jobs' ?
+        { data: [{ ...job, lease_token: '00000000-0000-4000-8000-000000000372' }], error: null }
+      : { data: [], error: null },
+    );
+    await expect(recoverBillingResources({ batchSize: 20, maxDurationMs: 45000 })).rejects.toThrow(
       'billing_recovery_completion_failed',
     );
+    expect(
+      mocks.rpc.mock.calls.filter(([name]) => name === 'apply_billing_recovery_result'),
+    ).toHaveLength(1);
   });
 });

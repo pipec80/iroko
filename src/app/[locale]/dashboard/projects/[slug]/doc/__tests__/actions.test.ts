@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { appConfig } from '@/config/app.config';
+
+vi.mock('@/config/app.config', () => ({ appConfig: { features: { projects: true } } }));
 
 const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
   getActiveAccountId: vi.fn(),
   create: vi.fn(),
   update: vi.fn(),
+  updateContentAtRevision: vi.fn(),
   revalidatePath: vi.fn(),
   captureServer: vi.fn(),
 }));
@@ -20,6 +24,7 @@ vi.mock('@/lib/active-account', () => ({ getActiveAccountId: mocks.getActiveAcco
 vi.mock('@/lib/project-documents', () => ({
   create: mocks.create,
   update: mocks.update,
+  updateContentAtRevision: mocks.updateContentAtRevision,
 }));
 
 vi.mock('@/lib/analytics/server', () => ({ captureServer: mocks.captureServer }));
@@ -59,6 +64,7 @@ const DOC_ID = '660e8400-e29b-41d4-a716-446655440111';
 const validDoc = { name: 'Especificación', projectId: PROJECT_ID };
 
 function mockAuthenticatedWithAccount() {
+  appConfig.features.projects = true;
   mocks.getClaims.mockResolvedValue({ data: { claims: { sub: 'user-uuid-1' } } });
   mocks.getActiveAccountId.mockResolvedValue('acct-uuid-1');
 }
@@ -70,6 +76,13 @@ describe('createDocument', () => {
     vi.clearAllMocks();
     mockAuthenticatedWithAccount();
     mocks.create.mockResolvedValue({ id: DOC_ID });
+  });
+
+  it('rejects the disabled module before authentication or persistence', async () => {
+    appConfig.features.projects = false;
+    expect(await createDocument(makeFormData(validDoc))).toEqual({ error: 'module_disabled' });
+    expect(mocks.getClaims).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it('returns error when name is empty', async () => {
@@ -112,6 +125,13 @@ describe('createDocument', () => {
     expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
+  it('returns a safe invalid project error when account and project differ', async () => {
+    mocks.create.mockRejectedValue({ code: '23503', message: 'foreign account details' });
+    const result = await createDocument(makeFormData(validDoc));
+    expect(result).toEqual({ error: 'invalid_project' });
+    expect(mocks.captureServer).not.toHaveBeenCalled();
+  });
+
   it('returns the new docId on success', async () => {
     const result = await createDocument(makeFormData(validDoc));
     expect(result.docId).toBe(DOC_ID);
@@ -128,35 +148,59 @@ describe('createDocument', () => {
 // ─── saveDocument ────────────────────────────────────────────────────────────
 
 describe('saveDocument', () => {
+  it('rejects the disabled module before authentication or a revision write', async () => {
+    vi.clearAllMocks();
+    appConfig.features.projects = false;
+    expect(await saveDocument(DOC_ID, 'content', 0)).toEqual({
+      success: false,
+      error: 'module_disabled',
+    });
+    expect(mocks.getClaims).not.toHaveBeenCalled();
+    expect(mocks.updateContentAtRevision).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mockAuthenticatedWithAccount();
-    mocks.update.mockResolvedValue({ id: DOC_ID });
+    mocks.updateContentAtRevision.mockResolvedValue(1);
   });
-
-  it('returns invalid_document_id for non-UUID input', async () => {
-    const result = await saveDocument('../../etc/passwd', '# contenido');
-    expect(result.error).toBe('invalid_document_id');
-    expect(mocks.update).not.toHaveBeenCalled();
+  it.each([-1, 1.5, Number.NaN])('rejects invalid revision %s', async (revision) => {
+    expect(await saveDocument(DOC_ID, 'content', revision)).toEqual({
+      success: false,
+      error: 'invalid_input',
+    });
+    expect(mocks.updateContentAtRevision).not.toHaveBeenCalled();
   });
-
-  it('returns not_authenticated when there are no claims', async () => {
+  it('rejects invalid document id', async () => {
+    expect(await saveDocument('invalid', 'content', 0)).toEqual({
+      success: false,
+      error: 'invalid_input',
+    });
+  });
+  it('rejects unauthenticated writes', async () => {
     mocks.getClaims.mockResolvedValue({ data: null });
-    const result = await saveDocument(DOC_ID, '# contenido');
-    expect(result.error).toBe('not_authenticated');
+    expect(await saveDocument(DOC_ID, 'content', 0)).toEqual({
+      success: false,
+      error: 'not_authenticated',
+    });
   });
-
-  it('returns generic error when persistence throws', async () => {
-    mocks.update.mockRejectedValue(new Error('permission denied for table'));
-    const result = await saveDocument(DOC_ID, '# contenido');
-    expect(result.error).toMatch(/no se pudo guardar/i);
+  it('retains a generic conflict for missing or unavailable rows', async () => {
+    mocks.updateContentAtRevision.mockResolvedValue(null);
+    expect(await saveDocument(DOC_ID, 'content', 0)).toEqual({
+      success: false,
+      error: 'conflict_or_unavailable',
+    });
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
   });
-
-  it('saves content and revalidates the layout on success', async () => {
-    const result = await saveDocument(DOC_ID, '# Título\n\nContenido.');
-
-    expect(result.success).toBe(true);
-    expect(mocks.update).toHaveBeenCalledWith(DOC_ID, { content: '# Título\n\nContenido.' });
+  it('returns safe error for RPC failure', async () => {
+    mocks.updateContentAtRevision.mockRejectedValue(new Error('private database detail'));
+    expect(await saveDocument(DOC_ID, 'content', 0)).toEqual({
+      success: false,
+      error: 'save_failed',
+    });
+  });
+  it('saves at the expected revision and returns the confirmed revision', async () => {
+    expect(await saveDocument(DOC_ID, 'content', 0)).toEqual({ success: true, revision: 1 });
+    expect(mocks.updateContentAtRevision).toHaveBeenCalledWith(DOC_ID, 'content', 0);
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/', 'layout');
   });
 });

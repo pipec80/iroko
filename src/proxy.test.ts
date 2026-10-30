@@ -286,6 +286,7 @@ describe('proxy', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Security-Policy')).toContain("default-src 'self'");
     expect(response.headers.get('X-Frame-Options')).toBe('DENY');
+    expect(response.headers.get('Referrer-Policy')).toBe('strict-origin');
   });
 
   // ADR 0004: every nonce-bearing document is request-specific, including

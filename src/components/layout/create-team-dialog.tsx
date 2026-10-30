@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { createTeam } from '@/app/[locale]/dashboard/actions';
+import { useDocumentDraftTransition } from '@/components/providers/document-draft-provider';
 
 const ERROR_KEYS: Record<string, string> = {
   name_required: 'create_team_error_name_required',
@@ -35,6 +36,7 @@ export function CreateTeamDialog({
   hideTrigger,
 }: CreateTeamDialogProps) {
   const t = useTranslations('Navigation');
+  const { confirmTransition, cancelTransition } = useDocumentDraftTransition();
   const [openState, setOpenState] = useState(false);
   const isControlled = openProp !== undefined;
   const open = isControlled ? openProp : openState;
@@ -46,7 +48,17 @@ export function CreateTeamDialog({
   }
 
   const [state, action, isPending] = useActionState(
-    async (_prev: { error?: string }, formData: FormData) => createTeam(formData),
+    async (_prev: { error?: string }, formData: FormData) => {
+      if (!(await confirmTransition())) return {};
+      try {
+        const result = await createTeam(formData);
+        if (result.error) cancelTransition();
+        return result;
+      } catch (error) {
+        cancelTransition(error);
+        throw error;
+      }
+    },
     {},
   );
 

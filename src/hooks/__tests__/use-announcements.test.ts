@@ -72,6 +72,7 @@ const MOCK_ANNOUNCEMENT: Announcement = {
 describe('useAnnouncements', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.setAuth.mockResolvedValue(undefined);
     mocks.queryResult.current = { data: [], error: null };
     mocks.channel.state = 'closed';
     mocks.storage.clear();
@@ -81,6 +82,25 @@ describe('useAnnouncements', () => {
         mocks.storage.set(key, value);
       },
     });
+  });
+
+  it('does not subscribe after cleanup wins the setAuth race', async () => {
+    let resolveAuth!: () => void;
+    mocks.setAuth.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (resolveAuth = resolve)),
+    );
+    const { unmount } = renderHook(() => useAnnouncements());
+    unmount();
+    await act(async () => resolveAuth());
+    expect(mocks.channel.subscribe).not.toHaveBeenCalled();
+    expect(mocks.removeChannel).toHaveBeenCalledWith(mocks.channel);
+  });
+
+  it('does not subscribe or reject unhandled when realtime auth fails', async () => {
+    mocks.setAuth.mockRejectedValueOnce(new Error('synthetic auth failure'));
+    renderHook(() => useAnnouncements());
+    await act(async () => {});
+    expect(mocks.channel.subscribe).not.toHaveBeenCalled();
   });
 
   it('should load recent announcements on mount', async () => {

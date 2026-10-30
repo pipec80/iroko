@@ -5,6 +5,7 @@ import { AlertTriangle, Copy, Download, KeyRound, Loader2, Smartphone } from 'lu
 import { useTranslations } from 'next-intl';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Factor } from '@supabase/supabase-js';
+import { useIdentityQueryKey } from '@/components/providers/query-provider';
 import { createClient } from '@/lib/supabase/client';
 import { generateRecoveryCodesAction } from '@/app/[locale]/dashboard/account/actions';
 import { Button } from '@/components/ui/button';
@@ -25,17 +26,26 @@ export function MfaSetup() {
   const t = useTranslations('Settings.security');
   const supabase = createClient();
   const queryClient = useQueryClient();
+  const { scope, queryKey } = useIdentityQueryKey('mfa-factors');
+  const { queryKey: recoveryQueryKey } = useIdentityQueryKey('recovery-codes-count');
   const [qrCode, setQrCode] = useState('');
   const [factorId, setFactorId] = useState('');
   const [verifyCode, setVerifyCode] = useState('');
   const [isEnrolling, setIsEnrolling] = useState(false);
   const [isLoadingQr, setIsLoadingQr] = useState(false);
-  // Tracks whether the current enrollment was completed successfully so
-  // onOpenChange knows not to unenroll an already-verified factor on close.
-  const enrolledSuccessfully = useRef(false);
+  type EnrollmentAttempt = {
+    factorId?: string;
+    cancelled: boolean;
+    verified: boolean;
+    verifying: boolean;
+    compensating: boolean;
+  };
+  const currentAttempt = useRef<EnrollmentAttempt | null>(null);
+  const mounted = useRef(true);
 
   const { data: factorsData, isLoading } = useQuery({
-    queryKey: ['mfa-factors'],
+    queryKey,
+    enabled: !!scope,
     queryFn: async () => {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
@@ -43,32 +53,74 @@ export function MfaSetup() {
     },
   });
 
-  const factors: Factor[] = factorsData?.all ?? [];
+  const factors: Factor[] = scope ? (factorsData?.all ?? []) : [];
 
-  const refetchFactors = () => void queryClient.invalidateQueries({ queryKey: ['mfa-factors'] });
+  const refetchFactors = () => void queryClient.invalidateQueries({ queryKey });
 
   const resetEnrollState = () => {
     setQrCode('');
     setFactorId('');
     setVerifyCode('');
     setIsEnrolling(false);
-    enrolledSuccessfully.current = false;
   };
 
-  const cancelEnrollment = (currentFactorId: string) => {
-    if (currentFactorId) {
-      void supabase.auth.mfa.unenroll({ factorId: currentFactorId });
+  const compensate = async (attempt: EnrollmentAttempt) => {
+    if (!attempt.factorId || attempt.verified || attempt.verifying || attempt.compensating) return;
+    attempt.compensating = true;
+    try {
+      const { data, error } = await supabase.auth.mfa.listFactors();
+      if (error) throw error;
+      const factor = data?.all.find((item) => item.id === attempt.factorId);
+      if (factor?.status === 'unverified') {
+        const result = await supabase.auth.mfa.unenroll({ factorId: attempt.factorId });
+        if (result.error) throw result.error;
+      }
+    } catch {
+      if (mounted.current) toast.error(t('error.mfa_unenroll_failed'));
+    } finally {
+      refetchFactors();
     }
+  };
+
+  const cancelEnrollment = () => {
+    const attempt = currentAttempt.current;
+    if (attempt && !attempt.verified) {
+      attempt.cancelled = true;
+      void compensate(attempt);
+    }
+    currentAttempt.current = null;
     resetEnrollState();
   };
 
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      const attempt = currentAttempt.current;
+      if (attempt && !attempt.verified) {
+        attempt.cancelled = true;
+        void compensate(attempt);
+      }
+    };
+  }, []);
+
   const onEnroll = async () => {
+    if (currentAttempt.current && !currentAttempt.current.cancelled) return;
+    const attempt: EnrollmentAttempt = {
+      cancelled: false,
+      verified: false,
+      verifying: false,
+      compensating: false,
+    };
+    currentAttempt.current = attempt;
     setIsLoadingQr(true);
     setIsEnrolling(true);
     setQrCode('');
+    let hasQr = false;
     try {
       // Fetch fresh factor list directly from API (bypasses stale query cache).
       const { data: existing } = await supabase.auth.mfa.listFactors();
+      if (attempt.cancelled) return;
       const allFactors = existing?.all ?? [];
 
       // If a verified TOTP factor already exists the user must disable it first.
@@ -85,33 +137,54 @@ export function MfaSetup() {
       // Remove stale unverified TOTP factors so re-enrollment doesn't fail.
       const stale = allFactors.filter((f) => f.factor_type === 'totp' && f.status === 'unverified');
       await Promise.all(stale.map((f) => supabase.auth.mfa.unenroll({ factorId: f.id })));
+      if (attempt.cancelled) return;
 
       const { data, error } = await supabase.auth.mfa.enroll({ factorType: 'totp' });
+      if (data) attempt.factorId = data.id;
+      if (attempt.cancelled) {
+        await compensate(attempt);
+        return;
+      }
 
       if (error) {
-        toast.error(t('error.mfa_enroll_failed'));
-        setIsEnrolling(false);
+        if (!attempt.cancelled) {
+          toast.error(t('error.mfa_enroll_failed'));
+        }
         return;
       }
 
       if (!data.totp.qr_code) {
         toast.error(t('error.mfa_no_qr'));
-        setIsEnrolling(false);
         return;
       }
 
+      hasQr = true;
       setFactorId(data.id);
       // qr_code from Supabase is already a valid data URL (data:image/svg+xml;...)
       setQrCode(data.totp.qr_code);
     } catch {
-      toast.error(t('error.mfa_enroll_failed'));
-      setIsEnrolling(false);
+      if (!attempt.cancelled) {
+        toast.error(t('error.mfa_enroll_failed'));
+      }
     } finally {
-      setIsLoadingQr(false);
+      if (!hasQr) {
+        attempt.cancelled = true;
+        if (currentAttempt.current === attempt) {
+          currentAttempt.current = null;
+          if (mounted.current) resetEnrollState();
+        }
+        await compensate(attempt);
+      }
+      if (mounted.current && (!currentAttempt.current || currentAttempt.current === attempt)) {
+        setIsLoadingQr(false);
+      }
     }
   };
 
   const onVerify = async () => {
+    const attempt = currentAttempt.current;
+    if (!attempt || !attempt.factorId) return;
+    attempt.verifying = true;
     try {
       const challenge = await supabase.auth.mfa.challenge({ factorId });
       if (challenge.error) {
@@ -132,12 +205,18 @@ export function MfaSetup() {
 
       // Mark as successfully enrolled so onOpenChange doesn't unenroll the
       // now-verified factor when the dialog closes.
-      enrolledSuccessfully.current = true;
-      toast.success(t('success.mfa_enabled'));
-      resetEnrollState();
+      attempt.verified = true;
+      if (currentAttempt.current === attempt && !attempt.cancelled) {
+        currentAttempt.current = null;
+        toast.success(t('success.mfa_enabled'));
+        resetEnrollState();
+      }
       refetchFactors();
     } catch {
       toast.error(t('error.mfa_verify_failed'));
+    } finally {
+      attempt.verifying = false;
+      if (attempt.cancelled && !attempt.verified) void compensate(attempt);
     }
   };
 
@@ -163,7 +242,8 @@ export function MfaSetup() {
   const [dismissedCodes, setDismissedCodes] = useState<string[] | null>(null);
 
   const { data: unusedCount = 0, refetch: refetchCount } = useQuery({
-    queryKey: ['recovery-codes-count'],
+    queryKey: recoveryQueryKey,
+    enabled: !!scope,
     queryFn: async () => {
       const { data } = await supabase.rpc('count_unused_recovery_codes');
       return (data as number | null) ?? 0;
@@ -203,6 +283,8 @@ export function MfaSetup() {
 
   const isMfaEnabled = factors.some((f) => f.status === 'verified');
 
+  if (!scope) return null;
+
   if (isLoading) {
     return (
       <Card className="border-border animate-pulse rounded-3xl">
@@ -239,7 +321,7 @@ export function MfaSetup() {
           </div>
 
           <div className="flex items-center gap-3">
-            {isMfaEnabled ?
+            {isMfaEnabled && !isEnrolling ?
               <Button
                 variant="outline"
                 size="sm"
@@ -253,9 +335,9 @@ export function MfaSetup() {
             : <Dialog
                 open={isEnrolling}
                 onOpenChange={(open) => {
-                  if (!open && !enrolledSuccessfully.current) {
+                  if (!open) {
                     // User cancelled — clean up the pending unverified factor.
-                    cancelEnrollment(factorId);
+                    cancelEnrollment();
                   }
                 }}>
                 <DialogTrigger asChild>
@@ -306,10 +388,7 @@ export function MfaSetup() {
                     </div>
                   </div>
                   <div className="flex justify-end gap-3 pt-2">
-                    <Button
-                      variant="ghost"
-                      onClick={() => cancelEnrollment(factorId)}
-                      className="rounded-xl">
+                    <Button variant="ghost" onClick={cancelEnrollment} className="rounded-xl">
                       {t('mfa_modal_cancel')}
                     </Button>
                     <Button

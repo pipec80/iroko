@@ -11,7 +11,8 @@
     "themeLight": "Claro",
     "themeDark": "Oscuro",
     "language": "Idioma",
-    "logout": "Cerrar sesión"
+    "logout": "Cerrar sesión",
+    "logout_failed": "No se pudo cerrar sesión. Inténtalo de nuevo."
   },
   "HomePage": {
     "title": "Iroko — el tronco común para tus micro-SaaS",
@@ -470,6 +471,7 @@
     "announcements_error_validation": "Revisá los datos del formulario.",
     "error_subject_required": "El asunto es obligatorio.",
     "error_body_required": "El mensaje es obligatorio.",
+    "error_generic": "Ocurrió un error. Intentá de nuevo.",
     "error_not_platform_admin": "No tenés acceso a esta página.",
     "error_mfa_required": "Se requiere autenticación de dos factores para continuar."
   },
@@ -1203,5 +1205,20 @@
     "error_invalid_name": "El nombre debe tener entre 2 y 100 caracteres.",
     "error_no_active_account": "No se encontró una cuenta activa.",
     "error_update_failed": "No se pudo actualizar la organización."
+  },
+  "documentEditor": {
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Guardado",
+    "pending": "Cambios pendientes",
+    "error": "Error al guardar. El borrador se conserva.",
+    "content": "Contenido",
+    "restorePrompt": "Hay un borrador de esta sesión. ¿Restaurarlo o descartarlo?",
+    "restore": "Restaurar",
+    "discard": "Descartar",
+    "memoryOnly": "El borrador solo permanece en esta sesión. Forzar una recarga o cerrar la pestaña lo descarta.",
+    "leaveIdentity": "Hay borradores pendientes. ¿Guardarlos antes de cambiar de identidad? Si no pueden guardarse, vuelve al documento para restaurarlos.",
+    "conflict": "El documento cambió o ya no está disponible. Tu borrador se conserva. Recarga explícitamente para ver la versión del servidor.",
+    "reload": "Recargar versión del servidor"
   }
 }

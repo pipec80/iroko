@@ -22,14 +22,20 @@ const mocks = vi.hoisted(() => {
   builder.order.mockImplementation(() => Promise.resolve(result.current));
   builder.maybeSingle.mockImplementation(() => Promise.resolve(result.current));
   builder.single.mockImplementation(() => Promise.resolve(result.current));
-  return { builder, result, from: vi.fn(() => builder) };
+  return { builder, result, from: vi.fn(() => builder), rpc: vi.fn() };
 });
 
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn().mockResolvedValue({ from: mocks.from }),
+  createClient: vi.fn().mockResolvedValue({ from: mocks.from, rpc: mocks.rpc }),
 }));
 
-import { listByProject, getById, create, update } from '../project-documents';
+import {
+  listByProject,
+  getById,
+  create,
+  update,
+  updateContentAtRevision,
+} from '../project-documents';
 
 const PROJECT_ID = 'proj-uuid-1';
 const DOC_ID = 'doc-uuid-1';
@@ -37,6 +43,27 @@ const DOC_ID = 'doc-uuid-1';
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.result.current = { data: null, error: null };
+});
+
+describe('revision compare-and-swap', () => {
+  it('returns the confirmed revision from the atomic RPC', async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ revision: 4 }], error: null });
+    expect(await updateContentAtRevision(DOC_ID, 'new content', 3)).toBe(4);
+    expect(mocks.rpc).toHaveBeenCalledWith('save_document_revision', {
+      p_document_id: DOC_ID,
+      p_content: 'new content',
+      p_expected_revision: 3,
+    });
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it('does not invent a revision for stale or unavailable rows', async () => {
+    mocks.rpc.mockResolvedValue({ data: [], error: null });
+    expect(await updateContentAtRevision(DOC_ID, 'new content', 3)).toBeNull();
+  });
+  it('propagates RPC errors to the safe action boundary', async () => {
+    mocks.rpc.mockResolvedValue({ data: null, error: new Error('RPC failed') });
+    await expect(updateContentAtRevision(DOC_ID, 'new content', 3)).rejects.toThrow('RPC failed');
+  });
 });
 
 describe('listByProject', () => {

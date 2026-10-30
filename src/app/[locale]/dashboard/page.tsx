@@ -47,7 +47,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   }
 
   const projects =
-    accountId ?
+    appConfig.features.projects && accountId ?
       await listByAccount(accountId).catch((err: unknown) => {
         logger.error(
           { action: 'list_projects', accountId },

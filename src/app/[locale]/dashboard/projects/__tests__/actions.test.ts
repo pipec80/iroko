@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { appConfig } from '@/config/app.config';
+
+vi.mock('@/config/app.config', () => ({ appConfig: { features: { projects: true } } }));
 
 const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
@@ -60,8 +63,18 @@ function mockAuthenticatedWithAccount() {
 describe('createProject', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    appConfig.features.projects = true;
     mockAuthenticatedWithAccount();
     mocks.create.mockResolvedValue({ id: 'project-uuid-1' });
+  });
+
+  it('rejects the disabled module before authentication or persistence', async () => {
+    appConfig.features.projects = false;
+    expect(await createProject(makeFormData(validProject))).toEqual({ error: 'module_disabled' });
+    expect(mocks.getClaims).not.toHaveBeenCalled();
+    expect(mocks.getActiveAccountId).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
+    expect(mocks.captureServer).not.toHaveBeenCalled();
   });
 
   describe('validation', () => {

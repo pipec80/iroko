@@ -18,6 +18,7 @@ import {
   updateProfileSchema,
   validateAvatarFile,
 } from '@/lib/validation/profile';
+import { hasOversizedUploadFields } from '@/lib/validation/upload-limits';
 
 export type SettingsActionState = {
   error?: string;
@@ -162,11 +163,10 @@ export const updatePasswordFromSettingsAction = withServerAction(
     const { supabase, userId } = await requireUserId();
     if (!userId) return { error: 'not_authenticated' };
 
-    // Pass currentPassword so Supabase can enforce secure_password_change.
+    // Auth's require-current-password policy is separate from recent-session reauthentication.
     const { error } = await supabase.auth.updateUser({
       password: parsed.data.password,
-      // @ts-expect-error supabase-js types miss this option in 2.x; supported server-side.
-      currentPassword: parsed.data.current_password,
+      current_password: parsed.data.current_password,
     });
     if (error) {
       logger.warn(
@@ -188,6 +188,7 @@ export const uploadAvatarAction = withServerAction(async function uploadAvatarAc
   if (!(file instanceof File) || file.size === 0) {
     return { error: 'no_file' };
   }
+  if (hasOversizedUploadFields(formData, 'avatar')) return { error: 'file_too_large' };
 
   const clientCheck = validateAvatarFile(file);
   if (!clientCheck.ok) return { error: clientCheck.error };
@@ -396,7 +397,7 @@ export const listMySessions = withServerAction(async function listMySessions(): 
       { userId, action: 'settings.listSessions', code: error.code },
       'List sessions failed',
     );
-    return [];
+    throw new Error('session_list_failed');
   }
   return (data ?? []) as SessionRow[];
 });

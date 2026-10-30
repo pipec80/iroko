@@ -3,7 +3,12 @@ import { readFileSync } from 'node:fs';
 
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
-import { requireLoopbackUrl, resolveDbTarget, validateDbContainerState } from '../local-e2e-target';
+import {
+  localE2eBudget,
+  requireLoopbackUrl,
+  resolveDbTarget,
+  validateDbContainerState,
+} from '../local-e2e-target';
 
 export const MAILPIT_BASE = 'http://127.0.0.1:54324';
 export const SUPABASE_URL = requireLoopbackUrl(
@@ -93,11 +98,17 @@ export function uniqueEmail(prefix = 'e2e'): string {
  * - "Nueva organización" solo se monta con el dropdown abierto
  *   (`{isOpen && ...}` en app-sidebar-client.tsx).
  */
-export async function createTeamViaUi(page: Page, teamName: string): Promise<void> {
+export async function createTeamViaUi(
+  page: Page,
+  teamName: string,
+  options: { preserveDocument?: boolean } = {},
+): Promise<void> {
   const switcher = page.getByRole('button', { name: /cambiar de organización/i });
 
-  await page.goto('/es/dashboard');
-  await page.waitForURL(/\/es\/dashboard$/);
+  if (!options.preserveDocument) {
+    await page.goto('/es/dashboard');
+    await page.waitForURL(/\/es\/dashboard$/);
+  }
   await switcher.click();
   await expect(page.getByRole('listbox')).toBeVisible();
   await page.getByRole('button', { name: /nueva organización/i }).click();
@@ -269,7 +280,7 @@ export async function loginViaUi(page: Page, email: string, password: string): P
   await page.locator('input[name="email"][type="email"]').fill(email);
   await page.locator('input[name="password"]').fill(password);
   await page.getByRole('button', { name: /iniciar sesión/i }).click();
-  await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+  await page.waitForURL(/\/es\/dashboard/, { timeout: localE2eBudget(20_000, 'navigation') });
 }
 
 type ApiResult = { ok: boolean; status: number; body: unknown };

@@ -22,7 +22,7 @@ vi.mock('@/env', () => ({
   },
 }));
 
-import { getAdminAccounts } from '../actions';
+import { getAdminAccount, getAdminAccounts } from '../actions';
 
 const ACCOUNT_A = '11111111-1111-4111-8111-111111111111';
 const ACCOUNT_B = '22222222-2222-4222-8222-222222222222';
@@ -131,5 +131,39 @@ describe('getAdminAccounts', () => {
       p_cursor_created_at: '2026-07-01T09:00:00Z',
       p_cursor_id: ACCOUNT_B,
     });
+  });
+});
+
+describe('getAdminAccount', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('looks up an exact account ID without requesting the first page', async () => {
+    mocks.rpc.mockResolvedValue({
+      data: [
+        {
+          account_id: ACCOUNT_B,
+          name: 'Account 101',
+          slug: 'account-101',
+          type: 'team',
+          owner_id: null,
+          owner_email: null,
+          plan_slug: null,
+          subscription_status: null,
+          member_count: 1,
+          created_at: '2026-07-01T00:00:00Z',
+        },
+      ],
+      error: null,
+    });
+    const result = await getAdminAccount(ACCOUNT_B);
+    expect(mocks.rpc).toHaveBeenCalledWith('get_admin_account', { p_account_id: ACCOUNT_B });
+    expect(result.data?.accountId).toBe(ACCOUNT_B);
+  });
+
+  it('rejects malformed IDs before RPC and retains authorization errors', async () => {
+    expect((await getAdminAccount('invalid')).error).toBe('validation_error');
+    expect(mocks.rpc).not.toHaveBeenCalled();
+    mocks.rpc.mockResolvedValue({ data: null, error: { message: 'mfa_required' } });
+    expect((await getAdminAccount(ACCOUNT_A)).error).toBe('mfa_required');
   });
 });

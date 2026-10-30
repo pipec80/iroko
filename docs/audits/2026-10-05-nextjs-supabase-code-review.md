@@ -1,5 +1,7 @@
 # Revisión de Next.js, seguridad Supabase y arquitectura de datos — 2026-10-05
 
+**Historical checkpoint notice — 2026-10-20:** T1 closed on October 8. Read the [current revalidation](2026-10-19-freeze-code-and-documentation-revalidation.md) and [central disposition](../exec-plans/active/freeze-remediation-register.csv) before acting; instructions below to continue T1 or defer 014-T1 are superseded. This notice does not rewrite the recorded results.
+
 - Plan: [Plan 016](../exec-plans/active/016-nextjs-supabase-code-review.md).
 - Tipo: revisión técnica de solo lectura; no certificación de producción.
 - Estado: **T0 cerrado; T1 cerrada como revisión estática; T2/T3 pendientes**.

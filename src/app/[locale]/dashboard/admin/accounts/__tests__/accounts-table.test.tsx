@@ -157,4 +157,81 @@ describe('AccountsTable', () => {
       1,
     );
   });
+
+  it('ignores search A when search B resolves first', async () => {
+    let resolveA!: (result: { data: { entries: AdminAccountEntry[]; nextCursor: null } }) => void;
+    let resolveB!: (result: { data: { entries: AdminAccountEntry[]; nextCursor: null } }) => void;
+    mocks.getAdminAccounts
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveA = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveB = resolve;
+          }),
+      );
+    renderWithIntl(<AccountsTable initialEntries={[ACTIVE_ENTRY]} initialCursor={null} />);
+    const input = screen.getByLabelText('Buscar por nombre o slug');
+    fireEvent.change(input, { target: { value: 'acme' } });
+    await waitFor(() => expect(mocks.getAdminAccounts).toHaveBeenCalledTimes(1));
+    fireEvent.change(input, { target: { value: 'bravo' } });
+    await waitFor(() => expect(mocks.getAdminAccounts).toHaveBeenCalledTimes(2));
+    resolveB({ data: { entries: [PAST_DUE_ENTRY], nextCursor: null } });
+    await waitFor(() =>
+      expect(screen.getAllByRole('link', { name: 'Bravo Ventures' }).length).toBeGreaterThan(0),
+    );
+    resolveA({ data: { entries: [ACTIVE_ENTRY], nextCursor: null } });
+    await waitFor(() =>
+      expect(screen.queryAllByRole('link', { name: 'Acme Testing Co' })).toHaveLength(0),
+    );
+  });
+
+  it('ignores an old load-more page after the filter changes', async () => {
+    const cursor = { createdAt: '2026-07-01T00:00:00Z', id: 'acc-1' };
+    let resolveOld!: (result: { data: { entries: AdminAccountEntry[]; nextCursor: null } }) => void;
+    mocks.getAdminAccounts
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveOld = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({ data: { entries: [PAST_DUE_ENTRY], nextCursor: null } });
+    renderWithIntl(<AccountsTable initialEntries={[ACTIVE_ENTRY]} initialCursor={cursor} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cargar más' }));
+    await waitFor(() => expect(mocks.getAdminAccounts).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText('Buscar por nombre o slug'), {
+      target: { value: 'bravo' },
+    });
+    await waitFor(() => expect(mocks.getAdminAccounts).toHaveBeenCalledTimes(2));
+    resolveOld({ data: { entries: [ACTIVE_ENTRY], nextCursor: null } });
+    await waitFor(() =>
+      expect(screen.getAllByRole('link', { name: 'Bravo Ventures' }).length).toBeGreaterThan(0),
+    );
+    expect(screen.queryAllByRole('link', { name: 'Acme Testing Co' })).toHaveLength(0);
+  });
+
+  it('preserves the last visible page when a new search fails', async () => {
+    mocks.getAdminAccounts.mockResolvedValue({ data: null, error: 'fetch_failed' });
+    renderWithIntl(<AccountsTable initialEntries={[ACTIVE_ENTRY]} initialCursor={null} />);
+    fireEvent.change(screen.getByLabelText('Buscar por nombre o slug'), {
+      target: { value: 'bravo' },
+    });
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toBe(es.Admin.error_generic));
+    expect(screen.getAllByRole('link', { name: 'Acme Testing Co' }).length).toBeGreaterThan(0);
+  });
+
+  it('hides an old cursor immediately while a new search is debouncing', () => {
+    const cursor = { createdAt: '2026-07-01T00:00:00Z', id: 'acc-1' };
+    renderWithIntl(<AccountsTable initialEntries={[ACTIVE_ENTRY]} initialCursor={cursor} />);
+    fireEvent.change(screen.getByLabelText('Buscar por nombre o slug'), {
+      target: { value: 'bravo' },
+    });
+    expect(screen.queryByRole('button', { name: 'Cargar más' })).toBeNull();
+    expect(mocks.getAdminAccounts).not.toHaveBeenCalled();
+  });
 });

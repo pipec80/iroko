@@ -15,6 +15,7 @@ const orgNameSchema = z.object({ name: z.string().trim().min(2).max(100) });
 /** Nombre de la cuenta activa, para prellenar el paso 1 del wizard. */
 export const getOnboardingOrg = withServerAction(async function getOnboardingOrg(): Promise<{
   name: string | null;
+  accountId?: string;
 }> {
   const accountId = await getActiveAccountId();
   if (accountId == null) return { name: null };
@@ -27,7 +28,9 @@ export const getOnboardingOrg = withServerAction(async function getOnboardingOrg
   // personal activa el campo va vacío: su nombre es el del usuario, no el de
   // una organización, y ofrecerlo como sugerencia confunde.
   const account = data.find((a) => a.account_id === accountId);
-  return { name: account?.type === 'team' ? account.name : null };
+  return account?.type === 'team' ?
+      { name: account.name, accountId: account.account_id }
+    : { name: null };
 });
 
 export const confirmOrgName = withServerAction(async function confirmOrgName(

@@ -180,7 +180,9 @@ test.describe('QA — presence', () => {
       await page.goto('/es/dashboard/members');
       await page.waitForURL(/\/es\/dashboard\/members/);
 
-      const teammateRowOnOwnerPage = page.getByTestId(`member-row-${teammateEmail}`);
+      const teammateRowOnOwnerPage = page
+        .getByRole('main')
+        .getByTestId(`member-row-${teammateEmail}`);
       await expect(teammateRowOnOwnerPage).toBeVisible();
       // Antes de que el teammate se conecte, su fila no tiene el punto "En línea".
       await expect(teammateRowOnOwnerPage.getByLabel('En línea')).not.toBeVisible();
@@ -200,7 +202,9 @@ test.describe('QA — presence', () => {
 
       // El teammate también ve online al owner — presence es simétrico dentro
       // del mismo canal de cuenta.
-      const ownerRowOnTeammatePage = teammatePage.getByTestId(`member-row-${ownerEmail}`);
+      const ownerRowOnTeammatePage = teammatePage
+        .getByRole('main')
+        .getByTestId(`member-row-${ownerEmail}`);
       await expect(ownerRowOnTeammatePage.getByLabel('En línea')).toBeVisible();
 
       // Navegar fuera de /members desmonta MembersTable → usePresence limpia

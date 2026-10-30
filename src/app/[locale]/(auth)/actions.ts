@@ -166,8 +166,10 @@ export async function verifyMfaAction(
       distinctId: userId,
     });
   }
+  const next = safeRedirectPath(formData.get('next') as string | null, locale);
+  const hrefWithoutLocale = next.replace(new RegExp(`^/${locale}`), '') || '/dashboard';
   const href = resolvePostAuthDestination(
-    '/dashboard',
+    hrefWithoutLocale,
     claimsData?.claims.app_metadata?.onboarding_completed,
   );
   redirect({ href, locale });
@@ -384,7 +386,9 @@ export async function verifyRecoveryAction(
   logger.info({ action: 'auth.recovery.success' }, 'Recovery code consumed');
 
   const locale = await getLocale();
-  redirect({ href: '/dashboard/account?tab=security&reenroll=1', locale });
+  const next = safeRedirectPath(formData.get('next') as string | null, locale);
+  const returnTo = next !== `/${locale}/dashboard` ? `&next=${encodeURIComponent(next)}` : '';
+  redirect({ href: `/dashboard/account?tab=security&reenroll=1${returnTo}`, locale });
   return {};
 }
 

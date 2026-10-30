@@ -51,6 +51,18 @@ describe('updateOrgLogo', () => {
     expect(res.error).toBe('no_file');
   });
 
+  it('rejects an oversized logo and oversized extra field before accessing Storage', async () => {
+    const large = new File(['x'], 'logo.png', { type: 'image/png' });
+    Object.defineProperty(large, 'size', { value: 5 * 1024 * 1024 + 1 });
+    const fd = new FormData();
+    fd.set('logo', large);
+    expect((await updateOrgLogo({}, fd)).error).toBe('file_too_large');
+    fd.set('logo', new File(['x'], 'logo.png', { type: 'image/png' }));
+    fd.set('extra', 'x'.repeat(512 * 1024 + 1));
+    expect((await updateOrgLogo({}, fd)).error).toBe('file_too_large');
+    expect(mocks.storageUpload).not.toHaveBeenCalled();
+  });
+
   it('should upload and persist the logo path', async () => {
     mocks.getActiveAccountId.mockResolvedValue('acc-1');
     mocks.storageUpload.mockResolvedValue({ error: null });

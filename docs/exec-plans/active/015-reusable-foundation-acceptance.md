@@ -1,9 +1,66 @@
 # Plan 015 — Aceptación de la base reutilizable
 
+## Contrato vigente de producto — 2026-10-28
+
+**Actualización2026-10-29:** prerrequisito de exclusión aceptado localmente:
+guards unitarios/revisión y navegador2/2, cleanup verificado. Ver resultado más
+reciente en [evidencia017](../../audits/2026-10-20-017-p1-execution.md).
+RS-05 global mantiene `evidence-pending` por composición/billingT0/T1. No acepta
+el resto de015, buildproduction ni Cloud; los bloqueos previos quedan históricos.
+
+[ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md) fija el
+resultado: replicar una base SaaS, cambiar marca/configuración y añadir un caso
+de negocio pequeño. Robot no es requisito ni primer consumidor obligatorio.
+Las instrucciones posteriores de ejecución se interpretan con este alcance;
+no construir cosmética, tarot e IoT para probar la misma base.
+
+**Prerrequisito adelantado,2026-10-29:** T1/RS-05, exclusión efectiva del editor/Robot y
+configuraciones ofrecidas, en paralelo lógico con la disposición de P1 del núcleo,
+pero nunca pruebas mutantes simultáneas. El código ahora fija
+`features.projects=false` y conserva Robot=false, con guards y regresiones locales;
+ver [evidencia browser y límites](../../audits/2026-10-20-017-p1-execution.md).
+Esto no acepta el resto deT1 ni inicia los ensayos de015. Antes de ofrecer
+el MVP verificar páginas, URLs profundas, acciones y accesos del inicio. Usar
+configuración existente; retirar la referencia Projects completa si es la forma
+simple de excluir su editor, sin borrar datos/esquemas ni crear un framework.
+El proyecto derivado neutral usa patrones de datos/autorización, no depende de
+reactivar esa UI ni de importar un editor cuya aceptación está diferida.
+
+**Archivos de T1 adicionales por exclusión:** `src/config/app.config.ts`;
+`src/app/[locale]/dashboard/projects/page.tsx`, `actions.ts`, `[slug]/page.tsx`,
+`[slug]/doc/actions.ts`, `[slug]/doc/[docId]/page.tsx` y
+`[slug]/doc/[docId]/actions.ts` (todos bajo el mismo directorio projects);
+`src/components/layout/app-sidebar-client.tsx`, `app-topbar-client.tsx` y
+`src/app/[locale]/dashboard/page.tsx`. Verificar consumidores antes de editar.
+Reusar controles Robot de014-T1; añadir regresiones focalizadas para flags falsos,
+URL directa y acción guardada antes de leer/escribir. La nueva configuración no
+autoriza acceso a datos anteriores ni permite omitir RLS.
+
+**Aceptación mínima:** ambas configuraciones (proveedor ofrecido / sin nuevas
+compras), una instalación derivada neutral, cambio de marca, una extensión útil
+y una actualización real preservando dato/personalización. Una sola extensión,
+con positivos/negativos; sin generador, nuevo motor de módulos o suite de verticales.
+La configuración con billing existente conserva callbacks y jobs. Los recorridos
+de navegador pueden ser manuales reproducibles o automatizados, con evidencia y
+autorización de destino; no dependen del runner development del editor.
+
+**Coordinación — 2026-10-20:** se conserva este alcance y sus tareas.
+El [registro central](freeze-remediation-register.csv) asigna S-10 a T1:
+`captureServer` debe respetar `appConfig.features.analytics=false`, además de
+token/consentimiento; añadir regresión con flag false y token/consentimiento
+positivos, sin envío de proveedor. Esto no cambia callbacks/worker de billing.
+El wizard ya omite el paso de plan con billing false: reusar esa implementación
+y probarla, sin presentar la condición como inexistente. 012.5 proporciona el
+único catálogo para superficies públicas/dashboard; T1 gobierna disponibilidad.
+La validación final integrada de 016 sucede después de los últimos cambios de
+este plan, no antes. Sólo el prerrequisito de exclusión tiene implementación
+local; el resto deT1 y los ensayos siguen sin iniciar.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
-**Estado:** propuesto; implementación/ensayos no iniciados. P1 para uso propio;
+**Estado:** prerrequisito de exclusión aceptado localmente, incluido navegador;
+resto del plan y ensayos no iniciados. P1 para uso propio;
 no depende de decidir vender. Baseline: `f82d2fbe381014c80a090ba3c36c99e4778111c3`.
 
 **Goal:** demostrar que una instalación nueva puede configurarse, extenderse y
@@ -20,7 +77,7 @@ pgTAP y scripts actuales; sin dependencias nuevas ni Fumadocs requerido.
 **Spec:** [estrategia](../../architecture/product-strategy.md), RS-05/06/07/12
 de la [auditoría](../../audits/2026-09-24-reusable-saas-readiness.md).
 
-**Contexto posterior aportado por el mantenedor:** el
+**Contexto histórico, no dependencia vigente:** el
 [piloto IoT](../../architecture/iot-vertical-pilot.md) es el primer candidato
 real de dominio, con el robot como emisor. T3 puede usar ese dominio en el
 derivado desechable en lugar del registro neutral de ejemplo, conservando
@@ -42,7 +99,8 @@ se convierte en dependencia de acabar toda la plataforma IoT para cerrar 015.
 - Instalar dependencias o crear un entorno desechable requiere autorización de
   ejecución que lo incluya; este documento no la concede.
 - No hacer escrituras Cloud, pagos, push, merge o deploy sin autorización propia.
-- Leer `TESTING-PLAN.md` antes de tocar pruebas; un PR por tarea implementable.
+- Leer `TESTING-PLAN.md` antes de tocar pruebas; lotes pequeños revisables, sin
+  autorización implícita de commit/push por aparecer en un paso sugerido.
 
 ## Review Focus
 
@@ -60,14 +118,15 @@ véase [composición y paneles del piloto](../../architecture/iot-vertical-pilot
 Esta tarea cubre una necesidad del núcleo. La ingestión y las pantallas IoT
 con datos reales conservan su trabajo propio.
 
-**Files:** crear `src/config/product-modules.ts` y
-`src/config/__tests__/product-modules.test.ts`; modificar
+**Files:** reutilizar configuración y composición actuales; extraer
+`src/config/product-modules.ts` y su test sólo si la duplicación impide el caso
+de adaptación real. Modificar según necesidad demostrada
 `src/components/layout/app-sidebar-client.tsx`, `app-topbar-client.tsx`,
 `src/app/[locale]/dashboard/page.tsx` y los tests afectados. Mantener
 `appConfig` como selección de capacidades de producto. No introducir un segundo
 inventario de variables de entorno ni una configuración editable con código remoto.
 
-**Interfaces:** catálogo estático tipado con ID, rutas, claves i18n, icono,
+**Interfaces:** metadatos estáticos tipados con ID, rutas, claves i18n, icono,
 orden/grupo, condición de disponibilidad/visibilidad y acceso de inicio.
 Resolvers puros reciben configuración y rol de presentación; devuelven solo
 metadatos, nunca clientes, secretos, callbacks privilegiados o consultas SQL.
@@ -82,7 +141,7 @@ profundos existentes. El catálogo no convierte un rol de UI en autorización.
       que sidebar y título coinciden para rutas existentes, incluidas rutas
       hijas; los tests deben renderizar consumidores, no duplicar el catálogo.
       Ejecutar las pruebas afectadas y registrar el fallo por divergencia real.
-- [ ] **Implementar.** Extraer los metadatos hoy repetidos y consumirlos en
+- [ ] **Implementar sólo lo necesario.** Reutilizar o extraer metadatos y consumirlos en
       sidebar, títulos, accesos y atajos. Ejecutar consultas del inicio solo para
       módulos habilitados. Conservar las páginas explícitas y sus guards; T1 y
       Plan 014 mantienen sus cierres de rutas/acciones, no se sustituyen por menú.
@@ -186,6 +245,14 @@ correo con cualquiera de los dos transportes.
       activos sin revisión y conservación de sus credenciales/servicios.
       Commit sugerido: `feat: support a minimal no-subscription configuration`.
 
+### 015-T1 — Extensión de aceptación S-10: flag de analítica servidor
+
+**Files:** modificar `src/lib/analytics/server.ts` y `src/lib/analytics/__tests__/server.test.ts`; conservar `client.ts` y sus tests como control de navegador. **Interface:** `captureServer` conserva firma y validación de eventos, y retorna sin consultar consentimiento ni crear cliente PostHog cuando `appConfig.features.analytics=false`. Con flag true siguen aplicándose token y consentimiento.
+
+- [ ] RED: flag false con token y consentimiento positivo no construye SDK ni envía; flag true/consentimiento positivo conserva evento de control; consent false sigue bloqueando. Comprobar que la operación de negocio invocante conserva su resultado con flag false.
+- [ ] Implementar guard temprano sin cambiar configuración del proveedor ni identidad financiera. Ejecutar `pnpm test src/lib/analytics/__tests__/server.test.ts src/lib/analytics/__tests__/client.test.ts`, typecheck/lint y revisión independiente.
+- [ ] Actualizar S-10 en registro con evidencia del candidato; no declarar cerrado por el guard equivalente que ya existe en navegador.
+
 ## T2 — Recetas de extensión y mapa de dependencias
 
 **Files:** ampliar `docs/modules/README.md`; crear
@@ -263,7 +330,8 @@ reset; nunca se usa el otro proyecto personal por inferencia.
       Completar la ficha de T2 con la configuración realmente ejecutada y sus
       límites; registrar por separado arranque local y aceptación operacional.
 - [ ] **Extensión mínima neutral.** Crear, solo en el derivado desechable, un
-      registro de negocio por tenant usando el patrón projects/documents, con
+      registro de negocio por tenant reutilizando patrones de identidad/RLS, sin
+      habilitar la UI/editor Projects diferida, con
       entrada validada, archivo privado y notificación. Crear dos cuentas, owner,
       editor y viewer. Probar escritura permitida, rechazo viewer, aislamiento,
       revocación y persistencia tras reload. Explicar cada modificación del núcleo;

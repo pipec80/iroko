@@ -1,6 +1,87 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+test('core harness fulfills exact country flags locally and rejects decorated or unrelated URLs', async () => {
+  const { writeE2eHarness, requiredE2eSpecs, guardBrowserContexts, assertScratchPath } =
+    await import('./run-plan-0124-local.mjs');
+  const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } = await import('node:fs');
+  const { resolve } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const { runInNewContext } = await import('node:vm');
+  const ts = await import('typescript');
+  const scratch = mkdtempSync(resolve(tmpdir(), 'plan0124-assets-'));
+  try {
+    mkdirSync(resolve(scratch, 'src/test/e2e'), { recursive: true });
+    for (const name of requiredE2eSpecs)
+      writeFileSync(
+        resolve(scratch, 'src/test/e2e', name),
+        "import {test} from '@playwright/test';\n",
+      );
+    writeE2eHarness(scratch, 'http://127.0.0.1:3000', resolve(scratch, 'egress.log'));
+    const source = readFileSync(resolve(scratch, 'src/test/plan0124-base.ts'), 'utf8');
+    const code = ts.transpileModule(source, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText;
+    let fixture;
+    runInNewContext(code, {
+      exports: {},
+      process: { env: {} },
+      URL,
+      require(id) {
+        if (id === '@playwright/test')
+          return {
+            test: {
+              extend(definition) {
+                fixture = definition.plan0124Guard[0];
+              },
+            },
+          };
+        if (id === 'node:fs') return { appendFileSync() {} };
+        if (id.endsWith('plan0124-browser-guard.mjs')) return { guardBrowserContexts };
+        throw new Error('Unexpected generated import');
+      },
+    });
+    for (const [url, allowed] of [
+      ['https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/cl.svg', true],
+      ['https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/cl.svg?token=synthetic', false],
+      ['https://unrelated.invalid/cl.svg', false],
+    ]) {
+      let handler;
+      let fulfilled = false;
+      let aborted = false;
+      const context = {
+        async route(_pattern, callback) {
+          handler = callback;
+        },
+      };
+      const browser = {
+        async newContext() {
+          return context;
+        },
+      };
+      const run = () =>
+        fixture({ context, browser }, async () => {
+          await handler({
+            request: () => ({ url: () => url, method: () => 'GET' }),
+            async fulfill(response) {
+              fulfilled = response.contentType === 'image/svg+xml';
+            },
+            async abort() {
+              aborted = true;
+            },
+          });
+        });
+      if (allowed) await run();
+      else await assert.rejects(run, /forbidden remote requests/);
+      assert.equal(fulfilled, allowed);
+      assert.equal(aborted, !allowed);
+    }
+  } finally {
+    assertScratchPath(scratch, tmpdir(), 'plan0124-assets-');
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
 test('isolated acceptance rejects partial, duplicated, skipped and flaky coverage', async () => {
   const { assertCompleteE2eAcceptance } = await import('./run-plan-0124-local.mjs');
   assert.equal(typeof assertCompleteE2eAcceptance, 'function');
@@ -28,6 +109,110 @@ test('isolated acceptance rejects partial, duplicated, skipped and flaky coverag
       cases.map((entry, index) => (index ? entry : { ...entry, statuses: ['skipped'] })),
     ),
   );
+});
+
+test('offered core acceptance excludes the complete Projects funnel before execution', async () => {
+  const { assertCompleteE2eAcceptance } = await import('./run-plan-0124-local.mjs');
+  const cases = Object.entries({
+    'csp.spec.ts': 10,
+    'analytics.spec.ts': 6,
+    'impersonation.spec.ts': 4,
+    'sentry-tunnel.spec.ts': 1,
+  }).flatMap(([file, count]) =>
+    Array.from({ length: count }, (_, index) => ({
+      file,
+      title: `${file} case ${index}`,
+      statuses: ['passed'],
+    })),
+  );
+  const stats = { expected: 21, skipped: 0, unexpected: 0, flaky: 0 };
+  assert.doesNotThrow(() => assertCompleteE2eAcceptance(stats, cases, false));
+  assert.throws(() => assertCompleteE2eAcceptance(stats, cases, true));
+  assert.throws(() => assertCompleteE2eAcceptance(stats, cases, null));
+  assert.throws(() =>
+    assertCompleteE2eAcceptance(
+      stats,
+      cases.map((entry, index) =>
+        index === 10 ? { ...entry, title: 'funnel @projects-enabled' } : entry,
+      ),
+      false,
+    ),
+  );
+  for (const field of ['skipped', 'unexpected', 'flaky'])
+    assert.throws(() => assertCompleteE2eAcceptance({ ...stats, [field]: 1 }, cases, false));
+  assert.throws(() =>
+    assertCompleteE2eAcceptance(
+      stats,
+      cases.map((entry, index) =>
+        index === 10 ? { ...entry, title: 'synthetic Auth URL data @confined-017' } : entry,
+      ),
+      false,
+    ),
+  );
+});
+
+test('Projects selection reads the application literal without executing configuration', async () => {
+  const { readOfferedProjects } = await import('./run-plan-0124-local.mjs');
+  assert.equal(
+    readOfferedProjects(
+      "throw Error('never execute'); export const appConfig = { features: { projects: false } };",
+    ),
+    false,
+  );
+  assert.equal(
+    readOfferedProjects('export const appConfig: AppConfig = { features: { projects: true } };'),
+    true,
+  );
+  for (const source of [
+    'export const other = { features: { projects: false } };',
+    'export const appConfig = { features: { projects: compute() } };',
+    'export const appConfig = { features: { projects: "false" } };',
+    '// projects: false\nexport const appConfig = { features: {} };',
+  ])
+    assert.throws(() => readOfferedProjects(source));
+});
+
+test('generated confined config keeps CSP/egress guards and excludes deferred Projects before discovery', async () => {
+  const { writeE2eHarness, requiredE2eSpecs } = await import('./run-plan-0124-local.mjs');
+  const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } = await import('node:fs');
+  const { resolve } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const scratch = mkdtempSync(resolve(tmpdir(), 'plan0124-scope-'));
+  try {
+    const directory = resolve(scratch, 'src/test/e2e');
+    mkdirSync(directory, { recursive: true });
+    for (const name of requiredE2eSpecs)
+      writeFileSync(resolve(directory, name), "import { test } from '@playwright/test';");
+    const config = writeE2eHarness(
+      scratch,
+      'http://127.0.0.1:3000',
+      resolve(scratch, 'egress.log'),
+      requiredE2eSpecs,
+      'production',
+      false,
+      false,
+    );
+    const source = readFileSync(config, 'utf8');
+    assert.ok(source.includes('|@projects-enabled|@confined-017/'));
+    assert.ok(source.includes('**/document-editor.spec.ts'));
+    assert.ok(source.includes('forbidOnly:true'));
+    assert.ok(source.includes('retries:0'));
+    assert.ok(source.includes("serviceWorkers:'block'"));
+    assert.equal(source.includes('testIgnore:["**/csp.spec.ts"'), false);
+    const bounded = writeE2eHarness(
+      scratch,
+      'http://127.0.0.1:3000',
+      resolve(scratch, 'egress.log'),
+      requiredE2eSpecs,
+      'development',
+      true,
+      false,
+    );
+    const boundedSource = readFileSync(bounded, 'utf8');
+    assert.equal(boundedSource.includes('|@confined-017/'), false);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 });
 
 test('generated isolated suite rejects an actual test.only during discovery', async () => {
@@ -386,7 +571,12 @@ test('generated E2E config and automatic fixture compile without importing the p
     }
     const fixture = readFileSync(resolve(scratch, 'src/test/plan0124-base.ts'), 'utf8');
     assert.ok(fixture.includes("'browser\\n'"));
-    assert.ok(fixture.includes("context.route('**/*'"));
+    assert.ok(fixture.includes('guardBrowserContexts(browser,context'));
+    assert.ok(
+      readFileSync(resolve(scratch, 'scripts/plan0124-browser-guard.mjs'), 'utf8').includes(
+        "target.route('**/*'",
+      ),
+    );
   } finally {
     assertScratchPath(scratch, tmpdir(), 'plan0124-harness-');
     rmSync(scratch, { recursive: true, force: true });
