@@ -82,8 +82,6 @@ La primera excepción Gitleaks funcionaba en el CLI local 8.30.1, pero CI usa
 el AND entre ruta exacta y valores exactos. No se actualiza la herramienta ni
 se ignora el archivo completo.
 
-## Límites
-
 ## Ajustes de aceptación tras ejecutar CI
 
 En `43f95c5`, la suite general de Chromium completó 85 PASS, dos skips
