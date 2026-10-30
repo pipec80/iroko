@@ -84,6 +84,24 @@ se ignora el archivo completo.
 
 ## Límites
 
+## Ajustes de aceptación tras ejecutar CI
+
+En `43f95c5`, la suite general de Chromium completó 85 PASS, dos skips
+preexistentes y un retry de presencia: durante la transición de cuenta el
+selector global encontraba un árbol anterior oculto y el actual. Se consulta
+el `main` visible, conservando las assertions de presencia y desconexión.
+
+La aceptación confinada posterior obtuvo 20 PASS y un fallo de egress en el
+caso de analítica durante impersonación, que visita el perfil. El harness de
+0124 no aplicaba el stub local de banderas SVG existente en017. La regresión
+ejecutando el fixture generado sin variables017 reproduce ese bloqueo. Se
+sirve localmente el mismo GET de SVG de país de ruta exacta; URLs con query,
+otros métodos y destinos ajenos permanecen bloqueados. Ninguna petición
+remota se permite por esta corrección. Regresión RED1/1 y GREEN62/62 de los
+runners0124/017, sin skips en Windows; CI debe renovar la aceptación real.
+
+## Límites
+
 La integración de Git no acepta pricing 012.5, composición/reutilización 015,
 revisión final 016, módulos diferidos ni paridad de migraciones Cloud.
 El despliegue automático y los checks deben atribuirse a su SHA. El estado de

@@ -1,6 +1,86 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+test('core harness fulfills exact country flags locally and rejects decorated or unrelated URLs', async () => {
+  const { writeE2eHarness, requiredE2eSpecs, guardBrowserContexts } =
+    await import('./run-plan-0124-local.mjs');
+  const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } = await import('node:fs');
+  const { resolve } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const { runInNewContext } = await import('node:vm');
+  const ts = await import('typescript');
+  const scratch = mkdtempSync(resolve(tmpdir(), 'plan0124-assets-'));
+  try {
+    mkdirSync(resolve(scratch, 'src/test/e2e'), { recursive: true });
+    for (const name of requiredE2eSpecs)
+      writeFileSync(
+        resolve(scratch, 'src/test/e2e', name),
+        "import {test} from '@playwright/test';\n",
+      );
+    writeE2eHarness(scratch, 'http://127.0.0.1:3000', resolve(scratch, 'egress.log'));
+    const source = readFileSync(resolve(scratch, 'src/test/plan0124-base.ts'), 'utf8');
+    const code = ts.transpileModule(source, {
+      compilerOptions: { module: ts.ModuleKind.CommonJS },
+    }).outputText;
+    let fixture;
+    runInNewContext(code, {
+      exports: {},
+      process: { env: {} },
+      URL,
+      require(id) {
+        if (id === '@playwright/test')
+          return {
+            test: {
+              extend(definition) {
+                fixture = definition.plan0124Guard[0];
+              },
+            },
+          };
+        if (id === 'node:fs') return { appendFileSync() {} };
+        if (id.endsWith('plan0124-browser-guard.mjs')) return { guardBrowserContexts };
+        throw new Error('Unexpected generated import');
+      },
+    });
+    for (const [url, allowed] of [
+      ['https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/cl.svg', true],
+      ['https://cdn.jsdelivr.net/gh/lipis/flag-icons/flags/4x3/cl.svg?token=synthetic', false],
+      ['https://unrelated.invalid/cl.svg', false],
+    ]) {
+      let handler;
+      let fulfilled = false;
+      let aborted = false;
+      const context = {
+        async route(_pattern, callback) {
+          handler = callback;
+        },
+      };
+      const browser = {
+        async newContext() {
+          return context;
+        },
+      };
+      const run = () =>
+        fixture({ context, browser }, async () => {
+          await handler({
+            request: () => ({ url: () => url, method: () => 'GET' }),
+            async fulfill(response) {
+              fulfilled = response.contentType === 'image/svg+xml';
+            },
+            async abort() {
+              aborted = true;
+            },
+          });
+        });
+      if (allowed) await run();
+      else await assert.rejects(run, /forbidden remote requests/);
+      assert.equal(fulfilled, allowed);
+      assert.equal(aborted, !allowed);
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
 test('isolated acceptance rejects partial, duplicated, skipped and flaky coverage', async () => {
   const { assertCompleteE2eAcceptance } = await import('./run-plan-0124-local.mjs');
   assert.equal(typeof assertCompleteE2eAcceptance, 'function');
