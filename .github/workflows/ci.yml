@@ -476,7 +476,7 @@ jobs:
           auth_state=$(docker inspect --format '{{.State.Running}}|{{index .Config.Labels "com.supabase.cli.project"}}|{{range .Config.Env}}{{if eq (index (split . "=") 0) "GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION"}}{{index (split . "=") 1}}{{end}}{{end}}' supabase_auth_saas-boilerplate)
           test "$auth_state" = 'true|saas-boilerplate|true'
           docker exec supabase_auth_saas-boilerplate test ! -e /.env
-          printf '%s\n' 'GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD=true' | docker exec -i supabase_auth_saas-boilerplate sh -c 'set -C; cat > /.env'
+          printf '%s\n' 'GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD=true' | docker exec --user 0 -i supabase_auth_saas-boilerplate sh -c 'umask 022; set -C; cat > /.env'
           docker restart supabase_auth_saas-boilerplate
           auth_health=''
           for attempt in $(seq 1 30); do

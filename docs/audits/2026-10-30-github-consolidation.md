@@ -98,6 +98,15 @@ otros métodos y destinos ajenos permanecen bloqueados. Ninguna petición
 remota se permite por esta corrección. Regresión RED1/1 y GREEN62/62 de los
 runners0124/017, sin skips en Windows; CI debe renovar la aceptación real.
 
+En `53c61bf`, Chromium general pasó86/86 sin flaky (dos skips preexistentes)
+y la aceptación confinada0124 pasó21/21, cero skips/flaky/egress. El siguiente
+paso falló antes de ejecutar017: el usuario no root de Auth no podía crear
+`/.env`. Sólo la escritura del archivo de política de ese contenedor efímero
+verificado usa `docker exec --user 0`, con `umask 022` para lectura por Auth y
+noclobber. Se conservan identidad del proyecto, rechazo de archivo existente,
+reauthentication=true, current-password=true y comprobación de salud. No cambia
+usuarios del servicio, privilegios del daemon ni configuración Cloud.
+
 ## Límites
 
 La integración de Git no acepta pricing 012.5, composición/reutilización 015,

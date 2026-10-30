@@ -52,6 +52,8 @@ test('CI routes confined 017 scenarios through the existing isolated runner and 
   assert.match(policy, /true\|saas-boilerplate\|true/);
   assert.match(policy, /GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION/);
   assert.match(policy, /test ! -e \/\.env/);
+  assert.match(policy, /docker exec --user 0 -i supabase_auth_saas-boilerplate/);
+  assert.match(policy, /umask 022; set -C; cat > \/\.env/);
   assert.match(policy, /GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD=true/);
   assert.match(policy, /docker restart supabase_auth_saas-boilerplate/);
   assert.match(policy, /\.State\.Health\.Status/);
