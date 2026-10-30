@@ -1,5 +1,30 @@
 # Current State
 
+## Punto de salida de sesión — 2026-10-30
+
+Próxima implementación: **012.5, pricing y promesas**, ya habilitada, todavía no
+ejecutada. El [plan existente](exec-plans/active/012-5-pricing-truth.md#reentrada-en-una-sesion-nueva--2026-10-30)
+contiene la entrada acotada para una sesión nueva; no requiere recuperar este
+chat. Código consolidado `634ad491`; exclusión aceptada registrada en `6e5e778`.
+El siguiente commit documental no será el cierre del freeze ni aceptación Cloud.
+
+Robot fue una vertical de prueba para importar Excel con formato específico,
+no un módulo obligatorio del template ni un importador empresarial genérico.
+La [aclaración de alcance](architecture/iot-vertical-pilot.md) conserva ese
+origen sin incorporar mensajería, chatbot o más formatos al producto.
+Capas gratuitas y sin nuevas prestaciones pagadas son el límite del trabajo
+declarado por el mantenedor, no una auditoría actual de planes/cuentas proveedor.
+
+Cola restante única:012.5 →014-T2/T3 →disposiciones017 restantes →015
+reutilización/configuración →016 revisión final. El CSV conserva además los
+seguimientos heredados RL-F01–F06, FOLLOW-MOCK, FOLLOW-TTL y FREEZE-VALIDATION;
+no desaparecen por cerrar P1 ni se convierten todos en nuevas implementaciones.
+Documentación reproducible de instalación/configuración/extensión/actualización
+se verifica en015; comentarios de contratos no obvios siguen AGENTS/JSDoc.
+La revisión final del código/documentación y del candidato corresponde a016,
+sin una reauditoría general paralela ahora. Venta/licencia/empaquetado013 sigue
+diferido respecto de demostrar la base adaptable para productos/clientes.
+
 ## Exclusión RS-05 aceptada localmente — 2026-10-29
 
 Projects/editor y Robot tienen aceptación local acotada de exclusión: navegador

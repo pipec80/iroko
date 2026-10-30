@@ -1,5 +1,16 @@
 # Piloto IoT — vertical opcional posterior a la base SaaS
 
+**Aclaración del mantenedor,2026-10-30:** el Robot pertenece a otro proyecto.
+La importación Excel fue un ejemplo de vertical: validar un formato conocido,
+guardar el original y trasladar registros estructurados a PostgreSQL por lote.
+El código actual acepta `.xlsx` en `src/lib/robot-config.ts`; no demuestra un
+importador genérico de CSV, separadores o formatos empresariales arbitrarios.
+El objetivo futuro de incorporar información de una empresa con rapidez no
+agrega ahora un motor de importación al núcleo. Mensajería interna y chatbot
+son ideas posteriores sin alcance aprobado para este freeze. Se conserva la
+implementación Robot excluida y su historia; no se integra el repositorio IoT
+ni se exige reactivarlo para aceptar la base reutilizable.
+
 **Disposición vigente 2026-10-28:** [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 Este documento conserva una propuesta e inspección históricas. Robot no es el
 SaaS base ni una dependencia de015/016. Primero demostrar réplica, marca,

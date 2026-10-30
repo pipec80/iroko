@@ -18,6 +18,53 @@ el runner editor ni certificar otro proveedor; preservar límites/cobros existen
 
 Estado: **planificado, no ejecutado**, 2026-10-20. Baseline `a2feb3d`. Responsable lógico: pricing/product truth; revisión datos/billing, seguridad y UI/i18n.
 
+## Reentrada en una sesion nueva — 2026-10-30
+
+**Preparado para ejecutar, no implementado.** Entrada desde `6e5e778`, rama
+`fix/017-editor-draft-revision`; estos son puntos históricos verificables, no
+instrucción de reset. Empezar con status/rama/HEAD y preservar cambios/logs locales.
+017 P1 ofrecido está dispuesto y la exclusión Projects/editor/Robot fue aceptada
+localmente2/2; no repetir login/S-02, billingT11 ni el runner del editor.
+
+1. Leer AGENTS, docs/index y current-state; ADR0005, estrategia/arquitectura y
+   ROADMAP; este plan y el CSV. Antes de pruebas, TESTING-PLAN y testing-strategy.
+   Consultar las reglas `.codex/rules` y guías Next instaladas aplicables. Usar
+   Superpowers, clean-code y Supabase donde corresponda; revisión independiente
+   de cada lote, pruebas seriales y evidencia por tarea.
+2. Ejecutar únicamente T1→T2→T3→T4 de este plan. Compartir la lectura de catálogo
+   existente de getBillingData/checkout; no reconstruir billing ni cambiar slugs,
+   importes, proveedores o contratos de cobro. Un precio MP ausente debe producir
+   unavailable/checkout false; conservar overview/paymentHealth. PlanRow ya tiene
+   description: decidir explícitamente su proyección pública segura, conservando
+   consumidores/pruebas, en vez de perder el campo por copiar el DTO propuesto.
+3. **Límite previo de T3:** FOLLOW-MOCK/017.3-T3 conserva uso general bloqueado.
+   La mención a mock/sumidero abajo no autoriza activar el proveedor mock ni
+   consumir sus tokens. Verificar un método confinado existente que inspeccione
+   la petición sin egress al proveedor; si no hay uno autorizado, completar lo
+   independiente y registrar T3 bloqueado. No ampliar el harness, implementar
+   TTL/jti ni marcar mocks unitarios como aceptación del recorrido real.
+4. Sólo Supabase local oficial identificado antes de mutar, fixtures exclusivas
+   reversibles y cleanup comprobado. Sin instalar/actualizar herramientas, crear
+   entornos ni alterar sandbox. No servicios pagados ni cambios de cuotas/planes.
+   Sin Cloud/proveedores/pagos reales/push/PR/merge/deploy. Commits locales de
+   lotes revisados permitidos; Cloud/GitHub siguen [NO VERIFICADO].
+5. Ejecutar focales y controles proporcionales del lote. Reservar la repetición
+   integrada completa para016; T3 conserva su validación SQL pertinente por
+   runner atestado, no sustituirla por SQL sin guards. Tras dos fallos de igual
+   firma sin información nueva, documentar bloqueo. No optimizar el editor ni
+   repetir suites costosas sin cambios o hipótesis nueva.
+6. Actualizar N-09 y referencias pertinentes de RS-09 sólo por su alcance real,
+   sin cerrar015 ni el seguimiento agregado de012. Entregar estado individualT1–T4, comandos/resultados,
+   revisión, cleanup y límites. Detenerse al terminar012.5 o disponer sus bloqueos;
+   014 y posteriores requieren su siguiente entrada, no se ejecutan en este lote.
+
+La preparación documental releyó las ocho reglas locales: TS/import type,
+JS asíncrono, RSC, SQL/ACL, tests observables y JSDoc de contratos aplican;
+Realtime no cambia. Mantener las excepciones vigentes: env.ts frente al antiguo
+env.js, cacheComponents=false sin introducir use cache, tokens Iroko frente a
+Material3, cuatro locales y migraciones manuales+mirror en Windows sólo si se
+autoriza una necesidad de esquema (este plan no la exige).
+
 ## Identidad y dependencias
 
 012.5 **no se desarma** ni se fusiona con 017: conserva pricing, límites, nombres, copy y metadata. El bloque P1 de 017 la precede por el orden aprobado; cuotas/invariantes se reparan allí y aquí se refleja su contrato. 014 mantiene imágenes/audit log. 015 reutiliza el catálogo al configurar billing; no vende una segunda oferta.
@@ -96,7 +143,7 @@ de cuenta en getPublicCatalog y cero import del módulo en Client Components.
 
 - [ ] RED local: modificar de forma controlada y reversible el precio/provider_price y un límite del fixture, cargar landing/pricing/dashboard y verificar el mismo resultado. Interceptar el provider en sumidero/mock local autorizado para comprobar amount/currency/interval del intento; ninguna llamada Mercado Pago real.
 - [ ] Afirmar rechazo anual MP, no trial, slug inválido, viewer/no miembro, proveedor no configurado y catálogo incompleto. Control positivo owner/admin; entitlements no se elevan por manipular precio/slug en cliente.
-- [ ] Ejecutar el E2E focalizado y `pnpm supa:test` solo tras preflight del runbook final. Registrar que un cambio de UI no modifica suscripciones existentes y que el caso de catálogo actualizado no requirió editar componentes/i18n.
+- [ ] Ejecutar el E2E focalizado y `pnpm supa:test supabase/tests/database/34_mercadopago_clp_catalog.test.sql`, más otros archivos SQL sólo si el cambio afecta su contrato. Aplicar el preflight de destino/exclusividad y el runner atestado del runbook; no adelantar toda la suite/gate final016. Registrar que un cambio de UI no modifica suscripciones existentes y que el caso de catálogo actualizado no requirió editar componentes/i18n.
 - [ ] Revisión datos/seguridad del DTO y prueba de cleanup/rollback fixture. Si falta entorno, dejar aceptación local pendiente; no marcar tarea completa por mocks.
 
 ## 012.5-T4 — Promesas y metadata
