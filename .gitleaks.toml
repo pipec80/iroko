@@ -1,0 +1,11 @@
+[extend]
+useDefault = true
+
+# These are verified Git object IDs and task identifiers in the evidence CSV.
+# Match both the exact file and exact secret to preserve all other scanning.
+[[allowlists]]
+description = "Verified Git IDs and task identifiers in remediation evidence"
+condition = "AND"
+paths = ['''^docs/exec-plans/active/freeze-remediation-register\.csv$''']
+regexTarget = "secret"
+regexes = ['''^(a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f|634ad4918809141b0d63c3f00bf368cc8b829b02|012\.4-closeout|012\.4-exceptions)$''']

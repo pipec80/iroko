@@ -49,15 +49,15 @@ del mantenedor confiando en un rollback que no cubre dblink.
 
 ## V1 — Calidad y suite sin servicios reales
 
-| Comando actual                | Criterio                                         | Evidencia                                                       |
-| ----------------------------- | ------------------------------------------------ | --------------------------------------------------------------- |
-| `pnpm typecheck`              | Exit 0                                           | SHA y resumen; revisar supresiones afectadas, no solo resultado |
-| `pnpm lint`                   | 0 errores; warnings con disposición              | Sin --fix automático sobre cambios ajenos                       |
-| `pnpm format:check`           | PASS o fallos delimitados                        | No formatear archivos ajenos para ocultar baseline              |
-| `pnpm knip`                   | Sin hallazgos nuevos sin disposición             | Separar hints previos de nuevos exports/código muerto           |
+| Comando actual                | Criterio                                                               | Evidencia                                                                                                                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm typecheck`              | Exit 0                                                                 | SHA y resumen; revisar supresiones afectadas, no solo resultado                                                                                                           |
+| `pnpm lint`                   | 0 errores; warnings con disposición                                    | Sin --fix automático sobre cambios ajenos                                                                                                                                 |
+| `pnpm format:check`           | PASS o fallos delimitados                                              | No formatear archivos ajenos para ocultar baseline                                                                                                                        |
+| `pnpm knip`                   | Sin hallazgos nuevos sin disposición                                   | Separar hints previos de nuevos exports/código muerto                                                                                                                     |
 | `pnpm test:coverage`          | Suite unitaria completa y umbrales existentes 90/78/90/90 o superiores | Registrar pool/workers, duración, fallos y skips; satisface también `pnpm test` si selección/configuración coinciden. No ejecutar dos suites idénticas ni bajar umbrales. |
-| `node scripts/check-docs.mjs` | Enlaces/referencias válidos                      | No demuestra consistencia semántica                             |
-| `pnpm design-system:check`    | PASS en superficies visuales afectadas           | No certifica inspección visual de todas las pantallas           |
+| `node scripts/check-docs.mjs` | Enlaces/referencias válidos                                            | No demuestra consistencia semántica                                                                                                                                       |
+| `pnpm design-system:check`    | PASS en superficies visuales afectadas                                 | No certifica inspección visual de todas las pantallas                                                                                                                     |
 
 El baseline del 19/10 tuvo 122 archivos/1452 tests aprobados con
 `pnpm test -- --pool=threads --maxWorkers=1`; el intento previo con pool original

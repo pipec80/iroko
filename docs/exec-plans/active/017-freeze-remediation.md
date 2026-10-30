@@ -79,7 +79,7 @@ atribuirla al candidato nuevo y `documentation-only` no certifica producto.
 | [017.1](017-1-auth-identity-and-privacy.md)       | Auth, estado entre identidades, privacidad, Realtime y logs                                                 | T1–T3 prioritarias; restantes después de 014 salvo dependencia necesaria |
 | [017.2](017-2-data-and-memberships.md)            | Cuotas API keys/seats, invitaciones, relación documento/proyecto/cuenta, último owner y serialización Robot | T1–T4 P1; T5 P2                                                          |
 | [017.3](017-3-billing-integrity.md)               | Fencing recovery y divergencia discovery MP; disposición de replay mock                                     | T1–T2 P1; T3 decisión acotada                                            |
-| [017.4](017-4-editor-integrity.md)                | Edición pendiente y conflicto de versiones entre sesiones                                                   | Diferido post-MVP; retorno al ofrecer editor; exclusión por015-T1         |
+| [017.4](017-4-editor-integrity.md)                | Edición pendiente y conflicto de versiones entre sesiones                                                   | Diferido post-MVP; retorno al ofrecer editor; exclusión por015-T1        |
 | [017.5](017-5-web-correctness-and-quality.md)     | Defectos web P2, gates CI y fiabilidad de fixtures                                                          | Después de 014; T11 puede adelantarse si prepara pruebas seguras de P1   |
 | [012.5](012-5-pricing-truth.md)                   | Catálogo público/dashboard/checkout, nombres, límites, copy y metadata                                      | Sigue independiente; después de los P1 de 017                            |
 | [014-T2/T3](014-reference-surface-correctness.md) | Imágenes por origen y auditoría global                                                                      | Conservar tareas y criterios existentes; no duplicarlas en 017           |
@@ -143,15 +143,15 @@ existen. Un checkbox histórico vacío no invalida la evidencia del registro.
 
 ### Entrada y salida de cada tarea
 
-| Campo | Fuente y obligación |
-| --- | --- |
-| Problema | ID y escenario en el CSV y en la tarea; verificar código actual antes de reparar. |
-| Resultado | Bloque **Resultado y límite** y assertions del hijo: comportamiento observable, no cantidad de archivos. |
-| Alcance | **Files/Interfaces** del hijo; tocar otro archivo solo si es un consumidor necesario, registrando el motivo. |
-| Dependencias | Relaciones de este padre y del CSV; evidencia válida satisface una dependencia, sin repetir su implementación. |
-| Validación | Comandos focalizados del hijo, bajo los destinos definidos abajo; exit 0 más assertions esperadas y cleanup cuando hay fixtures. |
-| Cierre | Resultado focal, revisión del lote y gate compartido enlazados en CSV; ninguna aceptación faltante se infiere de un mock. |
-| Bloqueo | Primer fallo útil, clasificación, diagnóstico realizado y próxima acción reproducible. No equivale a aceptación ni a defecto demostrado. |
+| Campo        | Fuente y obligación                                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Problema     | ID y escenario en el CSV y en la tarea; verificar código actual antes de reparar.                                                        |
+| Resultado    | Bloque **Resultado y límite** y assertions del hijo: comportamiento observable, no cantidad de archivos.                                 |
+| Alcance      | **Files/Interfaces** del hijo; tocar otro archivo solo si es un consumidor necesario, registrando el motivo.                             |
+| Dependencias | Relaciones de este padre y del CSV; evidencia válida satisface una dependencia, sin repetir su implementación.                           |
+| Validación   | Comandos focalizados del hijo, bajo los destinos definidos abajo; exit 0 más assertions esperadas y cleanup cuando hay fixtures.         |
+| Cierre       | Resultado focal, revisión del lote y gate compartido enlazados en CSV; ninguna aceptación faltante se infiere de un mock.                |
+| Bloqueo      | Primer fallo útil, clasificación, diagnóstico realizado y próxima acción reproducible. No equivale a aceptación ni a defecto demostrado. |
 
 1. Registrar branch/HEAD y diff inicial; leer las filas propias y evidencia
    enlazada. Seleccionar la primera tarea habilitada de la cola siguiente.
@@ -165,7 +165,7 @@ existen. Un checkbox histórico vacío no invalida la evidencia del registro.
    todas sus tareas; las correcciones posteriores reciben revisión dirigida del
    diff y controles afectados. No reiniciar la auditoría de toda la plataforma.
 5. Actualizar CSV antes del handoff. Salida: `aceptada localmente`, `pendiente de
-   validación` o `bloqueada`, con próxima tarea habilitada. Son resultados del
+validación` o `bloqueada`, con próxima tarea habilitada. Son resultados del
    handoff, no nuevos valores de la columna `state`.
 
 ### Comandos, lotes y destinos

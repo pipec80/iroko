@@ -28,15 +28,15 @@ La entrega es una base SaaS reutilizable primero para productos propios y
 adaptaciones a clientes. Demostrar reutilización es obligatorio; vender una
 licencia de boilerplate, construir un generador o un editor de aplicaciones no.
 
-| Superficie | Resultado mínimo de la base |
-| --- | --- |
-| Auth y cuentas | Acceso, salida, recuperación y roles efectivos; ningún dato cruza cuentas |
-| PostgreSQL/RLS | Una operación útil persistida, con positivos y negativos de autorización |
-| Storage | Un caso de subida/lectura/eliminación; público o privado según lo ofrecido |
-| Realtime | Un evento útil recibido y cleanup al salir/cambiar identidad |
-| Edge/correo | Una operación pequeña existente, autenticada, con resultado y error observables |
-| Suscripciones | Un proveedor y alcance ya acordados; alternativa sin nuevas compras coherente |
-| Adaptación | Marca, módulos, un registro de negocio y actualización sin duplicar autorización |
+| Superficie     | Resultado mínimo de la base                                                      |
+| -------------- | -------------------------------------------------------------------------------- |
+| Auth y cuentas | Acceso, salida, recuperación y roles efectivos; ningún dato cruza cuentas        |
+| PostgreSQL/RLS | Una operación útil persistida, con positivos y negativos de autorización         |
+| Storage        | Un caso de subida/lectura/eliminación; público o privado según lo ofrecido       |
+| Realtime       | Un evento útil recibido y cleanup al salir/cambiar identidad                     |
+| Edge/correo    | Una operación pequeña existente, autenticada, con resultado y error observables  |
+| Suscripciones  | Un proveedor y alcance ya acordados; alternativa sin nuevas compras coherente    |
+| Adaptación     | Marca, módulos, un registro de negocio y actualización sin duplicar autorización |
 
 No se exige usar todos los productos de Supabase, certificar todo tipo de archivo,
 todos los escenarios financieros, otro proveedor o una plataforma colaborativa.

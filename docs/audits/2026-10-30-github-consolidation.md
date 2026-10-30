@@ -1,0 +1,62 @@
+# Consolidación GitHub y Dependabot — 2026-10-30
+
+## Alcance autorizado
+
+El mantenedor autorizó integrar el trabajo local, resolver Dependabot, validar,
+hacer merge y retirar ramas integradas para continuar desde `main`. PR de
+consolidación: [#232](https://github.com/pipec80/iroko/pull/232).
+No autoriza aplicar migraciones a Supabase Cloud ni cerrar el freeze.
+
+Baseline remoto y `main` local: `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`.
+Trabajo local publicado inicialmente: `b107fbea393c9c2c01190c86202d4110c9a60741`,
+seis commits, 221 archivos respecto de main; árbol limpio al iniciar.
+
+## Dependencias consolidadas
+
+| PR original | Resultado incorporado al candidato                                              |
+| ----------- | ------------------------------------------------------------------------------- |
+| #224        | Next 16.4.2, React/React DOM 19.3.1; analyzer, ESLint y override Next alineados |
+| #225        | Supabase JS 2.118.0, versión exacta y lockfile                                  |
+| #226        | Avatar/Dialog 1.3.1, ScrollArea 1.4.0, Slider 1.6.1, Slot 1.5.0                 |
+| #227        | shadcn 4.21.5                                                                   |
+| #228        | commitlint config-conventional 21.2.3                                           |
+| #231        | Sentry Next.js 10.75.2                                                          |
+
+Se consolidan también correcciones de DOMPurify, fast-uri, Zod de producción,
+Vitest/mocker, Vite, SDK MCP, Hono/node-server, body-parser, undici y qs.
+No se actualiza el CLI pnpm ni se desactiva su política de supply chain.
+Los PR originales sólo se retiran cuando la consolidación esté integrada.
+
+La auditoría del lockfile actualizado deja dos avisos de desarrollo: Zod 3.25.76
+en shadcn/registry/SDK y deepmerge 4.3.1. El advisory Zod prescribe >=4.6.6,
+un cambio de major para esos consumidores; no se fuerza una API incompatible.
+El registro npm no publica deepmerge 4.3.2, aunque el advisory la indica como
+parche. Son pendientes upstream explícitos, sin dismiss de alertas ni bypass
+del gate de producción. Revalidar cuando exista actualización compatible.
+
+## Primera ejecución GitHub del trabajo local
+
+La ejecución [CI 41088599952](https://github.com/pipec80/iroko/actions/runs/41088599952)
+corresponde al head inicial `b107fbe`, no a las dependencias actualizadas.
+Unit Tests, Database Tests, Database Types, Edge Function Tests y smoke WebKit
+pasaron. CodeQL también pasó. Los fallos confirmados fueron:
+
+- Security Audit: vulnerabilidades del lockfile previo.
+- Quality: Knip reportó `supabase.exe`, CLI externo Windows ya usado por un test.
+  Se reconoce ese nombre junto con `supabase`; no se omite el test.
+- Documentation: formato de 16 documentos; se aplica el formateador existente.
+- Gitleaks: hashes Git y tareas `012.4-closeout`/`012.4-exceptions` en el CSV.
+  `.gitleaks.toml` conserva reglas default y limita la excepción a esos valores
+  exactos junto con la ruta exacta del CSV. Escaneo local de los seis commits:
+  cero detecciones después de comprobar cada valor.
+
+Dos intentos locales de Vitest no progresaron, con y sin sandbox; se detuvieron
+sólo los procesos propios. No se registran como PASS. CI suministra la evidencia
+ejecutada del candidato inicial; el head final debe renovar los checks afectados.
+
+## Límites
+
+La integración de Git no acepta pricing 012.5, composición/reutilización 015,
+revisión final 016, módulos diferidos ni paridad de migraciones Cloud.
+El despliegue automático y los checks deben atribuirse a su SHA. El estado de
+proveedores y las migraciones vinculadas siguen **[NO VERIFICADO]** aquí.
