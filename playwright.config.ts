@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from 'fs';
 
 import { defineConfig, devices } from '@playwright/test';
+import { appConfig } from './src/config/app.config';
+import { offeredE2eScope } from './src/test/e2e-scope';
 
 // .env.local is loaded by Next.js for the dev server automatically, but Playwright
 // test workers are separate Node.js processes that don't inherit those vars. Load
@@ -25,9 +27,12 @@ delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
  */
 export default defineConfig({
   testDir: './src/test/e2e',
-  // Requires the confined runner's synthetic error route and Turnstile fixture.
-  // CI runs this suite in its own mandatory step, without remote provider egress.
-  testIgnore: '**/csp.spec.ts',
+  // Shared by local/CI selection: exclusions replace deferred UI positives.
+  // Direct SQL/Storage authorization cases remain selected, preserving RLS evidence.
+  ...offeredE2eScope({
+    projects: appConfig.features.projects,
+    robot: appConfig.features.verticals.robot,
+  }),
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

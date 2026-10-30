@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import React, { useActionState, useRef, useState } from 'react';
+import React, { useActionState, useEffect, useRef, useState } from 'react';
 import { CheckCircle, FolderOpen, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -27,6 +27,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { routing } from '@/i18n/routing-config';
 import { storageUrl } from '@/lib/storage';
+import { validateAvatarFile } from '@/lib/validation/profile';
 import { PhoneCountryInput } from './phone-country-input';
 
 const LOCALE_LABELS: Record<(typeof routing.locales)[number], string> = {
@@ -74,22 +75,51 @@ export function ProfileTab({ profile, email, role }: Props) {
   );
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(storageUrl(profile.avatar_url));
+  const savedAvatarPreview = useRef<string | null>(storageUrl(profile.avatar_url));
   const [hasFile, setHasFile] = useState(false);
+  const [localAvatarError, setLocalAvatarError] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
-
+  const avatarRevision = useRef(0);
+  const submittedAvatarRevision = useRef<number | null>(null);
+  const submittedAvatarPreview = useRef<string | null>(null);
+  const lastAvatarResult = useRef(avatarState);
+  const [emailValue, setEmailValue] = useState('');
   const [isEmailDirty, setIsEmailDirty] = useState(false);
+  const emailRevision = useRef(0);
+  const submittedEmailRevision = useRef<number | null>(null);
+  const lastEmailResult = useRef(emailState);
 
   const profileError = translateError(t, profileState.error);
   const emailError = translateError(t, emailState.error);
   const avatarError = translateError(t, avatarState.error);
 
-  const [prevAvatarSuccess, setPrevAvatarSuccess] = useState(avatarState.success);
-  if (avatarState.success !== prevAvatarSuccess) {
-    setPrevAvatarSuccess(avatarState.success);
+  useEffect(() => {
+    if (lastAvatarResult.current === avatarState) return;
+    lastAvatarResult.current = avatarState;
     if (avatarState.success === 'avatar_updated') {
-      setHasFile(false);
+      savedAvatarPreview.current = submittedAvatarPreview.current;
+      if (submittedAvatarRevision.current === avatarRevision.current) {
+        if (avatarInputRef.current) avatarInputRef.current.value = '';
+        setHasFile(false);
+      } else if (!hasFile) {
+        // A later invalid selection cleared the input; show the upload that actually succeeded.
+        setAvatarPreview(submittedAvatarPreview.current);
+        setLocalAvatarError(null);
+      }
     }
-  }
+  }, [avatarState, avatarPreview, hasFile]);
+
+  useEffect(() => {
+    if (lastEmailResult.current === emailState) return;
+    lastEmailResult.current = emailState;
+    if (
+      emailState.success === 'email_change_requested' &&
+      submittedEmailRevision.current === emailRevision.current
+    ) {
+      setEmailValue('');
+      setIsEmailDirty(false);
+    }
+  }, [emailState]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -103,6 +133,10 @@ export function ProfileTab({ profile, email, role }: Props) {
           <form
             action={avatarAction}
             data-testid="avatar-form"
+            onSubmit={() => {
+              submittedAvatarRevision.current = avatarRevision.current;
+              submittedAvatarPreview.current = avatarPreview;
+            }}
             className="flex flex-col items-center gap-6 text-center sm:flex-row sm:text-left">
             <div className="bg-muted relative size-20 overflow-hidden rounded-full ring-2 ring-white">
               {avatarPreview ?
@@ -127,8 +161,18 @@ export function ProfileTab({ profile, email, role }: Props) {
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  setHasFile(Boolean(f));
-                  if (f) setAvatarPreview(URL.createObjectURL(f));
+                  avatarRevision.current++;
+                  const result = f ? validateAvatarFile(f) : null;
+                  if (!f || !result?.ok) {
+                    e.target.value = '';
+                    setHasFile(false);
+                    setAvatarPreview(savedAvatarPreview.current);
+                    setLocalAvatarError(result && !result.ok ? result.error : null);
+                    return;
+                  }
+                  setLocalAvatarError(null);
+                  setHasFile(true);
+                  setAvatarPreview(URL.createObjectURL(f));
                 }}
               />
               <div className="flex flex-col gap-3 sm:flex-row">
@@ -143,7 +187,7 @@ export function ProfileTab({ profile, email, role }: Props) {
                   {avatarPending ? t('profile.saving') : t('profile.save_changes')}
                 </Button>
               </div>
-              {avatarState.success === 'avatar_updated' && !hasFile && (
+              {avatarState.success === 'avatar_updated' && !hasFile && !localAvatarError && (
                 <div
                   role="status"
                   className="bg-primary/10 text-primary mt-3 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
@@ -151,9 +195,9 @@ export function ProfileTab({ profile, email, role }: Props) {
                   {t('profile.success.avatar_updated')}
                 </div>
               )}
-              {avatarError && (
+              {(localAvatarError || avatarError) && (
                 <p role="alert" className="text-error mt-2 text-xs">
-                  {avatarError}
+                  {localAvatarError ? translateError(t, localAvatarError) : avatarError}
                 </p>
               )}
             </div>
@@ -445,7 +489,9 @@ export function ProfileTab({ profile, email, role }: Props) {
           <form
             action={emailAction}
             noValidate
-            onChange={() => setIsEmailDirty(true)}
+            onSubmit={() => {
+              submittedEmailRevision.current = emailRevision.current;
+            }}
             className="flex flex-col gap-3 sm:flex-row sm:items-end">
             <div className="flex-1 space-y-1.5">
               <Label htmlFor="new_email">{t('profile.new_email')}</Label>
@@ -455,7 +501,12 @@ export function ProfileTab({ profile, email, role }: Props) {
                 type="email"
                 placeholder="name@company.com"
                 required
-                defaultValue=""
+                value={emailValue}
+                onChange={(event) => {
+                  emailRevision.current++;
+                  setEmailValue(event.target.value);
+                  setIsEmailDirty(true);
+                }}
                 aria-invalid={!!emailState.fieldErrors?.email}
               />
               {emailState.fieldErrors?.email && (

@@ -2,6 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { appConfig } from '../app.config';
 
 describe('appConfig', () => {
+  it('excludes the deferred Projects/editor and Robot modules from the MVP', () => {
+    expect(appConfig.features.projects).toBe(false);
+    expect(appConfig.features.verticals.robot).toBe(false);
+  });
   it('has a non-empty name and brand', () => {
     expect(appConfig.name.length).toBeGreaterThan(0);
     expect(appConfig.brand.length).toBeGreaterThan(0);

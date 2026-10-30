@@ -1,5 +1,7 @@
 -- pgTAP: durable payment recovery and financial anomalies.
 BEGIN;
+SET LOCAL search_path=public,extensions;
+CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 SELECT plan(20);
 
 SELECT has_table('billing', 'recovery_jobs', 'recovery jobs table exists');
@@ -33,8 +35,8 @@ SELECT is((SELECT count(*) FROM public.claim_billing_recovery_jobs(20, 900)), 0:
 SELECT is((SELECT attempt_count FROM billing.recovery_jobs WHERE resource_id='pay-37'), 1, 'claim increments attempts atomically');
 
 SELECT is(
-  (SELECT status FROM public.complete_billing_recovery_job(
-    (SELECT id FROM billing.recovery_jobs WHERE resource_id='pay-37'), 'pending', 'still_pending')),
+  (SELECT status FROM public.apply_billing_recovery_result(
+    (SELECT id FROM billing.recovery_jobs WHERE resource_id='pay-37'), (SELECT lease_token FROM billing.recovery_jobs WHERE resource_id='pay-37'), '{"kind":"pending"}')),
   'pending', 'a pending resource is scheduled again');
 SELECT ok(
   (SELECT next_attempt_at > now() FROM billing.recovery_jobs WHERE resource_id='pay-37'),
@@ -50,10 +52,10 @@ SELECT results_eq(
   $$ VALUES ('partial_refund'::text, 2, 'open'::text) $$,
   'partial-refund upsert is deduplicated and counted');
 
-UPDATE billing.recovery_jobs SET status='processing', attempt_count=5 WHERE resource_id='pay-37';
+UPDATE billing.recovery_jobs SET status='processing', attempt_count=5, lease_token=gen_random_uuid(),lease_expires_at=clock_timestamp()+interval '15 minutes' WHERE resource_id='pay-37';
 SELECT results_eq(
-  format($$ SELECT status, anomaly_created FROM public.complete_billing_recovery_job('%s','error','provider_down') $$,
-    (SELECT id FROM billing.recovery_jobs WHERE resource_id='pay-37')),
+  format($$ SELECT status, anomaly_created FROM public.apply_billing_recovery_result('%s','%s','{"kind":"error","errorCode":"provider_down"}') $$,
+    (SELECT id FROM billing.recovery_jobs WHERE resource_id='pay-37'),(SELECT lease_token FROM billing.recovery_jobs WHERE resource_id='pay-37')),
   $$ VALUES ('exhausted'::text, true) $$,
   'fifth failure exhausts and creates one anomaly');
 SELECT is((SELECT count(*) FROM billing.financial_anomalies WHERE external_resource_id='pay-37'), 1::bigint, 'exhaustion anomaly exists once');

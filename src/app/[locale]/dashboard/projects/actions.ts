@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { appConfig } from '@/config/app.config';
 
 import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
@@ -38,6 +39,7 @@ function toSlug(name: string): string {
 export const createProject = withServerAction(async function createProject(
   formData: FormData,
 ): Promise<ActionResult> {
+  if (!appConfig.features.projects) return { error: 'module_disabled' };
   const raw = {
     name: formData.get('name') as string,
     description: (formData.get('description') as string) || undefined,

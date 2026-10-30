@@ -1,3 +1,4 @@
+import { localE2eBudget } from '../local-e2e-target';
 import type { Page, APIRequestContext } from '@playwright/test';
 
 import { callRpc, execSqlAsPostgres, querySqlAsPostgres, SUPABASE_URL } from './helpers';
@@ -13,7 +14,7 @@ adminTest.describe('Impersonation — "Ver como"', () => {
   adminTest(
     'el admin entra como otro usuario y vuelve a ser él mismo',
     async ({ platformAdmin }) => {
-      adminTest.setTimeout(120_000);
+      adminTest.setTimeout(localE2eBudget(120_000));
       const { page, adminId, targetId, targetEmail } = platformAdmin;
 
       // accounts.id === user_id para cuentas personales (handle_new_profile)
@@ -30,7 +31,9 @@ adminTest.describe('Impersonation — "Ver como"', () => {
       // Match exacto de pathname — un regex laxo como /\/dashboard(\/|\?|$)/
       // también matchea la página actual (/dashboard/admin/accounts/<id>,
       // ya tiene un "/" después de "dashboard") y resuelve antes de tiempo.
-      await page.waitForURL((url) => url.pathname === '/es/dashboard', { timeout: 20_000 });
+      await page.waitForURL((url) => url.pathname === '/es/dashboard', {
+        timeout: localE2eBudget(20_000, 'navigation'),
+      });
       // Un solo locator sobre el texto del banner — el saludo del dashboard
       // ("Hola, {email}") también contiene el email y desambigua un locator
       // que solo busque el email suelto.
@@ -58,7 +61,9 @@ adminTest.describe('Impersonation — "Ver como"', () => {
       // Y aal2 simultáneamente).
       await page.goto('/es/dashboard');
       await page.getByRole('button', { name: /^salir$/i }).click();
-      await page.waitForURL(/\/es\/dashboard\/admin\/accounts/, { timeout: 20_000 });
+      await page.waitForURL(/\/es\/dashboard\/admin\/accounts/, {
+        timeout: localE2eBudget(20_000, 'navigation'),
+      });
       await expect(page.getByRole('heading', { name: 'Cuentas' })).toBeVisible();
       await expect(page.getByText(/estás viendo como/i)).toHaveCount(0);
 
@@ -191,7 +196,9 @@ async function beginSession(page: Page, targetId: string, targetEmail: string): 
   await page.getByRole('button', { name: /ver como/i }).click();
   await page.locator('#impersonate-reason').fill('Plan0124 local acceptance');
   await page.getByRole('button', { name: /iniciar sesión como este usuario/i }).click();
-  await page.waitForURL((url) => url.pathname === '/es/dashboard', { timeout: 20000 });
+  await page.waitForURL((url) => url.pathname === '/es/dashboard', {
+    timeout: localE2eBudget(20_000, 'navigation'),
+  });
   await expect(
     page.getByText(new RegExp(`estás viendo como.*${escapeRegExp(targetEmail)}`, 'i')),
   ).toBeVisible();

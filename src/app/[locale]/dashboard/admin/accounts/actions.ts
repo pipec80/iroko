@@ -1,5 +1,7 @@
 'use server';
 
+import { z } from 'zod';
+
 import { logger } from '@/lib/logger';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
@@ -29,6 +31,36 @@ export type AdminAccountsPage = {
 };
 
 type ActionResult = { data: AdminAccountsPage | null; error?: string };
+type AdminAccountRow = Database['public']['Functions']['admin_list_accounts']['Returns'][number];
+
+function toEntry(row: AdminAccountRow): AdminAccountEntry {
+  return {
+    accountId: row.account_id,
+    name: row.name,
+    slug: row.slug,
+    type: row.type,
+    ownerId: row.owner_id,
+    ownerEmail: row.owner_email,
+    planSlug: row.plan_slug,
+    subscriptionStatus: row.subscription_status,
+    memberCount: row.member_count,
+    createdAt: row.created_at,
+  };
+}
+
+/** Fetches exactly one account through the live platform-admin/AAL2 SQL gate. */
+export const getAdminAccount = withServerAction(async function getAdminAccount(
+  accountId: string,
+): Promise<{ data: AdminAccountEntry | null; error?: string }> {
+  if (!z.uuid().safeParse(accountId).success) return { data: null, error: 'validation_error' };
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('get_admin_account', { p_account_id: accountId });
+  if (error) {
+    logger.warn({ action: 'admin.accounts.get', code: error.code }, 'get_admin_account failed');
+    return { data: null, error: error.message ?? 'fetch_failed' };
+  }
+  return { data: data?.[0] ? toEntry(data[0]) : null };
+});
 
 /**
  * Fetches one page of accounts for the super-admin back-office.
@@ -61,18 +93,7 @@ export const getAdminAccounts = withServerAction(async function getAdminAccounts
     return { data: null, error: error.message ?? 'fetch_failed' };
   }
 
-  const entries: AdminAccountEntry[] = (data ?? []).map((row) => ({
-    accountId: row.account_id,
-    name: row.name,
-    slug: row.slug,
-    type: row.type,
-    ownerId: row.owner_id,
-    ownerEmail: row.owner_email,
-    planSlug: row.plan_slug,
-    subscriptionStatus: row.subscription_status,
-    memberCount: row.member_count,
-    createdAt: row.created_at,
-  }));
+  const entries: AdminAccountEntry[] = (data ?? []).map(toEntry);
 
   const last = entries.at(-1);
   const nextCursor: AdminAccountsCursor | null =

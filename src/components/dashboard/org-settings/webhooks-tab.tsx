@@ -21,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { useIdentityQueryKey } from '@/components/providers/query-provider';
 import { useOrgEntitlements } from '@/hooks/use-org-entitlements';
 import { FEATURE_KEYS } from '@/lib/billing/entitlement-keys';
 import { cn } from '@/lib/utils';
@@ -32,12 +33,11 @@ import {
 import { PlanGateEmptyState } from './plan-gate-empty-state';
 import { RevealCard } from './reveal-card';
 
-const ENDPOINTS_KEY = ['org-settings', 'webhooks'];
-
 /** Tab de administración de webhooks salientes en org/settings (F2-2D). */
 export function WebhooksTab() {
   const t = useTranslations('OrgSettings');
   const queryClient = useQueryClient();
+  const { scope, queryKey: ENDPOINTS_KEY } = useIdentityQueryKey('webhooks');
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
   const [events, setEvents] = useState<WebhookEventType[]>([]);
@@ -48,6 +48,7 @@ export function WebhooksTab() {
 
   const { data, isPending, error } = useQuery({
     queryKey: ENDPOINTS_KEY,
+    enabled: !!scope,
     queryFn: async () => {
       const result = await listWebhookEndpoints();
       if (result.error || !result.data) throw new Error(result.error ?? 'fetch_failed');
@@ -93,6 +94,8 @@ export function WebhooksTab() {
     setFormError(false);
     create.mutate();
   };
+
+  if (!scope) return null;
 
   if (error?.message === 'not_authorized') {
     return (
@@ -235,6 +238,7 @@ const EVENT_LABEL_KEYS: Record<WebhookEventType, string> = {
 function EndpointRow({ endpoint }: { endpoint: WebhookEndpoint }) {
   const t = useTranslations('OrgSettings');
   const queryClient = useQueryClient();
+  const { queryKey: ENDPOINTS_KEY } = useIdentityQueryKey('webhooks');
   const [expanded, setExpanded] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -354,12 +358,14 @@ function EndpointRow({ endpoint }: { endpoint: WebhookEndpoint }) {
 }
 
 function DeliveriesTable({ endpointId }: { endpointId: string }) {
+  const { scope, queryKey } = useIdentityQueryKey('webhook-deliveries');
   const t = useTranslations('OrgSettings');
   const locale = useLocale();
 
   const { data, isPending, error, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
-      queryKey: ['org-settings', 'webhooks', 'deliveries', endpointId],
+      queryKey: [...queryKey, endpointId],
+      enabled: !!scope,
       queryFn: async ({ pageParam }) => {
         const result = await listWebhookDeliveries({
           endpointId,

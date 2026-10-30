@@ -14,10 +14,10 @@ const eslintConfig = defineConfig([
   prettierConfig,
 
   // ──────────────────────────────────────────────────────────────
-  // jsx-a11y: plugin already registered by eslint-config-next;
-  // only extend rules here to avoid duplicate plugin registration
+  // Next registers jsx-a11y for React source files; apply its rules only there.
   // ──────────────────────────────────────────────────────────────
   {
+    files: ['src/**/*.{jsx,tsx}'],
     rules: jsxA11y.configs.recommended.rules,
   },
 
@@ -80,6 +80,7 @@ const eslintConfig = defineConfig([
   // XSS de DOM (js/xss-through-dom) que puede aparecer en la app.
   // ──────────────────────────────────────────────────────────────
   {
+    files: ['src/**/*.{jsx,tsx}'],
     rules: {
       'react/no-danger': 'error',
     },
@@ -89,6 +90,7 @@ const eslintConfig = defineConfig([
   // @typescript-eslint adicional (estricto)
   // ──────────────────────────────────────────────────────────────
   {
+    files: ['**/*.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': [
@@ -131,6 +133,21 @@ const eslintConfig = defineConfig([
   },
 
   // ──────────────────────────────────────────────────────────────
+  // Test doubles intentionally use native links, explicit undefined and
+  // domain-specific `role` props; these are not production accessibility nodes.
+  {
+    files: ['src/**/__tests__/**/*.{ts,tsx}'],
+    rules: {
+      '@next/next/no-html-link-for-pages': 'off',
+      'jsx-a11y/aria-role': 'off',
+      'unicorn/no-useless-undefined': 'off',
+    },
+  },
+  {
+    files: ['scripts/**/*.cjs'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+
   // Ignorar directorios globales
   // ──────────────────────────────────────────────────────────────
   globalIgnores([

@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { uploadRobotConfigAction } from '@/lib/robot-config';
 import { appConfig } from '@/config/app.config';
 import { cn } from '@/lib/utils';
+import { MAX_UPLOAD_BYTES } from '@/lib/validation/upload-limits';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -26,11 +27,13 @@ export function ExcelUploadDropzone() {
   function validateAndSetFile(selected: File) {
     setError(null);
     setSuccess(false);
-    if (!selected.name.endsWith('.xlsx')) {
+    setFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!selected.name.toLowerCase().endsWith('.xlsx') || selected.type !== XLSX_MIME) {
       setError(t('error_only_xlsx'));
       return;
     }
-    if (selected.size > 5 * 1024 * 1024) {
+    if (selected.size > MAX_UPLOAD_BYTES) {
       setError(t('error_file_too_large'));
       return;
     }
@@ -68,14 +71,18 @@ export function ExcelUploadDropzone() {
       setError(null);
       const formData = new FormData();
       formData.append('file', file);
-      const result = await uploadRobotConfigAction({}, formData);
-      if (result.error) {
-        setError(t('error_processing', { error: result.error }));
-      } else if (result.success) {
-        setSuccess(true);
-        setFile(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        router.refresh();
+      try {
+        const result = await uploadRobotConfigAction({}, formData);
+        if (result.error) {
+          setError(t('error_processing', { error: result.error }));
+        } else if (result.success) {
+          setSuccess(true);
+          setFile(null);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          router.refresh();
+        }
+      } catch {
+        setError(t('error_processing', { error: 'upload_failed' }));
       }
     });
   }

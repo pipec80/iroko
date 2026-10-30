@@ -82,9 +82,29 @@ const MOCK_NOTIF: Notification = {
 describe('useNotifications', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.setAuth.mockResolvedValue(undefined);
     mocks.queryResult.current = { data: [], error: null };
     mocks.rpcResult.current = { error: null };
     mocks.channel.state = 'closed';
+  });
+
+  it('does not subscribe after cleanup wins the setAuth race', async () => {
+    let resolveAuth!: () => void;
+    mocks.setAuth.mockImplementationOnce(
+      () => new Promise<void>((resolve) => (resolveAuth = resolve)),
+    );
+    const { unmount } = renderHook(() => useNotifications(USER_ID));
+    unmount();
+    await act(async () => resolveAuth());
+    expect(mocks.channel.subscribe).not.toHaveBeenCalled();
+    expect(mocks.removeChannel).toHaveBeenCalledWith(mocks.channel);
+  });
+
+  it('does not subscribe or reject unhandled when realtime auth fails', async () => {
+    mocks.setAuth.mockRejectedValueOnce(new Error('synthetic auth failure'));
+    renderHook(() => useNotifications(USER_ID));
+    await act(async () => {});
+    expect(mocks.channel.subscribe).not.toHaveBeenCalled();
   });
 
   it('should load initial notifications on mount', async () => {
@@ -157,5 +177,20 @@ describe('useNotifications', () => {
     unmount();
 
     expect(mocks.removeChannel).toHaveBeenCalled();
+  });
+});
+
+describe('notification identity boundary', () => {
+  it('hides A immediately while B initial load remains pending', async () => {
+    mocks.queryResult.current = { data: [MOCK_NOTIF], error: null };
+    const { result, rerender } = renderHook(({ userId }) => useNotifications(userId), {
+      initialProps: { userId: 'A' },
+    });
+    await act(async () => {});
+    expect(result.current.notifications[0]?.id).toBe(MOCK_NOTIF.id);
+    mocks.selectBuilder.limit.mockImplementationOnce(() => new Promise(() => {}));
+    rerender({ userId: 'B' });
+    expect(result.current.notifications).toEqual([]);
+    expect(result.current.unreadCount).toBe(0);
   });
 });

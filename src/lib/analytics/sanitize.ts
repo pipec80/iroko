@@ -1,52 +1,85 @@
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Query params that legitimately carry a value analytics must never see:
-// invitation/recovery tokens and the visitor's own email echoed back from
-// signup/confirm links.
-const SENSITIVE_QUERY_PARAMS = ['token', 'email', 'code'];
-
-/**
- * Strips path segments and query params that can carry a project slug,
- * a database UUID, or a token/email — the shape pageview capture
- * (`$current_url` / `$pathname`) is normalized through before it ever
- * reaches PostHog. Pure and total: never throws on a malformed input.
- */
-export function sanitizePath(pathname: string): string {
+function normalizePath(pathname: string): string {
   const segments = pathname.split('/');
-
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
-    if (!segment) continue;
-
-    if (UUID_PATTERN.test(segment)) {
-      segments[i] = ':id';
-      continue;
-    }
-
-    // The segment right after /projects/ is a user-chosen project slug —
-    // the one non-UUID dynamic route param in the app today.
-    const previous = segments[i - 1];
-    if (previous === 'projects' && segment !== ':id') {
-      segments[i] = ':slug';
-    }
-  }
-
-  return segments.join('/');
+  return segments
+    .map((segment, index) => {
+      if (UUID_PATTERN.test(segment)) return ':id';
+      if (segments[index - 1] === 'projects' && segment) return ':slug';
+      return segment;
+    })
+    .join('/');
 }
 
-/** Same normalization as `sanitizePath`, applied to a full URL's pathname + query string. */
+/** Analytics retains only a normalized pathname; URL parsing failures fail closed. */
 export function sanitizeUrl(url: string): string {
-  let parsed: URL;
   try {
-    parsed = new URL(url);
+    if (!url.startsWith('/') && !/^https?:\/\//i.test(url)) return ':redacted';
+    const parsed = new URL(url, 'https://analytics.invalid');
+    if (!['http:', 'https:'].includes(parsed.protocol)) return ':redacted';
+    return normalizePath(parsed.pathname);
   } catch {
-    return sanitizePath(url);
+    return ':redacted';
   }
+}
 
-  parsed.pathname = sanitizePath(parsed.pathname);
-  for (const param of SENSITIVE_QUERY_PARAMS) {
-    if (parsed.searchParams.has(param)) parsed.searchParams.set(param, ':redacted');
+/** Removes query/fragment data and anonymizes dynamic route segments. */
+export function sanitizePath(pathname: string): string {
+  return sanitizeUrl(pathname);
+}
+
+// posthog-js session-props and persistence also emit initial and session-entry copies.
+const URL_PROPERTY = /^\$(?:(?:initial|session_entry)_)?(?:current_url|url|pathname|referrer)$/;
+// CAMPAIGN_PARAMS/PERSONAL_DATA_CAMPAIGN_PARAMS and getSearchInfo in the installed
+// @posthog/browser-common SDK. Treat all prefix variants identically.
+const ATTRIBUTION_NAMES = new Set([
+  'client_session_props',
+  'gclid',
+  'gclsrc',
+  'dclid',
+  'gbraid',
+  'wbraid',
+  'fbclid',
+  'msclkid',
+  'twclid',
+  'li_fat_id',
+  'igshid',
+  'ttclid',
+  'rdt_cid',
+  'epik',
+  'qclid',
+  'sccid',
+  'irclid',
+  '_kx',
+  'gad_source',
+  'mc_cid',
+  'mc_eid',
+  'ph_keyword',
+  'campaign_params',
+  'referrer_info',
+  'person_info',
+  'referring_domain',
+  'search_engine',
+  'search_keyword',
+]);
+
+/** Sanitizes SDK-generated properties before serialization, preserving taxonomy fields. */
+export function sanitizeAnalyticsProperties(
+  properties: Record<string, unknown>,
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(properties)) {
+    const attribution = key.replace(/^\$?(?:(?:initial|session_entry)_)?/, '').toLowerCase();
+    if (attribution.startsWith('utm_') || ATTRIBUTION_NAMES.has(attribution)) continue;
+    if (URL_PROPERTY.test(key)) {
+      result[key] = typeof value === 'string' ? sanitizeUrl(value) : ':redacted';
+    } else if (key === '$set' || key === '$set_once') {
+      if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+        result[key] = sanitizeAnalyticsProperties(value as Record<string, unknown>);
+      }
+    } else {
+      result[key] = value;
+    }
   }
-
-  return `${parsed.pathname}${parsed.search}`;
+  return result;
 }

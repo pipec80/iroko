@@ -1041,6 +1041,9 @@ export const mercadopagoProvider: PaymentProvider = {
         financialAnomalies.push(observation);
         continue;
       }
+      if (invoice.payment.status !== payment.status) {
+        throw discoveryError('payment_status_divergence');
+      }
       const event = normalizeAuthorizedPaymentEvent(
         invoice,
         authorizedPaymentEventId(invoiceId, paymentId, invoice.payment.status),

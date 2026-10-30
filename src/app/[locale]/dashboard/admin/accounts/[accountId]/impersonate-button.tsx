@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 import { startImpersonation } from './impersonation-actions';
+import { useDocumentDraftTransition } from '@/components/providers/document-draft-provider';
 
 const MIN_REASON_LENGTH = 3;
 
@@ -37,6 +38,7 @@ export function ImpersonateButton({
   targetName: string;
 }) {
   const t = useTranslations('Impersonation');
+  const { confirmTransition, cancelTransition } = useDocumentDraftTransition();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -45,9 +47,16 @@ export function ImpersonateButton({
   function handleConfirm() {
     setError(null);
     startTransition(async () => {
-      const result = await startImpersonation(targetUserId, reason);
-      if (result.error) {
-        setError(t((ERROR_KEYS[result.error] ?? 'error_start_failed') as never));
+      if (!(await confirmTransition())) return;
+      try {
+        const result = await startImpersonation(targetUserId, reason);
+        if (result.error) {
+          cancelTransition();
+          setError(t((ERROR_KEYS[result.error] ?? 'error_start_failed') as never));
+        }
+      } catch (error) {
+        cancelTransition(error);
+        throw error;
       }
     });
   }

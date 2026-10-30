@@ -1,6 +1,7 @@
 'use server';
 
 import { z } from 'zod';
+import { appConfig } from '@/config/app.config';
 
 import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
@@ -20,6 +21,7 @@ type CreateDocumentResult = { error?: string; docId?: string };
 export const createDocument = withServerAction(async function createDocument(
   formData: FormData,
 ): Promise<CreateDocumentResult> {
+  if (!appConfig.features.projects) return { error: 'module_disabled' };
   const raw = {
     name: formData.get('name') as string,
     description: (formData.get('description') as string) || undefined,
@@ -64,6 +66,9 @@ export const createDocument = withServerAction(async function createDocument(
   } catch (err) {
     const message = err instanceof Error ? err.message : 'create_failed';
     logger.warn({ action: 'documents.create', accountId, message }, 'createDocument failed');
+    if (typeof err === 'object' && err !== null && 'code' in err && err.code === '23503') {
+      return { error: 'invalid_project' };
+    }
     return { error: 'create_failed' };
   }
 });

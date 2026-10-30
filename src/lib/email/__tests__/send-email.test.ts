@@ -67,8 +67,40 @@ describe('sendEmail', () => {
     const { logger } = await import('@/lib/logger');
     const fakeElement = { type: 'div', props: {}, key: null } as unknown as React.ReactElement;
 
-    await expect(sendEmail('user@example.com', 'Asunto', fakeElement)).rejects.toThrow('API error');
+    await expect(sendEmail('user@example.com', 'Asunto', fakeElement)).rejects.toThrow(
+      'Email delivery failed',
+    );
     expect(logger.error).toHaveBeenCalled();
+  });
+
+  it('keeps recipient, subject and provider free text out of failure logs and caller errors', async () => {
+    mockSend.mockResolvedValue({
+      data: null,
+      error: { message: 'RECIPIENT_MARKER SUBJECT_MARKER TOKEN_MARKER', statusCode: 422 },
+    });
+    const { sendEmail } = await import('@/lib/email');
+    const { logger } = await import('@/lib/logger');
+    const fakeElement = { type: 'div', props: {}, key: null } as unknown as React.ReactElement;
+
+    await expect(
+      sendEmail('RECIPIENT_MARKER@example.invalid', 'SUBJECT_MARKER', fakeElement),
+    ).rejects.toThrow('Email delivery failed');
+    const serialized = JSON.stringify(vi.mocked(logger.error).mock.calls);
+    expect(serialized).not.toContain('RECIPIENT_MARKER');
+    expect(serialized).not.toContain('SUBJECT_MARKER');
+    expect(serialized).not.toContain('TOKEN_MARKER');
+    expect(serialized).toContain('send_email');
+    expect(serialized).toContain('resend');
+    expect(serialized).toContain('422');
+  });
+
+  it('does not propagate a thrown provider exception that repeats message data', async () => {
+    mockSend.mockRejectedValue(new Error('RECIPIENT_MARKER SUBJECT_MARKER TOKEN_MARKER'));
+    const { sendEmail } = await import('@/lib/email');
+    const fakeElement = { type: 'div', props: {}, key: null } as unknown as React.ReactElement;
+    await expect(
+      sendEmail('RECIPIENT_MARKER@example.invalid', 'SUBJECT_MARKER', fakeElement),
+    ).rejects.toThrow('Email delivery failed');
   });
 
   it('sendWelcomeEmail llama a sendEmail con subject correcto', async () => {
@@ -210,5 +242,55 @@ describe('sendEmail — transporte local', () => {
     await expect(sendEmail('user@example.com', 'Asunto', fakeElement)).rejects.toThrow(
       /Mailpit rejected/,
     );
+  });
+
+  it('does not log a Mailpit response body that repeats recipient or message data', async () => {
+    vi.doMock('@/env', () => ({
+      env: {
+        RESEND_API_KEY: 're_test_key',
+        FROM_EMAIL: 'noreply@test.com',
+        SITE_URL: 'http://localhost:3000',
+        MAILPIT_URL: 'http://127.0.0.1:54324',
+      },
+    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        text: async () => 'RECIPIENT_MARKER SUBJECT_MARKER TOKEN_MARKER',
+      }),
+    );
+    const { sendEmail } = await import('@/lib/email');
+    const { logger } = await import('@/lib/logger');
+    await expect(
+      sendEmail('RECIPIENT_MARKER@example.invalid', 'SUBJECT_MARKER', fakeElement),
+    ).rejects.toThrow('Mailpit rejected the message (HTTP 500)');
+    const serialized = JSON.stringify(vi.mocked(logger.error).mock.calls);
+    expect(serialized).not.toContain('RECIPIENT_MARKER');
+    expect(serialized).not.toContain('SUBJECT_MARKER');
+    expect(serialized).not.toContain('TOKEN_MARKER');
+    expect(serialized).toContain('send_email');
+    expect(serialized).toContain('mailpit');
+    expect(serialized).toContain('500');
+  });
+
+  it('does not propagate a Mailpit transport exception that repeats message data', async () => {
+    vi.doMock('@/env', () => ({
+      env: {
+        RESEND_API_KEY: 're_test_key',
+        FROM_EMAIL: 'noreply@test.com',
+        SITE_URL: 'http://localhost:3000',
+        MAILPIT_URL: 'http://127.0.0.1:54324',
+      },
+    }));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockRejectedValue(new Error('RECIPIENT_MARKER SUBJECT_MARKER TOKEN_MARKER')),
+    );
+    const { sendEmail } = await import('@/lib/email');
+    await expect(
+      sendEmail('RECIPIENT_MARKER@example.invalid', 'SUBJECT_MARKER', fakeElement),
+    ).rejects.toThrow('Email delivery failed');
   });
 });

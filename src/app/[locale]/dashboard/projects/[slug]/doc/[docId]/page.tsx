@@ -10,12 +10,14 @@ import { saveDocument } from './actions';
 
 import type { Metadata } from 'next';
 import { appConfig } from '@/config/app.config';
+import { createClient } from '@/lib/supabase/server';
 
 interface DocEditorPageProps {
   params: Promise<{ locale: string; slug: string; docId: string }>;
 }
 
 export async function generateMetadata({ params }: DocEditorPageProps): Promise<Metadata> {
+  if (!appConfig.features.projects) notFound();
   const { docId } = await params;
   const doc = await getById(docId).catch((err: unknown) => {
     logger.error(
@@ -28,6 +30,7 @@ export async function generateMetadata({ params }: DocEditorPageProps): Promise<
 }
 
 export default async function DocEditorPage({ params }: DocEditorPageProps) {
+  if (!appConfig.features.projects) notFound();
   const { locale, slug, docId } = await params;
   setRequestLocale(locale);
 
@@ -51,11 +54,19 @@ export default async function DocEditorPage({ params }: DocEditorPageProps) {
     return null;
   });
   if (!doc || doc.project_id !== project.id) notFound();
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims.sub;
+  if (!userId) notFound();
 
   return (
     <MarkdownEditor
+      key={`${userId}:${accountId}:${doc.id}`}
       docId={doc.id}
+      userId={userId}
+      accountId={accountId}
       initialContent={doc.content}
+      initialRevision={doc.revision}
       docName={doc.name}
       projectName={project.name}
       projectSlug={slug}

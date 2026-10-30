@@ -95,11 +95,16 @@ async function sendViaMailpit(
       HTML: html,
     }),
     signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+  }).catch(() => {
+    logger.error({ action: 'send_email', provider: 'mailpit' }, 'Email delivery failed');
+    throw new Error('Email delivery failed');
   });
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => '');
-    logger.error({ to, action: 'send_email', subject, status: response.status }, detail);
+    logger.error(
+      { action: 'send_email', provider: 'mailpit', status: response.status },
+      'Email delivery failed',
+    );
     throw new Error(`Mailpit rejected the message (HTTP ${response.status})`);
   }
 }
@@ -127,11 +132,24 @@ export async function sendEmail(
   const { error } = await withTimeout(
     getResend().emails.send({ from: env.FROM_EMAIL, to, subject, react }),
     'Resend',
-  );
+  ).catch(() => {
+    logger.error({ action: 'send_email', provider: 'resend' }, 'Email delivery failed');
+    throw new Error('Email delivery failed');
+  });
 
   if (error) {
-    logger.error({ to, action: 'send_email', subject }, error.message);
-    throw new Error(error.message);
+    const status =
+      (
+        Number.isInteger(error.statusCode) &&
+        error.statusCode !== null &&
+        error.statusCode >= 100 &&
+        error.statusCode <= 599
+      ) ?
+        error.statusCode
+      : undefined;
+    logger.error({ action: 'send_email', provider: 'resend', status }, 'Email delivery failed');
+    // Callers also log thrown messages; never propagate provider free text.
+    throw new Error('Email delivery failed');
   }
 }
 

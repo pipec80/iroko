@@ -6,6 +6,7 @@ import { getActiveAccountId } from '@/lib/active-account';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { validateOrgLogoFile } from '@/lib/validation/profile';
+import { hasOversizedUploadFields } from '@/lib/validation/upload-limits';
 
 export type OrgLogoActionState = { error?: string; success?: string };
 type ActionResult<T> = { data: T | null; error?: string };
@@ -35,6 +36,7 @@ export const updateOrgLogo = withServerAction(async function updateOrgLogo(
   if (!(file instanceof File) || file.size === 0) {
     return { error: 'no_file' };
   }
+  if (hasOversizedUploadFields(formData, 'logo')) return { error: 'file_too_large' };
 
   const clientCheck = validateOrgLogoFile(file);
   if (!clientCheck.ok) return { error: clientCheck.error };

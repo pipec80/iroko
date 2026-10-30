@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { QueryProvider } from './query-provider';
 import { AnalyticsProvider } from './analytics-provider';
+import { VercelAnalyticsConsent } from './vercel-analytics-consent';
 import { Toaster } from '@/components/ui/sonner';
 import { CookieConsentBanner } from '@/components/cookie-consent-banner';
 import { appConfig } from '@/config/app.config';
@@ -14,6 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <Toaster position="top-right" richColors closeButton />
       {appConfig.features.cookieConsent && <CookieConsentBanner />}
       {appConfig.features.analytics && <AnalyticsProvider />}
+      {appConfig.features.analytics && <VercelAnalyticsConsent />}
     </QueryProvider>
   );
 }

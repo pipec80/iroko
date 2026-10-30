@@ -82,6 +82,7 @@ DECLARE
   v_invitation public.invitations%ROWTYPE;
   v_user_id    uuid := (SELECT auth.uid());
   v_token_hash text;
+  v_account_id uuid;
 BEGIN
   IF v_user_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
@@ -90,11 +91,13 @@ BEGIN
   -- Hashear el token recibido antes de buscar (nunca comparar plaintext)
   v_token_hash := encode(extensions.digest(p_token, 'sha256'), 'hex');
 
-  SELECT * INTO v_invitation
-  FROM public.invitations
-  WHERE token_hash = v_token_hash
-    AND status = 'pending'
-    AND expires_at > now();
+  -- Preliminary lookup locates the account; it grants no authorization.
+  SELECT i.account_id INTO v_account_id FROM public.invitations i WHERE i.token_hash=v_token_hash;
+  PERFORM 1 FROM public.accounts WHERE id=v_account_id AND deleted_at IS NULL FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Invalid or expired invitation'; END IF;
+  SELECT * INTO v_invitation FROM public.invitations
+  WHERE token_hash=v_token_hash AND status='pending' AND expires_at>clock_timestamp()
+  FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Invalid or expired invitation';
@@ -103,6 +106,12 @@ BEGIN
   IF lower(btrim((SELECT email FROM auth.users WHERE id = v_user_id)))
      IS DISTINCT FROM lower(btrim(v_invitation.email)) THEN
     RAISE EXCEPTION 'Invalid or expired invitation';
+  END IF;
+
+  IF NOT EXISTS(SELECT 1 FROM public.accounts_memberships m WHERE m.account_id=v_account_id AND m.user_id=v_user_id)
+     AND NOT private.within_plan_limit(v_account_id,'seats_max',
+       (SELECT count(*) FROM public.accounts_memberships m WHERE m.account_id=v_account_id)) THEN
+    RAISE EXCEPTION 'seat_limit_reached';
   END IF;
 
   INSERT INTO public.accounts_memberships (account_id, user_id, role, invited_by)
@@ -1064,12 +1073,13 @@ DECLARE
   v_norm_email  text;
   v_raw_token   text;
   v_token_hash  text;
+  v_reserved bigint;
 BEGIN
   -- Plan 009: las cuentas personales son 1:1 con su usuario (el trigger
   -- enforce_single_owner_per_account ya lo asumía); colaborar define a un team.
   SELECT type INTO v_account_type
   FROM public.accounts
-  WHERE id = p_account_id AND deleted_at IS NULL;
+  WHERE id = p_account_id AND deleted_at IS NULL FOR UPDATE;
 
   IF v_account_type IS DISTINCT FROM 'team' THEN
     RAISE EXCEPTION 'not_a_team';
@@ -1091,13 +1101,27 @@ BEGIN
     RAISE EXCEPTION 'Maximum 20 emails per batch';
   END IF;
 
+  -- Reservations are distinct normalized pending emails, excluding members.
+  SELECT count(*) INTO v_reserved FROM (
+    SELECT lower(btrim(i.email)) AS address FROM public.invitations i
+    WHERE i.account_id=p_account_id AND i.status='pending' AND i.expires_at>clock_timestamp()
+    UNION
+    SELECT lower(btrim(e)) FROM unnest(p_emails) AS e
+  ) reserved WHERE NOT EXISTS (
+    SELECT 1 FROM public.accounts_memberships m JOIN auth.users u ON u.id=m.user_id
+    WHERE m.account_id=p_account_id AND lower(btrim(u.email))=reserved.address
+  );
   IF NOT private.within_plan_limit(p_account_id, 'seats_max',
-      (SELECT count(*) FROM public.accounts_memberships m WHERE m.account_id = p_account_id),
-      array_length(p_emails, 1)) THEN
+      (SELECT count(*) FROM public.accounts_memberships m WHERE m.account_id=p_account_id)+v_reserved,0) THEN
     RAISE EXCEPTION 'seat_limit_reached';
   END IF;
+  -- Expired pending rows no longer reserve and must not prevent reinvitation.
+  UPDATE public.invitations SET status='expired',updated_at=clock_timestamp()
+  WHERE account_id=p_account_id AND status='pending' AND expires_at<=clock_timestamp();
 
-  FOREACH v_email IN ARRAY p_emails LOOP
+  FOR v_email IN SELECT DISTINCT lower(btrim(e)) FROM unnest(p_emails) AS e LOOP
+    IF EXISTS(SELECT 1 FROM public.accounts_memberships m JOIN auth.users u ON u.id=m.user_id
+      WHERE m.account_id=p_account_id AND lower(btrim(u.email))=v_email) THEN CONTINUE; END IF;
     v_norm_email := lower(trim(v_email));
     v_raw_token  := encode(extensions.gen_random_bytes(32), 'hex');
     v_token_hash := encode(extensions.digest(v_raw_token, 'sha256'), 'hex');
@@ -1241,6 +1265,8 @@ DECLARE
   v_caller_role public.membership_role;
   v_target_role public.membership_role;
 BEGIN
+  -- Account is always locked before membership authorization or mutation.
+  PERFORM 1 FROM public.accounts WHERE id=p_account_id FOR UPDATE;
   -- Check caller role
   SELECT role INTO v_caller_role
   FROM public.accounts_memberships
@@ -1385,6 +1411,13 @@ BEGIN
     RAISE EXCEPTION 'not_authenticated' USING ERRCODE = '42501';
   END IF;
 
+  -- One stable lock serializes replacements even when all three collections are empty.
+  -- Recheck membership only after waiting, so revoked members cannot write.
+  PERFORM 1 FROM public.accounts WHERE id = p_account_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
+  END IF;
+
   IF NOT COALESCE(private.get_user_role(p_account_id, v_uid) IN ('owner', 'admin', 'member'), false) THEN
     RAISE EXCEPTION 'not_authorized' USING ERRCODE = '42501';
   END IF;
@@ -1425,7 +1458,7 @@ $$;
 ALTER FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") IS 'Atomically replaces a tenant''s robot routines/contacts/memories in a single transaction. SECURITY DEFINER with a live owner/admin/member role check. Prevents the partial-write data loss of the previous delete-then-insert client flow.';
+COMMENT ON FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") IS 'Serializes each tenant''s complete robot replacement on its account row, then checks the live owner/admin/member role. All three collections commit or roll back together.';
 
 
 
@@ -1726,6 +1759,8 @@ CREATE TABLE IF NOT EXISTS "public"."documents" (
     "name" "text" NOT NULL,
     "description" "text",
     "content" "text" DEFAULT ''::"text" NOT NULL,
+    "revision" integer DEFAULT 0 NOT NULL,
+    CONSTRAINT "documents_revision_nonnegative" CHECK (revision >= 0),
     "created_by" "uuid",
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
@@ -1830,6 +1865,8 @@ ALTER TABLE ONLY "public"."projects"
 
 ALTER TABLE ONLY "public"."projects"
     ADD CONSTRAINT "projects_pkey" PRIMARY KEY ("id");
+
+ALTER TABLE ONLY public.projects ADD CONSTRAINT projects_id_account_id_key UNIQUE(id,account_id);
 
 
 
@@ -1938,7 +1975,7 @@ CREATE OR REPLACE TRIGGER "set_updated_at" BEFORE UPDATE ON "public"."projects" 
 
 
 CREATE TRIGGER "trg_enforce_account_owner"
-  BEFORE UPDATE OF "role" OR DELETE
+  BEFORE UPDATE OF "role", "account_id" OR DELETE
   ON "public"."accounts_memberships"
   FOR EACH ROW
   EXECUTE FUNCTION "private"."enforce_single_owner_per_account"();
@@ -1981,7 +2018,7 @@ ALTER TABLE ONLY "public"."documents"
 
 
 ALTER TABLE ONLY "public"."documents"
-    ADD CONSTRAINT "documents_project_id_fkey" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE CASCADE;
+    ADD CONSTRAINT "documents_project_account_fkey" FOREIGN KEY ("project_id", "account_id") REFERENCES "public"."projects"("id", "account_id") ON DELETE CASCADE;
 
 
 
@@ -2524,6 +2561,48 @@ GRANT EXECUTE ON FUNCTION public.admin_list_accounts(
 REVOKE ALL ON FUNCTION public.admin_list_accounts(
   text, integer, timestamptz, uuid
 ) FROM PUBLIC;
+
+-- Exact detail lookup, with the same live platform-admin/AAL2 gate as the list.
+CREATE FUNCTION public.get_admin_account(p_account_id uuid)
+RETURNS TABLE (
+  account_id uuid,
+  name text,
+  slug text,
+  type public.account_type,
+  owner_id uuid,
+  owner_email text,
+  plan_slug text,
+  subscription_status billing.subscription_status,
+  member_count integer,
+  created_at timestamptz
+)
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  PERFORM private.assert_platform_admin();
+
+  RETURN QUERY
+  SELECT a.id, a.name, a.slug, a.type, u.id, u.email::text,
+         p.slug, s.status,
+         (SELECT count(*)::int FROM public.accounts_memberships m WHERE m.account_id = a.id),
+         a.created_at
+  FROM public.accounts a
+  LEFT JOIN public.accounts_memberships om ON om.account_id = a.id AND om.role = 'owner'
+  LEFT JOIN auth.users u ON u.id = om.user_id
+  LEFT JOIN billing.customers c ON c.account_id = a.id
+  LEFT JOIN billing.subscriptions s ON s.customer_id = c.id
+    AND s.status IN ('active', 'trialing', 'past_due', 'paused')
+  LEFT JOIN billing.plans p ON p.id = s.plan_id
+  WHERE a.id = p_account_id AND a.deleted_at IS NULL
+  LIMIT 1;
+END;
+$$;
+
+COMMENT ON FUNCTION public.get_admin_account(uuid) IS
+  'Exact account detail lookup for a live platform admin with AAL2; same columns as admin_list_accounts.';
+REVOKE ALL ON FUNCTION public.get_admin_account(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.get_admin_account(uuid) TO authenticated;
 
 
 -- ============================================================================
@@ -3239,6 +3318,8 @@ DECLARE
   v_caller_role   public.membership_role;
   v_active_id     uuid;
 BEGIN
+  -- Account is always locked before membership authorization or mutation.
+  PERFORM 1 FROM public.accounts WHERE id=p_account_id FOR UPDATE;
   SELECT type INTO v_account_type
   FROM public.accounts
   WHERE id = p_account_id AND deleted_at IS NULL;
@@ -3304,6 +3385,8 @@ DECLARE
   v_caller_role public.membership_role;
   v_target_role public.membership_role;
 BEGIN
+  -- Account is always locked before membership authorization or mutation.
+  PERFORM 1 FROM public.accounts WHERE id=p_account_id FOR UPDATE;
   SELECT role INTO v_caller_role
   FROM public.accounts_memberships
   WHERE account_id = p_account_id AND user_id = (SELECT auth.uid());
@@ -3364,6 +3447,8 @@ DECLARE
   v_account_type public.account_type;
   v_target_role  public.membership_role;
 BEGIN
+  -- Account is always locked before membership authorization or mutation.
+  PERFORM 1 FROM public.accounts WHERE id=p_account_id FOR UPDATE;
   SELECT type INTO v_account_type
   FROM public.accounts
   WHERE id = p_account_id AND deleted_at IS NULL;
@@ -3427,10 +3512,13 @@ AS $$
 DECLARE
   v_invitation  public.invitations%ROWTYPE;
   v_caller_role public.membership_role;
+  v_account_id uuid;
 BEGIN
+  SELECT account_id INTO v_account_id FROM public.invitations WHERE id=p_invitation_id;
+  PERFORM 1 FROM public.accounts WHERE id=v_account_id FOR UPDATE;
   SELECT * INTO v_invitation
   FROM public.invitations
-  WHERE id = p_invitation_id;
+  WHERE id = p_invitation_id FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'invitation_not_found';
@@ -3972,20 +4060,20 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.claim_billing_recovery_jobs(p_batch_size integer,p_visibility_seconds integer)
-RETURNS TABLE(id uuid,provider text,resource_type text,resource_id text,reason text,attempt_count integer)
+RETURNS TABLE(id uuid,provider text,resource_type text,resource_id text,reason text,attempt_count integer,lease_token uuid,lease_expires_at timestamptz)
 LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
 BEGIN
-  IF p_batch_size<1 OR p_batch_size>20 OR p_visibility_seconds<30 OR p_visibility_seconds>3600
+  IF p_batch_size IS NULL OR p_visibility_seconds IS NULL OR p_batch_size<1 OR p_batch_size>20 OR p_visibility_seconds<30 OR p_visibility_seconds>3600
     THEN RAISE EXCEPTION 'billing_recovery_claim_invalid'; END IF;
   RETURN QUERY WITH candidates AS (
     SELECT job.id FROM billing.recovery_jobs job
     WHERE (job.status='pending' AND job.next_attempt_at<=now())
-       OR (job.status='processing' AND job.locked_at<=now()-make_interval(secs=>p_visibility_seconds))
+       OR (job.status='processing' AND job.lease_expires_at<=clock_timestamp())
     ORDER BY job.next_attempt_at,job.created_at LIMIT p_batch_size FOR UPDATE SKIP LOCKED
   ), claimed AS (
-    UPDATE billing.recovery_jobs job SET status='processing',locked_at=now(),attempt_count=LEAST(job.attempt_count+1,5)
+    UPDATE billing.recovery_jobs job SET status='processing',locked_at=now(),lease_token=gen_random_uuid(),lease_expires_at=clock_timestamp()+make_interval(secs=>p_visibility_seconds),attempt_count=LEAST(job.attempt_count+1,5)
     FROM candidates WHERE job.id=candidates.id
-    RETURNING job.id,job.provider,job.resource_type,job.resource_id,job.reason,job.attempt_count
+    RETURNING job.id,job.provider,job.resource_type,job.resource_id,job.reason,job.attempt_count,job.lease_token,job.lease_expires_at
   ) SELECT * FROM claimed;
 END;
 $$;
@@ -4261,3 +4349,140 @@ FROM anon, authenticated;
 -- Apply the same boundary to tables created by postgres in this schema.
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE REFERENCES, TRIGGER, TRUNCATE, MAINTAIN ON TABLES FROM anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.apply_billing_recovery_result(p_job_id uuid,p_lease_token uuid,p_result jsonb)
+RETURNS TABLE(status text,anomaly_created boolean)
+LANGUAGE plpgsql VOLATILE SECURITY DEFINER SET search_path='' AS $$
+DECLARE v_job billing.recovery_jobs%ROWTYPE; v_event jsonb; v_observation jsonb; v_kind text; v_plan_id uuid;
+BEGIN
+ SELECT * INTO v_job FROM billing.recovery_jobs WHERE id=p_job_id FOR UPDATE;
+ IF NOT FOUND OR v_job.status<>'processing' OR p_lease_token IS NULL
+ OR v_job.lease_token IS DISTINCT FROM p_lease_token OR v_job.lease_expires_at IS NULL
+ OR v_job.lease_expires_at<=clock_timestamp() THEN RAISE EXCEPTION 'billing_recovery_lease_not_owned'; END IF;
+ v_kind:=p_result->>'kind';
+ IF jsonb_typeof(p_result) IS DISTINCT FROM 'object' OR v_kind IS NULL OR v_kind NOT IN ('event','anomaly','pending','unrelated','error') THEN RAISE EXCEPTION 'billing_recovery_result_invalid'; END IF;
+ IF v_kind='event' THEN
+ v_event:=p_result->'event';
+ IF jsonb_typeof(v_event) IS DISTINCT FROM 'object' OR (v_event->>'provider') IS DISTINCT FROM v_job.provider
+ OR COALESCE(v_event->>'externalPaymentId',v_event#>>'{raw,payment,id}',v_event#>>'{raw,id}') IS DISTINCT FROM v_job.resource_id
+ OR NULLIF(v_event->>'accountId','') IS NULL OR NULLIF(v_event->>'externalEventId','') IS NULL
+ OR NULLIF(v_event->>'externalSubscriptionId','') IS NULL THEN RAISE EXCEPTION 'billing_recovery_result_invalid'; END IF;
+ IF v_event->>'type'='subscription_created' OR v_event->>'externalPriceId' IS NOT NULL THEN
+ SELECT plan_id INTO v_plan_id FROM public.resolve_billing_plan_by_external_price(v_job.provider,v_event->>'externalPriceId');
+ IF v_plan_id IS NULL THEN RAISE EXCEPTION 'billing_recovery_result_invalid'; END IF;
+ END IF;
+IF v_event->>'type'='subscription_created' THEN
+ PERFORM public.apply_subscription_created(p_provider => v_event->>'provider',
+p_external_event_id => v_event->>'externalEventId',
+p_account_id => (v_event->>'accountId')::uuid,
+p_plan_id => v_plan_id,
+p_external_subscription_id => v_event->>'externalSubscriptionId',
+p_status => (v_event->>'status')::billing.subscription_status,
+p_current_period_start => (v_event->>'currentPeriodStart')::timestamptz,
+p_current_period_end => (v_event->>'currentPeriodEnd')::timestamptz,
+p_cancel_at_period_end => (v_event->>'cancelAtPeriodEnd')::boolean,
+p_external_customer_id => v_event->>'externalCustomerId',
+p_payload => v_event->'raw');
+ELSIF v_event->>'type'='subscription_updated' THEN
+ PERFORM public.apply_subscription_updated(p_provider => v_event->>'provider',
+p_external_event_id => v_event->>'externalEventId',
+p_account_id => (v_event->>'accountId')::uuid,
+p_external_subscription_id => v_event->>'externalSubscriptionId',
+p_plan_id => v_plan_id,
+p_status => (v_event->>'status')::billing.subscription_status,
+p_current_period_start => (v_event->>'currentPeriodStart')::timestamptz,
+p_current_period_end => (v_event->>'currentPeriodEnd')::timestamptz,
+p_cancel_at_period_end => (v_event->>'cancelAtPeriodEnd')::boolean,
+p_external_customer_id => v_event->>'externalCustomerId',
+p_payload => v_event->'raw');
+ELSIF v_event->>'type'='subscription_canceled' THEN
+ PERFORM public.apply_subscription_canceled(p_provider => v_event->>'provider',
+p_external_event_id => v_event->>'externalEventId',
+p_account_id => (v_event->>'accountId')::uuid,
+p_external_subscription_id => v_event->>'externalSubscriptionId',
+p_canceled_at => (v_event->>'canceledAt')::timestamptz,
+p_access_until => (v_event->>'accessUntil')::timestamptz,
+p_payload => v_event->'raw');
+ELSIF v_event->>'type'='invoice_paid' THEN
+ PERFORM public.apply_invoice_paid(p_provider => v_event->>'provider',
+p_external_event_id => v_event->>'externalEventId',
+p_account_id => (v_event->>'accountId')::uuid,
+p_external_subscription_id => v_event->>'externalSubscriptionId',
+p_external_invoice_id => v_event->>'externalInvoiceId',
+p_external_payment_id => v_event->>'externalPaymentId',
+p_amount_paid => (v_event->>'amountPaid')::integer,
+p_currency => v_event->>'currency',
+p_period_start => (v_event->>'periodStart')::timestamptz,
+p_period_end => (v_event->>'periodEnd')::timestamptz,
+p_paid_at => (v_event->>'paidAt')::timestamptz,
+p_hosted_url => v_event->>'hostedUrl',
+p_pdf_url => v_event->>'pdfUrl',
+p_payload => v_event->'raw');
+ELSIF v_event->>'type'='invoice_payment_failed' THEN
+ PERFORM public.apply_invoice_payment_failed(p_provider => v_event->>'provider',
+p_external_event_id => v_event->>'externalEventId',
+p_account_id => (v_event->>'accountId')::uuid,
+p_external_subscription_id => v_event->>'externalSubscriptionId',
+p_external_invoice_id => v_event->>'externalInvoiceId',
+p_external_payment_id => v_event->>'externalPaymentId',
+p_status => 'failed',
+p_amount => (v_event->>'amountDue')::integer,
+p_currency => v_event->>'currency',
+p_attempted_at => (v_event->>'attemptedAt')::timestamptz,
+p_failure_code => v_event->>'failureCode',
+p_failure_message => v_event->>'failureMessage',
+p_payload => v_event->'raw');
+ELSIF v_event->>'type'='payment_recovered' THEN
+ PERFORM public.apply_payment_recovered(p_provider => v_event->>'provider',
+p_external_event_id => v_event->>'externalEventId',
+p_account_id => (v_event->>'accountId')::uuid,
+p_external_subscription_id => v_event->>'externalSubscriptionId',
+p_external_invoice_id => v_event->>'externalInvoiceId',
+p_external_payment_id => v_event->>'externalPaymentId',
+p_status => 'recovered',
+p_amount => (v_event->>'amountPaid')::integer,
+p_currency => v_event->>'currency',
+p_recovered_at => (v_event->>'recoveredAt')::timestamptz,
+p_payload => v_event->'raw');
+ ELSE RAISE EXCEPTION 'billing_recovery_result_invalid'; END IF;
+ ELSIF v_kind='anomaly' THEN
+ v_observation:=p_result->'observation';
+ IF jsonb_typeof(v_observation) IS DISTINCT FROM 'object' OR (v_observation->>'externalResourceId') IS DISTINCT FROM v_job.resource_id OR v_observation->>'anomalyType' IS NULL THEN RAISE EXCEPTION 'billing_recovery_result_invalid'; END IF;
+ PERFORM public.upsert_billing_financial_anomaly(v_job.provider,v_observation->>'anomalyType',v_job.resource_id,v_observation->>'observedStatus',NULL,NULL,(v_observation->>'originalAmount')::integer,(v_observation->>'affectedAmount')::integer,v_observation->>'currency');
+ ELSIF v_kind='error' AND (p_result->>'errorCode' IS NULL OR (p_result->>'errorCode')!~'^[a-z_]{1,100}$') THEN RAISE EXCEPTION 'billing_recovery_result_invalid';
+ END IF;
+ RETURN QUERY SELECT * FROM public.complete_billing_recovery_job(p_job_id,v_kind,CASE WHEN v_kind='pending' THEN 'payment_still_pending' ELSE p_result->>'errorCode' END);
+ UPDATE billing.recovery_jobs SET lease_token=NULL,lease_expires_at=NULL WHERE id=p_job_id;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.apply_billing_recovery_result(uuid,uuid,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.apply_billing_recovery_result(uuid,uuid,jsonb) TO service_role;
+REVOKE ALL ON FUNCTION public.complete_billing_recovery_job(uuid,text,text) FROM service_role;
+
+-- Plan 017.4 CAS functions and trigger
+CREATE OR REPLACE FUNCTION public.advance_document_revision()
+RETURNS trigger LANGUAGE plpgsql SET search_path = '' AS $$
+BEGIN
+  NEW.revision := OLD.revision + 1;
+  RETURN NEW;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.advance_document_revision() FROM PUBLIC, anon, authenticated;
+CREATE TRIGGER documents_advance_revision BEFORE UPDATE ON public.documents
+FOR EACH ROW EXECUTE FUNCTION public.advance_document_revision();
+
+CREATE OR REPLACE FUNCTION public.save_document_revision(
+  p_document_id uuid, p_content text, p_expected_revision integer
+) RETURNS TABLE(revision integer)
+LANGUAGE sql SECURITY INVOKER SET search_path = '' AS $$
+  UPDATE public.documents AS document
+  SET content = p_content
+  WHERE document.id = p_document_id
+    AND document.revision = p_expected_revision
+    AND document.deleted_at IS NULL
+  RETURNING document.revision;
+$$;
+REVOKE ALL ON FUNCTION public.save_document_revision(uuid,text,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.save_document_revision(uuid,text,integer) TO authenticated;
+COMMENT ON FUNCTION public.save_document_revision(uuid,text,integer) IS
+  'Atomic revision compare-and-swap under document RLS. No rows means conflict or unavailable; discloses no content.';

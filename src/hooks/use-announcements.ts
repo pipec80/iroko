@@ -89,31 +89,40 @@ export function useAnnouncements() {
   }, [supabase]);
 
   useEffect(() => {
-    if (channelRef.current?.state === 'joined') return;
-
+    let active = true;
     const channel = supabase.channel('platform:announcements', {
       config: { private: true },
     });
 
     channelRef.current = channel;
 
-    void supabase.realtime.setAuth().then(() => {
-      channel
-        .on(
-          'broadcast',
-          { event: 'announcement_created' },
-          (message: { payload: Announcement }) => {
-            setAnnouncements((prev) => [message.payload, ...prev].slice(0, MAX_ANNOUNCEMENTS));
-          },
-        )
-        .subscribe();
-    });
+    void supabase.realtime
+      .setAuth()
+      .then(() => {
+        if (!active) return;
+        channel
+          .on(
+            'broadcast',
+            { event: 'announcement_created' },
+            (message: { payload: Announcement }) => {
+              if (!active) return;
+              setAnnouncements((prev) => [message.payload, ...prev].slice(0, MAX_ANNOUNCEMENTS));
+            },
+          )
+          .subscribe();
+      })
+      .catch(() => {
+        if (active)
+          logClient.warn(
+            { action: 'realtime_auth', component: 'useAnnouncements' },
+            'Realtime authentication failed',
+          );
+      });
 
     return () => {
-      if (channelRef.current) {
-        void supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      active = false;
+      void supabase.removeChannel(channel);
+      if (channelRef.current === channel) channelRef.current = null;
     };
   }, [supabase]);
 

@@ -1,6 +1,7 @@
 import { expect, test as base, type Page } from '@playwright/test';
 
 import { generateTotp, msUntilNextTotpStep } from '../../totp';
+import { localE2eBudget } from '../../local-e2e-target';
 import {
   createConfirmedUser,
   enrollTotpFactor,
@@ -39,7 +40,7 @@ export const test = base.extend<PlatformAdminFixtures>({
       Boolean(process.env.PLAYWRIGHT_BASE_URL),
       'platformAdmin requiere Supabase local (127.0.0.1:54321) — no puede correr contra producción.',
     );
-    testInfo.setTimeout(Math.max(testInfo.timeout, 120_000));
+    testInfo.setTimeout(localE2eBudget(Math.max(testInfo.timeout, 120_000)));
 
     const hydrationErrors: string[] = [];
     page.on('pageerror', (err) => {
@@ -96,7 +97,7 @@ export const test = base.extend<PlatformAdminFixtures>({
         await page.locator('#code').fill(loginCode);
         lastCode = loginCode;
         await page.getByRole('button', { name: /verificar y continuar/i }).click();
-        await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+        await page.waitForURL(/\/es\/dashboard/, { timeout: localE2eBudget(20_000, 'navigation') });
 
         // Sanity gate del propio fixture: si esto falla, el problema es el
         // fixture (aal2/whitelist), no el test real que lo usa.

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { getAdminAccounts } from '../actions';
+import { getAdminAccount } from '../actions';
 import { ImpersonateButton } from './impersonate-button';
 
 export default async function AdminAccountDetailPage({
@@ -13,15 +13,8 @@ export default async function AdminAccountDetailPage({
   setRequestLocale(locale);
 
   const t = await getTranslations('Admin');
-  // No single-account RPC in C1 — reuse the list RPC with a tight search on
-  // this account's own slug/name isn't reliable, so we fetch a page and find
-  // it. Acceptable at C1 scale (call-center lookup, not a hot path); a
-  // dedicated `admin_get_account` RPC can be added later if this page needs
-  // more than the list already returns.
-  const { data, error } = await getAdminAccounts({ limit: 100 });
+  const { data: account, error } = await getAdminAccount(accountId);
   if (error === 'not_platform_admin' || error === 'mfa_required') notFound();
-
-  const account = data?.entries.find((entry) => entry.accountId === accountId);
   if (!account) notFound();
 
   return (

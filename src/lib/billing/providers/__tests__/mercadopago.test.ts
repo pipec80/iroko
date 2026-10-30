@@ -1682,6 +1682,104 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
     };
   }
 
+  it.each([
+    ['approved', 'rejected'],
+    ['approved', 'pending'],
+    ['rejected', 'approved'],
+    ['pending', 'approved'],
+  ])(
+    'rejects the entire page for invoice %s and fresh payment %s',
+    async (invoiceStatus, paymentStatus) => {
+      fetchMock.mockImplementation(async (url: string) => {
+        if (url.includes('/v1/payments/'))
+          return {
+            ok: true,
+            json: async () => ({
+              id: 'payment_1',
+              status: paymentStatus,
+              transaction_amount: '29900',
+              transaction_amount_refunded: '0',
+              currency_id: 'CLP',
+            }),
+          };
+        return {
+          ok: true,
+          json: async () => ({
+            paging: { offset: 0, limit: 1, total: 1 },
+            results: [
+              authorizedPayment(1, 'approved', {
+                payment: { id: 'payment_1', status: invoiceStatus },
+              }),
+            ],
+          }),
+        };
+      });
+      await expect(
+        mercadopagoProvider.discoverSubscriptionInvoices?.({
+          externalSubscriptionId: 'pa /subscription?',
+          modifiedSince: '2026-09-01T00:00:00Z',
+          pageSize: 1,
+        }),
+      ).rejects.toThrow('mercadopago_discovery_payment_status_divergence');
+    },
+  );
+
+  it.each([
+    ['approved', 'invoice_paid'],
+    ['rejected', 'invoice_payment_failed'],
+  ])('accepts concordant %s evidence', async (status, eventType) => {
+    fetchMock.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url.includes('/v1/payments/') ?
+          {
+            id: 'payment_1',
+            status,
+            transaction_amount: '29900',
+            transaction_amount_refunded: '0',
+            currency_id: 'CLP',
+          }
+        : {
+            paging: { offset: 0, limit: 1, total: 1 },
+            results: [authorizedPayment(1, 'approved', { payment: { id: 'payment_1', status } })],
+          },
+    }));
+    const page = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 1,
+    });
+    expect(page?.events).toHaveLength(1);
+    expect(page?.events[0]?.type).toBe(eventType);
+  });
+
+  it.each([
+    ['refunded', 'refund'],
+    ['charged_back', 'chargeback'],
+    ['in_mediation', 'mediation'],
+  ])('preserves financial %s precedence over invoice disagreement', async (status, anomalyType) => {
+    fetchMock.mockImplementation(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url.includes('/v1/payments/') ?
+          {
+            id: 'payment_1',
+            status,
+            transaction_amount: '29900',
+            transaction_amount_refunded: status === 'refunded' ? '29900' : '0',
+            currency_id: 'CLP',
+          }
+        : { paging: { offset: 0, limit: 1, total: 1 }, results: [authorizedPayment(1)] },
+    }));
+    const page = await mercadopagoProvider.discoverSubscriptionInvoices?.({
+      externalSubscriptionId: 'pa /subscription?',
+      modifiedSince: '2026-09-01T00:00:00Z',
+      pageSize: 1,
+    });
+    expect(page?.events).toEqual([]);
+    expect(page?.financialAnomalies).toEqual([expect.objectContaining({ anomalyType })]);
+  });
+
   it('paginates exact preapproval invoices without duplicates and returns a stable watermark', async () => {
     const firstPage = Array.from({ length: 15 }, (_, index) => authorizedPayment(index));
     const secondPage = Array.from({ length: 10 }, (_, index) => authorizedPayment(index + 15));
@@ -1935,7 +2033,7 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
     );
   });
 
-  it('filters only valid stale modifications, emits unknown modifications conservatively, and normalizes lifecycle events', async () => {
+  it('rejects a later divergent invoice without publishing earlier staged events', async () => {
     fetchMock.mockImplementation(async (url: string) => {
       if (url.includes('/v1/payments/')) {
         return freshPaymentResponse(decodeURIComponent(url.split('/v1/payments/')[1] ?? ''));
@@ -1954,23 +2052,13 @@ describe('mercadopagoProvider.discoverSubscriptionInvoices', () => {
       };
     });
 
-    const result = await mercadopagoProvider.discoverSubscriptionInvoices?.({
-      externalSubscriptionId: 'pa /subscription?',
-      modifiedSince: '2026-09-01T00:00:00Z',
-      pageSize: 4,
-    });
-
-    expect(result).toMatchObject({ nextCursor: null, providerWatermark: '2026-09-03T00:00:00Z' });
-    expect(result?.events.map((event) => event.type)).toEqual([
-      'invoice_paid',
-      'invoice_payment_failed',
-      'invoice_paid',
-    ]);
-    expect(result?.events.map((event) => event.externalEventId)).toEqual([
-      'authorized_payment:invoice_2:payment_2:approved',
-      'authorized_payment:invoice_3:payment_3:rejected',
-      'authorized_payment:invoice_3:payment_3:approved',
-    ]);
+    await expect(
+      mercadopagoProvider.discoverSubscriptionInvoices?.({
+        externalSubscriptionId: 'pa /subscription?',
+        modifiedSince: '2026-09-01T00:00:00Z',
+        pageSize: 4,
+      }),
+    ).rejects.toThrow('mercadopago_discovery_payment_status_divergence');
   });
 
   it.each([

@@ -196,7 +196,7 @@ export function AppSidebarClient({ orgs, activeAccountId = null }: Props) {
                 key={org.account_id}
                 org={org}
                 index={i}
-                isSelected={org.account_id === selectedOrg?.account_id}
+                isSelected={org.account_id === activeAccountId}
               />
             ))}
             <div className="my-1.5 h-px" style={{ background: 'var(--border)' }} />

@@ -4,6 +4,7 @@ import React, { useState, useTransition } from 'react';
 import { LogOut } from 'lucide-react';
 
 import {
+  listMySessions,
   revokeAllOtherSessionsAction,
   revokeSessionAction,
   type SessionRow,
@@ -25,6 +26,7 @@ type Labels = {
   none: string;
   session_revoked: string;
   other_sessions_revoked: string;
+  error: string;
   device_unknown: string;
   device_iphone: string;
   device_android: string;
@@ -57,31 +59,59 @@ function formatDate(value: string | null, locale: string): string {
 
 type Props = {
   sessions: SessionRow[];
+  currentSessionId: string | null;
   locale: string;
   labels: Labels;
 };
 
-export function SessionsTabClient({ sessions, locale, labels }: Props) {
+export function SessionsTabClient({ sessions, currentSessionId, locale, labels }: Props) {
   const [flash, setFlash] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [localSessions, setLocalSessions] = useState<SessionRow[]>(sessions);
+  const [local, setLocal] = useState({ source: sessions, rows: sessions });
+  const localSessions = local.source === sessions ? local.rows : sessions;
+
+  async function refreshSessions(success: string) {
+    try {
+      const rows = await listMySessions();
+      setLocal({ source: sessions, rows });
+      setError(null);
+      setFlash(success);
+    } catch {
+      setError(labels.error);
+      setFlash(null);
+    }
+  }
 
   const handleRevoke = (id: string) => {
     startTransition(async () => {
-      const result = await revokeSessionAction(id);
-      if (!result.error) {
-        setLocalSessions((s) => s.filter((row) => row.id !== id));
-        setFlash(labels.session_revoked);
+      try {
+        const result = await revokeSessionAction(id);
+        if (!result.error) {
+          await refreshSessions(labels.session_revoked);
+          return;
+        }
+      } catch {
+        // Transport and unexpected action failures show the same safe feedback.
       }
+      setError(labels.error);
+      setFlash(null);
     });
   };
 
   const handleRevokeAllOthers = () => {
     startTransition(async () => {
-      const result = await revokeAllOtherSessionsAction();
-      if (!result.error) {
-        setFlash(labels.other_sessions_revoked);
+      try {
+        const result = await revokeAllOtherSessionsAction();
+        if (!result.error) {
+          await refreshSessions(labels.other_sessions_revoked);
+          return;
+        }
+      } catch {
+        // Transport and unexpected action failures show the same safe feedback.
       }
+      setError(labels.error);
+      setFlash(null);
     });
   };
 
@@ -103,6 +133,11 @@ export function SessionsTabClient({ sessions, locale, labels }: Props) {
       </CardHeader>
       <CardContent>
         {flash && <p className="text-primary mb-4 text-sm">{flash}</p>}
+        {error && (
+          <p role="alert" className="text-error mb-4 text-sm">
+            {error}
+          </p>
+        )}
         {localSessions.length === 0 ?
           <p className="text-on-surface-variant text-sm">{labels.none}</p>
         : <div className="overflow-x-auto">
@@ -117,14 +152,14 @@ export function SessionsTabClient({ sessions, locale, labels }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {localSessions.map((s, i) => (
+                {localSessions.map((s) => (
                   <tr
                     key={s.id}
                     data-testid="session-item"
                     className="border-outline-variant/5 border-b last:border-b-0">
                     <td className="py-3 pr-4">
                       <div className="font-medium">{summarizeUserAgent(s.user_agent, labels)}</div>
-                      {i === 0 && (
+                      {s.id === currentSessionId && (
                         <span className="bg-primary/10 text-primary mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold">
                           {labels.current_badge}
                         </span>
@@ -140,7 +175,7 @@ export function SessionsTabClient({ sessions, locale, labels }: Props) {
                         size="sm"
                         variant="ghost"
                         onClick={() => handleRevoke(s.id)}
-                        disabled={isPending || i === 0}
+                        disabled={isPending || !currentSessionId || s.id === currentSessionId}
                         className="text-error">
                         {labels.revoke}
                       </Button>

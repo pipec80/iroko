@@ -720,6 +720,8 @@ export type Database = {
           external_event_id: string
           id: string
           last_error_code: string | null
+          lease_expires_at: string | null
+          lease_token: string | null
           locked_at: string | null
           next_attempt_at: string
           provider: string
@@ -736,6 +738,8 @@ export type Database = {
           external_event_id: string
           id?: string
           last_error_code?: string | null
+          lease_expires_at?: string | null
+          lease_token?: string | null
           locked_at?: string | null
           next_attempt_at?: string
           provider: string
@@ -752,6 +756,8 @@ export type Database = {
           external_event_id?: string
           id?: string
           last_error_code?: string | null
+          lease_expires_at?: string | null
+          lease_token?: string | null
           locked_at?: string | null
           next_attempt_at?: string
           provider?: string
@@ -1140,6 +1146,7 @@ export type Database = {
           id: string
           name: string
           project_id: string
+          revision: number
           updated_at: string
         }
         Insert: {
@@ -1152,6 +1159,7 @@ export type Database = {
           id?: string
           name: string
           project_id: string
+          revision?: number
           updated_at?: string
         }
         Update: {
@@ -1164,6 +1172,7 @@ export type Database = {
           id?: string
           name?: string
           project_id?: string
+          revision?: number
           updated_at?: string
         }
         Relationships: [
@@ -1182,11 +1191,11 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "documents_project_id_fkey"
-            columns: ["project_id"]
+            foreignKeyName: "documents_project_account_fkey"
+            columns: ["project_id", "account_id"]
             isOneToOne: false
             referencedRelation: "projects"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "account_id"]
           },
         ]
       }
@@ -1869,6 +1878,13 @@ export type Database = {
         }
         Returns: string
       }
+      apply_billing_recovery_result: {
+        Args: { p_job_id: string; p_lease_token: string; p_result: Json }
+        Returns: {
+          anomaly_created: boolean
+          status: string
+        }[]
+      }
       apply_invoice_paid: {
         Args: {
           p_account_id: string
@@ -2030,6 +2046,8 @@ export type Database = {
         Returns: {
           attempt_count: number
           id: string
+          lease_expires_at: string
+          lease_token: string
           provider: string
           reason: string
           resource_id: string
@@ -2205,6 +2223,21 @@ export type Database = {
           price: number
           slug: string
           trial_days: number
+        }[]
+      }
+      get_admin_account: {
+        Args: { p_account_id: string }
+        Returns: {
+          account_id: string
+          created_at: string
+          member_count: number
+          name: string
+          owner_email: string
+          owner_id: string
+          plan_slug: string
+          slug: string
+          subscription_status: Database["billing"]["Enums"]["subscription_status"]
+          type: Database["public"]["Enums"]["account_type"]
         }[]
       }
       get_billing_checkout_confirmation: {
@@ -2528,6 +2561,16 @@ export type Database = {
         Returns: undefined
       }
       revoke_my_session: { Args: { p_session_id: string }; Returns: undefined }
+      save_document_revision: {
+        Args: {
+          p_content: string
+          p_document_id: string
+          p_expected_revision: number
+        }
+        Returns: {
+          revision: number
+        }[]
+      }
       set_account_logo: {
         Args: { p_account_id: string; p_path?: string }
         Returns: undefined

@@ -226,7 +226,7 @@ export function localizeExternalRewrites(entries, sinkUrl) {
   };
 }
 
-export function makeLocalEnv(status, parent) {
+export function makeLocalEnv(status, parent, boundedP1 = false) {
   for (const key of ['API_URL', 'INBUCKET_URL']) {
     if (!status[key] || !isLoopback(new URL(status[key]).hostname))
       throw new Error('Official local Supabase endpoints are required');
@@ -244,6 +244,7 @@ export function makeLocalEnv(status, parent) {
     ...localDockerEnv(env),
     NODE_ENV: 'production',
     NEXT_TELEMETRY_DISABLED: '1',
+    ...(boundedP1 ? { LOCAL_VALIDATION: 'true', NEXT_PUBLIC_LOCAL_VALIDATION: 'true' } : {}),
     SENTRY_AUTH_TOKEN: 'plan-0124-synthetic-no-upload',
     SENTRY_UPLOAD_SOURCE_MAPS: 'false',
     NEXT_PUBLIC_SUPABASE_URL: status.API_URL,
@@ -275,6 +276,21 @@ export function classifyDockerCommand(argv) {
     'supabase_db_saas-boilerplate',
   ];
   if (JSON.stringify(argv) === JSON.stringify(inspect)) return 'inspect';
+  const authInspect = [
+    'inspect',
+    '--format',
+    '{{.State.Running}}|{{index .Config.Labels "com.supabase.cli.project"}}|{{.Config.Image}}|{{range .Config.Env}}{{if eq (index (split . "=") 0) "GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION"}}{{index (split . "=") 1}}{{end}}{{end}}',
+    'supabase_auth_saas-boilerplate',
+  ];
+  const authPolicy = [
+    'exec',
+    'supabase_auth_saas-boilerplate',
+    'grep',
+    '^GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD=',
+    '/.env',
+  ];
+  if (JSON.stringify(argv) === JSON.stringify(authInspect)) return 'auth-inspect';
+  if (JSON.stringify(argv) === JSON.stringify(authPolicy)) return 'auth-policy';
   if (
     argv.length === 11 &&
     argv[0] === 'exec' &&
@@ -297,6 +313,12 @@ ${classifyDockerCommand.toString()}
 const fs = require('node:fs');
 const net = require('node:net');
 const cp = require('node:child_process');
+if (process.env.PLAN017_WORKER_LIMIT === '2') {
+  const os = require('node:os');
+  const cpus = os.cpus.bind(os);
+  os.cpus = () => cpus().slice(0, 2);
+  os.availableParallelism = () => 2;
+}
 const ownedBrowserChildren = new Map();
 const ownedTaskkillExecutable = process.platform === 'win32' && process.env.PLAN0124_TASKKILL_EXECUTABLE
   ? fs.realpathSync(process.env.PLAN0124_TASKKILL_EXECUTABLE) : undefined;
@@ -312,7 +334,22 @@ net.Socket.prototype.connect = function(...args) {
 const lookup = require('node:dns').lookup;
 require('node:dns').lookup = function(host,...args) { if (!allowed(host)) fail('dns'); return lookup.call(this,host,...args); };
 const fetch = globalThis.fetch;
-if (fetch) globalThis.fetch = function(input,...args) { const host = new URL(typeof input === 'string' || input instanceof URL ? input : input.url).hostname; if (!allowed(host)) fail('fetch'); return fetch.call(this,input,...args); };
+if (fetch) globalThis.fetch = function(input,...args) {
+  const url = new URL(typeof input === 'string' || input instanceof URL ? input : input.url);
+  const method = String(args[0]?.method ?? (typeof input === 'object' ? input.method : undefined) ?? 'GET').toUpperCase();
+  // Tooling metadata has no application semantics: ignore wrapper headers and
+  // child NODE_ENV differences, returning fixed local data without any egress.
+  if (process.env.PLAN017_WORKER_LIMIT === '2' && url.href === 'https://registry.npmjs.org/-/package/next/dist-tags' && method === 'GET' && !args[0]?.body && !(input instanceof Request && input.body)) {
+    fs.appendFileSync(process.env.PLAN0124_EGRESS_LOG + '.allowed', 'synthetic-next-version\n');
+    return Promise.resolve(new Response(JSON.stringify({latest:require(process.env.PLAN0124_NEXT_ROOT + '/package.json').version,canary:'0.0.0'}),{headers:{'content-type':'application/json'}}));
+  }
+  if (!allowed(url.hostname)) {
+    if (process.env.PLAN0124_DIAGNOSTICS === 'true' && /^[a-zA-Z0-9.-]{1,120}$/.test(url.hostname)) fs.appendFileSync(process.env.PLAN0124_EGRESS_LOG + '.details','fetch-host:' + url.hostname + '\n');
+    if (process.env.PLAN0124_DIAGNOSTICS === 'true' && url.hostname === 'registry.npmjs.org') fs.appendFileSync(process.env.PLAN0124_EGRESS_LOG + '.details','fetch-shape:' + JSON.stringify({nextVersion:url.href === 'https://registry.npmjs.org/-/package/next/dist-tags',get:method === 'GET',request:input instanceof Request,headers:Boolean(args[0]?.headers),body:Boolean(args[0]?.body),development:process.env.NODE_ENV === 'development',workerLimit:process.env.PLAN017_WORKER_LIMIT === '2'}) + '\n');
+    fail('fetch');
+  }
+  return fetch.call(this,input,...args);
+};
 const fork = cp.fork;
 cp.fork = function(modulePath,args,options) {
   const opts = Array.isArray(args) ? (options || {}) : (args || {});
@@ -323,10 +360,17 @@ cp.fork = function(modulePath,args,options) {
   if (process.env.NODE_OPTIONS?.includes('--require=')) {
     try {
       const actual=fs.realpathSync(modulePath);
-      trusted=[process.env.PLAN0124_NEXT_ROOT,process.env.PLAN0124_BUILD_ROOT,process.env.PLAN0124_FIXTURE_WORKER==='true'?process.env.PLAN0124_PLAYWRIGHT_ROOT:undefined].filter(Boolean).some(root=>{const rel=path.relative(fs.realpathSync(root),actual);return rel && !rel.startsWith('..') && !path.isAbsolute(rel);});
+      trusted=[process.env.PLAN0124_NEXT_ROOT,process.env.PLAN0124_BUILD_ROOT,process.env.PLAN0124_FIXTURE_WORKER==='true'?process.env.PLAN0124_PLAYWRIGHT_ROOT:undefined].filter(root=>root && fs.existsSync(root)).some(root=>{const rel=path.relative(fs.realpathSync(root),actual);return rel && !rel.startsWith('..') && !path.isAbsolute(rel);});
     } catch { trusted=false; }
   }
-  if (!trusted) fail('fork-environment');
+  if (!trusted) {
+    if (process.env.PLAN0124_DIAGNOSTICS === 'true') {
+      const file = path.basename(String(modulePath));
+      if (/^[a-zA-Z0-9_.-]{1,80}$/.test(file)) fs.appendFileSync(process.env.PLAN0124_EGRESS_LOG + '.details', 'fork-entry:' + file + '\n');
+      fs.appendFileSync(process.env.PLAN0124_EGRESS_LOG + '.details', 'fork-guard-present:' + Boolean(process.env.NODE_OPTIONS?.includes('--require=')) + '\n');
+    }
+    fail('fork-environment');
+  }
   const childEnv={...process.env,...(opts.env || {})};
   for (const key of ['NODE_OPTIONS','PLAN0124_EGRESS_LOG','PLAN0124_DIAGNOSTICS','PLAN0124_NEXT_ROOT','PLAN0124_BUILD_ROOT','PLAN0124_TSC_ENTRY','PLAN0124_SCRATCH_ROOT','PLAN0124_FIXTURE_WORKER','PLAN0124_PLAYWRIGHT_ROOT','PLAN0124_BROWSER_EXECUTABLE','PLAN0124_TASKKILL_EXECUTABLE','PLAN0124_DOCKER_CONTEXT','DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH']) childEnv[key]=process.env[key];
   fs.appendFileSync(process.env.PLAN0124_EGRESS_LOG + '.allowed','guarded-next-fork\n');
@@ -339,6 +383,11 @@ for (const name of ['spawn','spawnSync','exec','execSync','execFile','execFileSy
   cp[name] = function(command,...args) {
     const argv = Array.isArray(args[0]) ? args[0] : [];
     const options = (Array.isArray(args[0]) ? args[1] : args[0]) || {};
+    const rollupReport = "const r=require('node:process').report;r.excludeNetwork=true;console.log(JSON.stringify(r.getReport().header));";
+    if (process.platform === 'win32' && process.env.PLAN017_WORKER_LIMIT === '2' && name === 'spawnSync' && command === process.execPath && JSON.stringify(argv) === JSON.stringify(['-p',rollupReport]) && JSON.stringify(options) === JSON.stringify({encoding:'utf8',timeout:3000,windowsHide:true})) {
+      fs.appendFileSync(process.env.PLAN0124_EGRESS_LOG + '.allowed', 'guarded-rollup-header-probe\n');
+      return original.call(this,command,argv,{...options,env:{...process.env,NODE_OPTIONS:process.env.NODE_OPTIONS}});
+    }
     // Playwright's Windows fallback uses a shell command. Rewrite only the
     // exact cleanup of a still-live Chromium child launched by this guard.
     const cleanup = /^taskkill \/pid ([1-9]\d*) \/T \/F$/.exec(String(command));
@@ -356,6 +405,14 @@ for (const name of ['spawn','spawnSync','exec','execSync','execFile','execFileSy
       const operation = classifyDockerCommand(argv);
       const isInspect = operation === 'inspect';
       const psql = operation === 'psql';
+      if (process.env.PLAN017_WORKER_LIMIT === '2' && ['auth-inspect','auth-policy'].includes(operation)) {
+        const prefix = ['--context',process.env.PLAN0124_DOCKER_CONTEXT];
+        const authIdentity = [...inspect.slice(0, -1), 'supabase_auth_saas-boilerplate'];
+        const state = original.call(this,command,[...prefix,...authIdentity],{encoding:'utf8',stdio:['ignore','pipe','pipe'],windowsHide:true}).trim();
+        if (state !== 'true|saas-boilerplate') fail('docker-identity');
+        fs.appendFileSync(process.env.PLAN0124_EGRESS_LOG + '.allowed','local-auth-policy-read\n');
+        return original.call(this,command,[...prefix,...argv],options);
+      }
       if (isInspect || psql) {
         const prefix = ['--context',process.env.PLAN0124_DOCKER_CONTEXT];
         const state = original.call(this,command,[...prefix,...inspect],{encoding:'utf8',stdio:['ignore','pipe','pipe'],windowsHide:true}).trim();
@@ -436,6 +493,44 @@ for (const name of ['spawn','spawnSync','exec','execSync','execFile','execFileSy
 require('node:module').syncBuiltinESMExports();
 `;
 
+function stopOwnedProcess(child) {
+  if (!child.pid || child.exitCode !== null || child.signalCode) return;
+  if (process.platform === 'win32') {
+    try {
+      execFileSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], {
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+    } catch {
+      if (child.exitCode === null && !child.signalCode)
+        throw new Error('Unable to stop owned process tree');
+    }
+  } else child.kill('SIGTERM');
+}
+
+/** Cancellation targets only a child created by this run, never a process-name scan. */
+export function watchOwnedProcess(child, signal, stop = stopOwnedProcess) {
+  let closed = false;
+  let stopping;
+  const stopOnce = () => {
+    if (closed) return stopping ?? Promise.resolve();
+    stopping ??= Promise.resolve().then(() => stop(child));
+    return stopping;
+  };
+  // Rejections are awaited by the owner in finally, never thrown from EventTarget.
+  const cancel = () => {
+    void stopOnce().catch(() => {});
+  };
+  const detach = () => signal?.removeEventListener('abort', cancel);
+  child.once('close', () => {
+    closed = true;
+    detach();
+  });
+  signal?.addEventListener('abort', cancel, { once: true });
+  if (signal?.aborted) cancel();
+  return { stop: stopOnce, detach };
+}
+
 function runNode(args, cwd, env) {
   return new Promise((accept, reject) => {
     // Do not echo subprocess output: env validation and SDK errors can contain keys.
@@ -488,22 +583,49 @@ export const requiredE2eSpecs = [
   'sentry-tunnel.spec.ts',
 ];
 
-/** Fail closed when an isolated run silently narrows the accepted scenario set. */
-export function assertCompleteE2eAcceptance(stats, cases) {
+/** Read the build-time Projects switch without executing application code or private environment. */
+export function readOfferedProjects(configSource) {
+  const ts = createRequire(import.meta.url)('typescript');
+  const source = ts.createSourceFile('app.config.ts', configSource, ts.ScriptTarget.Latest, true);
+  const declarations = source.statements
+    .filter(ts.isVariableStatement)
+    .flatMap((statement) => statement.declarationList.declarations);
+  const config = declarations.find(
+    (entry) => ts.isIdentifier(entry.name) && entry.name.text === 'appConfig',
+  );
+  const property = (object, name) =>
+    ts.isObjectLiteralExpression(object) ?
+      object.properties.find(
+        (entry) => ts.isPropertyAssignment(entry) && entry.name.getText(source) === name,
+      )?.initializer
+    : undefined;
+  const features = config?.initializer && property(config.initializer, 'features');
+  const projects = features && property(features, 'projects');
+  if (projects?.kind === ts.SyntaxKind.TrueKeyword) return true;
+  if (projects?.kind === ts.SyntaxKind.FalseKeyword) return false;
+  throw new Error('Offered Projects configuration must be an explicit boolean literal');
+}
+
+/** Fail closed when an isolated run silently narrows the preselected offered scenario set. */
+export function assertCompleteE2eAcceptance(stats, cases, offeredProjects = true) {
+  if (typeof offeredProjects !== 'boolean') throw new Error('Invalid offered configuration');
   const expectedByFile = {
     'csp.spec.ts': 10,
-    'analytics.spec.ts': 7,
+    'analytics.spec.ts': offeredProjects ? 7 : 6,
     'impersonation.spec.ts': 4,
     'sentry-tunnel.spec.ts': 1,
   };
+  const expected = offeredProjects ? 22 : 21;
   if (
-    stats.expected !== 22 ||
+    stats.expected !== expected ||
     stats.skipped ||
     stats.unexpected ||
     stats.flaky ||
-    cases.length !== 22
+    cases.length !== expected
   )
-    throw new Error('All 22 isolated E2E cases must pass without skips or retries');
+    throw new Error(
+      `All ${expected} offered isolated E2E cases must pass without skips or retries`,
+    );
   const counts = {};
   const seen = new Set();
   for (const entry of cases) {
@@ -511,6 +633,8 @@ export function assertCompleteE2eAcceptance(stats, cases) {
     const identity = `${file}:${entry.title}`;
     if (
       !Object.hasOwn(expectedByFile, file) ||
+      (!offeredProjects && entry.title.includes('@projects-enabled')) ||
+      entry.title.includes('@confined-017') ||
       seen.has(identity) ||
       entry.statuses.length !== 1 ||
       entry.statuses[0] !== 'passed'
@@ -524,13 +648,80 @@ export function assertCompleteE2eAcceptance(stats, cases) {
 }
 export const turnstileStub = String.raw`(()=>{const widgets=new Map();let sequence=0;const token='plan0124-local-captcha';const complete=id=>{widgets.get(id)?.callback?.(token);};window.turnstile={ready:callback=>callback(),render:(_element,options={})=>{const id='local-'+(++sequence);widgets.set(id,options);setTimeout(()=>complete(id),0);return id;},reset:id=>setTimeout(()=>complete(id),0),getResponse:()=>token,isExpired:()=>false,remove:id=>widgets.delete(id),execute:id=>setTimeout(()=>complete(id),0)};const source=document.currentScript?.src;const callback=source?new URL(source).searchParams.get('onload'):null;if(callback)setTimeout(()=>window[callback]?.(),0);})();`;
 
+/** Development-only Vercel debug assets are inert local scripts, never provider requests. */
+export function isSyntheticDevelopmentScript(url, method) {
+  return (
+    method === 'GET' &&
+    [
+      'https://va.vercel-scripts.com/v1/script.debug.js',
+      'https://va.vercel-scripts.com/v1/speed-insights/script.debug.js',
+    ].includes(url)
+  );
+}
+
+/** react-country-flag's exact installed SVG asset shape is an inert local image. */
+export function isSyntheticCountryFlag(url, method) {
+  return (
+    method === 'GET' &&
+    /^https:\/\/cdn\.jsdelivr\.net\/gh\/lipis\/flag-icons\/flags\/4x3\/[a-z]{2}\.svg$/.test(url)
+  );
+}
+
 /** Creates only scratch configuration; original Playwright env loading is never imported. */
-export function writeE2eHarness(scratch, baseURL, guardLog) {
+export function isolatedE2eBudgets(runtime, boundedP1) {
+  return runtime === 'development' && boundedP1 ?
+      { timeout: 300000, navigationTimeout: 90000 }
+    : { timeout: 120000, navigationTimeout: 30000 };
+}
+
+/** Every context created during a scenario shares one fail-closed egress count. */
+export async function guardBrowserContexts(browser, context, handle) {
+  let blocked = 0;
+  const install = (target) =>
+    target.route('**/*', async (route) => {
+      if ((await handle(route)) === false) blocked++;
+    });
+  const original = browser.newContext;
+  browser.newContext = async function (...args) {
+    const target = await original.apply(this, args);
+    await install(target);
+    return target;
+  };
+  try {
+    await install(context);
+  } catch (error) {
+    browser.newContext = original;
+    throw error;
+  }
+  return {
+    restore() {
+      browser.newContext = original;
+    },
+    assertClean() {
+      if (blocked) throw new Error('Browser attempted forbidden remote requests');
+    },
+  };
+}
+
+export function writeE2eHarness(
+  scratch,
+  baseURL,
+  guardLog,
+  specs = requiredE2eSpecs,
+  runtime = 'production',
+  boundedP1 = false,
+  offeredProjects = true,
+) {
+  if (typeof offeredProjects !== 'boolean') throw new Error('Invalid offered configuration');
+  const budgets = isolatedE2eBudgets(runtime, boundedP1);
   const directory = resolve(scratch, 'src/test/e2e');
-  for (const name of requiredE2eSpecs)
+  for (const name of specs)
     if (!existsSync(resolve(directory, name)))
       throw new Error(`Required E2E spec missing: ${name}`);
   const baseFile = resolve(scratch, 'src/test/plan0124-base.ts');
+  const browserGuardFile = resolve(scratch, 'scripts/plan0124-browser-guard.mjs');
+  mkdirSync(dirname(browserGuardFile), { recursive: true });
+  writeFileSync(browserGuardFile, `export ${guardBrowserContexts.toString()}\n`);
   const rewrite = (folder) => {
     for (const entry of readdirSync(folder, { withFileTypes: true })) {
       const path = resolve(folder, entry.name);
@@ -548,12 +739,12 @@ export function writeE2eHarness(scratch, baseURL, guardLog) {
   rewrite(directory);
   writeFileSync(
     baseFile,
-    `import { test as base } from '@playwright/test';\nimport { appendFileSync } from 'node:fs';\nexport * from '@playwright/test';\nexport const test=base.extend<{plan0124Guard:void}>({plan0124Guard:[async({context},use)=>{let blocked=0;await context.route('**/*',async route=>{const url=new URL(route.request().url());if(url.hostname==='challenges.cloudflare.com'&&url.pathname==='/turnstile/v0/api.js'&&route.request().method()==='GET')return route.fulfill({contentType:'application/javascript',body:${JSON.stringify(turnstileStub)}});if(url.pathname.startsWith('/ingest/')&&['localhost','127.0.0.1'].includes(url.hostname))return route.fulfill({contentType:url.pathname.endsWith('.js')?'application/javascript':'application/json',body:url.pathname.endsWith('.js')?'// local synthetic PostHog':JSON.stringify({status:1})});if(['localhost','127.0.0.1','[::1]'].includes(url.hostname)||['data:','blob:'].includes(url.protocol))return route.continue();blocked++;appendFileSync(${JSON.stringify(guardLog)},'browser\\n');return route.abort();});await use();if(blocked)throw new Error('Browser attempted forbidden remote requests');},{auto:true}]});\n`,
+    `import { test as base } from '@playwright/test';\nimport { appendFileSync } from 'node:fs';\nimport { guardBrowserContexts } from '../../scripts/plan0124-browser-guard.mjs';\nexport * from '@playwright/test';\nexport const test=base.extend<{plan0124Guard:void}>({plan0124Guard:[async({context,browser},use)=>{const guard=await guardBrowserContexts(browser,context,async(route:import('@playwright/test').Route)=>{const url=new URL(route.request().url());if(process.env.PLAN017_WORKER_LIMIT==='2'&&(${isSyntheticCountryFlag.toString()})(url.href,route.request().method()))return route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 3"/>'});if(process.env.PLAN017_WORKER_LIMIT==='2'&&(${isSyntheticDevelopmentScript.toString()})(url.href,route.request().method()))return route.fulfill({contentType:'application/javascript',body:'// inert local Vercel debug asset'});if(url.hostname==='challenges.cloudflare.com'&&url.pathname==='/turnstile/v0/api.js'&&route.request().method()==='GET')return route.fulfill({contentType:'application/javascript',body:${JSON.stringify(turnstileStub)}});if(url.pathname.startsWith('/ingest/')&&['localhost','127.0.0.1'].includes(url.hostname))return route.fulfill({contentType:url.pathname.endsWith('.js')?'application/javascript':'application/json',body:url.pathname.endsWith('.js')?'// local synthetic PostHog':JSON.stringify({status:1})});if(['localhost','127.0.0.1','[::1]'].includes(url.hostname)||['data:','blob:'].includes(url.protocol))return route.continue();if(/^[a-zA-Z0-9.-]{1,120}$/.test(url.hostname))appendFileSync(${JSON.stringify(guardLog)}+".details","browser-host:"+url.hostname+"\\n");appendFileSync(${JSON.stringify(guardLog)},'browser\\n');await route.abort();return false;});try{await use();}finally{guard.restore();guard.assertClean();}},{auto:true}]});\n`,
   );
   const config = resolve(scratch, 'plan0124-playwright.config.ts');
   writeFileSync(
     config,
-    `import {defineConfig,devices} from '@playwright/test';\nexport default defineConfig({testDir:'./src/test/e2e',testMatch:${JSON.stringify(requiredE2eSpecs)},forbidOnly:true,fullyParallel:false,workers:1,retries:0,timeout:120000,grepInvert:/Cloud @smoke: a real envelope through \\/sentry-tunnel reaches Sentry$/,reporter:[['json',{outputFile:'plan0124-results.json'}]],use:{...devices['Desktop Chrome'],baseURL:${JSON.stringify(baseURL)},serviceWorkers:'block',trace:'off',screenshot:'off',launchOptions:{executablePath:process.env.PLAN0124_BROWSER_EXECUTABLE,args:['--disable-background-networking','--disable-component-update','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1']}}});\n`,
+    `import {defineConfig,devices} from '@playwright/test';\nexport default defineConfig({testDir:'./src/test/e2e',testMatch:${JSON.stringify(specs)},testIgnore:${JSON.stringify(offeredProjects ? ['**/projects-disabled.spec.ts'] : ['**/projects.spec.ts', '**/document-editor.spec.ts'])},forbidOnly:true,fullyParallel:false,workers:1,retries:0,timeout:${budgets.timeout},grepInvert:/Cloud @smoke: a real envelope through \\/sentry-tunnel reaches Sentry$${offeredProjects ? '' : '|@projects-enabled'}${boundedP1 ? '' : '|@confined-017'}/,reporter:[['json',{outputFile:'plan0124-results.json'}]],use:{...devices['Desktop Chrome'],baseURL:${JSON.stringify(baseURL)},serviceWorkers:'block',navigationTimeout:${budgets.navigationTimeout},trace:'off',screenshot:'off',launchOptions:{executablePath:process.env.PLAN0124_BROWSER_EXECUTABLE,args:['--disable-background-networking','--disable-component-update','--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1']}}});\n`,
   );
   const fixture = resolve(scratch, 'src/app/[locale]/csp-runtime-error/page.tsx');
   mkdirSync(dirname(fixture), { recursive: true });
@@ -578,7 +769,138 @@ async function startSink() {
   });
   return { server, url: `http://127.0.0.1:${server.address().port}`, count: () => count };
 }
-async function runE2e(scratch, source, dependencies, env, scratchBase) {
+/** All isolated servers bind loopback; development is an explicitly separate evidence class. */
+export function isolatedServerArguments(runtime, port) {
+  if (!['production', 'development'].includes(runtime))
+    throw new Error('Unsupported isolated runtime');
+  return [
+    ...(runtime === 'development' ? ['dev', '--webpack'] : ['start']),
+    '--hostname',
+    '127.0.0.1',
+    '--port',
+    port,
+  ];
+}
+
+/** Bounded P1 runs cannot perform Next's automatic dependency-upgrade assessment. */
+export function isolatedExperimentalSettings(experimental, boundedP1) {
+  return { ...experimental, cpus: 2, ...(boundedP1 ? { agentUpgrade: false } : {}) };
+}
+
+/** Warm the owned login route and record only bounded timing/status, never HTML or headers. */
+export async function preflightOwnedLogin(siteUrl, scratchBase, request = fetch, signal) {
+  const origin = new URL(siteUrl);
+  if (origin.protocol !== 'http:' || !isLoopback(origin.hostname) || origin.port !== '3000')
+    throw new Error('Login preflight requires the owned local application origin');
+  const started = Date.now();
+  let status = null;
+  let outcome = 'failed';
+  try {
+    const response = await request(new URL('/es/login', origin), {
+      redirect: 'manual',
+      signal: AbortSignal.any([AbortSignal.timeout(120_000), ...(signal ? [signal] : [])]),
+    });
+    status = response.status;
+    await response.arrayBuffer();
+    if (status !== 200) throw new Error('Owned login route returned non-200 status');
+    outcome = 'ready';
+  } finally {
+    writeFileSync(
+      resolve(scratchBase, 'login-preflight.json'),
+      JSON.stringify({ elapsedMs: Date.now() - started, status, outcome }, null, 2),
+    );
+  }
+  console.log(`Owned login preflight: ${status} in ${Date.now() - started}ms`);
+}
+
+/** Keep only fixed diagnostic labels from the owned Next server, never raw logs or env values. */
+export function createOwnedServerDiagnostics() {
+  const started = Date.now();
+  const events = [];
+  let tail = '';
+  return {
+    observe(chunk) {
+      const output = (tail + String(chunk)).replace(/\u001b\[[0-9;]*m/g, '').slice(-8192);
+      const checks = [
+        ['ready', /Ready in\s+\d/i],
+        ['compiling-login', /Compiling[^\r\n]*\/es\/login/i],
+        ['compiled-login', /Compiled[^\r\n]*\/es\/login/i],
+        ['compiling-proxy', /Compiling[^\r\n]*proxy/i],
+        ['compiled-proxy', /Compiled[^\r\n]*proxy/i],
+        ['compiling-instrumentation', /Compiling[^\r\n]*instrumentation/i],
+        ['compiled-instrumentation', /Compiled[^\r\n]*instrumentation/i],
+        [
+          'environment-error',
+          /Invalid environment variables|environment validation|Missing required environment variables/i,
+        ],
+        ['module-error', /Module not found|Cannot find module|Can't resolve/i],
+        ['compile-error', /Failed to compile|Compilation failed|Syntax error/i],
+        ['server-error', /\bError:|\bERR_|\bEACCES\b|\bEPERM\b/i],
+        ['memory-restart', /Server is approaching the used memory threshold, restarting/i],
+      ];
+      for (const [event, pattern] of checks)
+        if (pattern.test(output) && !events.some((entry) => entry.event === event))
+          events.push({ event, elapsedMs: Date.now() - started });
+      tail = output.slice(-256);
+    },
+    snapshot() {
+      return { elapsedMs: Date.now() - started, events };
+    },
+  };
+}
+
+/** Failure evidence never retains test messages, bodies, full paths or credentials. */
+export function safeTestFailure(error, specs, specFile) {
+  const safe = {};
+  const location = String(error.stack ?? '').match(/([a-zA-Z0-9-]+\.spec\.ts):(\d+):(\d+)/);
+  if (location && specs.includes(location[1]))
+    Object.assign(safe, {
+      file: location[1],
+      line: Number(location[2]),
+      column: Number(location[3]),
+    });
+  const message = String(error.message ?? '').replace(/\u001b\[[0-9;]*m/g, '');
+  if (/Command failed:.*docker[\s\S]*psql/i.test(message)) safe.kind = 'sql-fixture';
+  else if (/Timeout|timed out/i.test(message)) safe.kind = 'timeout';
+  const constraint = message.match(/constraint "([a-z][a-z0-9_]{1,79})"/);
+  if (safe.kind === 'sql-fixture' && constraint) safe.constraint = constraint[1];
+  if (!safe.file) {
+    const frame = message.match(/^\s*>\s*(\d+)\s*\|/m);
+    const file = String(error.location?.file ?? specFile ?? '')
+      .replaceAll('\\', '/')
+      .split('/')
+      .at(-1);
+    const line = error.location?.line ?? (frame ? Number(frame[1]) : undefined);
+    if (specs.includes(file) && Number.isInteger(line) && line > 0)
+      Object.assign(safe, {
+        file,
+        line,
+        ...(Number.isInteger(error.location?.column) ? { column: error.location.column } : {}),
+      });
+  }
+  for (const key of ['Expected', 'Received']) {
+    const match = message.match(new RegExp(key + ':\\s*(true|false)\\b'));
+    if (match) safe[key.toLowerCase()] = match[1] === 'true';
+  }
+  return safe;
+}
+
+async function runE2e(
+  scratch,
+  source,
+  dependencies,
+  env,
+  scratchBase,
+  acceptance = null,
+  runtime = 'production',
+  specs = requiredE2eSpecs,
+  signal,
+  onProgress = () => {},
+) {
+  signal?.throwIfAborted();
+  const offeredProjects = readOfferedProjects(
+    readFileSync(resolve(scratch, 'src/config/app.config.ts'), 'utf8'),
+  );
   const require = createRequire(resolve(source, 'package.json'));
   const playwright = require('@playwright/test');
   const executable = playwright.chromium.executablePath();
@@ -612,19 +934,14 @@ async function runE2e(scratch, source, dependencies, env, scratchBase) {
   const port = String(new URL(env.SITE_URL).port);
   const server = spawn(
     process.execPath,
-    [
-      resolve(dependencies, 'next/dist/bin/next'),
-      'start',
-      '--hostname',
-      '127.0.0.1',
-      '--port',
-      port,
-    ],
+    [resolve(dependencies, 'next/dist/bin/next'), ...isolatedServerArguments(runtime, port)],
     { cwd: scratch, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true },
   );
   let exited = false;
   let ready = false;
+  const diagnostics = createOwnedServerDiagnostics();
   const serverClosed = new Promise((accept) => server.once('close', accept));
+  const ownedServer = watchOwnedProcess(server, signal);
   server.on('exit', () => {
     exited = true;
   });
@@ -632,15 +949,23 @@ async function runE2e(scratch, source, dependencies, env, scratchBase) {
     exited = true;
   });
   server.stdout.on('data', (chunk) => {
+    diagnostics.observe(chunk);
     if (String(chunk).includes('Ready in')) ready = true;
   });
-  server.stderr.on('data', () => {});
+  server.stderr.on('data', (chunk) => diagnostics.observe(chunk));
   try {
+    onProgress('starting-next');
     for (let attempt = 0; attempt < 90 && !ready; attempt++) {
+      signal?.throwIfAborted();
       if (exited) throw new Error('Owned server exited before readiness');
       await new Promise((accept) => setTimeout(accept, 1000));
     }
     if (!ready || exited) throw new Error('Owned server did not bind its loopback port');
+    if (acceptance && runtime === 'development') {
+      onProgress('compiling-login');
+      await preflightOwnedLogin(env.SITE_URL, scratchBase, fetch, signal);
+    }
+    onProgress('running-browser');
     let failure;
     try {
       await runNode(
@@ -666,6 +991,11 @@ async function runE2e(scratch, source, dependencies, env, scratchBase) {
           title: spec.title,
           file: spec.file,
           statuses: spec.tests.flatMap((test) => test.results.map((result) => result.status)),
+          failures: spec.tests.flatMap((test) =>
+            test.results.flatMap((result) =>
+              (result.errors ?? []).map((error) => safeTestFailure(error, specs, spec.file)),
+            ),
+          ),
         });
       for (const nested of suite.suites || []) visit(nested);
     };
@@ -673,6 +1003,8 @@ async function runE2e(scratch, source, dependencies, env, scratchBase) {
     const evidence = {
       observedAt: new Date().toISOString(),
       stats: result.stats,
+      runtime,
+      offeredProjects,
       cases,
       excludedCloudTest: 'Cloud @smoke: a real envelope through /sentry-tunnel reaches Sentry',
       syntheticTestRoutes: ['/[locale]/csp-runtime-error'],
@@ -680,8 +1012,10 @@ async function runE2e(scratch, source, dependencies, env, scratchBase) {
     writeFileSync(resolve(scratchBase, 'e2e-results.json'), JSON.stringify(evidence, null, 2));
     console.log('E2E actual counts: ' + JSON.stringify(result.stats));
     if (failure) throw failure;
-    assertCompleteE2eAcceptance(result.stats, cases);
+    if (acceptance) acceptance(result.stats, cases, offeredProjects);
+    else assertCompleteE2eAcceptance(result.stats, cases, offeredProjects);
     if (
+      !acceptance &&
       !cases.some(
         (test) =>
           test.title === 'POST /sentry-tunnel is not locale-redirected by the proxy' &&
@@ -692,21 +1026,49 @@ async function runE2e(scratch, source, dependencies, env, scratchBase) {
     if (existsSync(env.PLAN0124_EGRESS_LOG))
       throw new Error('E2E attempted forbidden egress or process execution');
   } finally {
-    if (!exited && server.pid) {
-      if (process.platform === 'win32')
-        execFileSync('taskkill', ['/PID', String(server.pid), '/T', '/F'], {
-          stdio: 'ignore',
-          windowsHide: true,
-        });
-      else server.kill('SIGTERM');
-    }
+    onProgress('stopping-next');
+    writeFileSync(
+      resolve(scratchBase, 'owned-next-server-diagnostics.json'),
+      JSON.stringify({ ...diagnostics.snapshot(), exited, ready }, null, 2),
+    );
+    if (!exited && server.pid) await ownedServer.stop();
     await serverClosed;
+    ownedServer.detach();
   }
 }
 
-async function main() {
-  const mode = parseMode(process.argv.slice(2));
+/** Compiler choice applies only to the isolated candidate, preserving the default 0124 build. */
+export function isolatedBuildArguments(compiler = 'turbopack') {
+  if (compiler === 'turbopack') return ['build'];
+  if (compiler === 'webpack') return ['build', '--webpack'];
+  throw new Error('Unsupported isolated compiler');
+}
+
+/** The server teardown is part of acceptance; it must not add a blocked operation. */
+export async function completeIsolatedDevelopment(run, guardLog) {
+  await run();
+  if (existsSync(guardLog))
+    throw new Error('E2E teardown attempted forbidden egress or process execution');
+}
+
+export async function runLocalValidation({
+  mode = parseMode(process.argv.slice(2)),
+  specs = requiredE2eSpecs,
+  acceptance = null,
+  compiler = 'turbopack',
+  runtime = 'production',
+  evidenceDirectory = '.superpowers/sdd/012-4-csp-and-secrets',
+  signal,
+  onProgress = () => {},
+} = {}) {
+  signal?.throwIfAborted();
+  onProgress('local-preflight');
   assertLocalParent(process.env);
+  if (
+    !['production', 'development'].includes(runtime) ||
+    (runtime === 'development' && (!acceptance || mode !== '--e2e'))
+  )
+    throw new Error('Development runtime requires explicit bounded acceptance');
   const source = process.cwd();
   if (
     !/^\s*project_id\s*=\s*"saas-boilerplate"\s*$/m.test(
@@ -750,12 +1112,13 @@ async function main() {
   } catch {
     throw new Error('Cannot read official local Supabase status; output withheld');
   }
-  const env = makeLocalEnv(status, process.env);
-  const scratchBase = resolve(source, '.superpowers/sdd/012-4-csp-and-secrets');
+  const env = makeLocalEnv(status, process.env, Boolean(acceptance));
+  const scratchBase = resolve(source, evidenceDirectory);
   mkdirSync(scratchBase, { recursive: true });
   const scratch = mkdtempSync(resolve(scratchBase, 'build-'));
   let sink;
   try {
+    onProgress('preparing-workspace');
     if (mode === '--e2e') await assertAppPortAvailable();
     sink = await startSink();
     env.POSTHOG_HOST = sink.url;
@@ -794,7 +1157,7 @@ async function main() {
     cpSync(resolve(scratch, 'next.config.ts'), isolatedConfig);
     writeFileSync(
       resolve(scratch, 'next.config.ts'),
-      `import config from './plan0124-next.config';\nimport { localizeExternalRewrites } from './scripts/run-plan-0124-local.mjs';\nexport default { ...config, experimental: { ...config.experimental, cpus: 2 }, async rewrites() { return localizeExternalRewrites(await config.rewrites?.() ?? [], ${JSON.stringify(sink.url)}); }, turbopack: { ...config.turbopack, root: ${JSON.stringify(source)} } };\n`,
+      `import config from './plan0124-next.config';\nimport { localizeExternalRewrites, isolatedExperimentalSettings } from './scripts/run-plan-0124-local.mjs';\nexport default { ...config, experimental: isolatedExperimentalSettings(config.experimental, ${Boolean(acceptance)}), async rewrites() { return localizeExternalRewrites(await config.rewrites?.() ?? [], ${JSON.stringify(sink.url)}); }, turbopack: { ...config.turbopack, root: ${JSON.stringify(source)} } };\n`,
     );
     const guard = resolve(scratch, '.plan0124-network.cjs');
     writeFileSync(guard, networkGuard);
@@ -809,13 +1172,51 @@ async function main() {
     // NODE_OPTIONS parsing treats Windows backslashes as escapes even inside
     // double quotes; use forward slashes so child workers load the actual guard.
     env.NODE_OPTIONS = guardNodeOptions(guard);
+    if (acceptance) {
+      env.PLAN017_WORKER_LIMIT = '2';
+      env.RAYON_NUM_THREADS = '2';
+      env.TURBO_TASKS_AVAILABLE_PARALLELISM = '2';
+    }
     if (mode === '--e2e') {
       env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = '1x00000000000000000000AA';
-      writeE2eHarness(scratch, env.SITE_URL, env.PLAN0124_EGRESS_LOG);
+      writeE2eHarness(
+        scratch,
+        env.SITE_URL,
+        env.PLAN0124_EGRESS_LOG,
+        specs,
+        runtime,
+        Boolean(acceptance),
+        readOfferedProjects(readFileSync(resolve(scratch, 'src/config/app.config.ts'), 'utf8')),
+      );
+    }
+    if (runtime === 'development') {
+      env.NODE_ENV = 'development';
+      await completeIsolatedDevelopment(
+        () =>
+          runE2e(
+            scratch,
+            source,
+            dependencies,
+            env,
+            scratchBase,
+            acceptance,
+            runtime,
+            specs,
+            signal,
+            onProgress,
+          ),
+        env.PLAN0124_EGRESS_LOG,
+      );
+      console.log('Bounded local development E2E passed; production build remains unverified.');
+      return;
     }
     let output;
     try {
-      output = await runNode([resolve(dependencies, 'next/dist/bin/next'), 'build'], scratch, env);
+      output = await runNode(
+        [resolve(dependencies, 'next/dist/bin/next'), ...isolatedBuildArguments(compiler)],
+        scratch,
+        env,
+      );
     } catch (error) {
       if (existsSync(env.PLAN0124_EGRESS_LOG)) {
         const kinds = readFileSync(env.PLAN0124_EGRESS_LOG, 'utf8')
@@ -888,6 +1289,7 @@ async function main() {
       : [];
     const evidence = {
       observedAt: new Date().toISOString(),
+      compiler,
       routeMatrix,
       staticAssetBytes: assetBytes(resolve(scratch, '.next/static')),
       nodeGuardAttempts: 0,
@@ -904,7 +1306,18 @@ async function main() {
       JSON.stringify(evidence, null, 2),
     );
     if (mode === '--e2e') {
-      await runE2e(scratch, source, dependencies, env, scratchBase);
+      await runE2e(
+        scratch,
+        source,
+        dependencies,
+        env,
+        scratchBase,
+        acceptance,
+        runtime,
+        specs,
+        signal,
+        onProgress,
+      );
       if (existsSync(env.PLAN0124_EGRESS_LOG))
         throw new Error('E2E teardown attempted forbidden egress or process execution');
     }
@@ -930,6 +1343,16 @@ async function main() {
           {
             observedAt: new Date().toISOString(),
             kinds,
+            details:
+              existsSync(env.PLAN0124_EGRESS_LOG + '.details') ?
+                readFileSync(env.PLAN0124_EGRESS_LOG + '.details', 'utf8')
+                  .split('\n')
+                  .filter((line) =>
+                    /^(?:fork-entry:[a-zA-Z0-9_.-]{1,80}|fork-guard-present:(?:true|false)|(?:fetch|browser)-host:[a-zA-Z0-9.-]{1,120}|fetch-shape:\{"nextVersion":(?:true|false),"get":(?:true|false),"request":(?:true|false),"headers":(?:true|false),"body":(?:true|false),"development":(?:true|false),"workerLimit":(?:true|false)\})$/.test(
+                      line,
+                    ),
+                  )
+              : [],
           },
           null,
           2,
@@ -941,6 +1364,7 @@ async function main() {
     }
     throw error;
   } finally {
+    onProgress('cleanup');
     if (sink) {
       sink.server.closeAllConnections();
       await new Promise((accept) => sink.server.close(accept));
@@ -988,7 +1412,7 @@ async function main() {
   }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href)
-  main().catch((error) => {
+  runLocalValidation().catch((error) => {
     console.error(error.message);
     process.exitCode = 1;
   });

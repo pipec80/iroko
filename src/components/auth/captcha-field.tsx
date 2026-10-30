@@ -1,5 +1,5 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 
 import { env } from '@/env';
@@ -17,6 +17,10 @@ export function CaptchaField({ resetKey, onReadyChange }: Props) {
   const ref = useRef<TurnstileInstance>(null);
   const [token, setToken] = useState('');
   const nonce = useCspNonce();
+
+  useEffect(() => {
+    if (!siteKey) onReadyChange?.(true);
+  }, [siteKey, resetKey, onReadyChange]);
 
   if (!siteKey) return null;
 

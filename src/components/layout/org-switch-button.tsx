@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 
 import { switchAccount } from '@/app/[locale]/dashboard/actions';
 import { storageUrl } from '@/lib/storage';
+import { useDocumentDraftTransition } from '@/components/providers/document-draft-provider';
 
 import { getOrgTone, orgInitials } from './org-utils';
 import type { OrgAccount } from './app-sidebar-client';
@@ -21,8 +22,20 @@ type Props = { org: OrgAccount; index: number; isSelected: boolean };
 /** One org row in the switcher dropdown — owns its own switchAccount call so errors are visible. */
 export function OrgSwitchButton({ org, index, isSelected }: Props) {
   const t = useTranslations('Navigation');
+  const { confirmTransition, cancelTransition } = useDocumentDraftTransition();
   const [state, action, isPending] = useActionState(
-    async (_prev: { error?: string }, formData: FormData) => switchAccount(formData),
+    async (_prev: { error?: string }, formData: FormData) => {
+      if (isSelected) return {};
+      if (!(await confirmTransition())) return {};
+      try {
+        const result = await switchAccount(formData);
+        if (result.error) cancelTransition();
+        return result;
+      } catch (error) {
+        cancelTransition(error);
+        throw error;
+      }
+    },
     {},
   );
 

@@ -43,6 +43,7 @@ vi.mock('next-intl/server', () => ({
 
 vi.mock('@/i18n/routing', () => ({
   redirect: mocks.redirect,
+  routing: { locales: ['es', 'en', 'pt', 'fr'] },
 }));
 
 vi.mock('@/env', () => ({
@@ -404,6 +405,31 @@ describe('verifyMfaAction', () => {
     });
   });
 
+  it('continues a validated invitation after MFA and rejects an external next', async () => {
+    mocks.mfaChallenge.mockResolvedValue({ data: { id: 'challenge-1' }, error: null });
+    mocks.mfaVerify.mockResolvedValue({ error: null });
+    const invitation = '/es/auth/accept-invitation?token=fixture-token';
+    await expect(
+      verifyMfaAction(
+        PREV,
+        makeFormData({ code: '123456', factorId: 'factor-1', next: invitation }),
+      ),
+    ).rejects.toThrow('NEXT_REDIRECT');
+    expect(mocks.redirect).toHaveBeenCalledWith({
+      href: '/auth/accept-invitation?token=fixture-token',
+      locale: 'es',
+    });
+
+    mocks.redirect.mockClear();
+    await expect(
+      verifyMfaAction(
+        PREV,
+        makeFormData({ code: '123456', factorId: 'factor-1', next: 'https://evil.example' }),
+      ),
+    ).rejects.toThrow('NEXT_REDIRECT');
+    expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+  });
+
   // F3-C4: same fresh-session-decides-the-destination fix as signInAction.
   it('redirects to /dashboard/onboarding when the verified session has onboarding_completed=false', async () => {
     mocks.mfaChallenge.mockResolvedValue({ data: { id: 'challenge-1' }, error: null });
@@ -473,6 +499,26 @@ describe('verifyRecoveryAction', () => {
       locale: 'es',
     });
   });
+
+  it('keeps a safe invitation next behind recovery re-enrollment', async () => {
+    mocks.rpc.mockResolvedValue({ data: true, error: null });
+    const next = '/es/auth/accept-invitation?token=fixture-token';
+    await expect(
+      verifyRecoveryAction(PREV, makeFormData({ code: 'AB12-CD34', next })),
+    ).rejects.toThrow('NEXT_REDIRECT');
+    expect(mocks.redirect).toHaveBeenCalledWith({
+      href: `/dashboard/account?tab=security&reenroll=1&next=${encodeURIComponent(next)}`,
+      locale: 'es',
+    });
+    mocks.redirect.mockClear();
+    await expect(
+      verifyRecoveryAction(PREV, makeFormData({ code: 'AB12-CD34', next: 'https://evil.example' })),
+    ).rejects.toThrow('NEXT_REDIRECT');
+    expect(mocks.redirect).toHaveBeenCalledWith({
+      href: '/dashboard/account?tab=security&reenroll=1',
+      locale: 'es',
+    });
+  });
 });
 
 // ─── magicLinkAction ─────────────────────────────────────────────────────────
@@ -515,6 +561,26 @@ describe('magicLinkAction', () => {
     const result = await magicLinkAction(PREV, fd);
 
     expect(result.success).toBe('magic_link_sent');
+  });
+
+  it('forwards only a fresh magic-link CAPTCHA token to a protected OTP boundary', async () => {
+    mocks.signInWithOtp.mockImplementation(
+      async ({ options }: { options: { captchaToken?: string } }) => ({
+        error: options.captchaToken === 'magic-fresh-token' ? null : { code: 'captcha_failed' },
+      }),
+    );
+    const withoutToken = await magicLinkAction(PREV, makeFormData({ email: 'ana@example.com' }));
+    expect(withoutToken.error).toBe('captcha_failed');
+    const withToken = await magicLinkAction(
+      PREV,
+      makeFormData({ email: 'ana@example.com', captchaToken: 'magic-fresh-token' }),
+    );
+    expect(withToken.success).toBe('magic_link_sent');
+    expect(mocks.signInWithOtp).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({ captchaToken: 'magic-fresh-token' }),
+      }),
+    );
   });
 });
 

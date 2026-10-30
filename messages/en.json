@@ -11,7 +11,8 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "language": "Language",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "logout_failed": "Could not sign out. Please try again."
   },
   "HomePage": {
     "title": "Iroko — the shared trunk for your micro-SaaS",
@@ -470,6 +471,7 @@
     "announcements_error_validation": "Check the form fields.",
     "error_subject_required": "Subject is required.",
     "error_body_required": "Message is required.",
+    "error_generic": "Something went wrong. Try again.",
     "error_not_platform_admin": "You don't have access to this page.",
     "error_mfa_required": "Two-factor authentication is required to continue."
   },
@@ -1201,5 +1203,20 @@
     "error_invalid_name": "The name must be between 2 and 100 characters.",
     "error_no_active_account": "No active account was found.",
     "error_update_failed": "Could not update the organization."
+  },
+  "documentEditor": {
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "pending": "Unsaved changes",
+    "error": "Save failed. Your draft is retained.",
+    "content": "Content",
+    "restorePrompt": "There is a draft from this session. Restore or discard it?",
+    "restore": "Restore",
+    "discard": "Discard",
+    "memoryOnly": "Drafts remain only in this session. Forcing a reload or closing the tab discards them.",
+    "leaveIdentity": "There are pending drafts. Save them before changing identity? If they cannot be saved, return to the document to restore them.",
+    "conflict": "The document changed or is unavailable. Your draft is retained. Reload explicitly to view the server version.",
+    "reload": "Reload server version"
   }
 }

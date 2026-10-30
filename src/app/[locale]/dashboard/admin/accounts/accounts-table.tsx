@@ -51,8 +51,10 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [requestError, setRequestError] = useState(false);
   const [isPending, startTransition] = useTransition();
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const generationRef = useRef(0);
 
   // Server-side search: debounced so we don't re-fetch on every keystroke.
   // Skips the initial mount (search starts empty and initialEntries already covers it).
@@ -63,11 +65,22 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
       return;
     }
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    const generation = ++generationRef.current;
     debounceRef.current = setTimeout(() => {
       startTransition(async () => {
-        const result = await getAdminAccounts({ search: search.trim() || null });
-        setEntries(result.data?.entries ?? []);
-        setCursor(result.data?.nextCursor ?? null);
+        try {
+          const result = await getAdminAccounts({ search: search.trim() || null });
+          if (generation !== generationRef.current) return;
+          if (!result.data) {
+            setRequestError(true);
+            return;
+          }
+          setEntries(result.data.entries);
+          setCursor(result.data.nextCursor);
+          setRequestError(false);
+        } catch {
+          if (generation === generationRef.current) setRequestError(true);
+        }
       });
     }, SEARCH_DEBOUNCE_MS);
     return () => {
@@ -77,10 +90,22 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
 
   function loadMore() {
     if (!cursor) return;
+    const generation = ++generationRef.current;
     startTransition(async () => {
-      const result = await getAdminAccounts({ search: search.trim() || null, cursor });
-      setEntries((prev) => [...prev, ...(result.data?.entries ?? [])]);
-      setCursor(result.data?.nextCursor ?? null);
+      try {
+        const result = await getAdminAccounts({ search: search.trim() || null, cursor });
+        if (generation !== generationRef.current) return;
+        if (!result.data) {
+          setRequestError(true);
+          return;
+        }
+        const page = result.data;
+        setEntries((prev) => [...prev, ...page.entries]);
+        setCursor(page.nextCursor);
+        setRequestError(false);
+      } catch {
+        if (generation === generationRef.current) setRequestError(true);
+      }
     });
   }
 
@@ -103,6 +128,11 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
+      {requestError && (
+        <p role="alert" className="text-destructive text-sm">
+          {t('error_generic')}
+        </p>
+      )}
       <p className="text-muted-foreground text-sm">
         {t('accounts_count', { count: filtered.length })}
       </p>
@@ -122,7 +152,11 @@ export function AccountsTable({ initialEntries, initialCursor }: Props) {
           <input
             id="accounts-search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              generationRef.current++;
+              setCursor(null);
+              setSearch(e.target.value);
+            }}
             placeholder={t('accounts_search_placeholder')}
             className="toolbar-control text-foreground w-full py-0 pr-3 pl-[34px] text-[13px]"
           />

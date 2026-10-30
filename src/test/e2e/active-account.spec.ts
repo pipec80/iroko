@@ -1,3 +1,4 @@
+import { localE2eBudget } from '../local-e2e-target';
 import { test, expect } from './fixtures/auth';
 
 /**
@@ -19,7 +20,7 @@ import { test, expect } from './fixtures/auth';
  *   switcher dropdown is open (`{isOpen && (...)}` in app-sidebar-client.tsx).
  */
 test.describe('Active account — switch and create', () => {
-  test.setTimeout(60_000);
+  test.setTimeout(localE2eBudget(60_000));
 
   test('user creates a second team, switches between accounts, survives reload', async ({
     authenticatedPage: page,
@@ -75,7 +76,7 @@ test.describe('Active account — switch and create', () => {
    * getBySlug(teamId, personalSlug) → null → 404, even though the project
    * is correctly listed under the (already-migrated) Projects list page.
    */
-  test("user's Personal project still resolves after creating and leaving a new team", async ({
+  test("user's Personal project still resolves after creating and leaving a new team @projects-enabled", async ({
     authenticatedPage: page,
   }) => {
     const teamName = `Equipo E2E ${Date.now()}`;

@@ -1,5 +1,20 @@
 BEGIN;
 
+DO $guard$
+BEGIN
+  IF to_regclass('iroko_test_guard.target_attestation') IS NULL THEN
+    RAISE EXCEPTION 'local_test_attestation_required: run pnpm supa:test';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM iroko_test_guard.target_attestation
+    WHERE project_id='saas-boilerplate'
+      AND system_identifier=(SELECT system_identifier::text FROM pg_control_system())
+      AND expires_at>clock_timestamp()) THEN
+    RAISE EXCEPTION 'local_test_attestation_required: invalid or expired target';
+  END IF;
+END;
+$guard$;
+
+
 SELECT plan(49);
 
 SELECT has_table(
@@ -685,14 +700,8 @@ SELECT ok(
 CREATE EXTENSION IF NOT EXISTS dblink WITH SCHEMA extensions;
 DO $setup$
 BEGIN
-  PERFORM extensions.dblink_connect(
-    'reconciliation-lock-42',
-    'host=host.docker.internal port=54322 dbname=postgres user=postgres password=postgres'
-  );
-  PERFORM extensions.dblink_connect(
-    'reconciliation-claim-42',
-    'host=host.docker.internal port=54322 dbname=postgres user=postgres password=postgres'
-  );
+  PERFORM iroko_test_guard.connect('reconciliation-lock-42');
+  PERFORM iroko_test_guard.connect('reconciliation-claim-42');
   PERFORM extensions.dblink_exec(
     'reconciliation-lock-42',
     $remote$

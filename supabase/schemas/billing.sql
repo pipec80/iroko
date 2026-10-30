@@ -1183,6 +1183,7 @@ CREATE TABLE billing.recovery_jobs (
   last_error_code text CHECK (last_error_code IS NULL OR char_length(last_error_code) <= 100),
   resolution text CHECK (resolution IS NULL OR resolution IN ('event', 'unrelated', 'anomaly')),
   created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now(),
+  lease_token uuid, lease_expires_at timestamptz,
   UNIQUE (provider, resource_type, resource_id, reason)
 );
 CREATE INDEX recovery_jobs_due_idx ON billing.recovery_jobs(next_attempt_at, created_at)

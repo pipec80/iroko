@@ -258,6 +258,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v2
         with:
@@ -284,7 +296,7 @@ jobs:
           done
 
       - name: Run pgTAP tests
-        run: supabase test db
+        run: pnpm supa:test
 
       # Después de los tests para incluir pg_prove (que test db pullea bajo
       # demanda) — ver comentario equivalente en db-types.
@@ -456,6 +468,30 @@ jobs:
         # rebuilds only local fixture credentials from the verified CLI stack.
         run: env -i PATH="$PATH" HOME="$HOME" node scripts/run-plan-0124-local.mjs --e2e
 
+      # This job owns the ephemeral Auth container created above. The current-
+      # password setting is distinct from secure_password_change in config.toml.
+      - name: Prepare owned CI Auth password policy
+        run: |
+          set -euo pipefail
+          auth_state=$(docker inspect --format '{{.State.Running}}|{{index .Config.Labels "com.supabase.cli.project"}}|{{range .Config.Env}}{{if eq (index (split . "=") 0) "GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_REAUTHENTICATION"}}{{index (split . "=") 1}}{{end}}{{end}}' supabase_auth_saas-boilerplate)
+          test "$auth_state" = 'true|saas-boilerplate|true'
+          docker exec supabase_auth_saas-boilerplate test ! -e /.env
+          printf '%s\n' 'GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD=true' | docker exec -i supabase_auth_saas-boilerplate sh -c 'set -C; cat > /.env'
+          docker restart supabase_auth_saas-boilerplate
+          auth_health=''
+          for attempt in $(seq 1 30); do
+            auth_health=$(docker inspect --format '{{.State.Health.Status}}' supabase_auth_saas-boilerplate)
+            if [ "$auth_health" = 'healthy' ]; then break; fi
+            sleep 2
+          done
+          test "$auth_health" = 'healthy'
+          docker exec supabase_auth_saas-boilerplate grep -Fx 'GOTRUE_SECURITY_UPDATE_PASSWORD_REQUIRE_CURRENT_PASSWORD=true' /.env
+
+      - name: Run confined 017 acceptance
+        # The runner reconstructs local credentials and synthetic providers;
+        # these scenarios must never inherit CI/provider configuration directly.
+        run: env -i PATH="$PATH" HOME="$HOME" node scripts/run-plan-017-local.mjs password-settings.spec.ts analytics.spec.ts
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()
@@ -584,13 +620,20 @@ jobs:
     needs: [e2e, e2e-webkit]
     if: always()
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Propagate E2E result
-        run: |
-          if [ "${{ needs.e2e.result }}" = "failure" ] || [ "${{ needs.e2e-webkit.result }}" = "failure" ]; then
-            echo "E2E tests failed"
-            exit 1
-          fi
-          echo "E2E tests passed or were skipped"
+        env:
+          E2E_RESULT: ${{ needs.e2e.result }}
+          WEBKIT_RESULT: ${{ needs.e2e-webkit.result }}
+          ALLOW_SKIPPED: ${{ github.event_name == 'pull_request' && startsWith(github.head_ref, 'dependabot/') }}
+        run: node scripts/check-e2e-status.mjs
 
   # ─────────────────────────────────────────────
   # JOB 7: Build de producción (gate final)
@@ -601,7 +644,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [quality, gitleaks, test, db-types, db-tests, edge-functions, e2e, e2e-webkit]
+    needs: [quality, security, gitleaks, test, db-types, db-tests, edge-functions, e2e, e2e-webkit]
     if: |
       !startsWith(github.head_ref, 'dependabot/') &&
       (github.event_name == 'pull_request' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')

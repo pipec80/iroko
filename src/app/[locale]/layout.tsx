@@ -3,8 +3,6 @@ import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { setRequestLocale } from 'next-intl/server';
 import { Suspense } from 'react';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import { LocaleHtmlLang } from '@/components/layout/locale-html-lang';
 import { Providers } from '@/components/providers';
@@ -44,8 +42,6 @@ export default async function LocaleLayout({
           <Providers>{children}</Providers>
         </I18nProvider>
       </Suspense>
-      <Analytics />
-      <SpeedInsights />
     </>
   );
 }

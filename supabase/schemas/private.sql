@@ -284,10 +284,15 @@ CREATE OR REPLACE FUNCTION "private"."enforce_single_owner_per_account"() RETURN
     SET "search_path" TO ''
     AS $$
 DECLARE
-  v_account_id   uuid := COALESCE(NEW.account_id, OLD.account_id);
+  v_account_id   uuid := OLD.account_id;
   v_account_type public.account_type;
 BEGIN
-  SELECT type INTO v_account_type FROM public.accounts WHERE id = v_account_id;
+  IF TG_OP = 'UPDATE' AND NEW.account_id IS DISTINCT FROM OLD.account_id THEN
+    RAISE EXCEPTION 'membership_account_immutable' USING ERRCODE='integrity_constraint_violation';
+  END IF;
+  SELECT type INTO v_account_type FROM public.accounts WHERE id = v_account_id FOR UPDATE NOWAIT;
+  -- RPCs already own this lock. Privileged direct DML must fail fast rather
+  -- than invert the account -> membership lock order and deadlock an RPC.
 
   -- No es una cuenta de equipo (personal, o ya no existe) -- no aplica el
   -- invariante, dejar pasar la mutación.

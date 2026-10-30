@@ -57,7 +57,7 @@
     "supa:diff": "supabase db diff --local",
     "supa:lint": "supabase db lint --local",
     "supa:advisors": "supabase db advisors --local",
-    "supa:test": "supabase test db --local",
+    "supa:test": "node scripts/run-reconciliation-db-test.mjs",
     "supa:migration:new": "supabase migration new",
     "supa:functions:new": "supabase functions new",
     "supa:functions:serve": "supabase functions serve --env-file supabase/functions/.env",

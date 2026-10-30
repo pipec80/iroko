@@ -30,6 +30,110 @@ test('isolated acceptance rejects partial, duplicated, skipped and flaky coverag
   );
 });
 
+test('offered core acceptance excludes the complete Projects funnel before execution', async () => {
+  const { assertCompleteE2eAcceptance } = await import('./run-plan-0124-local.mjs');
+  const cases = Object.entries({
+    'csp.spec.ts': 10,
+    'analytics.spec.ts': 6,
+    'impersonation.spec.ts': 4,
+    'sentry-tunnel.spec.ts': 1,
+  }).flatMap(([file, count]) =>
+    Array.from({ length: count }, (_, index) => ({
+      file,
+      title: `${file} case ${index}`,
+      statuses: ['passed'],
+    })),
+  );
+  const stats = { expected: 21, skipped: 0, unexpected: 0, flaky: 0 };
+  assert.doesNotThrow(() => assertCompleteE2eAcceptance(stats, cases, false));
+  assert.throws(() => assertCompleteE2eAcceptance(stats, cases, true));
+  assert.throws(() => assertCompleteE2eAcceptance(stats, cases, null));
+  assert.throws(() =>
+    assertCompleteE2eAcceptance(
+      stats,
+      cases.map((entry, index) =>
+        index === 10 ? { ...entry, title: 'funnel @projects-enabled' } : entry,
+      ),
+      false,
+    ),
+  );
+  for (const field of ['skipped', 'unexpected', 'flaky'])
+    assert.throws(() => assertCompleteE2eAcceptance({ ...stats, [field]: 1 }, cases, false));
+  assert.throws(() =>
+    assertCompleteE2eAcceptance(
+      stats,
+      cases.map((entry, index) =>
+        index === 10 ? { ...entry, title: 'synthetic Auth URL data @confined-017' } : entry,
+      ),
+      false,
+    ),
+  );
+});
+
+test('Projects selection reads the application literal without executing configuration', async () => {
+  const { readOfferedProjects } = await import('./run-plan-0124-local.mjs');
+  assert.equal(
+    readOfferedProjects(
+      "throw Error('never execute'); export const appConfig = { features: { projects: false } };",
+    ),
+    false,
+  );
+  assert.equal(
+    readOfferedProjects('export const appConfig: AppConfig = { features: { projects: true } };'),
+    true,
+  );
+  for (const source of [
+    'export const other = { features: { projects: false } };',
+    'export const appConfig = { features: { projects: compute() } };',
+    'export const appConfig = { features: { projects: "false" } };',
+    '// projects: false\nexport const appConfig = { features: {} };',
+  ])
+    assert.throws(() => readOfferedProjects(source));
+});
+
+test('generated confined config keeps CSP/egress guards and excludes deferred Projects before discovery', async () => {
+  const { writeE2eHarness, requiredE2eSpecs } = await import('./run-plan-0124-local.mjs');
+  const { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } = await import('node:fs');
+  const { resolve } = await import('node:path');
+  const { tmpdir } = await import('node:os');
+  const scratch = mkdtempSync(resolve(tmpdir(), 'plan0124-scope-'));
+  try {
+    const directory = resolve(scratch, 'src/test/e2e');
+    mkdirSync(directory, { recursive: true });
+    for (const name of requiredE2eSpecs)
+      writeFileSync(resolve(directory, name), "import { test } from '@playwright/test';");
+    const config = writeE2eHarness(
+      scratch,
+      'http://127.0.0.1:3000',
+      resolve(scratch, 'egress.log'),
+      requiredE2eSpecs,
+      'production',
+      false,
+      false,
+    );
+    const source = readFileSync(config, 'utf8');
+    assert.ok(source.includes('|@projects-enabled|@confined-017/'));
+    assert.ok(source.includes('**/document-editor.spec.ts'));
+    assert.ok(source.includes('forbidOnly:true'));
+    assert.ok(source.includes('retries:0'));
+    assert.ok(source.includes("serviceWorkers:'block'"));
+    assert.equal(source.includes('testIgnore:["**/csp.spec.ts"'), false);
+    const bounded = writeE2eHarness(
+      scratch,
+      'http://127.0.0.1:3000',
+      resolve(scratch, 'egress.log'),
+      requiredE2eSpecs,
+      'development',
+      true,
+      false,
+    );
+    const boundedSource = readFileSync(bounded, 'utf8');
+    assert.equal(boundedSource.includes('|@confined-017/'), false);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
 test('generated isolated suite rejects an actual test.only during discovery', async () => {
   const { writeE2eHarness, requiredE2eSpecs } = await import('./run-plan-0124-local.mjs');
   const { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } = await import('node:fs');
@@ -386,7 +490,12 @@ test('generated E2E config and automatic fixture compile without importing the p
     }
     const fixture = readFileSync(resolve(scratch, 'src/test/plan0124-base.ts'), 'utf8');
     assert.ok(fixture.includes("'browser\\n'"));
-    assert.ok(fixture.includes("context.route('**/*'"));
+    assert.ok(fixture.includes('guardBrowserContexts(browser,context'));
+    assert.ok(
+      readFileSync(resolve(scratch, 'scripts/plan0124-browser-guard.mjs'), 'utf8').includes(
+        "target.route('**/*'",
+      ),
+    );
   } finally {
     assertScratchPath(scratch, tmpdir(), 'plan0124-harness-');
     rmSync(scratch, { recursive: true, force: true });

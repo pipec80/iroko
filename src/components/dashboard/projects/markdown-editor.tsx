@@ -5,92 +5,89 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChevronLeft, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 
-import { Link } from '@/i18n/routing';
-
-const AUTOSAVE_DELAY = 800;
+import { Link, useRouter } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
+import { useDocumentDraft } from '@/hooks/use-document-draft';
+import { useDocumentDraftRegistry } from '@/components/providers/document-draft-provider';
+import type { SaveDocumentResult } from '@/app/[locale]/dashboard/projects/[slug]/doc/[docId]/actions';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
 interface MarkdownEditorProps {
   docId: string;
+  userId: string;
+  accountId: string;
   initialContent: string;
+  initialRevision: number;
   docName: string;
   projectName: string;
   projectSlug: string;
-  saveAction: (docId: string, content: string) => Promise<{ error?: string; success?: boolean }>;
+  saveAction: (
+    docId: string,
+    content: string,
+    expectedRevision: number,
+  ) => Promise<SaveDocumentResult>;
 }
 
 export function MarkdownEditor({
   docId,
+  userId,
+  accountId,
   initialContent,
+  initialRevision,
   docName,
   projectName,
   projectSlug,
   saveAction,
 }: MarkdownEditorProps) {
-  const [content, setContent] = useState(initialContent);
-  const [status, setStatus] = useState<SaveStatus>('idle');
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSavedRef = useRef(initialContent);
+  const router = useRouter();
+  const t = useTranslations('documentEditor');
+  const registry = useDocumentDraftRegistry();
+  const blocked = useRef(false);
+  const [conflict, setConflict] = useState(false);
+  const [restorable, setRestorable] = useState(() => registry.get(docId));
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Set placeholder client-side: newlines in HTML attributes are normalized to
-  // spaces during SSR serialization, causing a React hydration mismatch.
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.placeholder = '# Título del documento\n\nEscribe aquí en Markdown...';
-    }
-  }, []);
-
-  async function save(value: string) {
-    if (value === lastSavedRef.current) return;
-    setStatus('saving');
-    const result = await saveAction(docId, value);
-    if (result.success) {
-      lastSavedRef.current = value;
-      setStatus('saved');
-      setTimeout(() => setStatus('idle'), 2000);
-    } else {
-      setStatus('error');
-    }
-  }
-
-  // Keeps the effect below from needing `save` in its dependency array —
-  // `save` closes over state and is redefined every render.
-  const saveRef = useRef(save);
-  useEffect(() => {
-    saveRef.current = save;
+  const draft = useDocumentDraft({
+    docId,
+    userId,
+    accountId,
+    initialContent,
+    initialRevision,
+    save: async (value, expectedRevision) => {
+      if (blocked.current) return { success: false, error: 'conflict_or_unavailable' };
+      const result = await saveAction(docId, value, expectedRevision);
+      if (!result.success && result.error === 'conflict_or_unavailable') {
+        blocked.current = true;
+        setConflict(true);
+      }
+      return result;
+    },
   });
-
-  function handleChange(value: string) {
-    setContent(value);
-    setStatus('idle');
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => {
-      void saveRef.current(value);
-    }, AUTOSAVE_DELAY);
-  }
-
-  // Manual save with Ctrl+S / Cmd+S
+  const { content, setContent } = draft;
+  const status: SaveStatus =
+    draft.error ? 'error'
+    : draft.saving ? 'saving'
+    : draft.dirty ? 'idle'
+    : 'saved';
+  const flushRef = useRef(draft.flush);
   useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        void saveRef.current(content);
+    flushRef.current = draft.flush;
+  });
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        void flushRef.current();
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [content]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
   }, []);
-
+  async function returnToProject(event: React.MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    if (restorable) return;
+    if (await draft.flush()) router.push(`/dashboard/projects/${projectSlug}`);
+  }
   return (
     <div className="flex h-[calc(100vh-64px)] flex-col">
       {/* Topbar */}
@@ -99,6 +96,7 @@ export function MarkdownEditor({
         style={{ background: 'var(--surface-1)' }}>
         <Link
           href={`/dashboard/projects/${projectSlug}`}
+          onClick={returnToProject}
           className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-[12px] font-medium transition-colors">
           <ChevronLeft size={14} strokeWidth={1.5} />
           {projectName}
@@ -110,16 +108,48 @@ export function MarkdownEditor({
           <SaveIndicator status={status} />
           <button
             type="button"
-            onClick={() => save(content)}
-            disabled={status === 'saving'}
+            onClick={() => {
+              void draft.flush();
+            }}
+            disabled={status === 'saving' || Boolean(restorable)}
             className="flex items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-semibold transition-all disabled:opacity-50"
             style={{ background: 'var(--surface-3)', color: 'var(--text-primary)' }}>
             <Save size={12} strokeWidth={1.5} />
-            Guardar
+            {t('save')}
           </button>
         </div>
       </div>
 
+      {restorable && (
+        <div role="alert" className="border-border border-b p-3">
+          <p>{t('restorePrompt')}</p>
+          <button
+            type="button"
+            onClick={() => {
+              draft.restore(restorable);
+              setRestorable(undefined);
+            }}>
+            {t('restore')}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              registry.remove(docId, restorable.content);
+              setRestorable(undefined);
+            }}>
+            {t('discard')}
+          </button>
+        </div>
+      )}
+      {conflict && (
+        <div role="alert" className="text-destructive p-3">
+          <p>{t('conflict')}</p>
+          <button type="button" onClick={() => window.location.reload()}>
+            {t('reload')}
+          </button>
+        </div>
+      )}
+      <p className="text-muted-foreground px-4 text-xs">{t('memoryOnly')}</p>
       {/* Split view */}
       <div className="flex min-h-0 flex-1">
         {/* Editor */}
@@ -134,7 +164,9 @@ export function MarkdownEditor({
           <textarea
             ref={textareaRef}
             value={content}
-            onChange={(e) => handleChange(e.target.value)}
+            onChange={(e) => setContent(e.target.value)}
+            disabled={Boolean(restorable) || !draft.canEdit}
+            aria-label={t('content')}
             spellCheck={false}
             className="min-h-0 flex-1 resize-none p-5 font-mono text-[13px] leading-relaxed focus:outline-none"
             style={{
@@ -168,28 +200,32 @@ export function MarkdownEditor({
 }
 
 function SaveIndicator({ status }: { status: SaveStatus }) {
-  if (status === 'idle') return null;
+  const t = useTranslations('documentEditor');
+  if (status === 'idle') return <span role="status">{t('pending')}</span>;
 
   if (status === 'saving')
     return (
-      <span className="text-muted-foreground flex items-center gap-1 text-[11px]">
+      <span role="status" className="text-muted-foreground flex items-center gap-1 text-[11px]">
         <Loader2 size={11} className="animate-spin" />
-        Guardando…
+        {t('saving')}
       </span>
     );
 
   if (status === 'saved')
     return (
-      <span className="flex items-center gap-1 text-[11px]" style={{ color: 'var(--color-iron)' }}>
+      <span
+        role="status"
+        className="flex items-center gap-1 text-[11px]"
+        style={{ color: 'var(--color-success)' }}>
         <CheckCircle2 size={11} />
-        Guardado
+        {t('saved')}
       </span>
     );
 
   return (
-    <span className="flex items-center gap-1 text-[11px]" style={{ color: '#e55' }}>
+    <span role="status" className="text-destructive flex items-center gap-1 text-[11px]">
       <AlertCircle size={11} />
-      Error al guardar
+      {t('error')}
     </span>
   );
 }

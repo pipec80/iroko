@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { NextIntlClientProvider } from 'next-intl';
 import { describe, it, expect, vi } from 'vitest';
+import { appConfig } from '@/config/app.config';
 
 vi.mock('@/i18n/routing', () => ({
   Link: (p: React.ComponentProps<'a'>) => <a {...p}>{p.children}</a>,
@@ -13,6 +14,7 @@ vi.mock('@/app/[locale]/dashboard/actions', () => ({
 }));
 
 import { AppSidebarClient, type OrgAccount } from '../app-sidebar-client';
+import { switchAccount } from '@/app/[locale]/dashboard/actions';
 import es from '../../../../messages/es.json';
 
 const ORG_WITH_LOGO: OrgAccount = {
@@ -35,6 +37,29 @@ function renderWithIntl(ui: React.ReactElement) {
 }
 
 describe('AppSidebarClient logo rendering', () => {
+  it('omits the deferred modules while retaining the offered navigation', () => {
+    renderWithIntl(<AppSidebarClient orgs={[ORG_WITHOUT_LOGO]} />);
+    expect(screen.queryByRole('link', { name: es.Navigation.nav_projects })).toBeNull();
+    expect(screen.queryByRole('link', { name: `${appConfig.brand} Robot` })).toBeNull();
+    expect(screen.getByRole('link', { name: es.Navigation.nav_members })).toBeDefined();
+  });
+  it.each([null, 'unknown-account'])(
+    'allows activating the first account with unresolved active context %s',
+    async (activeAccountId) => {
+      vi.mocked(switchAccount).mockClear();
+      vi.mocked(switchAccount).mockResolvedValue({});
+      renderWithIntl(
+        <AppSidebarClient orgs={[ORG_WITHOUT_LOGO]} activeAccountId={activeAccountId} />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: es.Navigation.org_switcher_label }));
+      fireEvent.click(screen.getByRole('option', { name: /acme/i }));
+      await waitFor(() => expect(switchAccount).toHaveBeenCalledOnce());
+      expect(vi.mocked(switchAccount).mock.calls[0]?.[0].get('accountId')).toBe(
+        ORG_WITHOUT_LOGO.account_id,
+      );
+    },
+  );
+
   it('should render the logo image when logo_url is present', () => {
     renderWithIntl(<AppSidebarClient orgs={[ORG_WITH_LOGO]} />);
     expect(screen.getByRole('img', { name: 'Acme' })).toBeDefined();

@@ -8,6 +8,7 @@ import { appConfig } from '@/config/app.config';
 import { requireAccountRole } from '@/lib/active-account';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
+import { hasOversizedUploadFields, MAX_UPLOAD_BYTES } from '@/lib/validation/upload-limits';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -16,7 +17,6 @@ export type RobotConfigUploadState = {
   success?: boolean;
 };
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 async function requireContext() {
@@ -84,10 +84,11 @@ export async function uploadRobotConfigAction(
   const file = formData.get('file');
 
   if (!(file instanceof File) || file.size === 0) return { error: 'no_file' };
+  if (hasOversizedUploadFields(formData, 'file')) return { error: 'file_too_large' };
 
   if (file.type !== ALLOWED_MIME) return { error: 'invalid_type' };
   if (!file.name.toLowerCase().endsWith('.xlsx')) return { error: 'invalid_extension' };
-  if (file.size > MAX_FILE_SIZE) return { error: 'file_too_large' };
+  if (file.size > MAX_UPLOAD_BYTES) return { error: 'file_too_large' };
 
   const { supabase, userId, accountId } = await requireContext();
   if (!userId || !accountId) return { error: 'not_authenticated' };

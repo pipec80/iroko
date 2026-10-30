@@ -101,6 +101,8 @@ AS $$
 DECLARE
   v_key text;
 BEGIN
+  -- Serialize quota reads and admission; recheck authorization after waiting.
+  PERFORM pg_advisory_xact_lock(hashtextextended('api-key-account:' || p_account_id::text, 0));
   PERFORM private.assert_account_admin(p_account_id);
 
   IF p_name IS NULL OR char_length(btrim(p_name)) < 1 OR char_length(btrim(p_name)) > 100 THEN

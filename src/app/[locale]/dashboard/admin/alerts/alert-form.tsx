@@ -41,7 +41,7 @@ export function AlertForm() {
     startTransition(async () => {
       const result = await sendPlatformAlert({ subject, body });
       if (result.error) {
-        setError(t((ERROR_KEYS[result.error] ?? 'error_not_platform_admin') as never));
+        setError(t((ERROR_KEYS[result.error] ?? 'error_generic') as never));
         return;
       }
       setSuccessCount(result.data?.sentCount ?? 0);
