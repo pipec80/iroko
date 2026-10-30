@@ -67,7 +67,7 @@ describe('getOnboardingOrg', () => {
     });
     const result = await getOnboardingOrg();
     expect(mocks.rpc).toHaveBeenCalledWith('get_my_accounts');
-    expect(result).toEqual({ name: 'Mi Empresa' });
+    expect(result).toEqual({ name: 'Mi Empresa', accountId: 'acc-1' });
   });
 
   it('returns null name when the active account is personal', async () => {

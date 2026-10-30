@@ -3,7 +3,10 @@ useDefault = true
 
 # These are verified Git object IDs and task identifiers in the evidence CSV.
 # Match both the exact file and exact secret to preserve all other scanning.
-[[allowlists]]
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
 description = "Verified Git IDs and task identifiers in remediation evidence"
 condition = "AND"
 paths = ['''^docs/exec-plans/active/freeze-remediation-register\.csv$''']

@@ -84,6 +84,24 @@ describe('OnboardingWizard', () => {
     expect(screen.getByLabelText('Nombre de la organización')).toBeDefined();
   });
 
+  it('resumes at invitations after the identity boundary remounts a confirmed team', async () => {
+    renderWithIntl(
+      <OnboardingWizard initialOrgName="Mi Empresa" initialAccountId="account-confirmed" />,
+    );
+    expect(screen.getByText('Paso 2 de 4')).toBeDefined();
+    expect(screen.queryByLabelText('Nombre de la organización')).toBeNull();
+    expect(mocks.confirmOrgName).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Invitar más tarde' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('billing-account').textContent).toBe('account-confirmed'),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Atrás' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Atrás' }));
+    expect(screen.getByLabelText('Nombre de la organización')).toBeDefined();
+  });
+
   it('shows the step counter for the current step', () => {
     renderWithIntl(<OnboardingWizard initialOrgName="Mi Empresa" />);
     expect(screen.getByText('Paso 1 de 4')).toBeDefined();

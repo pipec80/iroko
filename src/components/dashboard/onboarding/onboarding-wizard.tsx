@@ -16,10 +16,18 @@ import { appConfig } from '@/config/app.config';
 
 const STEP_ICONS = [Building2, Users, Send, PartyPopper];
 
-export function OnboardingWizard({ initialOrgName }: { initialOrgName: string | null }) {
+export function OnboardingWizard({
+  initialOrgName,
+  initialAccountId = null,
+}: {
+  initialOrgName: string | null;
+  initialAccountId?: string | null;
+}) {
   const t = useTranslations('Onboarding');
-  const [step, setStep] = useState(0);
-  const [billingAccountId, setBillingAccountId] = useState<string | null>(null);
+  // Creating a team changes identity and remounts this subtree. Resume only
+  // from the active team verified by the server, without retaining old-scope state.
+  const [step, setStep] = useState(initialAccountId ? 1 : 0);
+  const [billingAccountId, setBillingAccountId] = useState<string | null>(initialAccountId);
 
   const labels = [
     t('step_org'),

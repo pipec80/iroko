@@ -50,9 +50,34 @@ pasaron. CodeQL también pasó. Los fallos confirmados fueron:
   exactos junto con la ruta exacta del CSV. Escaneo local de los seis commits:
   cero detecciones después de comprobar cada valor.
 
-Dos intentos locales de Vitest no progresaron, con y sin sandbox; se detuvieron
-sólo los procesos propios. No se registran como PASS. CI suministra la evidencia
-ejecutada del candidato inicial; el head final debe renovar los checks afectados.
+Los intentos locales de Vitest con forks no progresaron, con y sin sandbox;
+se detuvieron sólo los procesos propios. No se registran como PASS. El pool de
+threads sí ejecutó las regresiones posteriores; no se cambia la configuración
+por defecto del proyecto. El head final debe renovar los checks afectados.
+
+## Reparación de integración descubierta por CI
+
+El E2E inicial terminó con 85 PASS, dos skips declarados por la suite y un fallo
+de onboarding reproducido en los tres intentos de Playwright. La traza muestra
+que «Invitar después» llegó a existir y fue desmontado: crear el team cambia la
+identidad activa, el guard remonta el subtree y el wizard volvía al paso uno.
+No era un selector obsoleto ni un problema de disponibilidad del módulo.
+
+La reparación conserva el guard: el servidor devuelve el ID y nombre del team
+activo verificado por `get_my_accounts`; el wizard remonta en invitaciones y
+con ese ID para billing. Una cuenta personal, sin cuenta o un RPC fallido no
+recibe ese estado. El botón Atrás permite volver a confirmar el nombre.
+
+Regresión local RED: dos fallos y 21 PASS antes de reparar. GREEN: 24/24 en
+cuatro archivos, incluidos los controles de identidad entre cuentas y logout.
+Comando: `node node_modules/vitest/vitest.mjs run --pool=threads --maxWorkers=1
+'onboarding/__tests__' 'providers/__tests__/query-provider'`.
+
+La primera excepción Gitleaks funcionaba en el CLI local 8.30.1, pero CI usa
+8.24.3 y no interpretaba `[[allowlists]]` global. Se usa
+`[[rules.allowlists]]` sobre `generic-api-key`, compatible con CI, conservando
+el AND entre ruta exacta y valores exactos. No se actualiza la herramienta ni
+se ignora el archivo completo.
 
 ## Límites
 
