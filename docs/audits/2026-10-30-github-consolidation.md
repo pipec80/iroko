@@ -27,12 +27,15 @@ Vitest/mocker, Vite, SDK MCP, Hono/node-server, body-parser, undici y qs.
 No se actualiza el CLI pnpm ni se desactiva su política de supply chain.
 Los PR originales sólo se retiran cuando la consolidación esté integrada.
 
-La auditoría del lockfile actualizado deja dos avisos de desarrollo: Zod 3.25.76
-en shadcn/registry/SDK y deepmerge 4.3.1. El advisory Zod prescribe >=4.6.6,
+La auditoría del lockfile actualizado deja dos dependencias con avisos: Zod
+3.25.76 en shadcn/registry/SDK (desarrollo) y deepmerge 4.3.1, también transitiva
+de producción por `@react-email/render > html-to-text` desde correo/Resend.
+El advisory Zod prescribe >=4.6.6,
 un cambio de major para esos consumidores; no se fuerza una API incompatible.
 El registro npm no publica deepmerge 4.3.2, aunque el advisory la indica como
-parche. Son pendientes upstream explícitos, sin dismiss de alertas ni bypass
-del gate de producción. Revalidar cuando exista actualización compatible.
+parche. Son pendientes upstream explícitos, sin dismiss de alertas ni bypass.
+Producción conserva un aviso low de deepmerge y cero high/critical; el gate
+existente exige cero high/critical. Revalidar al existir actualización compatible.
 
 ## Primera ejecución GitHub del trabajo local
 

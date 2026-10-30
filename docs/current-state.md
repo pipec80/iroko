@@ -7,7 +7,8 @@ y retirar las ramas integradas para continuar desde `main`. El
 [PR #232](https://github.com/pipec80/iroko/pull/232) concentra ese alcance; su
 estado de merge y checks se consulta en GitHub. La
 [auditoría de consolidación](audits/2026-10-30-github-consolidation.md) registra
-baseline, actualizaciones, validaciones y pendientes upstream de desarrollo.
+baseline, actualizaciones, validaciones y pendientes upstream: Zod 3 de
+desarrollo y deepmerge low también transitivo del correo de producción.
 Las menciones fechadas de «sin push/PR» inferiores describen su ejecución
 histórica. Esta integración no cierra 017/015/016 ni aplica migraciones Cloud.
 La próxima implementación de producto continúa siendo 012.5.
