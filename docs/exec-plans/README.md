@@ -29,9 +29,10 @@ reuse proof and final016 re-audit. Editor017.4 is deferred, with preserved tests
 and no runtime acceptance. Its development runner is not a freeze prerequisite.
 Keep deferred child scope identifiable; do not move its failed checks to completed.
 
+Plan012 está cerrado por entregables2026-11-02; [disposición de seguimientos](../audits/2026-11-02-plan-012-integration-and-disposition.md). No acepta todo el MVP.
+
 Active product plans are:
 
-- [Plan 012 — security hardening and pricing truth](active/012-security-hardening-and-pricing-truth.md)
 - [Plan 014 — reference-surface correctness](active/014-reference-surface-correctness.md)
 - [Plan 015 — reusable-foundation acceptance](active/015-reusable-foundation-acceptance.md)
 - [Plan 016 — Next.js and Supabase code review](active/016-nextjs-supabase-code-review.md)
@@ -39,7 +40,7 @@ Active product plans are:
 
 The [central disposition register](active/freeze-remediation-register.csv)
 preserves all historical IDs, partial splits, aliases and follow-ups. Detailed
-[012.5](active/012-5-pricing-truth.md) remains under Plan 012, after the P1
+[012.5](completed/012-5-pricing-truth.md) is completed locally2026-11-02 under Plan012, after the P1
 remediation phase. Final 016 validation follows the final changes from 015,
 using the [candidate runbook](../runbooks/freeze-candidate-validation.md).
 

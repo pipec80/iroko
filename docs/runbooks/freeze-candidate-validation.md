@@ -34,6 +34,18 @@ avanzar en esa secuencia. Este protocolo acepta el candidato integrado; no debe
 ejecutarse entero para cerrar cada tarea o cada lote de 017. Consultar el contrato
 común de ese plan para validación proporcional y límites de reintento.
 
+## Seguimientos recibidos de012 — 2026-11-02
+
+El cierre por entregables de012 conserva estos controles, sin ejecutarlos aquí:
+RL-F01→017.1-T9 (confianza IP Data API) y RL-F03→017.2-T6 (grants accounts)
+requieren triage/decisión técnica; V4/V5 valida resultado y severidad, no sustituye
+su reparación. RL-F02/V4 conserva ensayo aislado503/500; RL-F04/V4 correlación
+de origen independiente; RL-F05/V4 usa escenarios por integración y matriz011
+MP, sin certificar otros protocolos. RL-F06/V4 conserva inventario WAF y retoma
+ante cambios de hosts/deployment/secreto/reglas, con autenticación, readback y
+negativas de alcance; no ampliar cuotas ni desactivar WAF globalmente.
+Estados/condiciones originales: [registro012.3](../audits/2026-10-14-plan-012-3-follow-ups.md).
+
 ## V0 — Identidad, alcance y preflight
 
 - [ ] Registrar branch/HEAD, git status, diff autorizado, fecha y versiones instaladas. Comprobar comandos existentes con Get-Command/where/version antes de declararlos ausentes. No instalar ni actualizar herramientas para obtener verde sin petición explícita.

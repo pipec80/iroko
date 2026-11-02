@@ -42,11 +42,11 @@ certification or proof of current production health. The completed P0
 tenant-isolation remediation is recorded in
 [Plan 010](docs/exec-plans/completed/010-tenant-isolation-and-regression-tests.md),
 and additional hardening is tracked in
-[Plan 012](docs/exec-plans/active/012-security-hardening-and-pricing-truth.md).
+[Plan 012](docs/exec-plans/completed/012-security-hardening-and-pricing-truth.md).
 
 - **Database**: Row Level Security (RLS) on all tables, SECURITY DEFINER RPCs with `SET search_path = ''`
 - **Auth**: Supabase Auth with MFA (TOTP; WebAuthn/phone available on Pro). MFA is enforced at the edge — a user with an enrolled factor cannot reach protected routes until the session is elevated to `aal2`.
-- **Sessions**: session timebox and inactivity timeout are `0s` (disabled) in `supabase/config.toml`, consistent with the declared Free baseline. Their provider capability and any future change require separate verification and authorization; [Plan 012](docs/exec-plans/active/012-security-hardening-and-pricing-truth.md) owns the pricing/security reconciliation.
+- **Sessions**: session timebox and inactivity timeout are `0s` (disabled) in `supabase/config.toml`, consistent with the declared Free baseline. Their provider capability and any future change require separate verification and authorization; [Plan 012](docs/exec-plans/completed/012-security-hardening-and-pricing-truth.md) owns the pricing/security reconciliation.
 - **Leaked password protection**: HaveIBeenPwned checking on signup/password-change requires the Supabase **Pro** plan (Dashboard → Authentication → Sign In / Providers). Disabled on the Free plan — no local config equivalent.
 - **Headers**: local Plan 012.4 code uses a fresh 16-byte nonce per request and propagates it to document rendering, theme and CAPTCHA. Production `script-src` omits `unsafe-inline`/`unsafe-eval`; `style-src 'unsafe-inline'` remains an explicit exception. Nonce-bearing documents use request-time rendering and private/no-store caching. HSTS (2 years + preload), COOP and CORP remain. [ADR 0004](docs/adr/0004-csp-nonce-and-rendering-boundary.md) records the trade-off; isolated local Chromium acceptance passed, while real Turnstile and Cloud acceptance remain **[NO VERIFICADO]**.
 - **Rate limiting**: the Data API hook and application API admission have separate contracts. Plan 012.3 recorded bounded application acceptance; legacy CF/XFF trust in the SQL hook remains **[NO VERIFICADO]**, as recorded in its [follow-up register](docs/audits/2026-10-14-plan-012-3-follow-ups.md).

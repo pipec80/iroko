@@ -7,7 +7,7 @@ Estado: implementación y aceptación locales verificadas. Este registro no decl
 
 El usuario aprobó explícitamente sender Node y tickets para alta/edición después de explicar el cambio de contrato RPC. La autorización cubre implementación, pruebas y revisión locales. Se preserva el árbol pendiente; sin instalaciones, commits, push, merge, deploy ni escrituras Cloud para 012.2.
 
-Referencias: [plan de ejecución](../exec-plans/active/012-2-webhook-ssrf.md), [decisión de transporte](2026-10-09-plan-012-2-transport-design.md) y [ensayo T2](2026-10-09-plan-012-2-t2-transport-spike.md).
+Referencias: [plan de ejecución](../exec-plans/completed/012-2-webhook-ssrf.md), [decisión de transporte](2026-10-09-plan-012-2-transport-design.md) y [ensayo T2](2026-10-09-plan-012-2-t2-transport-spike.md).
 
 La autorización Cloud anterior se consumió exclusivamente en [014 → 012.1](2026-10-09-plan-012-1-cloud-application.md). El coordinador registra Cloud con 161 migraciones y local con 162; no se declara paridad para esta nueva implementación.
 

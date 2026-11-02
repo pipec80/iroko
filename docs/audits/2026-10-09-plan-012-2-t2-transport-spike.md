@@ -4,7 +4,7 @@ Fecha: 2026-10-09. Estado: **viabilidad mecánica comprobada y revisada; decisi�
 
 ## Alcance y entorno
 
-Se ejecutó T2 del [desglose 012.2](../exec-plans/active/012-2-webhook-ssrf.md), con backend, seguridad y contratos SQL revisados por agentes especializados en paralelo; el coordinador leyó el harness y repitió ambos ensayos.
+Se ejecutó T2 del [desglose 012.2](../exec-plans/completed/012-2-webhook-ssrf.md), con backend, seguridad y contratos SQL revisados por agentes especializados en paralelo; el coordinador leyó el harness y repitió ambos ensayos.
 
 Node v24.18.0 satisface engines24.x del repo; Docker daemon29.8.1 accesible. Antes de cualquier uso se renovó identidad de supabase_db_iroko-012-history-20261009: imagen postgres17.6.1.141, sin mounts, red iroko-012-history-20261009 Internal=true, DB postgres,161 migraciones, última20261008130000, cron.launch_active_jobs=off, cero jobs activos. Solo se consultó; el ensayo no necesita modificar esa DB.
 

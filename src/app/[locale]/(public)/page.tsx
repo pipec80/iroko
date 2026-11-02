@@ -1,6 +1,9 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Building2, Check, CreditCard, Database, Globe, Moon, ShieldCheck } from 'lucide-react';
 
+import { getPublicCatalog } from '@/lib/billing/public-catalog';
+import { formatPlanAmount, getPlanItems } from '@/lib/billing/presentation';
+
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
@@ -30,54 +33,21 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     t('proof_rls'),
   ];
 
-  const pricingTiers = [
-    {
-      name: t('tier_personal_name'),
-      price: t('tier_personal_price'),
-      period: t('tier_personal_period'),
-      desc: t('tier_personal_desc'),
-      cta: t('tier_personal_cta'),
-      href: '#',
-      featured: false,
-      items: [
-        t('tier_personal_item_1'),
-        t('tier_personal_item_2'),
-        t('tier_personal_item_3'),
-        t('tier_personal_item_4'),
-      ],
-    },
-    {
-      name: t('tier_studio_name'),
-      price: t('tier_studio_price'),
-      period: t('tier_studio_period'),
-      desc: t('tier_studio_desc'),
-      cta: t('tier_studio_cta'),
-      href: '/signup',
-      featured: true,
-      items: [
-        t('tier_studio_item_1'),
-        t('tier_studio_item_2'),
-        t('tier_studio_item_3'),
-        t('tier_studio_item_4'),
-        t('tier_studio_item_5'),
-      ],
-    },
-    {
-      name: t('tier_custom_name'),
-      price: t('tier_custom_price'),
-      period: '',
-      desc: t('tier_custom_desc'),
-      cta: t('tier_custom_cta'),
-      href: '/contact',
-      featured: false,
-      items: [
-        t('tier_custom_item_1'),
-        t('tier_custom_item_2'),
-        t('tier_custom_item_3'),
-        t('tier_custom_item_4'),
-      ],
-    },
-  ];
+  const tCatalog = await getTranslations('PublicCatalog');
+  const catalog = await getPublicCatalog();
+  const pricingTiers = catalog.plans.map((plan) => ({
+    ...plan,
+    price: formatPlanAmount(plan.amount, plan.currency, locale),
+    period: tCatalog(plan.interval),
+    desc: plan.description,
+    cta: tCatalog(plan.slug === 'free' ? 'free_cta' : 'paid_cta'),
+    href: '/signup',
+    featured: plan.slug === 'pro',
+    items: [
+      ...getPlanItems(plan, tCatalog, locale),
+      ...(plan.trialDays > 0 ? [tCatalog('trial', { days: plan.trialDays })] : []),
+    ],
+  }));
 
   return (
     <>
@@ -183,9 +153,20 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
 
           <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-6 md:grid-cols-3">
+            {catalog.status === 'unavailable' && (
+              <p
+                role="status"
+                data-testid="catalog-unavailable"
+                className="text-muted-foreground col-span-full text-center">
+                {tCatalog('unavailable')}
+              </p>
+            )}
             {pricingTiers.map((tier) => (
               <div
-                key={tier.name}
+                key={`${tier.slug}-${tier.interval}`}
+                data-testid="catalog-plan"
+                data-plan-slug={tier.slug}
+                data-plan-interval={tier.interval}
                 className="relative flex flex-col rounded-2xl p-8 transition-all duration-300"
                 style={
                   tier.featured ?
@@ -199,14 +180,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       border: '1px solid var(--border)',
                     }
                 }>
-                {tier.featured && (
-                  <div
-                    className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 font-mono text-xs font-bold tracking-wider uppercase"
-                    style={{ background: 'var(--color-gold)', color: 'var(--color-ink)' }}>
-                    {t('tier_popular_badge')}
-                  </div>
-                )}
-
                 <h3
                   className="mb-1 text-xl font-bold"
                   style={{ color: tier.featured ? 'var(--color-bone)' : undefined }}>

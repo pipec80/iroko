@@ -492,6 +492,18 @@ jobs:
         # these scenarios must never inherit CI/provider configuration directly.
         run: env -i PATH="$PATH" HOME="$HOME" node scripts/run-plan-017-local.mjs password-settings.spec.ts analytics.spec.ts
 
+      - name: Upload sanitized confined acceptance diagnostics
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: failure()
+        with:
+          name: confined-017-diagnostics
+          path: |
+            .superpowers/sdd/017-freeze-remediation/e2e-results.json
+            .superpowers/sdd/017-freeze-remediation/owned-next-server-diagnostics.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure()

@@ -434,7 +434,7 @@ esos checks. Cero hallazgos no significa ausencia garantizada de vulnerabilidade
 
 - [Plan 011](../deferred/011-billing/011-billing-correctness.md): conserva aceptación de proveedores y
   recuperación; este review evalúa implementación/contratos, no renueva evidencia Cloud.
-- [Plan 012](012-security-hardening-and-pricing-truth.md): recibe hardening y
+- [Plan 012](../completed/012-security-hardening-and-pricing-truth.md): recibe hardening y
   coherencia de pricing; evitar una segunda lista de correcciones sin dueño.
 - [Plan 014](014-reference-surface-correctness.md): conserva robot, orígenes de
   imágenes y auditoría. Revalidar esos defectos, no presentarlos como nuevos.

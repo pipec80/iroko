@@ -139,6 +139,18 @@ Comandos planificados por tarea: `pnpm supa:status`, `pnpm supa:migration:up`, `
 - [ ] Ejecutar protocolo común y `pnpm supa:test supabase/tests/database/43_robot_reference_rbac.test.sql`; verificar aislación entre cuentas.
 - [ ] Revisor del lote verifica atomicidad y serialización por separado; registrar D-06 cerrado solo con ambas evidencias. La aceptación previa 014-T1 no sustituye este gate.
 
+### 017.2-T6: disposición de grants accounts Cloud — RL-F03
+
+Recibido de012 el2026-11-02; responsable lógico datos/permisos. Cloud conserva
+CRUD amplio service_role sobre accounts, confirmado por lectura; las ocho
+migraciones sincronizadas no lo cambian. Estado decision-pending; triage junto
+a017.1-T9 antes de P2. No revocar permisos por inferencia ni llamar a esto paridad.
+
+- [ ] Inventariar `createAdminClient` y consumidores directos/RPC de public.accounts; comparar grants de tabla/columna local y Cloud. Registrar matriz consumidor→permiso necesario; no inspeccionar secretos para probar igualdad.
+- [ ] Resolver explícitamente conservar o reducir el baseline, con riesgo y justificación. Conservar un permiso requerido exige evidencia de su consumidor, no un PASS genérico. Un P0/P1 confirmado no puede diferirse por mover el plan.
+- [ ] Si se reduce: migración nueva y mirror, sin editar aplicadas; tests de consumidores y negativas pertinentes de `49_account_api_summary_grants.test.sql` por runner atestado en local. No ejecutar esas negativas contra el baseline Cloud más amplio como si ya fueran equivalentes.
+- [ ] Revisión independiente y operación Cloud concreta autorizada si se necesita; renovar grants por lectura, actualizar RL-F03 y condición de retorno.016-V4/V5 acepta su disposición; no declara cierre por escribir esta tarea.
+
 ## Completion record
 
 Cada tarea actualiza el [registro central](freeze-remediation-register.csv) con

@@ -2,6 +2,9 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Check } from 'lucide-react';
 
 import { PlanViewedTracker } from '@/components/analytics/plan-viewed-tracker';
+import { getPublicCatalog } from '@/lib/billing/public-catalog';
+import { catalogFields, formatPlanAmount, getPlanItems } from '@/lib/billing/presentation';
+
 import { Button } from '@/components/ui/button';
 import { Link } from '@/i18n/routing';
 
@@ -11,74 +14,21 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
 
   const t = await getTranslations('PublicPricing');
 
-  const pricingTiers = [
-    {
-      name: t('tier_personal_name'),
-      price: t('tier_personal_price'),
-      period: t('tier_personal_period'),
-      desc: t('tier_personal_desc'),
-      cta: t('tier_personal_cta'),
-      href: '#',
-      featured: false,
-      items: [
-        t('tier_personal_item_1'),
-        t('tier_personal_item_2'),
-        t('tier_personal_item_3'),
-        t('tier_personal_item_4'),
-        t('tier_personal_item_5'),
-      ],
-    },
-    {
-      name: t('tier_studio_name'),
-      price: t('tier_studio_price'),
-      period: t('tier_studio_period'),
-      desc: t('tier_studio_desc'),
-      cta: t('tier_studio_cta'),
-      href: '/signup',
-      featured: true,
-      items: [
-        t('tier_studio_item_1'),
-        t('tier_studio_item_2'),
-        t('tier_studio_item_3'),
-        t('tier_studio_item_4'),
-        t('tier_studio_item_5'),
-        t('tier_studio_item_6'),
-      ],
-    },
-    {
-      name: t('tier_custom_name'),
-      price: t('tier_custom_price'),
-      period: '',
-      desc: t('tier_custom_desc'),
-      cta: t('tier_custom_cta'),
-      href: '/contact',
-      featured: false,
-      items: [
-        t('tier_custom_item_1'),
-        t('tier_custom_item_2'),
-        t('tier_custom_item_3'),
-        t('tier_custom_item_4'),
-        t('tier_custom_item_5'),
-      ],
-    },
-  ];
-
-  const comparison = [
-    {
-      feature: t('comparison_feature_orgs'),
-      personal: t('comparison_orgs_personal'),
-      studio: t('comparison_orgs_studio'),
-      custom: t('comparison_orgs_custom'),
-    },
-    { feature: t('comparison_feature_auth'), personal: true, studio: true, custom: true },
-    { feature: t('comparison_feature_billing'), personal: false, studio: true, custom: true },
-    { feature: t('comparison_feature_i18n'), personal: true, studio: true, custom: true },
-    { feature: t('comparison_feature_dark'), personal: true, studio: true, custom: true },
-    { feature: t('comparison_feature_updates'), personal: false, studio: true, custom: true },
-    { feature: t('comparison_feature_discord'), personal: false, studio: true, custom: true },
-    { feature: t('comparison_feature_onboarding'), personal: false, studio: false, custom: true },
-    { feature: t('comparison_feature_sla'), personal: false, studio: false, custom: true },
-  ];
+  const tCatalog = await getTranslations('PublicCatalog');
+  const catalog = await getPublicCatalog();
+  const pricingTiers = catalog.plans.map((plan) => ({
+    ...plan,
+    price: formatPlanAmount(plan.amount, plan.currency, locale),
+    period: tCatalog(plan.interval),
+    desc: plan.description,
+    cta: tCatalog(plan.slug === 'free' ? 'free_cta' : 'paid_cta'),
+    href: '/signup',
+    featured: plan.slug === 'pro',
+    items: [
+      ...getPlanItems(plan, tCatalog, locale),
+      ...(plan.trialDays > 0 ? [tCatalog('trial', { days: plan.trialDays })] : []),
+    ],
+  }));
 
   return (
     <>
@@ -96,9 +46,20 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
 
         {/* Pricing cards */}
         <div className="mx-auto mb-24 grid max-w-5xl grid-cols-1 items-center gap-6 md:grid-cols-3">
+          {catalog.status === 'unavailable' && (
+            <p
+              role="status"
+              data-testid="catalog-unavailable"
+              className="text-muted-foreground col-span-full text-center">
+              {tCatalog('unavailable')}
+            </p>
+          )}
           {pricingTiers.map((tier) => (
             <div
-              key={tier.name}
+              key={`${tier.slug}-${tier.interval}`}
+              data-testid="catalog-plan"
+              data-plan-slug={tier.slug}
+              data-plan-interval={tier.interval}
               className="relative flex flex-col rounded-2xl p-8 transition-all duration-300"
               style={
                 tier.featured ?
@@ -112,14 +73,6 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
                     border: '1px solid var(--border)',
                   }
               }>
-              {tier.featured && (
-                <div
-                  className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full px-4 py-1.5 font-mono text-xs font-bold tracking-wider uppercase"
-                  style={{ background: 'var(--color-gold)', color: 'var(--color-ink)' }}>
-                  {t('tier_popular_badge')}
-                </div>
-              )}
-
               <h2
                 className="mb-1 text-xl font-bold"
                 style={{ color: tier.featured ? 'var(--color-bone)' : undefined }}>
@@ -185,62 +138,53 @@ export default async function PricingPage({ params }: { params: Promise<{ locale
           ))}
         </div>
 
-        {/* Comparison Table */}
-        <div className="border-border overflow-hidden rounded-2xl border">
-          <div
-            className="border-border border-b px-6 py-4"
-            style={{ background: 'var(--color-ink)' }}>
-            <h3 className="font-mono text-sm font-semibold" style={{ color: 'var(--color-bone)' }}>
-              {t('comparison_title')}
-            </h3>
-          </div>
-          <table className="w-full">
-            <thead>
-              <tr className="bg-surface-2 border-border border-b">
-                <th className="text-muted-foreground px-6 py-4 text-left text-sm font-semibold">
-                  {t('comparison_feature_col')}
-                </th>
-                {[t('tier_personal_name'), t('tier_studio_name'), t('tier_custom_name')].map(
-                  (col) => (
-                    <th
-                      key={col}
-                      className="p-4 text-center text-sm font-semibold"
-                      style={{
-                        color: col === t('tier_studio_name') ? 'var(--color-poppy)' : undefined,
-                      }}>
-                      {col}
+        {/* Only capabilities present in the current catalog are compared. */}
+        {catalog.status === 'available' && (
+          <div className="border-border overflow-x-auto rounded-2xl border">
+            <table className="w-full">
+              <caption className="text-foreground p-4 text-left font-semibold">
+                {t('comparison_title')}
+              </caption>
+              <thead>
+                <tr className="bg-surface-2 border-border border-b">
+                  <th scope="col" className="p-4 text-left">
+                    {t('comparison_feature_col')}
+                  </th>
+                  {catalog.plans.map((plan) => (
+                    <th scope="col" key={`${plan.slug}-${plan.interval}`} className="p-4">
+                      {plan.name}
                     </th>
-                  ),
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {comparison.map((row, i) => (
-                <tr
-                  key={row.feature}
-                  className="border-border border-b last:border-0"
-                  style={{ background: i % 2 === 0 ? undefined : 'var(--surface-2)' }}>
-                  <td className="text-foreground px-6 py-4 text-sm">{row.feature}</td>
-                  {([row.personal, row.studio, row.custom] as (boolean | string)[]).map(
-                    (val, j) => (
-                      <td key={j} className="p-4 text-center">
-                        {typeof val === 'boolean' ?
-                          val ?
-                            <Check
-                              className="mx-auto size-4"
-                              style={{ color: 'var(--color-poppy)' }}
-                              strokeWidth={2.5}
-                            />
-                          : <span className="text-muted-foreground font-mono text-xs">—</span>
-                        : <span className="text-foreground text-sm">{val}</span>}
-                      </td>
-                    ),
-                  )}
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {catalogFields
+                  .filter(({ key, kind }) =>
+                    catalog.plans.some((plan) => plan[kind][key] !== undefined),
+                  )
+                  .map(({ key, kind }) => (
+                    <tr key={key} className="border-border border-b last:border-0">
+                      <th scope="row" className="p-4 text-left font-normal">
+                        {tCatalog(key)}
+                      </th>
+                      {catalog.plans.map((plan) => {
+                        const value = plan[kind][key];
+                        return (
+                          <td key={`${plan.slug}-${plan.interval}`} className="p-4 text-center">
+                            {value === undefined ?
+                              tCatalog('unspecified')
+                            : typeof value === 'boolean' ?
+                              tCatalog(value ? 'included' : 'excluded')
+                            : new Intl.NumberFormat(locale).format(value)}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* CTA */}
         <div

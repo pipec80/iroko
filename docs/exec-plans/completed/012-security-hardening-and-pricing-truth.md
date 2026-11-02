@@ -1,12 +1,19 @@
 # Plan 012 — Hardening de seguridad + fuente de verdad única para pricing
 
+**Cierre por entregables — 2026-11-02.** Alcance operacional aceptado;
+integración y disposición en la [auditoría](../../audits/2026-11-02-plan-012-integration-and-disposition.md), publicada en
+[PR241](https://github.com/pipec80/iroko/pull/241). Los estados inferiores
+conservan sus fechas históricas. No representa cierre total de seguridad ni
+aceptación integrada del MVP. Seguimientos RL-F01–F06 abiertos en017/016 y
+aceptación por integración, con condiciones originales conservadas.
+
 **Dirección vigente 2026-10-28:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 Conservar cierres de seguridad y su evidencia;012.5 ofrece catálogo fiel a la
 base SaaS. No repetir cierres012 por diferir editor/Robot ni convertir esa
 decisión en aceptación Cloud. No añadir servicios/proveedores durante el freeze.
 
 - Priority: P1
-- Status: Active - operational scopes 012.1/012.2/012.3 and bounded 012.4 acceptance closed; pricing and inherited follow-ups remain pending. 012.4 source integrated in PR #229; dated closure evidence preserves all exceptions.
+- Status: Completed by approved deliverables; inherited follow-ups transferred explicitly on2026-11-02, still open with their receiving owners.
 - Baseline: `main` @ `d9e2648`
 - Orden v1: sus cambios independientes pueden avanzar sin esperar renovación
   o aceptación final de Mercado Pago. Coordinar superficies compartidas con
@@ -31,10 +38,10 @@ metadata, without promising capabilities that have not passed acceptance.
 The target promise and allowed evidence stages are in
 [product strategy](../../architecture/product-strategy.md).
 
-Proposed [Plan 014](014-reference-surface-correctness.md) owns robot
+Proposed [Plan 014](../active/014-reference-surface-correctness.md) owns robot
 route/action/SQL correctness, image-origin validation and platform audit
 interaction. They do not expand this plan's historical «no RLS changes» scope.
-Proposed [Plan 015](015-reusable-foundation-acceptance.md) owns configuration
+Proposed [Plan 015](../active/015-reusable-foundation-acceptance.md) owns configuration
 without new subscription sales and independent reuse. Coordinate its public
 billing visibility with PR 5; do not create a second catalogue. Plan 012 still
 owns the security sweep and does not certify infrastructure merely from code.
@@ -275,7 +282,7 @@ del API.
 ## PR 4 — `chore/csp-and-secrets-hardening`
 
 **Bounded acceptance completed - 2026-10-19.** The
-[completed execution plan](../completed/012-4-csp-and-secrets.md) and
+[completed execution plan](012-4-csp-and-secrets.md) and
 [closure evidence](../../audits/2026-10-19-plan-012-4-cloud-closure.md) record
 PR #229, exact merged SHA/READY Git deployment on the fixed MVP domain, green
 PR/post-merge CI, local and Cloud acceptance, provider receipts, real owner MFA,
@@ -322,7 +329,12 @@ details this scope. It remains part of Plan 012; it is not split into 017 or 015
 commercial naming and evidence-based copy stay together; unrelated Auth/data
 repairs use 017 and billing-disabled availability uses 015.
 
-**Pendiente para v1:** conectar landing, `/pricing`, checkout y entitlements
+**Aceptación local2026-11-02:** `436228963bf87a073040fbdc2f644c348ee9c40b`; catálogo mostrado/contratado,
+fixture, capture MP sin egress, copy humano y cleanup verificados en la
+[auditoría012.5](../../audits/2026-10-30-plan-012-5-local-execution.md).
+No cierra el agregado012 ni certifica Cloud/pagos reales.
+
+**Objetivo original para v1:** conectar landing, `/pricing`, checkout y entitlements
 al catálogo vigente, sin modificar precios ni slugs durante el cierre MP.
 El catálogo chileno mantiene etiquetas Free / Plus / Pro y slugs
 `free` / `pro` / `scale`; no deducir el nombre comercial capitalizando el slug.

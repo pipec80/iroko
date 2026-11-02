@@ -1,5 +1,18 @@
 # Iroko Capability Inventory
 
+Cloud migration update2026-11-02: eight existing migrations applied after reviewed
+preflight; repository/local/Cloud177 and no remaining migration dry-run. This is
+not full grants parity (RL-F03) or real-charge acceptance. [Evidence](audits/2026-11-02-plan-012-integration-and-disposition.md).
+
+Pricing local acceptance,2026-11-02: landing/pricing/billing share the server
+catalog; MP prices come from provider_prices. Incomplete MP offers are unavailable
+publicly and disable checkout. Unit132/132, SQL44/44, confined capture6/6 and
+public E2E1/1 (eight routes) passed; real browser billing showed updated limits
+and price. Checkout ignored client amount/currency and retained Free entitlements
+pending authorization. Fixtures restored; copy scope approved by the maintainer.
+See the [012.5 evidence](audits/2026-10-30-plan-012-5-local-execution.md).
+This accepts local pricing coherence, not Cloud parity or a real provider charge.
+
 Offered MVP boundary, 2026-10-28: [ADR0005](adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 The inventory below describes implementation/evidence, not a promise to ship every
 reference module. Robot and advanced document editor are deferred consumers;

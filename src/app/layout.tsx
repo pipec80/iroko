@@ -8,6 +8,7 @@ import { env } from '@/env';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { CspNonceProvider } from '@/components/providers/csp-nonce-provider';
 import { appConfig } from '@/config/app.config';
+import { getPublicMetadata } from '@/lib/public-metadata';
 
 import './globals.css';
 
@@ -34,7 +35,7 @@ export const viewport: Viewport = {
   ],
 };
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   title: {
     default: appConfig.name,
     template: `%s | ${appConfig.name}`,
@@ -56,6 +57,11 @@ export const metadata: Metadata = {
   },
   manifest: '/site.webmanifest',
 };
+
+/** Localized descriptions share the bounded public product contract. */
+export async function generateMetadata(): Promise<Metadata> {
+  return { ...baseMetadata, ...(await getPublicMetadata(await getLocale())) };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   await connection();

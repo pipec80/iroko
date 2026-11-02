@@ -425,6 +425,17 @@ describe('billing actions', () => {
     expect(mocks.cancelSubscription).not.toHaveBeenCalled();
   });
 
+  it('does not pass browser amounts or currency to the checkout service', async () => {
+    const input = { planSlug: 'pro', interval: 'month', amount: 1, currency: 'USD' };
+    await startCheckout(input);
+    expect(mocks.createCheckout).toHaveBeenCalledWith(
+      expect.objectContaining({ planSlug: 'pro', interval: 'month' }),
+    );
+    const checkoutInput = mocks.createCheckout.mock.calls[0]?.[0] as Record<string, unknown>;
+    expect(checkoutInput).not.toHaveProperty('amount');
+    expect(checkoutInput).not.toHaveProperty('currency');
+  });
+
   it('getBillingData maps plans, overview, and payment health from their RPCs', async () => {
     mocks.rpc.mockImplementation((fn: string) => {
       if (fn === 'get_active_plans') {
@@ -638,6 +649,64 @@ describe('billing actions', () => {
         limits: { api_keys_max: 100 },
       },
     ]);
+  });
+
+  it('disables partial MP checkout while preserving existing subscription and payment health', async () => {
+    mocks.getPaymentProvider.mockReturnValue({ name: 'mercadopago' });
+    mocks.getProviderPrice.mockRejectedValue(new Error('plan_provider_price_not_configured'));
+    mocks.rpc.mockImplementation(async (fn: string) => {
+      if (fn === 'get_active_plans')
+        return {
+          data: [
+            {
+              slug: 'pro',
+              name: 'Plus',
+              description: null,
+              interval: 'month',
+              price: 2900,
+              currency: 'USD',
+              features: {},
+              limits: {},
+              trial_days: 0,
+            },
+          ],
+          error: null,
+        };
+      if (fn === 'get_billing_overview')
+        return {
+          data: [
+            {
+              plan_slug: 'pro',
+              plan_name: 'Plus',
+              plan_interval: 'month',
+              status: 'active',
+              provider: 'mercadopago',
+              external_subscription_id: 'existing-sub',
+              current_period_end: null,
+              cancel_at_period_end: false,
+              trial_end: null,
+            },
+          ],
+          error: null,
+        };
+      return {
+        data: [
+          {
+            state: 'attention_required',
+            last_attempt_at: '2026-10-30T12:00:00Z',
+            last_failure_code: 'cc_rejected_other_reason',
+          },
+        ],
+        error: null,
+      };
+    });
+    const result = await getBillingData();
+    expect(result.data).toMatchObject({
+      checkoutAvailable: false,
+      plans: [],
+      overview: { planSlug: 'pro', status: 'active', externalSubscriptionId: 'existing-sub' },
+      paymentHealth: { state: 'attention_required', lastFailureCode: 'cc_rejected_other_reason' },
+    });
   });
 
   it('keeps the billing catalog available when the default provider is not configured', async () => {

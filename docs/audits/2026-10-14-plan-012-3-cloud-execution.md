@@ -3,7 +3,7 @@
 Fecha: 2026-10-14. Estado: alcance operativo Cloud 012.3 aceptado. Migraciones
 aplicadas, WAF acotado publicado, candidato y dominio estable aceptados por
 HTTPS público sin bypass. Integración documental final en curso; sin push ni merge.
-Plan: [012.3](../exec-plans/active/012-3-rate-limiting.md).
+Plan: [012.3](../exec-plans/completed/012-3-rate-limiting.md).
 Baseline aceptado: [ejecución local](2026-10-13-plan-012-3-local-execution.md).
 
 ## Autorización, destino y alcance

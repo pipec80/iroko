@@ -1,5 +1,12 @@
 # Plan 012.2 — SSRF saliente: implementación y aceptación Cloud
 
+**Cierre por entregables — 2026-11-02.** Alcance operacional aceptado;
+integración y disposición en la [auditoría](../../audits/2026-11-02-plan-012-integration-and-disposition.md), publicada en
+[PR241](https://github.com/pipec80/iroko/pull/241). Los estados inferiores
+conservan sus fechas históricas. No representa cierre total de seguridad ni
+aceptación integrada del MVP. Seguimientos RL-F01–F06 abiertos en017/016 y
+aceptación por integración, con condiciones originales conservadas.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans para implementar tareas posteriores al gate de diseño. El inventario usa agentes especializados en paralelo y revisión del coordinador.
 
 **Goal:** Impedir conexiones webhook hacia destinos internos, incluso ante DNS rebinding y redirecciones, preservando entregas legítimas.

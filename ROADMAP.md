@@ -64,12 +64,12 @@ This is the single execution sequence for the freeze:
    The scope prerequisite **015-T1/RS-05 may advance here first**: implement and
    verify excluded-module boundaries and the offered configuration. The rest of
    015's replication/update drill remains at step13; no dependency on editor acceptance.
-10. **Plan 012.5 — pricing truth.** Keep its own
-    [execution plan](docs/exec-plans/active/012-5-pricing-truth.md): align catalogue,
+10. **Plan 012.5 — pricing truth: accepted locally2026-11-02.** Keep its own
+    [execution plan](docs/exec-plans/completed/012-5-pricing-truth.md): align catalogue,
     labels, limits, landing, pricing, checkout and evidence-based copy. It is not
     split into 017 or merged with 015.
-11. **Plan 014 T2/T3.** Correct trusted image origins and platform audit interaction.
-12. **Plan 017 — offered-surface closure and dispositions.** Close remaining
+11. **Security triage before P2 —017.1-T9/017.2-T6.** Receive RL-F01 (Data API IP trust) and RL-F03 (Cloud accounts grants) from completed012. Inventory and decide risk; any confirmed offered-surface P0/P1 is repaired first. Do not repeat accepted017 core repairs.
+12. **Offered corrections —014 T2/T3, then remaining017.** Start with trusted image origins and platform audit interaction as two bounded tasks/PRs. Group subsequent web/privacy evidence by subsystem without merging IDs. Close remaining
     security/integrity and essential usability findings in offered web, privacy
     and CI/fixture surfaces. Explicitly defer secondary capabilities; do not run
     the editor development harness or expand Robot. Preserve completed repairs.

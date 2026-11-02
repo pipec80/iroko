@@ -22,6 +22,13 @@ effective exclusion now has local guards/unit and bounded browser acceptance
 5. [Documentation history](history/README.md) — superseded versioned material,
    including the exact pre-freeze roadmap; non-authoritative.
 
+## Entrada vigente — 2026-11-02
+
+012 cerrado por entregables; Supabase177 migraciones repo/local/Cloud.
+[Integración y pendientes](audits/2026-11-02-plan-012-integration-and-disposition.md).
+Siguiente: triage017 RL-F01/F03,014 y resto017; después015 reutilización y016
+aceptación final. No duplicar los cierres históricos ni reactivar editor/Robot.
+
 ## Freeze remediation — 2026-10-20
 
 Execution simplification, 2026-10-27: the existing 017 parent owns the shared
@@ -32,7 +39,7 @@ plan directory or parallel status inventory is introduced.
 
 - [Code/documentation revalidation](audits/2026-10-19-freeze-code-and-documentation-revalidation.md) — 53 historical IDs revalidated with evidence boundaries.
 - [017 specification and child plans](exec-plans/active/017-freeze-remediation.md) and [central disposition register](exec-plans/active/freeze-remediation-register.csv) — P1 and P2 local implementation in progress; [execution evidence](audits/2026-10-20-017-p1-execution.md) records task results and pending acceptance separately. [Environment triage](audits/2026-10-27-017-environment-triage.md) distinguishes local candidate checks from Cloud acceptance.
-- [012.5 pricing execution plan](exec-plans/active/012-5-pricing-truth.md) — preserved as its own work item after 017 P1.
+- [012.5 pricing execution plan](exec-plans/completed/012-5-pricing-truth.md) — accepted locally2026-11-02; Cloud and aggregate012 remain separate.
 - [Final candidate validation](runbooks/freeze-candidate-validation.md) — local, SQL, browser, provider and documentary gates after the final product changes. The root roadmap owns the sequence.
 - [Planning review and delivery](audits/2026-10-20-freeze-remediation-planning-review.md) — independent review, corrections to the plans and documentary checks; product implementation remains pending.
 

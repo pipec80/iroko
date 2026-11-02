@@ -348,7 +348,7 @@ terminaba en `failed` dentro de un resumen con HTTP 200. MP-12 y MP-14 siguen
    local, comprobación UI/acceso, comando/run y revisión del responsable.
    Sin tokens, secretos, datos personales ni payloads crudos. Un escenario
    imposible de reproducir sigue abierto, con limitación y siguiente acción.
-4. Resolver hardening y fuente única de pricing del [Plan 012](../../active/012-security-hardening-and-pricing-truth.md),
+4. Resolver hardening y fuente única de pricing del [Plan 012](../../completed/012-security-hardening-and-pricing-truth.md),
    conservando el rename `scale → teams` como decisión separada. Antes de
    usuarios reales: smoke de producción, auth/aislamiento, seguridad, entrega
    de email, observabilidad/alertas accionables, paridad de migraciones y
