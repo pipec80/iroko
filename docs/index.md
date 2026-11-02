@@ -32,7 +32,7 @@ plan directory or parallel status inventory is introduced.
 
 - [Code/documentation revalidation](audits/2026-10-19-freeze-code-and-documentation-revalidation.md) — 53 historical IDs revalidated with evidence boundaries.
 - [017 specification and child plans](exec-plans/active/017-freeze-remediation.md) and [central disposition register](exec-plans/active/freeze-remediation-register.csv) — P1 and P2 local implementation in progress; [execution evidence](audits/2026-10-20-017-p1-execution.md) records task results and pending acceptance separately. [Environment triage](audits/2026-10-27-017-environment-triage.md) distinguishes local candidate checks from Cloud acceptance.
-- [012.5 pricing execution plan](exec-plans/active/012-5-pricing-truth.md) — preserved as its own work item after 017 P1.
+- [012.5 pricing execution plan](exec-plans/completed/012-5-pricing-truth.md) — accepted locally2026-11-02; Cloud and aggregate012 remain separate.
 - [Final candidate validation](runbooks/freeze-candidate-validation.md) — local, SQL, browser, provider and documentary gates after the final product changes. The root roadmap owns the sequence.
 - [Planning review and delivery](audits/2026-10-20-freeze-remediation-planning-review.md) — independent review, corrections to the plans and documentary checks; product implementation remains pending.
 

@@ -1,5 +1,23 @@
 # Current State
 
+## Pricing y promesas — cierre local 2026-11-02
+
+012.5 está aceptado localmente en `436228963bf87a073040fbdc2f644c348ee9c40b`:
+catálogo común de landing/pricing/billing, límites/capacidades y copy/metadata
+en cuatro idiomas. El mantenedor aprobó el alcance editorial y autorizó captura
+MP confinada sin egress. La [evidencia](audits/2026-10-30-plan-012-5-local-execution.md#cierre-de-aceptacion-local--2026-11-02)
+registra unit132/132, SQL44/44, captura6/6, E2E público1/1 sobre ocho rutas,
+billing con precio/límite actualizado y checkout que ignora amount/currency
+manipulados. Fixture/cuenta/intent retirados, catálogo restaurado y runtime
+propio detenido; Docker preservado. Tipos y lint486 archivos/0 errores PASS.
+
+El [plan cerrado](exec-plans/completed/012-5-pricing-truth.md) no acepta pagos
+reales, Cloud ni el agregado012/015/016. La inspección Cloud del2026-10-30
+encontró169 migraciones frente a177 locales y un caso reconciliation429;
+no se revalidó ni aplicó ese estado remoto en este cierre. Ver la
+[auditoría separada](audits/2026-10-30-supabase-local-cloud-parity.md).
+Próxima entrada según roadmap:014-T2/T3; no ejecutada en este lote.
+
 ## Consolidación GitHub y dependencias — 2026-10-30
 
 El mantenedor autorizó publicar e integrar el trabajo local, resolver Dependabot
@@ -16,7 +34,7 @@ La próxima implementación de producto continúa siendo 012.5.
 ## Punto de salida de sesión — 2026-10-30
 
 Próxima implementación: **012.5, pricing y promesas**, ya habilitada, todavía no
-ejecutada. El [plan existente](exec-plans/active/012-5-pricing-truth.md#reentrada-en-una-sesion-nueva--2026-10-30)
+ejecutada. El [plan existente](exec-plans/completed/012-5-pricing-truth.md#reentrada-en-una-sesion-nueva--2026-10-30)
 contiene la entrada acotada para una sesión nueva; no requiere recuperar este
 chat. Código consolidado `634ad491`; exclusión aceptada registrada en `6e5e778`.
 El siguiente commit documental no será el cierre del freeze ni aceptación Cloud.
@@ -205,7 +223,7 @@ Planning consolidation **2026-10-20**: the owner accepted the revalidated
 [audit](audits/2026-10-19-freeze-code-and-documentation-revalidation.md) as the
 basis for [017 remediation](exec-plans/active/017-freeze-remediation.md), the
 [central register](exec-plans/active/freeze-remediation-register.csv), a detailed
-[012.5 plan](exec-plans/active/012-5-pricing-truth.md) and the
+[012.5 plan](exec-plans/completed/012-5-pricing-truth.md) and the
 [final validation protocol](runbooks/freeze-candidate-validation.md).
 The audit freshly ran TypeScript, lint (0 errors/16 warnings), 122 unit files /
 1452 tests with threads, documentary checks and two pure synthetic probes.
@@ -709,7 +727,7 @@ not prerequisites of the replicable base under ADR0005. Plans/rows are not runti
 | [012.2 — SSRF / outbound HTTP](audits/2026-10-13-plan-012-2-cloud-acceptance.md)              | Bounded operational scope closed                                                               | Validated Node sender, controlled HTTPS/HMAC delivery and worker wake observed; implementation consolidated through PR #221. This is not acceptance of every business trigger or Mercado Pago callback.                                                             |
 | [012.4 — CSP / secrets](audits/2026-10-19-plan-012-4-cloud-closure.md)                        | Closed, 2026-10-19; PRs #229 / #230 merged                                                     | Browser baseline, provider receipts, owner MFA/impersonation/recovery retries and fixture cleanup recorded. Nonfatal blocked Zod probe and unexecuted Cloud elapsed TTL remain explicit limitations.                                                                |
 | [017 — Remediation](exec-plans/active/017-freeze-remediation.md)                              | Local disposition recorded29/10; milestone blocked                                             | Exclusion/MFA implemented and scoped checks reviewed; shared lint/coverage confirmation and offered browser acceptance remain blocked. CSV distinguishes reused local evidence, deferred editor and outstanding gates. Integrated016 follows015; no MVP acceptance. |
-| [012.5 — Pricing truth](exec-plans/active/012-5-pricing-truth.md)                             | Planned; after 017 P1                                                                          | Align landing, pricing, checkout and entitlements with the current catalog; correct unsupported claims. Keep its own scope and current CLP labels/slugs/provider constraints; coordinate availability with 015.                                                     |
+| [012.5 — Pricing truth](exec-plans/completed/012-5-pricing-truth.md) | Accepted locally 2026-11-02 | Common catalog, public/billing updated fixture, confined MP checkout capture, human copy approval and cleanup accepted. [Execution record](audits/2026-10-30-plan-012-5-local-execution.md). No Cloud, real payment or aggregate012/016 acceptance. |
 | [014 T2 — Trusted image origins](exec-plans/active/014-reference-surface-correctness.md)      | Pending                                                                                        | Replace prefix trust with exact origin validation and regressions for similar hosts, userinfo and unauthorized ports.                                                                                                                                               |
 | [014 T3 — Platform audit interaction](exec-plans/active/014-reference-surface-correctness.md) | Pending                                                                                        | Keep platform-wide scope when filtering/paginating; preserve valid rows on errors and correct displayed fields/states.                                                                                                                                              |
 | [016 T2 — Candidate validation](exec-plans/active/016-nextjs-supabase-code-review.md)         | Pending as an integrated review deliverable                                                    | Reuse applicable commit-bound evidence and run remaining checks against the corrected candidate, including Edge Functions/SQL/E2E as required. Individual 012.4 CI passes do not complete T2.                                                                       |

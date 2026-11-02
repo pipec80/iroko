@@ -39,7 +39,7 @@ Active product plans are:
 
 The [central disposition register](active/freeze-remediation-register.csv)
 preserves all historical IDs, partial splits, aliases and follow-ups. Detailed
-[012.5](active/012-5-pricing-truth.md) remains under Plan 012, after the P1
+[012.5](completed/012-5-pricing-truth.md) is completed locally2026-11-02 under Plan012, after the P1
 remediation phase. Final 016 validation follows the final changes from 015,
 using the [candidate runbook](../runbooks/freeze-candidate-validation.md).
 

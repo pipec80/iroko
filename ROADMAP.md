@@ -64,8 +64,8 @@ This is the single execution sequence for the freeze:
    The scope prerequisite **015-T1/RS-05 may advance here first**: implement and
    verify excluded-module boundaries and the offered configuration. The rest of
    015's replication/update drill remains at step13; no dependency on editor acceptance.
-10. **Plan 012.5 — pricing truth.** Keep its own
-    [execution plan](docs/exec-plans/active/012-5-pricing-truth.md): align catalogue,
+10. **Plan 012.5 — pricing truth: accepted locally2026-11-02.** Keep its own
+    [execution plan](docs/exec-plans/completed/012-5-pricing-truth.md): align catalogue,
     labels, limits, landing, pricing, checkout and evidence-based copy. It is not
     split into 017 or merged with 015.
 11. **Plan 014 T2/T3.** Correct trusted image origins and platform audit interaction.

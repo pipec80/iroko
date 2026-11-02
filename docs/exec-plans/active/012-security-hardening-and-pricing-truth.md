@@ -317,12 +317,17 @@ no inferir cierre de012.4 a partir de este gate. Evidencia en el
 
 ## PR 5 — `feat/pricing-single-source-of-truth`
 
-**Execution plan — 2026-10-20:** [012.5 pricing truth](012-5-pricing-truth.md)
+**Execution plan — 2026-10-20:** [012.5 pricing truth](../completed/012-5-pricing-truth.md)
 details this scope. It remains part of Plan 012; it is not split into 017 or 015. The approved roadmap places 017 P1 repairs first. Source-of-truth,
 commercial naming and evidence-based copy stay together; unrelated Auth/data
 repairs use 017 and billing-disabled availability uses 015.
 
-**Pendiente para v1:** conectar landing, `/pricing`, checkout y entitlements
+**Aceptación local2026-11-02:** `436228963bf87a073040fbdc2f644c348ee9c40b`; catálogo mostrado/contratado,
+fixture, capture MP sin egress, copy humano y cleanup verificados en la
+[auditoría012.5](../../audits/2026-10-30-plan-012-5-local-execution.md).
+No cierra el agregado012 ni certifica Cloud/pagos reales.
+
+**Objetivo original para v1:** conectar landing, `/pricing`, checkout y entitlements
 al catálogo vigente, sin modificar precios ni slugs durante el cierre MP.
 El catálogo chileno mantiene etiquetas Free / Plus / Pro y slugs
 `free` / `pro` / `scale`; no deducir el nombre comercial capitalizando el slug.
