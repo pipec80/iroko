@@ -143,6 +143,29 @@ uno antes y cero después de confirmar la eliminación, con presupuestos iguales
 Un experimento browser sin servicios reprodujo el strict-mode original y
 comprobó la selección visible; el recorrido real sigue dependiendo del CI.
 
+La corrida3fef5c7 superó E2E general y CSP;017 quedó7/8,0 skips/flaky. El
+diagnóstico nuevo ubicó timeout en analytics.spec.ts398: login/MFA/listado
+pasaron y el clic Ver como retornó, pero no apareció el input del diálogo.
+La reproducción local Turbopack mostró página administrativa normal con botón
+enfocado y diálogo cerrado, sin overlay de manifiesto. Esto no demuestra la
+causa exacta del fallo CI ni fallo de autorización/inicio de impersonación.
+
+Ruling de método:017 usa ahora runtime production y compilador Turbopack,
+ambos ya soportados por runLocalValidation. El build completo precede a los
+mismos ocho casos; guards, SDK sintético, sumideros, cero retries/skips/flaky y
+acceptance exacta permanecen. Los presupuestos base de producción son más
+estrictos que los de compilación development. Revisión independiente del
+método sin bloqueantes. Un PASS acepta los escenarios del producto en ese
+runtime; no certifica reparación de HMR/hidratación de desarrollo. Costo:
+build adicional y límites del entorno development conservados explícitamente.
+
+La reproducción local Turbopack finalizó6/7, mismo timeout del diálogo, sin
+skips/flaky; runtime detenido, usuarios propios0 y guard SQL ausente. Las
+pruebas de infraestructura del método permanecen63/63. Un intento dentro del
+sandbox falló por EACCES de loopback/EPERM de junction; repetición autorizada
+fuera del sandbox pasó63/63, sin modificar los guards ni atribuir el rechazo
+del sistema a un fallo del producto.
+
 Reproducción webpack final:5/7 aprobados,2 fallidos,0 skips/flaky; segundo caso
 Auth URL agotó su presupuesto después del error de manifiesto. Runtime detenido
 y cleanup del runner completado. No se contabiliza como aceptación. Tras el

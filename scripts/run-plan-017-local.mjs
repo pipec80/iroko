@@ -121,7 +121,7 @@ export async function runPlan017(specs) {
       ...lifecycle,
       mode: '--e2e',
       compiler: 'turbopack',
-      runtime: 'development',
+      runtime: 'production',
       specs,
       acceptance: (stats, cases, configuredProjects) =>
         assertP1Acceptance(stats, cases, specs, configuredProjects),
