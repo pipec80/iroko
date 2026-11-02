@@ -168,7 +168,7 @@ teamMgmtTest.describe('Team — remove member', () => {
 
       // The seeded member's email contains "e2e+team-member" — wait for their row
       const memberText = page.getByText(/e2e\+team-member/).filter({ visible: true });
-      await expect(memberText).toHaveCount(1);
+      await expect(memberText).toHaveCount(1, { timeout: 10_000 });
       await expect(memberText).toBeVisible({ timeout: 10_000 });
 
       // Open the row's actions menu — only non-owner active members have one
