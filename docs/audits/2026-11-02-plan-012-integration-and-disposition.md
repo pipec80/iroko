@@ -133,6 +133,16 @@ valores arbitrarios. Se registra compiler en evidencia; mismos escenarios,
 assertions y guards. La aceptación real requiere el resultado posterior del
 runner/CI, no se infiere del test de argumentos.
 
+La segunda corrida CI (c3000e9) aprobó Documentation, calidad/unit/SQL/seguridad
+y WebKit, pero el E2E general quedó86 aprobados/2 skips/1 fallo. Falló
+team.spec.ts171 antes de la eliminación: getByText coincidía con dos copias
+DOM del mismo correo, una oculta, y Playwright rechazó la ambigüedad incluso
+en sus retries. No llegó al bloque017; su cambio de compilador no se considera
+aceptado por esta corrida. Se acotó el locator a elementos visibles, exigiendo
+uno antes y cero después de confirmar la eliminación, con presupuestos iguales.
+Un experimento browser sin servicios reprodujo el strict-mode original y
+comprobó la selección visible; el recorrido real sigue dependiendo del CI.
+
 Reproducción webpack final:5/7 aprobados,2 fallidos,0 skips/flaky; segundo caso
 Auth URL agotó su presupuesto después del error de manifiesto. Runtime detenido
 y cleanup del runner completado. No se contabiliza como aceptación. Tras el

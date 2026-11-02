@@ -167,7 +167,8 @@ teamMgmtTest.describe('Team — remove member', () => {
       await page.waitForURL(/\/es\/dashboard\/members/);
 
       // The seeded member's email contains "e2e+team-member" — wait for their row
-      const memberText = page.getByText(/e2e\+team-member/);
+      const memberText = page.getByText(/e2e\+team-member/).filter({ visible: true });
+      await expect(memberText).toHaveCount(1);
       await expect(memberText).toBeVisible({ timeout: 10_000 });
 
       // Open the row's actions menu — only non-owner active members have one
@@ -183,7 +184,7 @@ teamMgmtTest.describe('Team — remove member', () => {
 
       // Visible result: dialog gone and the member's email no longer in the list
       await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15_000 });
-      await expect(page.getByText(/e2e\+team-member/)).not.toBeVisible({ timeout: 15_000 });
+      await expect(memberText).toHaveCount(0, { timeout: 15_000 });
     },
   );
 });
