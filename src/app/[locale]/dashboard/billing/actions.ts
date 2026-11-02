@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 import { getActiveAccountId } from '@/lib/active-account';
 import { captureServer } from '@/lib/analytics/server';
-import { getProviderPrice } from '@/lib/billing/catalog';
+import { readBillingCatalog } from '@/lib/billing/public-catalog';
 import { getPaymentProvider } from '@/lib/billing/registry';
 import { mapBillingPaymentHealth, type BillingPaymentHealth } from '@/lib/billing/payment-health';
 import { cancelBillingSubscription, startBillingCheckout } from '@/lib/billing/service';
@@ -290,12 +290,12 @@ export const getBillingData = withServerAction(async function getBillingData(): 
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
   const supabase = await createClient();
-  const [plansResult, overviewResult, paymentHealthResult] = await Promise.all([
-    supabase.rpc('get_active_plans'),
+  const [catalog, overviewResult, paymentHealthResult] = await Promise.all([
+    readBillingCatalog(),
     supabase.rpc('get_billing_overview', { p_account_id: accountId }),
     supabase.rpc('get_billing_payment_health', { p_account_id: accountId }),
   ]);
-  if (plansResult.error) return { data: null, error: 'fetch_failed' };
+  if (catalog.error) return { data: null, error: 'fetch_failed' };
 
   const overviewNotAuthorized =
     overviewResult.error?.code === '42501' || overviewResult.error?.message === 'not_authorized';
@@ -310,55 +310,11 @@ export const getBillingData = withServerAction(async function getBillingData(): 
     return { data: null, error: 'fetch_failed' };
   }
 
-  const plans = plansResult.data;
   const overview = overviewNotAuthorized ? null : overviewResult.data;
-  const basePlans: PlanRow[] = (plans ?? []).map((p) => ({
-    slug: p.slug,
-    name: p.name,
-    description: p.description,
-    interval: p.interval,
-    price: p.price,
-    currency: p.currency,
-    trialDays: p.trial_days ?? 0,
-    features: (p.features ?? {}) as Record<string, boolean>,
-    limits: (p.limits ?? {}) as Record<string, number>,
+  const mappedPlans: PlanRow[] = catalog.plans.map(({ amount, ...plan }) => ({
+    ...plan,
+    price: amount,
   }));
-  let paymentProvider: ReturnType<typeof getPaymentProvider> | null = null;
-  try {
-    paymentProvider = getPaymentProvider();
-  } catch {
-    // A missing checkout configuration must not hide the account's catalog or
-    // billing state. The client uses this flag to disable checkout explicitly.
-  }
-  const shouldUseMercadoPagoCatalog =
-    paymentProvider?.name === 'mercadopago' || env.BILLING_DEFAULT_PROVIDER === 'mercadopago';
-  const mappedPlans: PlanRow[] =
-    shouldUseMercadoPagoCatalog ?
-      (
-        await Promise.all(
-          basePlans
-            .filter((plan) => plan.interval === 'month')
-            .map(async (plan) => {
-              try {
-                const providerPrice = await getProviderPrice({
-                  planSlug: plan.slug,
-                  interval: 'month',
-                  provider: 'mercadopago',
-                  currency: 'CLP',
-                });
-                return {
-                  ...plan,
-                  price: providerPrice.amount,
-                  currency: providerPrice.currency,
-                  trialDays: 0,
-                };
-              } catch {
-                return null;
-              }
-            }),
-        )
-      ).filter((plan): plan is PlanRow => plan !== null)
-    : basePlans;
   const o = overview?.[0];
   const mappedOverview: BillingOverview | null =
     o ?
@@ -382,7 +338,7 @@ export const getBillingData = withServerAction(async function getBillingData(): 
       paymentHealth: mapBillingPaymentHealth(
         paymentHealthNotAuthorized ? null : paymentHealthResult.data?.[0],
       ),
-      checkoutAvailable: paymentProvider !== null,
+      checkoutAvailable: catalog.checkoutAvailable,
     },
   };
 });

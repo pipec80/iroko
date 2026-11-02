@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -100,6 +100,32 @@ describe('BillingTab — role-awareness', () => {
         status: 'incomplete',
       },
     });
+  });
+
+  it('shows current catalog limits and capabilities alongside the provider price', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: {
+        plans: [
+          {
+            ...PLAN_PRO,
+            name: 'Plus',
+            price: 34567,
+            currency: 'CLP',
+            limits: { seats_max: 17, api_keys_max: 1 },
+            features: { webhooks_enabled: true, priority_support: true },
+          },
+        ],
+        overview: ACTIVE_PRO_OVERVIEW,
+        checkoutAvailable: true,
+      },
+    });
+    renderBillingTab('owner');
+    const card = await screen.findByTestId('plan-card-pro');
+    expect(card.textContent).toContain('34.567');
+    expect(within(card).getByText('Miembros: 17')).toBeTruthy();
+    expect(within(card).getByText('API keys: 1')).toBeTruthy();
+    expect(within(card).getByText('Webhooks')).toBeTruthy();
+    expect(within(card).queryByText('Soporte prioritario')).toBeNull();
   });
 
   it('should show the read-only notice for a member', async () => {

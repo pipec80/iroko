@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dialog';
 import { useRouter } from '@/i18n/routing';
 import { logClient } from '@/lib/logger-client';
+import { getPlanItems } from '@/lib/billing/presentation';
 import { canManageBilling, type MembershipRole } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
@@ -360,6 +361,9 @@ function PlanCard({
   isCheckoutBlocked: boolean;
 }) {
   const t = useTranslations('Billing');
+  const catalogLabels = useTranslations('PublicCatalog');
+  const locale = useLocale();
+  const items = getPlanItems(plan, catalogLabels, locale);
   const isFree = plan.slug === 'free';
   const isCanceledWithAccess = isCurrent && accessEndsOn !== null;
 
@@ -392,6 +396,13 @@ function PlanCard({
         <p className="text-muted-foreground mb-4 text-[12px]">
           {t('plan_trial', { days: plan.trialDays })}
         </p>
+      )}
+      {items.length > 0 && (
+        <ul className="text-muted-foreground mb-4 space-y-1 text-sm">
+          {items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
       )}
       <button
         type="button"

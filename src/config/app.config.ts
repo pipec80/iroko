@@ -62,7 +62,7 @@ export const appConfig: AppConfig = {
   name: 'Iroko',
   brand: 'Iroko',
   description:
-    'The SaaS boilerplate that maximises Supabase and runs on the free tier. Auth, billing, teams and deploy — ready on day one.',
+    'SaaS foundation in development with authentication, accounts, permissions and configurable integrations.',
   version: packageJson.version,
   supportEmail: 'pipec800@gmail.com',
   defaultLocale: routing.defaultLocale,
