@@ -281,7 +281,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v2
+        uses: supabase/setup-cli@d239d1052f6f024a8d746d7e5aeddead63b9cb53 # v2
         with:
           version: 2.109.1
 
