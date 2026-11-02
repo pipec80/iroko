@@ -284,7 +284,7 @@ conecta hallazgos con código y propietarios. No duplicar planes:
   requerido por el freeze está satisfecho; la
   [matriz Chile](../exec-plans/deferred/011-billing/011-mercadopago-v1-chile-acceptance.md)
   conserva evidencia y escenarios pendientes sin declararlos completos.
-- [012](../exec-plans/active/012-security-hardening-and-pricing-truth.md): grants,
+- [012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md): grants,
   salida HTTP, rate limit, CSP/secretos y pricing/copy coherente.
 - [014](../exec-plans/active/014-reference-surface-correctness.md), activo:
   cerrar superficies de ejemplo, confianza de URLs e interacción de auditoría.

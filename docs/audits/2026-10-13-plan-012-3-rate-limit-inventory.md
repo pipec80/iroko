@@ -2,7 +2,7 @@
 
 Fecha: 2026-10-13. Inspección estática y lectura Cloud, sin cambios de producto,
 SQL ni proveedores. **Veredicto: no está ya resuelto; requiere corrección.**
-Este informe desarrolla el primer paso de PR3 del [Plan012](../exec-plans/active/012-security-hardening-and-pricing-truth.md).
+Este informe desarrolla el primer paso de PR3 del [Plan012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md).
 
 ## Superficies y consumidores
 

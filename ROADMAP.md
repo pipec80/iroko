@@ -68,8 +68,8 @@ This is the single execution sequence for the freeze:
     [execution plan](docs/exec-plans/completed/012-5-pricing-truth.md): align catalogue,
     labels, limits, landing, pricing, checkout and evidence-based copy. It is not
     split into 017 or merged with 015.
-11. **Plan 014 T2/T3.** Correct trusted image origins and platform audit interaction.
-12. **Plan 017 — offered-surface closure and dispositions.** Close remaining
+11. **Security triage before P2 —017.1-T9/017.2-T6.** Receive RL-F01 (Data API IP trust) and RL-F03 (Cloud accounts grants) from completed012. Inventory and decide risk; any confirmed offered-surface P0/P1 is repaired first. Do not repeat accepted017 core repairs.
+12. **Offered corrections —014 T2/T3, then remaining017.** Start with trusted image origins and platform audit interaction as two bounded tasks/PRs. Group subsequent web/privacy evidence by subsystem without merging IDs. Close remaining
     security/integrity and essential usability findings in offered web, privacy
     and CI/fixture surfaces. Explicitly defer secondary capabilities; do not run
     the editor development harness or expand Robot. Preserve completed repairs.

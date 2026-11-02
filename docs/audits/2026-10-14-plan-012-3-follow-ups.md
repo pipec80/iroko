@@ -1,5 +1,7 @@
 # Plan 012.3 — Cierre y seguimientos pendientes
 
+**Transferencia2026-11-02:** RL-F01→017.1-T9; RL-F03→017.2-T6; RL-F02/F04/F06→016-V4 y runbook; RL-F05→aceptación por integración/matriz011 con coordinación016. Permanecen abiertos con condiciones de la tabla; no se certifican al mover012 a completed. [Disposición](2026-11-02-plan-012-integration-and-disposition.md).
+
 **Resolution pointer — 2026-10-20:** NEXT-0124 below is historical: [012.4 closed with bounded acceptance on 19/10](2026-10-19-plan-012-4-cloud-closure.md). RL-F01–F06 retain their own conditions. Current task disposition is in the [central register](../exec-plans/active/freeze-remediation-register.csv); no new provider acceptance is claimed here.
 
 Actualizado: 2026-10-15. Registro documental; no autoriza cambios Cloud.
@@ -64,6 +66,6 @@ mantienen sus propios límites y no se dan por corregidos al redactar 012.4.
 ## Referencias
 
 - [Estado actual](../current-state.md).
-- [Plan 012 padre y PR4](../exec-plans/active/012-security-hardening-and-pricing-truth.md).
-- [Plan 012.3 y ejecución por etapas](../exec-plans/active/012-3-rate-limiting.md).
+- [Plan 012 padre y PR4](../exec-plans/completed/012-security-hardening-and-pricing-truth.md).
+- [Plan 012.3 y ejecución por etapas](../exec-plans/completed/012-3-rate-limiting.md).
 - [Ejecución Cloud y recuperación](2026-10-14-plan-012-3-cloud-execution.md).

@@ -32,7 +32,7 @@ servicios, paquetes ni una nueva arquitectura de billing.
 **Tech Stack:** Next 16.4.1, React 19/Compiler, TypeScript strict, Zod, Supabase
 Postgres, Sentry 10.67.0, PostHog, Vitest, Playwright y pgTAP instalados.
 
-**Spec:** [PR4 del Plan 012](../active/012-security-hardening-and-pricing-truth.md#pr-4--chorecsp-and-secrets-hardening), cruzado con el
+**Spec:** [PR4 del Plan 012](012-security-hardening-and-pricing-truth.md#pr-4--chorecsp-and-secrets-hardening), cruzado con el
 [inventario estático fechado](../../audits/2026-10-14-plan-012-4-readiness.md).
 
 **Estado (2026-10-16):** implementación local de tareas 1–5 presente en

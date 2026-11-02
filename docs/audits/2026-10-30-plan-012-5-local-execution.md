@@ -175,7 +175,7 @@ y soporte no acreditado. No se cambiaron botones, permisos, overview,
 paymentHealth ni inicio de checkout.
 
 - RED observado: caso `shows current catalog limits and capabilities alongside
-  the provider price`, fallo «Miembros:17» ausente en la tarjeta, con precio
+the provider price`, fallo «Miembros:17» ausente en la tarjeta, con precio
   CLP34567 ya correcto. La selección `-t` no ejecutó26 casos restantes; esos
   casos no se contabilizaron como aceptación durante RED.
 - GREEN:27/27 del archivo de billing; después conjunto relevante **132/132 en
@@ -184,7 +184,7 @@ paymentHealth ni inicio de checkout.
   cuenta como prueba aprobada. Se liberó el Next propio antes de la ejecución
   exitosa; no se bajaron umbrales ni assertions.
 - Typecheck posterior al cambio: `node node_modules/typescript/bin/tsc --noEmit
-  --incremental false` → PASS.
+--incremental false` → PASS.
 - Revisión independiente concreta: hooks incondicionales, import cliente sin
   arrastrar código servidor, límites cero conservados, estados/CTA intactos.
 
@@ -205,12 +205,12 @@ pública8+8 y fixture pública2/2 del primer runtime: el cambio posterior solo
 añade presentación al dashboard y estrecha el tipo del helper compartido.
 La aceptación del intento MP sigue bloqueada; no se inició ningún checkout.
 
-| Tarea | Código/revisión | Aceptación pendiente |
-| --- | --- | --- |
-| T1 | Aceptado localmente: lector común seguro, regresiones, SQL, tipos y lint PASS; SHA superior | Cloud no aceptado por esta tarea |
-| T2 | Aceptado localmente: DTO, formatter, cuatro locales, browser available/unavailable y CLI ocho rutas PASS | Desktop en desarrollo; sin build productivo ni todos los dispositivos |
-| T3 | Aceptado localmente: billing actualizado, captura MP confinada con manipulación cliente, SQL y cleanup PASS | No acredita login por UI, pago real, webhook ni autorización MP |
-| T4 | Aceptado localmente: copy/metadata, revisión independiente y aprobación humana2026-11-02 | Browser completo de product/solutions/contact no ejecutado; no es certificación operacional |
+| Tarea | Código/revisión                                                                                             | Aceptación pendiente                                                                        |
+| ----- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| T1    | Aceptado localmente: lector común seguro, regresiones, SQL, tipos y lint PASS; SHA superior                 | Cloud no aceptado por esta tarea                                                            |
+| T2    | Aceptado localmente: DTO, formatter, cuatro locales, browser available/unavailable y CLI ocho rutas PASS    | Desktop en desarrollo; sin build productivo ni todos los dispositivos                       |
+| T3    | Aceptado localmente: billing actualizado, captura MP confinada con manipulación cliente, SQL y cleanup PASS | No acredita login por UI, pago real, webhook ni autorización MP                             |
+| T4    | Aceptado localmente: copy/metadata, revisión independiente y aprobación humana2026-11-02                    | Browser completo de product/solutions/contact no ejecutado; no es certificación operacional |
 
 ## Primera ejecución — registro histórico del2026-10-30
 
@@ -300,16 +300,16 @@ no sustituirlo por Cloud ni por mock general. No hubo push, PR, merge o deploy.
 
 ## Matriz editorial — cuatro locales
 
-| Claim anterior | Consumidor | Evidencia/decisión | Resultado |
-| --- | --- | --- | --- |
-| Ready on day one / listo para producción | `app.config.description`, root metadata, HomePage/Marketing, home/product/footer | ADR0005: base y adaptación aún pendientes de aceptación | «Base SaaS en desarrollo con autenticación, cuentas, permisos e integraciones configurables» y traducción equivalente |
-| Personal/Studio/Custom, $79/79 €, contactar ventas | tarjetas y comparación landing/pricing | DB+provider_prices son autoridad; no catálogo alternativo en i18n | Retirado; nombres/importes/capacidades del DTO |
-| Stripe certificado, portal, upgrade/downgrade | home/product y comparación retirada | Matriz MP v1 no acepta esas operaciones ni otros proveedores | Mensual CLP Mercado Pago, sin certificar otros proveedores |
-| Más popular | badge landing/pricing | Selección visual por slug no demuestra popularidad | Retirado; se conserva jerarquía visual |
-| SLA garantizado / soporte prioritario / Discord privado | tiers, comparación, solutions y contact | Sin evidencia operacional aceptada para esos servicios | Retirado; consulta por correo sin plazo garantizado |
-| Lanzar esta tarde / menos de 30 min / respuesta 24 h | Marketing, home/pricing/product/solutions/contact | No hay medición aceptada ni compromiso de servicio | Configuración/adaptación por validar; sin plazo garantizado |
-| Migraciones automáticas / tokens M3 | home/product | Reglas actuales Windows y tokens Iroko | SQL versionado, migraciones, RLS y tokens Iroko; detalles operacionales solo en documentación |
-| Trial o límites comerciales independientes | tiers retirados / tarjetas nuevas | Interval/trial/features/limits del DTO; MP trialDays=0 | Se muestran solo valores del catálogo; sin trial MP |
+| Claim anterior                                          | Consumidor                                                                       | Evidencia/decisión                                                | Resultado                                                                                                             |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Ready on day one / listo para producción                | `app.config.description`, root metadata, HomePage/Marketing, home/product/footer | ADR0005: base y adaptación aún pendientes de aceptación           | «Base SaaS en desarrollo con autenticación, cuentas, permisos e integraciones configurables» y traducción equivalente |
+| Personal/Studio/Custom, $79/79 €, contactar ventas      | tarjetas y comparación landing/pricing                                           | DB+provider_prices son autoridad; no catálogo alternativo en i18n | Retirado; nombres/importes/capacidades del DTO                                                                        |
+| Stripe certificado, portal, upgrade/downgrade           | home/product y comparación retirada                                              | Matriz MP v1 no acepta esas operaciones ni otros proveedores      | Mensual CLP Mercado Pago, sin certificar otros proveedores                                                            |
+| Más popular                                             | badge landing/pricing                                                            | Selección visual por slug no demuestra popularidad                | Retirado; se conserva jerarquía visual                                                                                |
+| SLA garantizado / soporte prioritario / Discord privado | tiers, comparación, solutions y contact                                          | Sin evidencia operacional aceptada para esos servicios            | Retirado; consulta por correo sin plazo garantizado                                                                   |
+| Lanzar esta tarde / menos de 30 min / respuesta 24 h    | Marketing, home/pricing/product/solutions/contact                                | No hay medición aceptada ni compromiso de servicio                | Configuración/adaptación por validar; sin plazo garantizado                                                           |
+| Migraciones automáticas / tokens M3                     | home/product                                                                     | Reglas actuales Windows y tokens Iroko                            | SQL versionado, migraciones, RLS y tokens Iroko; detalles operacionales solo en documentación                         |
+| Trial o límites comerciales independientes              | tiers retirados / tarjetas nuevas                                                | Interval/trial/features/limits del DTO; MP trialDays=0            | Se muestran solo valores del catálogo; sin trial MP                                                                   |
 
 Metadata usa el mismo texto limitado por idioma desde `HomePage.description`,
 sin modificar CSP, fuentes, título base, icons, robots o metadataBase. El fallback

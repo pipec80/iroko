@@ -247,6 +247,17 @@ FOLLOW-CONSENT; implementador y revisor preservan ese contrato y su evidencia.
 - [ ] Inspeccionar wrapper existente `src/components/providers/vercel-analytics-consent.tsx` y fila FOLLOW-CONSENT: opt-in y browser local ya registrados. Conservar esa decisión; solo revalidar si cambia su superficie.
 - [ ] Si hay regresión, los controles siguen siendo cero script/envío sin consentimiento, evento positivo aceptado y cero eventos después de revocar, con SDK interceptado. Desmontar por sí solo no basta. Comando: `node scripts/run-plan-017-local.mjs vercel-analytics-consent.spec.ts`; no acredita proveedor ni cumplimiento legal.
 
+### 017.1-T9: triage de confianza IP Data API — RL-F01
+
+Recibido de012 el2026-11-02; responsable lógico seguridad Auth/Data API.
+Estado evidence-pending, sin nueva aceptación. Triage antes del siguiente lote
+P2, coordinado con017.2-T6; no repetir cierres de rate limiting.
+
+- [ ] Inventariar consumidores de `private.check_request`, acceso directo al Data API, proxies y configuración aplicada; leer `src/proxy.ts`, RPC/hook y pruebas SQL47 (`hook_rate_limit_contract`) y48 (`account_api_admission`). SQL49 corresponde al seguimiento de grants RL-F03. No asumir que headers CF/XFF son confiables por su nombre.
+- [ ] Renovar identidad/destino y ejecutar ensayo HTTP acotado autorizado con headers ausentes, privados y falsificados, correlacionando bucket efectivo sin imprimir IPs/tokens. No provocar indisponibilidad global ni saltar guards.
+- [ ] Clasificar riesgo y certeza. Si confirma un P0/P1 en superficie ofrecida, reparar antes de usuarios reales con RED/GREEN, migración nueva+mirror si corresponde y regresión de consumidores. Si no se reproduce, registrar alcance y evidencia, sin certificar todos los proxies.
+- [ ] Actualizar RL-F01 con resultado, revisión independiente y cleanup;016-V4 verifica la disposición. Condición original íntegra en la auditoría012.3.
+
 ## Cierre del lote
 
 - [ ] Ejecutar `pnpm typecheck`, `pnpm lint` y unitarios afectados con SHA identificado; registrar comandos y resultados, incluidos fallos. El coordinador serializa suites compartidas.

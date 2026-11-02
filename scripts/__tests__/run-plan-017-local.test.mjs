@@ -295,6 +295,14 @@ test('isolated dev server keeps loopback binding and production remains default'
     '3000',
   ]);
   assert.throws(() => isolatedServerArguments('arbitrary', '3000'));
+  assert.deepEqual(isolatedServerArguments('development', '3000', 'turbopack'), [
+    'dev',
+    '--hostname',
+    '127.0.0.1',
+    '--port',
+    '3000',
+  ]);
+  assert.throws(() => isolatedServerArguments('development', '3000', 'arbitrary'));
 });
 
 test('Playwright fork remains guarded when a dev build directory does not exist yet', async () => {
@@ -574,6 +582,28 @@ test('browser failure diagnostics retain only authorized locations and boolean c
       [],
     ),
     { kind: 'sql-fixture', constraint: 'customers_account_id_fkey' },
+  );
+});
+
+test('failure diagnostics identify the fixed local admin fixture without retaining private paths', async () => {
+  const { safeTestFailure } = await import('../run-plan-0124-local.mjs');
+  assert.deepEqual(
+    safeTestFailure(
+      {
+        stack:
+          'at loginAdmin (C:\\private\\src\\test\\e2e\\fixtures\\platform-admin.ts:101:9)\nat analytics.spec.ts:380:1',
+        message: 'expect(locator).toBeVisible() failed private-token-marker',
+      },
+      ['analytics.spec.ts'],
+    ),
+    { file: 'fixtures/platform-admin.ts', line: 101, column: 9 },
+  );
+  assert.deepEqual(
+    safeTestFailure(
+      { stack: 'at C:/private/fixtures/other-user.ts:9:9', message: 'private-marker' },
+      ['analytics.spec.ts'],
+    ),
+    {},
   );
 });
 

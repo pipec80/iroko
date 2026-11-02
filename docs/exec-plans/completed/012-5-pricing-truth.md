@@ -10,7 +10,6 @@ E2E público1/1 (ocho rutas), billing/checkout browser local, tipos y lint PASS.
 Build productivo, aceptación integrada016, Cloud y agregado012 siguen separados.
 Las instrucciones y estados fechados inferiores conservan su contexto histórico.
 
-
 **Dirección vigente 2026-10-28:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 Este plan sigue siendo cierre del catálogo ofrecido, no paridad con competidores.
 No anunciar editor/Robot diferidos ni productos cosmética/tarot como implementados.
@@ -25,7 +24,7 @@ el runner editor ni certificar otro proveedor; preservar límites/cobros existen
 
 **Tech Stack:** Next.js 16.4.2 verificado en runtime de cierre (plan inicial16.4.1), React 19/Compiler, TypeScript, Supabase RPC, next-intl, Vitest/pgTAP/Playwright existentes.
 
-**Spec:** [PR 5 del Plan 012](../active/012-security-hardening-and-pricing-truth.md#pr-5--featpricing-single-source-of-truth), [auditoría](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md) y [contrato de remediación](../active/017-freeze-remediation.md).
+**Spec:** [PR 5 del Plan 012](012-security-hardening-and-pricing-truth.md#pr-5--featpricing-single-source-of-truth), [auditoría](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md) y [contrato de remediación](../active/017-freeze-remediation.md).
 
 Estado histórico de planificación: **planificado, no ejecutado**, 2026-10-20. Baseline `a2feb3d`. Responsable lógico: pricing/product truth; revisión datos/billing, seguridad y UI/i18n.
 

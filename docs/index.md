@@ -22,6 +22,13 @@ effective exclusion now has local guards/unit and bounded browser acceptance
 5. [Documentation history](history/README.md) — superseded versioned material,
    including the exact pre-freeze roadmap; non-authoritative.
 
+## Entrada vigente — 2026-11-02
+
+012 cerrado por entregables; Supabase177 migraciones repo/local/Cloud.
+[Integración y pendientes](audits/2026-11-02-plan-012-integration-and-disposition.md).
+Siguiente: triage017 RL-F01/F03,014 y resto017; después015 reutilización y016
+aceptación final. No duplicar los cierres históricos ni reactivar editor/Robot.
+
 ## Freeze remediation — 2026-10-20
 
 Execution simplification, 2026-10-27: the existing 017 parent owns the shared

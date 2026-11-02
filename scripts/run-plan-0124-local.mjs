@@ -770,11 +770,15 @@ async function startSink() {
   return { server, url: `http://127.0.0.1:${server.address().port}`, count: () => count };
 }
 /** All isolated servers bind loopback; development is an explicitly separate evidence class. */
-export function isolatedServerArguments(runtime, port) {
+export function isolatedServerArguments(runtime, port, compiler = 'webpack') {
   if (!['production', 'development'].includes(runtime))
     throw new Error('Unsupported isolated runtime');
+  if (!['webpack', 'turbopack'].includes(compiler))
+    throw new Error('Unsupported isolated compiler');
   return [
-    ...(runtime === 'development' ? ['dev', '--webpack'] : ['start']),
+    ...(runtime === 'development' ?
+      ['dev', ...(compiler === 'webpack' ? ['--webpack'] : [])]
+    : ['start']),
     '--hostname',
     '127.0.0.1',
     '--port',
@@ -852,8 +856,12 @@ export function createOwnedServerDiagnostics() {
 /** Failure evidence never retains test messages, bodies, full paths or credentials. */
 export function safeTestFailure(error, specs, specFile) {
   const safe = {};
-  const location = String(error.stack ?? '').match(/([a-zA-Z0-9-]+\.spec\.ts):(\d+):(\d+)/);
-  if (location && specs.includes(location[1]))
+  const location = [
+    ...String(error.stack ?? '')
+      .replaceAll('\\', '/')
+      .matchAll(/(fixtures\/platform-admin\.ts|[a-zA-Z0-9-]+\.spec\.ts):(\d+):(\d+)/g),
+  ].find((entry) => specs.includes(entry[1]) || entry[1] === 'fixtures/platform-admin.ts');
+  if (location)
     Object.assign(safe, {
       file: location[1],
       line: Number(location[2]),
@@ -896,6 +904,7 @@ async function runE2e(
   specs = requiredE2eSpecs,
   signal,
   onProgress = () => {},
+  compiler = 'webpack',
 ) {
   signal?.throwIfAborted();
   const offeredProjects = readOfferedProjects(
@@ -934,7 +943,10 @@ async function runE2e(
   const port = String(new URL(env.SITE_URL).port);
   const server = spawn(
     process.execPath,
-    [resolve(dependencies, 'next/dist/bin/next'), ...isolatedServerArguments(runtime, port)],
+    [
+      resolve(dependencies, 'next/dist/bin/next'),
+      ...isolatedServerArguments(runtime, port, compiler),
+    ],
     { cwd: scratch, env, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true },
   );
   let exited = false;
@@ -1004,6 +1016,7 @@ async function runE2e(
       observedAt: new Date().toISOString(),
       stats: result.stats,
       runtime,
+      compiler,
       offeredProjects,
       cases,
       excludedCloudTest: 'Cloud @smoke: a real envelope through /sentry-tunnel reaches Sentry',
@@ -1204,6 +1217,7 @@ export async function runLocalValidation({
             specs,
             signal,
             onProgress,
+            compiler,
           ),
         env.PLAN0124_EGRESS_LOG,
       );
@@ -1317,6 +1331,7 @@ export async function runLocalValidation({
         specs,
         signal,
         onProgress,
+        compiler,
       );
       if (existsSync(env.PLAN0124_EGRESS_LOG))
         throw new Error('E2E teardown attempted forbidden egress or process execution');

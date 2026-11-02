@@ -1,6 +1,6 @@
 # Plan 012.2 — T2: diseño de transporte seguro
 
-Fecha: 2026-10-09. Estado: diseño aprobado explícitamente por el usuario; implementación y aceptación locales verificadas; Cloud pendiente. [Plan y gates](../exec-plans/active/012-2-webhook-ssrf.md).
+Fecha: 2026-10-09. Estado: diseño aprobado explícitamente por el usuario; implementación y aceptación locales verificadas; Cloud pendiente. [Plan y gates](../exec-plans/completed/012-2-webhook-ssrf.md).
 
 ## Decisión propuesta
 

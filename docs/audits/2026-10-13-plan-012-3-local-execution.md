@@ -3,7 +3,7 @@
 Fecha: 2026-10-13. Estado: implementación, aceptación local e integración de
 código aprobadas; cierre documental incluido en la selección final.
 Cloud pendiente de etapa autorizada.
-Plan: [012.3](../exec-plans/active/012-3-rate-limiting.md).
+Plan: [012.3](../exec-plans/completed/012-3-rate-limiting.md).
 
 ## Destino y preservación
 

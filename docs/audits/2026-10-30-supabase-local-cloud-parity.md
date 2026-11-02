@@ -1,5 +1,14 @@
 # Supabase local / Cloud — inspección de solo lectura, 2026-10-30
 
+## Actualización2026-11-02 — migraciones sincronizadas
+
+El mantenedor autorizó sincronizar Cloud. Se aplicaron las ocho migraciones
+existentes mediante CLI, con revisión/preflight, recovery pausado sin trabajos
+en vuelo y cron restaurado. Repo/local/Cloud177, dry-run final sin pendientes.
+[Operación y límites](2026-11-02-plan-012-integration-and-disposition.md).
+Persisten RL-F03 (grants accounts) y reconciliation429; no es paridad exhaustiva.
+Los apartados inferiores son el diagnóstico histórico del2026-10-30.
+
 Solicitud del mantenedor: comprobar Docker, retomar012.5 y verificar si faltan
 migraciones en Cloud. Se preservan los cambios pendientes de
 `feat/012-5-pricing-truth`, HEAD `71c04ccdaee8c013627f45c927d50d34c5212291`.
@@ -33,16 +42,16 @@ operacional completa de billing a partir de HTTP200.
 
 ## Migraciones pendientes en Cloud
 
-| Versión | Migración | Alcance e implicación |
-| --- | --- | --- |
-| 20261020100000 | `api_key_quota_serialization` | Serialización de admisión de cuotas API keys |
-| 20261020101000 | `membership_invitation_serialization` | Reservas de seats/invitaciones y cambios concurrentes |
-| 20261020102000 | `document_project_account_integrity` | Integridad documento/proyecto/cuenta |
-| 20261020103000 | `last_owner_serialization` | Concurrencia al cambiar o retirar el último owner |
-| 20261020104000 | `robot_replace_serialization` | Guard de concurrencia Robot, vertical diferida |
-| 20261020110000 | `billing_recovery_fencing` | Leases y RPC `apply_billing_recovery_result` requerido por el código actual de recovery |
-| 20261020174000 | `document_revision_cas` | Columna revisión y contrato CAS del editor diferido |
-| 20261026113000 | `get_admin_account` | RPC administrativo de detalle por identidad exacta |
+| Versión        | Migración                             | Alcance e implicación                                                                   |
+| -------------- | ------------------------------------- | --------------------------------------------------------------------------------------- |
+| 20261020100000 | `api_key_quota_serialization`         | Serialización de admisión de cuotas API keys                                            |
+| 20261020101000 | `membership_invitation_serialization` | Reservas de seats/invitaciones y cambios concurrentes                                   |
+| 20261020102000 | `document_project_account_integrity`  | Integridad documento/proyecto/cuenta                                                    |
+| 20261020103000 | `last_owner_serialization`            | Concurrencia al cambiar o retirar el último owner                                       |
+| 20261020104000 | `robot_replace_serialization`         | Guard de concurrencia Robot, vertical diferida                                          |
+| 20261020110000 | `billing_recovery_fencing`            | Leases y RPC `apply_billing_recovery_result` requerido por el código actual de recovery |
+| 20261020174000 | `document_revision_cas`               | Columna revisión y contrato CAS del editor diferido                                     |
+| 20261026113000 | `get_admin_account`                   | RPC administrativo de detalle por identidad exacta                                      |
 
 Consultas Cloud de presencia ejecutadas: `get_admin_account(uuid)` ausente;
 `public.documents.revision` ausente; `billing.recovery_jobs.lease_token` ausente;

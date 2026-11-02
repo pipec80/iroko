@@ -120,7 +120,7 @@ export async function runPlan017(specs) {
     runLocalValidation({
       ...lifecycle,
       mode: '--e2e',
-      compiler: 'webpack',
+      compiler: 'turbopack',
       runtime: 'development',
       specs,
       acceptance: (stats, cases, configuredProjects) =>
