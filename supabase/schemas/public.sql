@@ -2367,7 +2367,6 @@ GRANT ALL ON FUNCTION "public"."update_my_profile"("p_given_name" "text", "p_fam
 
 
 GRANT REFERENCES,TRIGGER,TRUNCATE,MAINTAIN ON TABLE "public"."accounts" TO "authenticated";
-GRANT ALL ON TABLE "public"."accounts" TO "service_role";
 
 
 

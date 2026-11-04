@@ -41,12 +41,40 @@ it('does not mount either SDK before consent and blocks events after revocation'
   const analyticsGuard = sdk.analytics.mock.lastCall?.[0].beforeSend;
   const speedGuard = sdk.speed.mock.lastCall?.[0].beforeSend;
   const event = { url: '/es' };
-  expect(analyticsGuard(event)).toBe(event);
-  expect(speedGuard(event)).toBe(event);
+  expect(analyticsGuard(event)).toEqual(event);
+  expect(speedGuard(event)).toEqual(event);
 
   act(() => writeConsentCookie({ analytics: false, marketing: false }));
   expect(screen.queryByTestId('vercel-analytics')).toBeNull();
   expect(screen.queryByTestId('vercel-speed-insights')).toBeNull();
   expect(analyticsGuard(event)).toBeNull();
   expect(speedGuard(event)).toBeNull();
+});
+
+it('removes credentials and personal query data from both SDK URLs without mutating input', async () => {
+  act(() => writeConsentCookie({ analytics: true, marketing: false }));
+  render(<VercelAnalyticsConsent />);
+  await waitFor(() => expect(sdk.analytics).toHaveBeenCalled());
+  await waitFor(() => expect(sdk.speed).toHaveBeenCalled());
+  const guards = [
+    sdk.analytics.mock.lastCall?.[0].beforeSend,
+    sdk.speed.mock.lastCall?.[0].beforeSend,
+  ];
+  for (const guard of guards) {
+    for (const [url, expected] of [
+      [
+        'http://localhost:3000/es/auth/click?token_hash=PRIVATE_MARKER&code=PRIVATE_MARKER&email=PRIVATE_MARKER#PRIVATE_MARKER',
+        '/es/auth/click',
+      ],
+      ['/es/signup/confirmation?email=PRIVATE_MARKER', '/es/signup/confirmation'],
+      ['javascript:PRIVATE_MARKER', ':redacted'],
+      ['/es/dashboard', '/es/dashboard'],
+    ]) {
+      const event = { url, type: 'pageview', route: '/[locale]/auth/click' };
+      const result = guard(event);
+      expect(result).toEqual({ ...event, url: expected });
+      expect(JSON.stringify(result)).not.toContain('PRIVATE_MARKER');
+      expect(event.url).toBe(url);
+    }
+  }
 });

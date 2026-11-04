@@ -82,13 +82,14 @@ export default defineConfig({
   : {
       webServer: {
         command:
-          'cross-env NODE_ENV=production pnpm build && cross-env NODE_ENV=production pnpm start',
+          'cross-env NODE_ENV=production pnpm build && cross-env NODE_ENV=production pnpm start --hostname 127.0.0.1',
         url: 'http://localhost:3000/es/login',
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
         stdout: 'pipe',
         stderr: 'pipe',
         env: {
+          MOCK_BILLING_FIXTURE: 'true',
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: '',
           HOSTNAME: 'localhost',
           PORT: '3000',

@@ -1,6 +1,6 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
-import { isMockBillingAllowed } from '@/lib/billing/mock-policy';
+import { isMockBillingOptedIn } from '@/lib/billing/mock-policy';
 export { isMockBillingAllowed } from '@/lib/billing/mock-policy';
 
 export const env = createEnv({
@@ -36,7 +36,7 @@ export const env = createEnv({
       .refine(
         (provider) =>
           provider !== 'mock' ||
-          isMockBillingAllowed({
+          isMockBillingOptedIn({
             nodeEnv: process.env.NODE_ENV,
             allowMockBilling: process.env.ALLOW_MOCK_BILLING,
           }),
@@ -45,6 +45,7 @@ export const env = createEnv({
         },
       ),
     ALLOW_MOCK_BILLING: z.enum(['true']).optional(),
+    MOCK_BILLING_FIXTURE: z.literal('true').optional(),
     MOCK_BILLING_SECRET: z.string().regex(/^[0-9a-f]{64}$/i),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
@@ -91,6 +92,7 @@ export const env = createEnv({
     MAILPIT_URL: process.env.MAILPIT_URL,
     BILLING_DEFAULT_PROVIDER: process.env.BILLING_DEFAULT_PROVIDER ?? 'mock',
     ALLOW_MOCK_BILLING: process.env.ALLOW_MOCK_BILLING,
+    MOCK_BILLING_FIXTURE: process.env.MOCK_BILLING_FIXTURE,
     MOCK_BILLING_SECRET: process.env.MOCK_BILLING_SECRET,
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
     STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,

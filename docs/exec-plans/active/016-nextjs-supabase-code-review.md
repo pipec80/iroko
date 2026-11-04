@@ -2,6 +2,34 @@
 
 ## Reauditoría final vigente — 2026-10-28
 
+### Recepción acotada de evidencias017 —2026-11-02
+
+El mantenedor acotó017 para no repetir validaciones ni mantenerlo abierto hasta
+este gate.016 recibe los IDs siguientes con sus estados pendientes originales;
+no se aceptan por traslado. Las especificaciones de los hijos017 se conservan
+como referencia, no como una segunda orden de ejecutar los mismos recorridos.
+
+| Gate | IDs                 | Resultado mínimo                                                                                               |
+| ---- | ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| V2   | N-02,N-03           | Inspeccionar sitemap generado: origen correcto y sin rutas privadas en cuatro locales; reutilizar build válido |
+| V3   | N-07                | Un evento Realtime útil y cleanup al salir/cambiar identidad; sin prueba de carga                              |
+| V3   | N-08,N-28           | Recuperación visible del error controlado; HTML/hidratación404 sólo si se reproduce la hipótesis               |
+| V3   | N-11,N-12,N-19,N-20 | Un recorrido avatar/logo que reúna rechazo inválido, límite, dos envíos y persistencia; Robot no ofrecido      |
+| V3   | N-13,N-14,N-15      | Retry y destino seguro Auth/invitación/MFA; CAPTCHA condicionado a configuración ofrecida, sin bypass          |
+| V3   | N-16,N-17           | Dos sesiones: identificar actual, revocar otra, conservar sesión válida y feedback de error                    |
+| V3   | N-21,N-23           | Lookup por ID fuera del primer lote y error genérico fiel; no confundir con014-T3                              |
+
+Antes de ejecutar, comparar cada assertion con evidencia vigente y registrar
+qué se reutiliza. Método manual reproducible o automatización existente
+confinada; un único recorrido puede cubrir varios IDs si demuestra cada contrato.
+Sólo ejecutar lo que falta, con control positivo/negativo y cleanup pertinente.
+No construir harness nuevos, ampliar permisos, bajar cobertura ni forzar cuotas.
+Los P0/P1 de una capacidad ofrecida siguen bloqueando; P2 no demostrados admiten
+disposición explícita con riesgo/dueño/retorno, no PASS inventado.
+
+017 puede cerrar su remediación acotada antes de015;016 conserva el veredicto
+integrado posterior a015. Este ajuste no declara completas las tareas de016.
+
 [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md) fija
 el alcance deT2/T3 después de015: base replicable y configurable, sin obligación
 de construir Robot ni aceptar editor avanzado. Conservar el manifiesto/revisiónT1

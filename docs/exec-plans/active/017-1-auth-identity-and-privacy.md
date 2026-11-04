@@ -253,12 +253,14 @@ Recibido de012 el2026-11-02; responsable lógico seguridad Auth/Data API.
 Estado evidence-pending, sin nueva aceptación. Triage antes del siguiente lote
 P2, coordinado con017.2-T6; no repetir cierres de rate limiting.
 
-- [ ] Inventariar consumidores de `private.check_request`, acceso directo al Data API, proxies y configuración aplicada; leer `src/proxy.ts`, RPC/hook y pruebas SQL47 (`hook_rate_limit_contract`) y48 (`account_api_admission`). SQL49 corresponde al seguimiento de grants RL-F03. No asumir que headers CF/XFF son confiables por su nombre.
+- [ ] Inventariar consumidores de `public.check_request`, acceso directo al Data API, proxies y configuración aplicada; leer `src/proxy.ts`, RPC/hook y pruebas SQL47 (`hook_rate_limit_contract`) y48 (`account_api_admission`). SQL49 corresponde al seguimiento de grants RL-F03. No asumir que headers CF/XFF son confiables por su nombre.
 - [ ] Renovar identidad/destino y ejecutar ensayo HTTP acotado autorizado con headers ausentes, privados y falsificados, correlacionando bucket efectivo sin imprimir IPs/tokens. No provocar indisponibilidad global ni saltar guards.
 - [ ] Clasificar riesgo y certeza. Si confirma un P0/P1 en superficie ofrecida, reparar antes de usuarios reales con RED/GREEN, migración nueva+mirror si corresponde y regresión de consumidores. Si no se reproduce, registrar alcance y evidencia, sin certificar todos los proxies.
 - [ ] Actualizar RL-F01 con resultado, revisión independiente y cleanup;016-V4 verifica la disposición. Condición original íntegra en la auditoría012.3.
 
 ## Cierre del lote
+
+Actualización 2026-11-03: [ensayo de confianza IP, controles Chromium de las tres filas y límites](../../audits/2026-10-20-017-p1-execution.md#lotes-del-cierre-acotado--2026-11-03). La confianza en la cadena de proxies Cloud sigue [NO VERIFICADO].
 
 - [ ] Ejecutar `pnpm typecheck`, `pnpm lint` y unitarios afectados con SHA identificado; registrar comandos y resultados, incluidos fallos. El coordinador serializa suites compartidas.
 - [ ] E2E solo en local identificado, Sentry upload desactivado mediante contrato existente y env validado, sin omitir validación de variables. Registrar aceptación de fase A separada de fase B.

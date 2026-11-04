@@ -139,7 +139,7 @@ de publicar está en [docs/history/](docs/history/README.md).
 El [roadmap de freeze](ROADMAP.md) contiene el único orden vigente. Plan 011
 tiene el alcance requerido por este freeze satisfecho y conserva sus escenarios
 restantes como trabajo diferido; Plan 013 también queda diferido hasta decidir
-vender. Los Planes 012, 014, 015, 016 y 017 forman el trabajo activo. Consulta el
+vender. Plan012 cerrado por entregables;014,015,016 y017 siguen activos. Consulta el
 [índice de planes](docs/exec-plans/README.md) para su ciclo de vida y
 [el estado actual](docs/current-state.md) para evidencia verificada.
 

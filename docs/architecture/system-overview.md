@@ -4,8 +4,9 @@ MVP direction accepted 2026-10-28: [ADR0005](../adr/0005-replicable-saas-mvp-and
 The reusable SaaS core precedes any Robot/client vertical. Existing runtime
 boundaries remain; no new architecture, provider or generic plugin engine is
 introduced. Editor/Robot exclusion has configuration/authorization guards and
-unit evidence under015-T1 (2026-10-29); browser acceptance remains blocked.
-This map does not establish runtime acceptance.
+unit evidence under015-T1 (2026-10-29); bounded local browser exclusion passed2/2
+later that day. Independent composition/reuse and final016 remain pending.
+This map does not establish acceptance of the deferred modules themselves.
 
 Status: current architectural map with explicitly marked planned areas
 Last reviewed: 2026-09-24 (product/reuse boundary and billing worker map;

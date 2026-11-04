@@ -27,8 +27,16 @@ const props = {
 describe('mock checkout page boundaries', () => {
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
     mocks.env.NODE_ENV = 'test';
     mocks.env.ALLOW_MOCK_BILLING = undefined;
+  });
+  it('denies a production bearer before decoding when only the old opt-in is configured', async () => {
+    vi.stubEnv('MOCK_BILLING_FIXTURE', undefined);
+    mocks.env.NODE_ENV = 'production';
+    mocks.env.ALLOW_MOCK_BILLING = 'true';
+    await expect(MockCheckoutPage(props)).rejects.toThrow('not_found');
+    expect(mocks.verify).not.toHaveBeenCalled();
   });
   it('denies production before decoding a signed token without opt-in', async () => {
     mocks.env.NODE_ENV = 'production';
