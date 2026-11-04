@@ -7,7 +7,113 @@ Integración publicada: [PR241](https://github.com/pipec80/iroko/pull/241);
 consultar su estado y checks en GitHub antes de atribuir el merge a un SHA.
 Implementación pricing `436228963bf87a073040fbdc2f644c348ee9c40b`.
 
+## Resultado final y reconciliación documental —2026-11-02
+
+PR241 fusionado por squash en `7ea19539372948868aec04dda9528e9d2f9ca9d0`;
+todos sus checks terminaron en SUCCESS. Checkout local en main limpio e igual
+a origin/main; rama012.5 local/remota retirada, material ignorado preservado.
+El árbol del squash coincide con el último candidato `e63ffc9`.
+
+CI final: E2E general87 aprobados/2 skips; CSP confinado21/21 y017 confinado8/8,
+estos dos últimos con0 skips/unexpected/flaky y0 intentos prohibidos de egress
+Node o ejecución hija. El runtime production de017 acepta esos escenarios;
+no demuestra reparación de los fallos development registrados más abajo.
+Quality, Build, Documentation, unitarios, SQL/tipos, seguridad y WebKit verdes.
+
+Vercel fijo `project-a89lv.vercel.app`: `dpl_7KRmqmJcciGf6cxnAZ5KLxMUvGaP`,
+READY, mismo SHA del merge. La consulta HTTP pública encontró Vercel Security
+Checkpoint: visualización Cloud **[NO VERIFICADO]**, sin cambiar WAF ni intentar
+compras. Consulta Cloud posterior confirma177 migraciones, última20261026113000.
+No se confunde disponibilidad del deployment con aceptación de flujo.
+
+La revisión documental posterior encontró resúmenes obsoletos:012 aún activo,
+exclusión browser bloqueada y entrada015-T1 anterior. Se corrigieron los puntos
+de entrada; las auditorías fechadas y ADR aceptados conservan su historia.
+
+| Documento revisado manualmente                   | Resultado vigente                                                                                  |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| README raíz, docs/index y docs/current-state     | 012 cerrado por entregables;014/015/016/017 abiertos; tabla de progreso y cola alineadas           |
+| ROADMAP y docs/exec-plans/README                 | Triage017 →014-T2/T3 →resto017 →015 →016; no ejecutar otra vez012.5                                |
+| docs/adr/README y ADR0005                        | Decisión aceptada preservada; exclusión local no equivale a reutilización ni MVP aceptado          |
+| Arquitectura: system-overview y product-strategy | Núcleo primero; exclusión local acotada, composición/reutilización pendientes                      |
+| Arquitectura: documentation-freeze-structure     | Listas antiguas identificadas como baseline histórico, no cola vigente                             |
+| docs/capabilities                                | Projects/editor excluidos con guards y navegador local; editor y reutilización no aceptados        |
+| Plan014                                          | T1 con cierre acotado; T2 imágenes y T3 auditoría pendientes                                       |
+| Plan015                                          | Prerrequisito de exclusión local aceptado; composición/configuración, recetas y ensayos pendientes |
+| Plan016                                          | T0/T1 históricos cerrados; revisión/validación/consolidación final T2/T3 pendientes después de015  |
+| Plan017 y CSV central                            | Reparaciones y evidencias parciales preservadas; seguimientos y obligaciones finales abiertos      |
+
+El verificador documental recorre archivo por archivo los Markdown versionados
+y no ignorados: enlaces relativos y patrones obsoletos. Este control automático
+no equivale a leer semánticamente cada auditoría histórica ni a revisar todo el
+código. La revisión manual anterior cubre autoridad, estado, secuencia y límites;
+no se ejecutaron las implementaciones014/015/017 ni la aceptación final016.
+
+Validación de esta reconciliación: `node scripts/check-docs.mjs` PASS187
+Markdown; `node scripts/check-design-system.mjs` PASS7 tokens/4 guías/fuentes;
+`git diff --check` PASS. Formato con la configuración documental de CI.
+Revisión independiente del diff frente a planes y CSV: sin bloqueantes;
+no renueva comprobaciones de proveedores ni aceptación de código.
+Las correcciones documentales posteriores a PR241 requieren su propia
+publicación; no se atribuyen al SHA ya fusionado.
+
 ## Veredicto por alcance
+
+### Acotación017 y utilidad de pruebas — decisión posterior2026-11-02
+
+El mantenedor pidió limitar017 al MVP sobre servicios gratuitos y detener el
+ciclo de tests que agota RAM o falla antes del escenario. El criterio es valor
+observable y riesgo, no completar todo el inventario ni aumentar capacidad.
+
+- Mantener como cierre017 dos lotes: seguridad/configuración
+  RL-F01/RL-F03/FOLLOW-MOCK y privacidad N-25/N-26/S-11. Son seis IDs/cinco tareas;
+  no equivalen a cinco defectos confirmados. Verificar primero evidencia vigente.
+- Transferir a016-V2/V3 los otros dieciséis IDs funcionales, sin cambiar sus
+  estados, aceptación ni resultados históricos.016 los recibe explícitamente:
+  siete recorridos/controles agrupables, no dieciséis suites nuevas. Cada
+  escenario necesita evidencia reutilizada o comprobación/disposición específica.
+  -017 puede cerrar después de sus dos lotes, revisión y gates proporcionales;
+  deja de depender del fin015/016. No está cerrado por editar el contrato.
+- No eliminar tests ni umbrales; no alterar guards, secretos, providers, CI,
+  protección de rama o selección de suites desplegada. Este cambio es documental.
+  Ningún P0/P1 confirmado de superficie ofrecida puede aceptarse por traslado.
+- No usar pruebas de carga, resiliencia empresarial, SLA ni editor/Robot
+  diferidos como requisito de017. Una cuenta A→B, dos sesiones o un evento
+  Realtime son controles funcionales pequeños; no requieren simular cientos de
+  clientes ni una prestación de pago. Mantenerlos sólo donde se ofrece capacidad.
+- No repetir builds por ID; aprovechar una revisión construida/evidencia CI
+  válida. Para lo faltante, método manual reproducible o automatización
+  existente confinada, ejecución serial y presupuesto definido antes. Después
+  de dos fallos iguales sin información nueva, bloquear ese método y cambiar
+  estrategia; no consumir otra vez toda la RAM ni declarar aceptación.
+
+Verificación de plataforma en esta revisión: workflowCI tiene calidad, SQL,
+unitarios/cobertura, E2E y build, sin comando de despliegue Vercel. MCP de Vercel
+confirma proyecto fijo y último deployment production READY; no expone aquí un
+gate Actions→promoción. No se afirma que ese gate esté configurado. La integración
+Git de Vercel permite despliegue automático, independiente del build de Actions;
+compilar/desplegar no prueba permisos o recorridos. No se cambió esa integración.
+
+Fuentes oficiales consultadas2026-11-02:
+[Vercel Git](https://vercel.com/docs/git),
+[Deployment Checks](https://vercel.com/docs/deployment-checks),
+[Supabase Realtime limits](https://supabase.com/docs/guides/realtime/limits) y
+[GitHub Actions billing](https://docs.github.com/en/actions/concepts/billing-and-usage).
+Realtime Free admite200 conexiones simultáneas y100 mensajes/s; un control de
+evento/cleanup de uno o dos clientes no exige una cuota de pago. Actions privado
+usa cuota incluida; consumo restante de esta cuenta y minutos disponibles
+**[NO VERIFICADO]**. No se instalaron herramientas ni activaron servicios pagos.
+
+Reglas aplicadas: jerarquía AGENTS/ADR0005 y evidencia antes de afirmaciones;
+TS/JS/React/SQL/Realtime sin cambios ejecutables, pruebas sin modificaciones.
+No se crea un plan nuevo ni se ejecuta la optimización del runner. Las secciones
+anteriores/inferiores de esta auditoría conservan la secuencia previa a esta decisión.
+
+Revisión independiente de la acotación: sin bloqueantes. Comparación del CSV
+contra HEAD confirma16 transferencias, todasP2, con state y acceptance idénticos;
+ningún P1 trasladado ni PASS añadido. Si un escenario revela P1 real, se escala
+y repara antes de entregar. Checker documental187 Markdown y diff-check PASS;
+no se ejecutaron pruebas funcionales ni se renovó aceptación por este cambio.
 
 Las cinco entregas de012 tienen cierre de su alcance aprobado: grants, SSRF,
 rate limiting, CSP/secretos y pricing. Se conserva la aceptación fechada de cada

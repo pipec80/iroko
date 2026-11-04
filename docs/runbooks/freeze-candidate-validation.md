@@ -25,7 +25,8 @@ reportar exclusiones: todavía no se modificó su selección por este documento.
 
 Estado: protocolo de ejecución **planificado**, 2026-10-20. Implementa la
 validación final de [016-T2/T3](../exec-plans/active/016-nextjs-supabase-code-review.md)
-y el gate de [017](../exec-plans/active/017-freeze-remediation.md). El orden lo
+y las evidencias funcionales recibidas desde [017](../exec-plans/active/017-freeze-remediation.md),
+sin mantener ese plan abierto hasta este gate. El orden lo
 define [ROADMAP](../../ROADMAP.md); ejecutar este protocolo después de los últimos
 cambios de 015, con validaciones focalizadas durante cada tarea anterior.
 

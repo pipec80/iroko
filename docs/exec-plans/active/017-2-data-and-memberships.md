@@ -153,6 +153,8 @@ a017.1-T9 antes de P2. No revocar permisos por inferencia ni llamar a esto parid
 
 ## Completion record
 
+2026-11-03 — RL-F03: se decidió reducir la ACL del backend a las cuatro columnas del resumen. SQL49 RED/GREEN, migración aplicada en el stack local, sin aplicación Cloud. [Matriz de consumidores, controles y retorno](../../audits/2026-10-20-017-p1-execution.md#seguridad-y-configuración).
+
 Cada tarea actualiza el [registro central](freeze-remediation-register.csv) con
 evidencia propia. D06/T5 conserva corrected-local; no inventar nueva ejecución
 por checkboxes históricos sin marcar. Cierre MVP según alcance ofrecido y exclusión

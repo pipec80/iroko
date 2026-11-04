@@ -16,7 +16,9 @@ Filename convention: `NNNN-short-title.md`, numbered sequentially.
 
 - [0005 — Replicable SaaS MVP and bounded acceptance](0005-replicable-saas-mvp-and-bounded-acceptance.md)
   — **Accepted**,2026-10-28. Core replication before optional verticals;
-  editor runner off critical path; scope exclusion and runtime acceptance pending.
+  editor runner off critical path. Local scope exclusion passed2026-10-29;
+  independent reuse and final integrated acceptance remain pending. The accepted
+  ADR text preserves its original decision date, not a live task status.
 
 - [0003 — Mercado Pago reliability boundaries](0003-mercadopago-reliability-boundaries.md)
   — **Accepted**, 2026-09-09. Durable checkout coordination and recovery through

@@ -18,6 +18,19 @@ function isLoopbackUrl(value: string | undefined): boolean {
   }
 }
 
+function hasHostingMarker(input: Record<string, string | undefined>): boolean {
+  return hostingMarkers.some((marker) => Boolean(input[marker]));
+}
+
+function hasLoopbackTargets(input: Record<string, string | undefined>): boolean {
+  return isLoopbackUrl(input.SITE_URL) && isLoopbackUrl(input.NEXT_PUBLIC_SUPABASE_URL);
+}
+
+/** Both the application and its database must be local before exposing fixture-only effects. */
+export function isUnhostedLoopbackEnvironment(input: Record<string, string | undefined>): boolean {
+  return !hasHostingMarker(input) && hasLoopbackTargets(input);
+}
+
 /** Rejects Cloud targets before disabling observability for isolated local validation. */
 export function isLocalValidation(input: Record<string, string | undefined>): boolean {
   const flag = input.LOCAL_VALIDATION;
@@ -30,10 +43,10 @@ export function isLocalValidation(input: Record<string, string | undefined>): bo
     throw new Error('The browser validation flag must be derived from LOCAL_VALIDATION.');
   }
   if (flag !== 'true') return false;
-  if (hostingMarkers.some((marker) => input[marker] !== undefined && input[marker] !== '')) {
+  if (hasHostingMarker(input)) {
     throw new Error('Local validation is forbidden on hosted deployments.');
   }
-  if (!isLoopbackUrl(input.SITE_URL) || !isLoopbackUrl(input.NEXT_PUBLIC_SUPABASE_URL)) {
+  if (!hasLoopbackTargets(input)) {
     throw new Error('Local validation requires explicit HTTP loopback site and Supabase URLs.');
   }
   return true;

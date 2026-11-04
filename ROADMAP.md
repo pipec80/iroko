@@ -73,8 +73,9 @@ This is the single execution sequence for the freeze:
     security/integrity and essential usability findings in offered web, privacy
     and CI/fixture surfaces. Explicitly defer secondary capabilities; do not run
     the editor development harness or expand Robot. Preserve completed repairs.
-    Record the local milestone and each nonblocking disposition before 015. Neither local milestone
-    moves 017 to completed or claims Cloud acceptance.
+    Record the bounded017 closure and each disposition before015. The November2
+    contract allows017 completion after its security/privacy lots; functional
+    evidence transfers explicitly to016, without PASS or Cloud acceptance.
 13. **Plan 015 — replicable core.** Verify effective exclusion of deferred modules,
     then prove independent installation, brand/configuration changes, one neutral
     business extension and one real update preserving data and customization.

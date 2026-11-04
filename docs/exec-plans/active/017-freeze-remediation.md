@@ -10,7 +10,17 @@
 
 **Spec:** [Auditoría revalidada](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md), [estrategia](../../architecture/product-strategy.md) y aceptación del mantenedor en esta conversación, 2026-10-20.
 
-**Estado:** ejecución **P1 y P2 locales en curso** desde 2026-10-20, con [evidencia P1](../../audits/2026-10-20-017-p1-execution.md), [evidencia P2](../../audits/2026-10-22-017-5-p2-execution.md) y disposición por ID en el registro central. Contraseña, identidad, MFA, Storage RBAC, traducciones Admin y consentimiento Vercel ya tienen controles locales positivos; el editor browser, analytics funnel y otras aceptaciones siguen pendientes según el registro. La aceptación integrada final no está cerrada. Base `main` @ `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`, cambios sin commit. No autoriza Cloud, pagos ni despliegue. El [roadmap](../../../ROADMAP.md) mantiene el único orden de ejecución.
+**Estado histórico2026-10-20 (ver actualización vigente abajo):** ejecución **P1 y P2 locales en curso** desde 2026-10-20, con [evidencia P1](../../audits/2026-10-20-017-p1-execution.md), [evidencia P2](../../audits/2026-10-22-017-5-p2-execution.md) y disposición por ID en el registro central. Contraseña, identidad, MFA, Storage RBAC, traducciones Admin y consentimiento Vercel ya tienen controles locales positivos; el editor browser, analytics funnel y otras aceptaciones siguen pendientes según el registro. La aceptación integrada final no está cerrada. Base `main` @ `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`, cambios sin commit. No autoriza Cloud, pagos ni despliegue. El [roadmap](../../../ROADMAP.md) mantiene el único orden de ejecución.
+
+## Estado vigente —2026-11-02
+
+Activo; no cerrado. Implementación histórica consolidada y PR241 fusionado en
+`7ea1953`, con checks verdes y aceptación confinada017 de8/8, sin skips/flaky.
+Esto supera la afirmación histórica de cambios sin commit y Actions no verificado
+para ese recorrido; no acepta todas las filas ni cierra017. La cola comienza por
+017.1-T9/017.2-T6 (RL-F01/F03), luego014-T2/T3 y resto017 ofrecido.
+015 conserva composición/reutilización;016 conserva aceptación final.
+El CSV sigue siendo el registro por ID, sin convertir pendientes en PASS.
 
 ## Entendimiento aprobado y alcance
 
@@ -47,6 +57,70 @@ MVP sin renombrar catálogo ni afirmar implementación. Otras decisiones durader
 incompatibles requieren su evidencia y disposición, no cambios implícitos.
 
 ## Registro único y estados
+
+### Cierre acotado aprobado —2026-11-02
+
+**Aceptación local 2026-11-04.** N-25 integrado Next y callbacks de telemetría
+con scripts sintéticos PASS2/2 con cleanup; SQL49 renovado7/7. El CSV registra
+N-25 corrected-local. FOLLOW-MOCK conserva bloqueo operativo en el último
+despliegue consultado hasta despliegue autorizado o desactivación efectiva.
+No mover a completed mientras ese riesgo ofrecido no esté resuelto.
+
+**Reentrada 2026-11-04.** Entorno local reconstruido y smoke manual de registro,
+confirmación y perfil informado por el mantenedor, con logs compatibles.
+La [auditoría](../../audits/2026-10-20-017-p1-execution.md) conserva límites y cola
+de continuación. Priorizar aislamiento de telemetría, clasificación del hallazgo
+de URL sensible y diagnóstico de N-25. No repetir suites históricas por la
+limpieza ni convertir el smoke en aceptación de los seis IDs. Cloud no renovado.
+
+**Ejecución 2026-11-03.** [Resultados por ID y límites](../../audits/2026-10-20-017-p1-execution.md#lotes-del-cierre-acotado--2026-11-03). El padre permanece activo. El destino ofrecido sigue desplegado sin el guard nuevo de checkout mock; la reducción de permisos se aplicó sólo en local. Los dieciséis casos transferidos conservan su estado en 016.
+
+El mantenedor pidió acotar017 al valor para el MVP gratuito y evitar repetir
+pruebas que agotan el equipo. Este bloque sustituye la obligación inferior de
+mantener017 abierto hasta016 y las colas históricas ya satisfechas. No cambia
+los criterios de seguridad, borra pruebas ni acepta escenarios no ejecutados.
+
+Quedan dos lotes finitos de comprobación/disposición:
+
+1. **Seguridad y configuración:** RL-F01/017.1-T9 (confianza IP/Data API),
+   RL-F03/017.2-T6 (grants accounts Cloud) y FOLLOW-MOCK/017.3-T3 (mantener
+   uso general bloqueado o endurecer con autorización; fixtures confinados no
+   habilitan checkout mock general). Clasificar riesgo con consumidores reales;
+   no reimplementar un limitador ni revocar permisos por intuición. Todo P0/P1
+   confirmado en superficie ofrecida debe repararse antes de entregar.
+2. **Privacidad ofrecida:** N-25/017.1-T3 (cuenta A→B), N-26 yS-11/017.1-T5
+   (retry de consentimiento y revocación durante import). Comparar primero
+   assertions/evidencia vigente; ejecutar sólo el caso exacto faltante, con
+   control positivo y negativo, SDK sintético y sin salida al proveedor.
+   El PASS genérico de analytics no demuestra automáticamente estos escenarios.
+
+Los dieciséis IDs funcionales restantes se reciben explícitamente en016-V2/V3,
+sin marcar PASS: N-02/03/07/08/11/12/13/14/15/16/17/19/20/21/23/28.
+Se conservan sus especificaciones técnicas originales, evidencia y estados en
+el CSV. No son dieciséis nuevas implementaciones: incluyen controles pendientes
+e hipótesis.016 decide por escenario qué evidencia existente reutilizar y qué
+recorrido mínimo falta; si confirma un defecto, asigna reparación al subsistema
+concreto, sin reabrir toda la auditoría017. No duplicar el mismo recorrido allí
+y aquí.014 y015 conservan sus reparaciones/ensayos propios.
+
+**Salida de017:** dos lotes resueltos con evidencia o disposición justificada
+(riesgo, dueño, límite y retorno), sin P0/P1 ofrecido pendiente, revisión
+independiente y checks proporcionales. Entonces puede moverse a completed sin
+esperar015/016. Eso acepta remediación acotada, nunca el MVP, Cloud exhaustivo
+ni las validaciones transferidas. Hoy sigue activo: este cambio es de contrato.
+
+**Presupuesto de ejecución:** no lanzar suites pesadas en esta revisión. Al
+ejecutar, un runtime propio y una suite mutante por vez; priorizar evidencia CI
+ya válida y controles focales. Si CLI falla antes del escenario, diagnosticar
+su primer error; no repetir una corrida que agota RAM. Tras dos intentos con
+igual firma sin información nueva, registrar bloqueo y cambiar método o usar
+CI dentro de cuota verificada. No instalar/actualizar herramientas ni contratar
+capacidad para salvar un gate. No debilitar guardas, timeouts o assertions.
+
+Auth/RLS, aislamiento de cuentas, consentimiento y un evento Realtime útil no
+dependen de un plan pago. No exigir carga masiva, SLA, alta disponibilidad,
+inyección global de fallos ni funcionamiento de editor/Robot diferidos para
+cerrar017. Los controles ofrecidos siguen vigentes aunque sean dos usuarios.
 
 El [registro consolidado CSV](freeze-remediation-register.csv) tiene una fila por ID histórico N/S/D, aliases RS, desgloses D-03, discrepancias DOC y seguimientos heredados. Es el registro de disposición, no otro roadmap. Cada fila identifica responsable lógico, tarea, aceptación y evidencia. Un alias no crea otra implementación.
 
@@ -185,8 +259,9 @@ validación` o `bloqueada`, con próxima tarea habilitada. Son resultados del
   basenames declarados en ese script. No añadir filtros para omitir casos que
   fallan dentro del alcance elegido. Otros escenarios necesitan el confinamiento del runbook antes
   de usar Playwright; no ampliar el runner por conveniencia. No convertir su
-  optimización en una nueva tarea del MVP. Este runner usa
-  desarrollo/webpack: no acredita build de producción ni Turnstile real.
+  optimización en una nueva tarea del MVP. Desde PR241 este runner usa
+  production/Turbopack con build previo; no acredita Turnstile real ni acepta
+  los fallos históricos del runtime development.
 - Un lote es un conjunto fijo de tareas con dependencia o superficie compartida,
   declarado antes de ejecutarlo. Cada tarea tiene pruebas focalizadas; al cerrar
   el lote ejecutar una vez `pnpm typecheck`, `pnpm lint` y `git diff --check`,
@@ -277,6 +352,7 @@ freeze. Una fase aceptada no cierra las restantes.
 
 **Aceptación integrada:** después de 012.5/014/015, 016 ejecuta el
 [gate final](../../runbooks/freeze-candidate-validation.md) y comprueba
-compatibilidad del candidato. 017 permanece en `active/`, con su hito local
-visible, hasta completar esta obligación. No esperar al gate integrado para
+compatibilidad del candidato. Según el cierre acotado2026-11-02,017 puede pasar
+a completed al satisfacer sus dos lotes y transferencias explícitas;016 conserva
+esta obligación integrada. No esperar al gate integrado para
 registrar reparaciones locales ni repetir toda su ejecución sin cambios afectados.

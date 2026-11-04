@@ -23,9 +23,10 @@ migrations or dated observations.
 ## Current freeze
 
 Direction 2026-10-28: [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
-The base must be replicable before a Robot/client vertical. Immediate entry is
-015-T1/RS-05 configuration/exclusion, then offered-core017,012.5/014, remaining015
-reuse proof and final016 re-audit. Editor017.4 is deferred, with preserved tests
+The base must be replicable before a Robot/client vertical. Current entry,2026-11-02:
+triage017.1-T9/017.2-T6 →014-T2/T3 →remaining offered017 →015 reuse proof
+→016-T2/T3 final acceptance. The exclusion prerequisite of015-T1 passed locally;
+012 is completed by its approved deliveries. Editor017.4 is deferred, with preserved tests
 and no runtime acceptance. Its development runner is not a freeze prerequisite.
 Keep deferred child scope identifiable; do not move its failed checks to completed.
 
@@ -50,8 +51,8 @@ validation contract passes.
 
 For 017, start with its parent execution contract and then the selected child
 task and CSV rows. Local repair acceptance permits the next roadmap phase;
-integrated acceptance remains after 015 under 016. Keep 017 in active until its
-remaining final obligations pass. Evidence belongs in the existing dated audit
+integrated acceptance remains after 015 under 016. 017 may close its bounded remediation independently under the November2
+contract;016 owns the transferred final evidence and integrated acceptance. Evidence belongs in the existing dated audit
 for its subsystem; a rerun alone does not require another plan or audit file.
 
 Plan 016 T1 has an
@@ -62,8 +63,9 @@ inventory and lifecycle; its task map records planning, not completed review.
 Plan 012 PR4 has a [completed bounded execution record](completed/012-4-csp-and-secrets.md)
 and [Cloud closure evidence](../audits/2026-10-19-plan-012-4-cloud-closure.md).
 The implementation merged through PR #229; actual provider/browser acceptance
-and cleanup retain the audit's explicit exceptions. This closes neither pricing
-nor the parent Plan 012. The earlier [static inventory](../audits/2026-10-14-plan-012-4-readiness.md)
+and cleanup retain the audit's explicit exceptions. That historical012.4 closure
+did not close pricing or its parent; both subsequently closed within the bounded
+012 integration recorded above. The earlier [static inventory](../audits/2026-10-14-plan-012-4-readiness.md)
 is historical evidence, not a fresh runtime check.
 
 ## Deferred and completed records

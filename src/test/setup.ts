@@ -2,6 +2,7 @@
 // but tests don't go through Next build — stub the values manually.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const env = process.env as any;
+env.MOCK_BILLING_FIXTURE = 'true';
 env.LOG_LEVEL = env.LOG_LEVEL ?? 'silent';
 env.SITE_URL = env.SITE_URL ?? 'http://localhost:3000';
 env.NEXT_PUBLIC_SUPABASE_URL = env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321';

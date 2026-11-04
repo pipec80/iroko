@@ -134,6 +134,8 @@ disposición: **[NO VERIFICADO]**.
 
 ## Completion record
 
+2026-11-03 — FOLLOW-MOCK: opt-in de producción/preview confirmado en el proyecto Vercel. El candidato bloquea hosting y servidores ordinarios, y conserva el control positivo de fixture. La revisión desplegada precede a la reparación. [Condición de entrega y evidencia](../../audits/2026-10-20-017-p1-execution.md#seguridad-y-configuración).
+
 Actualización2026-10-29: D-01/D-11 renuevan su disposición local usando T11
 del27/10 y hashes sin cambios, con revisión independiente dirigida. No se
 reimplementa billing ni se repite SQL; la aceptación de aislamiento que el

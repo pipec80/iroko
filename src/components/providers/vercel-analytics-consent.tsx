@@ -3,6 +3,7 @@
 import { lazy, Suspense, useSyncExternalStore } from 'react';
 
 import { hasConsent, subscribeToConsent } from '@/lib/cookie-consent';
+import { sanitizeUrl } from '@/lib/analytics/sanitize';
 
 const Analytics = lazy(() =>
   import('@vercel/analytics/next').then((module) => ({ default: module.Analytics })),
@@ -27,8 +28,16 @@ export function VercelAnalyticsConsent() {
   // Recheck at event time so revocation also blocks those existing scripts.
   return (
     <Suspense fallback={null}>
-      <Analytics beforeSend={(event) => (analyticsConsent() ? event : null)} />
-      <SpeedInsights beforeSend={(event) => (analyticsConsent() ? event : null)} />
+      <Analytics
+        beforeSend={(event) =>
+          analyticsConsent() ? { ...event, url: sanitizeUrl(event.url) } : null
+        }
+      />
+      <SpeedInsights
+        beforeSend={(event) =>
+          analyticsConsent() ? { ...event, url: sanitizeUrl(event.url) } : null
+        }
+      />
     </Suspense>
   );
 }

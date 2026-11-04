@@ -616,6 +616,18 @@ test('copy excludes private material, traversal and symlink paths', () => {
     assert.equal(safeSourcePath(path), false, path);
   assert.equal(safeSourcePath('src/env.ts'), true);
 });
+test('CLI3 Mailpit endpoint remains confined to loopback', () => {
+  const status = {
+    API_URL: 'http://127.0.0.1:54321',
+    ANON_KEY: 'local-anon',
+    SERVICE_ROLE_KEY: 'local-service',
+    MAILPIT_URL: 'http://127.0.0.1:54324',
+    AUTH_SITE_URL: 'http://localhost:3000',
+  };
+  assert.equal(makeLocalEnv(status, {}).MAILPIT_URL, status.MAILPIT_URL);
+  assert.throws(() => makeLocalEnv({ ...status, MAILPIT_URL: 'https://remote.invalid' }, {}));
+});
+
 test('local credentials stay in env and untrusted inherited secrets are absent', () => {
   const env = makeLocalEnv(
     {
@@ -630,6 +642,7 @@ test('local credentials stay in env and untrusted inherited secrets are absent',
   assert.equal(env.SUPABASE_SECRET_KEY, 'local-service');
   assert.equal(env.SENTRY_AUTH_TOKEN, 'plan-0124-synthetic-no-upload');
   assert.equal(env.LOCAL_VALIDATION, undefined);
+  assert.equal(env.MOCK_BILLING_FIXTURE, 'true');
   assert.throws(() => makeLocalEnv({ API_URL: 'https://hosted.supabase.co' }, {}));
 });
 

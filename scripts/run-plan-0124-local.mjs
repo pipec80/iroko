@@ -227,8 +227,9 @@ export function localizeExternalRewrites(entries, sinkUrl) {
 }
 
 export function makeLocalEnv(status, parent, boundedP1 = false) {
-  for (const key of ['API_URL', 'INBUCKET_URL']) {
-    if (!status[key] || !isLoopback(new URL(status[key]).hostname))
+  const mailpitUrl = status.MAILPIT_URL ?? status.INBUCKET_URL;
+  for (const endpoint of [status.API_URL, mailpitUrl]) {
+    if (!endpoint || !isLoopback(new URL(endpoint).hostname))
       throw new Error('Official local Supabase endpoints are required');
   }
   if (!status.ANON_KEY || !status.SERVICE_ROLE_KEY)
@@ -251,11 +252,12 @@ export function makeLocalEnv(status, parent, boundedP1 = false) {
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.ANON_KEY,
     SUPABASE_SECRET_KEY: status.SERVICE_ROLE_KEY,
     SITE_URL: parseAuthAttestation(`true|saas-boilerplate|${status.AUTH_SITE_URL ?? ''}`),
-    MAILPIT_URL: status.INBUCKET_URL,
+    MAILPIT_URL: mailpitUrl,
     RESEND_API_KEY: 'local-unused',
     FROM_EMAIL: 'local@example.test',
     BILLING_DEFAULT_PROVIDER: 'mock',
     ALLOW_MOCK_BILLING: 'true',
+    MOCK_BILLING_FIXTURE: 'true',
     MOCK_BILLING_SECRET: 'cd'.repeat(32),
     IMPERSONATION_COOKIE_SECRET: 'ab'.repeat(32),
     POSTHOG_HOST: 'http://127.0.0.1:1',
