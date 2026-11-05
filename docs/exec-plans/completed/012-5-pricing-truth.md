@@ -24,7 +24,7 @@ el runner editor ni certificar otro proveedor; preservar límites/cobros existen
 
 **Tech Stack:** Next.js 16.4.2 verificado en runtime de cierre (plan inicial16.4.1), React 19/Compiler, TypeScript, Supabase RPC, next-intl, Vitest/pgTAP/Playwright existentes.
 
-**Spec:** [PR 5 del Plan 012](012-security-hardening-and-pricing-truth.md#pr-5--featpricing-single-source-of-truth), [auditoría](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md) y [contrato de remediación](../active/017-freeze-remediation.md).
+**Spec:** [PR 5 del Plan 012](012-security-hardening-and-pricing-truth.md#pr-5--featpricing-single-source-of-truth), [auditoría](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md) y [contrato de remediación](../completed/017-freeze-remediation.md).
 
 Estado histórico de planificación: **planificado, no ejecutado**, 2026-10-20. Baseline `a2feb3d`. Responsable lógico: pricing/product truth; revisión datos/billing, seguridad y UI/i18n.
 

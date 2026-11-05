@@ -1,5 +1,10 @@
 # 017.5 — Web correctness and quality Implementation Plan
 
+**Registro técnico conservado tras el cierre acotado del padre,2026-11-04.**
+El [padre017](../completed/017-freeze-remediation.md) está completed únicamente
+para sus dos lotes aprobados. Este hijo conserva resultados, especificaciones y
+casos diferidos/transferidos; no declara PASS global ni aceptación del MVP.
+
 **Alcance vigente 2026-10-28:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 T11 y su runner SQL atestado se conservan. Se retira del camino crítico sólo
 el runner development del editor. Priorizar riesgos y usabilidad esencial de
@@ -8,7 +13,7 @@ con015-T1 la selección explícita de CI para el MVP, sin esconder fallos, bajar
 umbrales ni omitir pruebas de exclusión. No modificar CI durante esta entrega
 documental ni declarar que ya soporta el candidato.
 
-> **Ejecución:** aplicar el [contrato común de 017](017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
+> **Ejecución:** aplicar el [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
 
 **Goal:** Corregir pendientes P2 concretos de interfaz, autenticación, CI y pruebas sin ampliar el producto.
 
@@ -16,7 +21,7 @@ documental ni declarar que ya soporta el candidato.
 
 **Tech Stack:** Next.js 16, React 19 Compiler, TypeScript strict, Supabase, Vitest, Playwright, GitHub Actions y Node.js.
 
-**Spec:** [017 — freeze remediation](017-freeze-remediation.md). Estado: **ejecución local parcial**; consultar CSV y [evidencia P2](../../audits/2026-10-22-017-5-p2-execution.md). Base `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`; renovar árbol y contenido al ejecutar.
+**Spec:** [017 — freeze remediation](../completed/017-freeze-remediation.md). Estado: **ejecución local parcial**; consultar CSV y [evidencia P2](../../audits/2026-10-22-017-5-p2-execution.md). Base `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`; renovar árbol y contenido al ejecutar.
 
 ## Cómo retomar este hijo
 

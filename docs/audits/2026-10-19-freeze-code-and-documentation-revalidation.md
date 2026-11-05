@@ -3,7 +3,7 @@
 **Follow-up — 2026-10-20:** the owner accepted remediation planning. The
 [delivery/review record](2026-10-20-freeze-remediation-planning-review.md),
 [central register](../exec-plans/active/freeze-remediation-register.csv) and
-[017 plans](../exec-plans/active/017-freeze-remediation.md) assign the findings.
+[017 plans](../exec-plans/completed/017-freeze-remediation.md) assign the findings.
 012.5 keeps its own plan after P1; final validation follows 015. This follow-up
 does not change the dated observations or mean the reported defects are fixed.
 

@@ -1,6 +1,15 @@
 # 017.4 — Editor integrity Implementation Plan
 
-## Disposición vigente — diferido, 2026-10-28
+**Registro técnico conservado tras el cierre acotado del padre,2026-11-04.**
+El [padre017](../completed/017-freeze-remediation.md) está completed únicamente
+para sus dos lotes aprobados. Este hijo conserva resultados, especificaciones y
+casos diferidos/transferidos; no declara PASS global ni aceptación del MVP.
+
+## Disposición histórica — diferido, 2026-10-28
+
+La exclusión efectiva fue aceptada posteriormente el 29/10 según la auditoría
+del padre. El estado pendiente descrito en este bloque corresponde al 28/10;
+editor permanece diferido y sus escenarios no se aceptan por el cierre acotado.
 
 Por [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md),
 N04/N05/R02 no son parte de la oferta MVP. No ejecutar ni optimizar su runner
@@ -13,7 +22,7 @@ configuración MVP; sigue pendiente en código. No basta ocultar el botón. Si
 se decide ofrecerlo, reabrir este hijo, verificar revisión origen/CAS y sus
 escenarios por un método adecuado, sin reducir cobertura ni afirmar PASS previo.
 
-> **Ejecución:** aplicar el [contrato común de 017](017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
+> **Ejecución:** aplicar el [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
 
 **Goal:** Evitar pérdida silenciosa de borradores y sobrescritura de documentos entre sesiones concurrentes.
 
@@ -21,7 +30,7 @@ escenarios por un método adecuado, sin reducir cobertura ni afirmar PASS previo
 
 **Tech Stack:** Next.js 16, React 19 Compiler, TypeScript strict, Supabase PostgreSQL, Vitest y Playwright.
 
-**Spec:** [017 — freeze remediation](017-freeze-remediation.md). Ejecución local iniciada 2026-10-20; [evidencia](../../audits/2026-10-20-017-p1-execution.md) y [revisión independiente](../../audits/2026-10-21-017-p1-independent-review.md). El registro central conserva la disposición por tarea. Base `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`, sin commit. El CAS de T2 pasó dos veces en dos sesiones browser independientes el 2026-10-22. T1 sigue pendiente: en la segunda corrida la acción interceptada nunca se observó y el selector de cuenta agotó el timeout antes de editar; ninguno constituye aceptación de borrador.
+**Spec:** [017 — freeze remediation](../completed/017-freeze-remediation.md). Ejecución local iniciada 2026-10-20; [evidencia](../../audits/2026-10-20-017-p1-execution.md) y [revisión independiente](../../audits/2026-10-21-017-p1-independent-review.md). El registro central conserva la disposición por tarea. Base `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`, sin commit. El CAS de T2 pasó dos veces en dos sesiones browser independientes el 2026-10-22. T1 sigue pendiente: en la segunda corrida la acción interceptada nunca se observó y el selector de cuenta agotó el timeout antes de editar; ninguno constituye aceptación de borrador.
 
 ## Cómo retomar este hijo
 

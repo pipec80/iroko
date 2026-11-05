@@ -2,7 +2,7 @@
 
 Use this template after the master reconnaissance has selected and a human has approved one execution plan.
 
-For Plan 017, use its [shared execution contract](../exec-plans/active/017-freeze-remediation.md)
+For Plan 017, use its [shared execution contract](../exec-plans/completed/017-freeze-remediation.md)
 and the selected child task instead of the generic process/checklist below.
 Its outcome, scope, focused validation, batch gates and stop conditions apply
 regardless of model. Do not install dependencies, create a PR, rerun every gate

@@ -1,5 +1,10 @@
 # 017.2 — Data and memberships implementation plan
 
+**Registro técnico conservado tras el cierre acotado del padre,2026-11-04.**
+El [padre017](../completed/017-freeze-remediation.md) está completed únicamente
+para sus dos lotes aprobados. Este hijo conserva resultados, especificaciones y
+casos diferidos/transferidos; no declara PASS global ni aceptación del MVP.
+
 **Alcance vigente 2026-10-28:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 Cuotas/roles/invitaciones/aislamiento del núcleo siguen obligatorios. D03 es un
 agregado a disponer desde subfilas, no otra implementación. Conservar FK y
@@ -7,7 +12,7 @@ regresiones SQL ya incorporadas aunque editor se difiera. T5/Robot conserva
 su evidencia corrected-local; no ampliar ni repetir su vertical como gate de
 la base. La exclusión efectiva de referencias pertenece a015-T1.
 
-> **Ejecución:** aplicar el [contrato común de 017](017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
+> **Ejecución:** aplicar el [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
 
 **Goal:** Hacer cumplir cuotas, pertenencia documento/proyecto y transiciones de membresía bajo concurrencia real.
 
@@ -15,7 +20,7 @@ la base. La exclusión efectiva de referencias pertenece a015-T1.
 
 **Tech Stack:** PostgreSQL/Supabase, pgTAP, TypeScript strict, Vitest, Next.js 16.
 
-**Spec:** [017 — Freeze remediation](017-freeze-remediation.md).
+**Spec:** [017 — Freeze remediation](../completed/017-freeze-remediation.md).
 
 **Status:** T1–T4 tienen evidencia local registrada el2026-10-22 en
 [SQL/revisión](../../audits/2026-10-20-017-2-p1-execution.md) y

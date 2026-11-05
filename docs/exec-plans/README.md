@@ -22,6 +22,12 @@ migrations or dated observations.
 
 ## Current freeze
 
+Entrada vigente2026-11-04: el [padre017](completed/017-freeze-remediation.md)
+completó sus dos lotes acotados; siguiente014-T2/T3, después015/016. Se conservan
+los hijos técnicos para resultados históricos, alcances diferidos y recepción
+en016. No se promueven sus pendientes por el movimiento del padre ni se cierra
+el MVP o Cloud exhaustivo. Véase la [evidencia](../audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04).
+
 Direction 2026-10-28: [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 The base must be replicable before a Robot/client vertical. Current entry,2026-11-02:
 triage017.1-T9/017.2-T6 →014-T2/T3 →remaining offered017 →015 reuse proof
@@ -37,7 +43,10 @@ Active product plans are:
 - [Plan 014 — reference-surface correctness](active/014-reference-surface-correctness.md)
 - [Plan 015 — reusable-foundation acceptance](active/015-reusable-foundation-acceptance.md)
 - [Plan 016 — Next.js and Supabase code review](active/016-nextjs-supabase-code-review.md)
-- [Plan 017 — freeze remediation](active/017-freeze-remediation.md) — five implementation children; initial planning and assignment are not execution evidence.
+
+Completed bounded remediation:
+
+- [Plan 017 — freeze remediation](completed/017-freeze-remediation.md) — sólo el padre y su contrato acotado; hijos técnicos/diferidos y pendientes016 conservados.
 
 The [central disposition register](active/freeze-remediation-register.csv)
 preserves all historical IDs, partial splits, aliases and follow-ups. Detailed

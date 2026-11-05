@@ -6,13 +6,30 @@
 
 **Architecture:** Mantener el monolito modular, Supabase como autoridad de identidad/datos y los contratos comerciales actuales. Esta familia implementa las reparaciones que 016 identifica pero no ejecuta; 012.5, 014 y 015 conservan su propiedad.
 
-**Tech Stack:** Next.js 16.4.1, React 19/Compiler, TypeScript strict, PostgreSQL/Supabase, TanStack Query, Vitest, pgTAP y Playwright instalados.
+**Tech Stack:** Next.js 16.4.3 en el candidato de cierre, React 19/Compiler, TypeScript strict, PostgreSQL/Supabase, TanStack Query, Vitest, pgTAP y Playwright instalados. Los ensayos fechados conservan la versión de su candidato histórico.
 
 **Spec:** [Auditoría revalidada](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md), [estrategia](../../architecture/product-strategy.md) y aceptación del mantenedor en esta conversación, 2026-10-20.
 
 **Estado histórico2026-10-20 (ver actualización vigente abajo):** ejecución **P1 y P2 locales en curso** desde 2026-10-20, con [evidencia P1](../../audits/2026-10-20-017-p1-execution.md), [evidencia P2](../../audits/2026-10-22-017-5-p2-execution.md) y disposición por ID en el registro central. Contraseña, identidad, MFA, Storage RBAC, traducciones Admin y consentimiento Vercel ya tienen controles locales positivos; el editor browser, analytics funnel y otras aceptaciones siguen pendientes según el registro. La aceptación integrada final no está cerrada. Base `main` @ `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`, cambios sin commit. No autoriza Cloud, pagos ni despliegue. El [roadmap](../../../ROADMAP.md) mantiene el único orden de ejecución.
 
-## Estado vigente —2026-11-02
+## Cierre acotado completado — 2026-11-04
+
+Se completan exclusivamente los dos lotes de «Cierre acotado aprobado —2026-11-02».
+Candidato integrado/desplegado `4917f6ea7380ca896382bf296df3d0bdc4a5e6c5`;
+PR242 y PR243 fusionadas con CI completa verde. La [evidencia de cierre](../../audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04)
+registra la migración Cloud exacta, permisos efectivos, negativo browser mock,
+aceptación local N-25 y evidencia histórica reutilizada N-26/S-11.
+RL-F01 se dispone como riesgo P2 con dueño y retorno; confianza IP Cloud sigue
+**[NO VERIFICADO]**. No quedan P0/P1 confirmados del alcance ofrecido sin reparar.
+Revisión independiente favorable al cierre combinado con esos límites.
+
+Sólo este padre pasa a completed. Los hijos conservan especificaciones técnicas,
+resultados históricos y alcances diferidos/transferidos; su ubicación no declara
+aceptados editor/Robot ni los dieciséis IDs pendientes de016. No se cierra el MVP
+ni se afirma aceptación Cloud exhaustiva o pagos reales. Siguiente: **014-T2/T3**.
+Las secciones fechadas inferiores conservan su contexto anterior al cierre.
+
+## Estado histórico —2026-11-02
 
 Activo; no cerrado. Implementación histórica consolidada y PR241 fusionado en
 `7ea1953`, con checks verdes y aceptación confinada017 de8/8, sin skips/flaky.
@@ -122,7 +139,7 @@ dependen de un plan pago. No exigir carga masiva, SLA, alta disponibilidad,
 inyección global de fallos ni funcionamiento de editor/Robot diferidos para
 cerrar017. Los controles ofrecidos siguen vigentes aunque sean dos usuarios.
 
-El [registro consolidado CSV](freeze-remediation-register.csv) tiene una fila por ID histórico N/S/D, aliases RS, desgloses D-03, discrepancias DOC y seguimientos heredados. Es el registro de disposición, no otro roadmap. Cada fila identifica responsable lógico, tarea, aceptación y evidencia. Un alias no crea otra implementación.
+El [registro consolidado CSV](../active/freeze-remediation-register.csv) tiene una fila por ID histórico N/S/D, aliases RS, desgloses D-03, discrepancias DOC y seguimientos heredados. Es el registro de disposición, no otro roadmap. Cada fila identifica responsable lógico, tarea, aceptación y evidencia. Un alias no crea otra implementación.
 
 - `planned`: defecto vigente con tarea de reparación; no implementado.
 - `conditional`: primero reproducir el escenario; si no ocurre en el candidato, cerrar la hipótesis con evidencia y alcance, sin inventar una corrección.
@@ -148,17 +165,17 @@ atribuirla al candidato nuevo y `documentation-only` no certifica producto.
 
 ## Propiedad por subsistema
 
-| Plan                                              | Tareas y responsabilidad                                                                                    | Condición de fase                                                        |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| [017.1](017-1-auth-identity-and-privacy.md)       | Auth, estado entre identidades, privacidad, Realtime y logs                                                 | T1–T3 prioritarias; restantes después de 014 salvo dependencia necesaria |
-| [017.2](017-2-data-and-memberships.md)            | Cuotas API keys/seats, invitaciones, relación documento/proyecto/cuenta, último owner y serialización Robot | T1–T4 P1; T5 P2                                                          |
-| [017.3](017-3-billing-integrity.md)               | Fencing recovery y divergencia discovery MP; disposición de replay mock                                     | T1–T2 P1; T3 decisión acotada                                            |
-| [017.4](017-4-editor-integrity.md)                | Edición pendiente y conflicto de versiones entre sesiones                                                   | Diferido post-MVP; retorno al ofrecer editor; exclusión por015-T1        |
-| [017.5](017-5-web-correctness-and-quality.md)     | Defectos web P2, gates CI y fiabilidad de fixtures                                                          | Después de 014; T11 puede adelantarse si prepara pruebas seguras de P1   |
-| [012.5](../completed/012-5-pricing-truth.md)      | Catálogo público/dashboard/checkout, nombres, límites, copy y metadata                                      | Sigue independiente; después de los P1 de 017                            |
-| [014-T2/T3](014-reference-surface-correctness.md) | Imágenes por origen y auditoría global                                                                      | Conservar tareas y criterios existentes; no duplicarlas en 017           |
-| [015](015-reusable-foundation-acceptance.md)      | Composición, integraciones opcionales, recetas y reuso independiente                                        | S-10 pertenece a T1; pruebas de marketing coordinan 012.5                |
-| [016](016-nextjs-supabase-code-review.md)         | Consolidación inicial/final y validación del candidato                                                      | Revisa/asigna, no implementa las reparaciones de 017                     |
+| Plan                                                        | Tareas y responsabilidad                                                                                    | Condición de fase                                                        |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [017.1](../active/017-1-auth-identity-and-privacy.md)       | Auth, estado entre identidades, privacidad, Realtime y logs                                                 | T1–T3 prioritarias; restantes después de 014 salvo dependencia necesaria |
+| [017.2](../active/017-2-data-and-memberships.md)            | Cuotas API keys/seats, invitaciones, relación documento/proyecto/cuenta, último owner y serialización Robot | T1–T4 P1; T5 P2                                                          |
+| [017.3](../active/017-3-billing-integrity.md)               | Fencing recovery y divergencia discovery MP; disposición de replay mock                                     | T1–T2 P1; T3 decisión acotada                                            |
+| [017.4](../active/017-4-editor-integrity.md)                | Edición pendiente y conflicto de versiones entre sesiones                                                   | Diferido post-MVP; retorno al ofrecer editor; exclusión por015-T1        |
+| [017.5](../active/017-5-web-correctness-and-quality.md)     | Defectos web P2, gates CI y fiabilidad de fixtures                                                          | Después de 014; T11 puede adelantarse si prepara pruebas seguras de P1   |
+| [012.5](../completed/012-5-pricing-truth.md)                | Catálogo público/dashboard/checkout, nombres, límites, copy y metadata                                      | Sigue independiente; después de los P1 de 017                            |
+| [014-T2/T3](../active/014-reference-surface-correctness.md) | Imágenes por origen y auditoría global                                                                      | Conservar tareas y criterios existentes; no duplicarlas en 017           |
+| [015](../active/015-reusable-foundation-acceptance.md)      | Composición, integraciones opcionales, recetas y reuso independiente                                        | S-10 pertenece a T1; pruebas de marketing coordinan 012.5                |
+| [016](../active/016-nextjs-supabase-code-review.md)         | Consolidación inicial/final y validación del candidato                                                      | Revisa/asigna, no implementa las reparaciones de 017                     |
 
 El mantenedor conserva la decisión de producto y los permisos de Cloud; el ejecutor de cada PR es propietario de su diff; un revisor distinto comprueba aceptación y regresiones. No se inventan responsables humanos ni fechas de entrega.
 
