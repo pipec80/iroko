@@ -1,5 +1,10 @@
 # 017.3 — Billing integrity implementation plan
 
+**Registro técnico conservado tras el cierre acotado del padre,2026-11-04.**
+El [padre017](../completed/017-freeze-remediation.md) está completed únicamente
+para sus dos lotes aprobados. Este hijo conserva resultados, especificaciones y
+casos diferidos/transferidos; no declara PASS global ni aceptación del MVP.
+
 **Alcance vigente 2026-10-28:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 Un proveedor y los escenarios ofrecidos, sin otra plataforma de cobros. D01/D11
 se aceptan por contrato real; reutilizar T11 que lo cubra, no repetir ni reescribir
@@ -7,7 +12,7 @@ billing por un estado documental antiguo. Distinguir fixtures/proveedor simulado
 de recibo Cloud. Una instalación sin nuevas compras conserva suscripciones/jobs
 existentes. No añadir proveedor ni activar escenarios diferidos de011.
 
-> **Ejecución:** aplicar el [contrato común de 017](017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
+> **Ejecución:** aplicar el [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
 
 **Goal:** Impedir efectos de recovery con lease obsoleto y evitar contabilizar una invoice cuyo estado contradice el payment fresco.
 
@@ -15,7 +20,7 @@ existentes. No añadir proveedor ni activar escenarios diferidos de011.
 
 **Tech Stack:** PostgreSQL/Supabase, Node.js, TypeScript strict, Vitest, pgTAP.
 
-**Spec:** [017 — Freeze remediation](017-freeze-remediation.md).
+**Spec:** [017 — Freeze remediation](../completed/017-freeze-remediation.md).
 
 **Status:** T1–T2 tienen implementación y [aceptación local histórica del 22/10](../../audits/2026-10-20-017-3-p1-execution.md). El 27/10 se reabrió la disposición D-01/D-11 por aislamiento de pruebas R04/R05, sin atribuir un defecto nuevo al fencing/adapter. T3 conserva decisión pendiente en el CSV. Base `main` / `a2feb3d`, sin commit; proveedor y Cloud **[NO VERIFICADO]**. No cierra 017 ni 016.
 

@@ -36,6 +36,12 @@ surface; it does not silently expand the product.
 
 ## Ordered queue
 
+**Entrada vigente2026-11-04:** 017 completó sus dos lotes bajo el contrato acotado,
+con [evidencia y límites](docs/audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04).
+Siguiente **014-T2/T3**, después015 y016. Se conserva la cola histórica inferior
+para trazabilidad; los dieciséis IDs transferidos siguen pendientes en016 y
+editor/Robot continúan diferidos. No se acepta el MVP por este hito.
+
 This is the single execution sequence for the freeze:
 
 1. **Plan 011 freeze scope satisfied; remaining scenarios deferred.** Preserve
@@ -55,9 +61,9 @@ This is the single execution sequence for the freeze:
    [revalidation](docs/audits/2026-10-19-freeze-code-and-documentation-revalidation.md)
    and [central register](docs/exec-plans/active/freeze-remediation-register.csv)
    assign the findings. This is documented planning, not implementation or final T3 closure.
-9. **Plan 017 — offered-core remediation.** Repair Auth/privacy/client identity,
+9. **Plan 017 — bounded remediation completed2026-11-04.** Repair Auth/privacy/client identity,
    data/membership invariants and recovery/discovery in the offered configuration using
-   the [bounded child plans](docs/exec-plans/active/017-freeze-remediation.md).
+   the [bounded child plans](docs/exec-plans/completed/017-freeze-remediation.md).
    Fixture safety work may advance when required to test these tasks safely.
    Record local P1 acceptance using the shared 017 contract, then proceed to
    step 10; final integrated acceptance is deliberately reserved for step 14.

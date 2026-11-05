@@ -1,5 +1,20 @@
 # Current State
 
+## Cierre acotado 017 — 2026-11-04
+
+El [padre017](exec-plans/completed/017-freeze-remediation.md) pasa a completed
+para sus dos lotes finitos. Supabase repo/local/Cloud178, migración exacta
+20261103090000 aplicada con autorización y grants de accounts reducidos a las
+cuatro columnas de resumen. Vercel producción READY4917f6e y negativo browser
+del mock combinado con guard hosted/negativas locales: uso general bloqueado.
+N-25 aceptado en Next local; N-26/S-11 reutilizan evidencia histórica específica.
+RL-F01 conserva disposición P2 con confianza IP Cloud **[NO VERIFICADO]**.
+La [auditoría](audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04)
+registra comandos, positivos, límites, limpieza y revisión independiente favorable.
+Los hijos técnicos y dieciséis IDs transferidos conservan sus límites/pendientes;
+no se cierra MVP ni aceptación Cloud exhaustiva. Siguiente: **014-T2/T3**.
+Las actualizaciones fechadas inferiores reflejan checkpoints históricos.
+
 ## Recuperación local y recorrido manual — 2026-11-04
 
 Continuación técnica: N-25 aceptado en Next local y control de telemetría Vercel
@@ -29,7 +44,7 @@ El mantenedor acotó017: quedan dos lotes, seguridad/configuración
 (RL-F01,RL-F03,FOLLOW-MOCK) y privacidad ofrecida (N-25,N-26,S-11).
 Dieciséis IDs funcionales pasan a016-V2/V3 con estados/evidencia pendientes
 conservados, para un único gate integrado; no son aprobaciones ni nuevas
-implementaciones. El [contrato017](exec-plans/active/017-freeze-remediation.md)
+implementaciones. El [contrato017](exec-plans/completed/017-freeze-remediation.md)
 permite cerrarlo después de resolver esos lotes y sus disposiciones, sin
 esperar015/016. Hoy sigue activo.014 y015 conservan tareas propias.
 
@@ -272,7 +287,7 @@ verificado; no existe aún optimización aceptada del consumo ni aceptación R02
 
 ## Plan 017 execution contract update — 2026-10-27
 
-Documentation-only simplification: [017](exec-plans/active/017-freeze-remediation.md)
+Documentation-only simplification: [017](exec-plans/completed/017-freeze-remediation.md)
 now defines model-independent task outcomes, one shared review/quality gate per
 bounded batch, explicit stop conditions and separate local/integrated milestones.
 The five children retain their security/integrity acceptance scenarios. The
@@ -287,7 +302,7 @@ was executed by this documentation update. Integrated acceptance remains
 
 Planning consolidation **2026-10-20**: the owner accepted the revalidated
 [audit](audits/2026-10-19-freeze-code-and-documentation-revalidation.md) as the
-basis for [017 remediation](exec-plans/active/017-freeze-remediation.md), the
+basis for [017 remediation](exec-plans/completed/017-freeze-remediation.md), the
 [central register](exec-plans/active/freeze-remediation-register.csv), a detailed
 [012.5 plan](exec-plans/completed/012-5-pricing-truth.md) and the
 [final validation protocol](runbooks/freeze-candidate-validation.md).
@@ -775,12 +790,12 @@ required before real users; they are not deferred to selling the boilerplate.
 
 ## Freeze work status
 
-Updated **2026-11-02** after PR241 integration and documentary reconciliation. The
+Updated **2026-11-04** after bounded017 closure and authorized Cloud verification. The
 [root roadmap](../ROADMAP.md) owns the single execution sequence. This table
 summarizes recorded evidence, not a new runtime audit or a second task checklist.
 A closed bounded scope does not close inherited follow-ups or certify the whole
-platform. Current entry: **017.1-T9/017.2-T6 security triage**, then014-T2/T3,
-remaining offered017,015 reuse proof and016 final acceptance. Editor and Robot are
+platform. Current entry: **014-T2/T3**, then015 reuse proof and016 final
+acceptance. Bounded017 is completed; its transferred cases remain pending. Editor and Robot are
 not prerequisites of the replicable base under ADR0005. Plans/rows are not runtime evidence.
 
 | Work item                                                                                     | Recorded status                                                    | Remaining work / evidence boundary                                                                                                                                                                                                                        |
@@ -792,7 +807,7 @@ not prerequisites of the replicable base under ADR0005. Plans/rows are not runti
 | [012.3 — Rate limiting](audits/2026-10-14-plan-012-3-follow-ups.md)                           | Bounded local/Cloud/API acceptance closed                          | Concurrency, isolation and public stable-domain checks passed. Legacy hook header trust, Cloud 500/503 injection, independent external-IP confirmation and inherited service-role ACL differences remain explicit follow-ups.                             |
 | [012.2 — SSRF / outbound HTTP](audits/2026-10-13-plan-012-2-cloud-acceptance.md)              | Bounded operational scope closed                                   | Validated Node sender, controlled HTTPS/HMAC delivery and worker wake observed; implementation consolidated through PR #221. This is not acceptance of every business trigger or Mercado Pago callback.                                                   |
 | [012.4 — CSP / secrets](audits/2026-10-19-plan-012-4-cloud-closure.md)                        | Closed, 2026-10-19; PRs #229 / #230 merged                         | Browser baseline, provider receipts, owner MFA/impersonation/recovery retries and fixture cleanup recorded. Nonfatal blocked Zod probe and unexecuted Cloud elapsed TTL remain explicit limitations.                                                      |
-| [017 — Remediation](exec-plans/active/017-freeze-remediation.md)                              | Active; partial implementation and local acceptance                | Preserve corrected-local rows and deferred editor. Two bounded security/privacy lots remain. Sixteen functional IDs transfer pending to016;017 closure no longer waits for015/016. PR241 confined017 acceptance8/8 does not close the entire plan.        |
+| [017 — Remediation](exec-plans/completed/017-freeze-remediation.md)                           | Completed bounded scope,2026-11-04                                 | Two lots resolved with explicit limits; Cloud178/ACL and hosted mock exclusion verified. RL-F01 Cloud IP trust remains [NO VERIFICADO]. Sixteen functional IDs retain pending states in016; no MVP or exhaustive Cloud acceptance.                        |
 | [012.5 — Pricing truth](exec-plans/completed/012-5-pricing-truth.md)                          | Completed within approved012 scope; PR241 merged2026-11-02         | Shared catalog/copy and confined checkout accepted locally; integrated CI green, Vercel READY at7ea1953. Public Cloud rendering remains unverified due to checkpoint; no real-charge or016 acceptance.                                                    |
 | [014 T2 — Trusted image origins](exec-plans/active/014-reference-surface-correctness.md)      | Pending                                                            | Replace prefix trust with exact origin validation and regressions for similar hosts, userinfo and unauthorized ports.                                                                                                                                     |
 | [014 T3 — Platform audit interaction](exec-plans/active/014-reference-surface-correctness.md) | Pending                                                            | Keep platform-wide scope when filtering/paginating; preserve valid rows on errors and correct displayed fields/states.                                                                                                                                    |
@@ -802,7 +817,7 @@ not prerequisites of the replicable base under ADR0005. Plans/rows are not runti
 | [Solid MVP candidate](../ROADMAP.md)                                                          | Not yet accepted                                                   | Evaluate all freeze exit gates together after the remaining work. No overall percentage is inferred from heterogeneous tasks.                                                                                                                             |
 
 Parent **012 is completed by approved deliveries**, with inherited follow-ups
-transferred explicitly. **014,015,016 and017 remain active**. Plan
+transferred explicitly. **014,015 and016 remain active; bounded017 is completed**. Plan
 [013 — commercial preparation](exec-plans/deferred/013-launch-readiness-roadmap.md),
 new providers and verticals remain outside this freeze. The
 [external-services map](exec-plans/deferred/external-services-map.md) is a

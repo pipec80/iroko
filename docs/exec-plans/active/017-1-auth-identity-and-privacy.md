@@ -1,5 +1,10 @@
 # 017.1 — Auth, identidad y privacidad Implementation Plan
 
+**Registro técnico conservado tras el cierre acotado del padre,2026-11-04.**
+El [padre017](../completed/017-freeze-remediation.md) está completed únicamente
+para sus dos lotes aprobados. Este hijo conserva resultados, especificaciones y
+casos diferidos/transferidos; no declara PASS global ni aceptación del MVP.
+
 **Alcance vigente 2026-10-28:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 Priorizar acceso/identidad y privacidad de capacidades ofrecidas; reutilizar
 reparaciones aceptadas. Un caso Realtime pequeño basta para el patrón, sin
@@ -7,7 +12,7 @@ plataforma colaborativa. No depender del editor/Robot ni de su runner. S09 y
 otros riesgos accesibles no se difieren sólo para acelerar cierre; desactivar
 una integración exige comprobar su efecto real, no sólo ocultar UI.
 
-> **Ejecución:** aplicar el [contrato común de 017](017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
+> **Ejecución:** aplicar el [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
 
 **Goal:** Corregir contratos de contraseña, aislamiento de estado cliente y privacidad con pruebas negativas y controles positivos.
 
@@ -15,7 +20,7 @@ una integración exige comprobar su efecto real, no sólo ocultar UI.
 
 **Tech Stack:** Next.js 16, React 19 con React Compiler, TypeScript, TanStack Query 5, Supabase Auth/Realtime, PostHog, Pino, Vitest y Playwright.
 
-**Spec:** [017 — Freeze remediation](017-freeze-remediation.md).
+**Spec:** [017 — Freeze remediation](../completed/017-freeze-remediation.md).
 
 Ejecución local T1–T8 en curso: [evidencia](../../audits/2026-10-20-017-1-p1-execution.md), [MFA T7](../../audits/2026-10-26-017-1-t7-mfa.md) y [coordinación](../../audits/2026-10-20-017-p1-execution.md). El registro central conserva la disposición por tarea; las aceptaciones pendientes siguen **[NO VERIFICADO]**. Base inspeccionada:
 `a2feb3de9ca95bef5b18c7f6d2b4a4e88f6f899f`; renovar SHA y git status al ejecutar.

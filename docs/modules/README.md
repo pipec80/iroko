@@ -1,6 +1,6 @@
 # Module Catalog
 
-Consolidation **2026-10-20**: use the [audit/register](../exec-plans/active/017-freeze-remediation.md) for current repair disposition. Robot route/action/live-role SQL guards are incorporated; 014-T2/T3 and the remaining 017 tasks are still planned. Dated module/runtime evidence below retains its own scope.
+Consolidation **2026-10-20**: use the [audit/register](../exec-plans/completed/017-freeze-remediation.md) for current repair disposition. Robot route/action/live-role SQL guards are incorporated; 014-T2/T3 and the remaining 017 tasks are still planned. Dated module/runtime evidence below retains its own scope.
 
 Catalog cross-check: **2026-09-24**, baseline
 `f82d2fbe381014c80a090ba3c36c99e4778111c3`. The eight detailed guides retain

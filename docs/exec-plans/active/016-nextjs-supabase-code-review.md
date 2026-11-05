@@ -52,7 +52,7 @@ Aplicar el runbook final actualizado; un bloqueo no se convierte en PASS.
 La [auditoría dirigida](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md)
 y el [registro central](freeze-remediation-register.csv) consolidan los 53 IDs
 históricos y sus alias/seguimientos. Las reparaciones están asignadas a
-[017](017-freeze-remediation.md), 012.5, 014 o 015; 016 conserva revisión,
+[017](../completed/017-freeze-remediation.md), 012.5, 014 o 015; 016 conserva revisión,
 validación y disposición, sin implementar esas reparaciones.
 Esta asignación documentada no cierra todo T3 ni renueva la lectura exhaustiva
 T1 del candidato histórico. Final T2/T3 sucede después de los últimos cambios
