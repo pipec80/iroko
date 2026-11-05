@@ -57,7 +57,7 @@ overrides:
   # @react-email/ui (solo usado por `email:dev`, preview local) fija next@16.2.6
   # como dependencia directa exacta — nunca sigue el bump del next raíz. Forzar
   # acá para que no quede una segunda instancia vulnerable en el árbol.
-  next: 16.4.2
+  next: 16.4.3
   # Advisories on dev-scope transitive dependencies (Dependabot #80, #89, #91, #94).
   smol-toml: 1.9.1
   postcss-selector-parser: 7.1.6

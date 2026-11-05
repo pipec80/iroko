@@ -1,5 +1,31 @@
 # Consolidación Git y Dependabot — 2026-10-14
 
+## Consolidación autorizada — 2026-11-04
+
+El mantenedor autorizó integrar las ocho PR Dependabot233–240 junto al trabajo
+ya fusionado del017 por PR242 (`dc2a802`). Rama de integración
+`codex/dependabot-consolidation`, basada en ese main limpio.
+Se incorporan globals17.13.0, TanStack Query5.105.0, pino-pretty13.2.0,
+lucide-react1.65.0, Next16.4.3 y los SHA propuestos de setup-node7.1.0,
+setup-cli3.1.0 y CodeQL4.39.1. Se preserva Node24 y CLI Supabase2.109.1 en CI:
+la versión de la acción setup-cli es distinta de la herramienta que instala.
+
+Dos reparaciones necesarias antes de integrar: PR236 sólo cambiaba el manifest
+Next, pero override/lock seguían16.4.2; ahora Next, override, bundle-analyzer,
+eslint-config-next y transitivos correspondientes resuelven16.4.3. PR234 cambiaba
+sólo init: el log41531490127 falla por configuración4.39.1 con analyze4.38.2;
+init/analyze ahora comparten SHA. No se modifican guards, selección, workers o
+timeouts. Las ocho PR originales omiten Build y ambos E2E por actor Dependabot,
+por lo que se exige CI completa de la PR conjunta antes de fusionar/cerrarlas.
+
+`pnpm install --lockfile-only --ignore-scripts` terminó exit0:1535 entradas,
+políticas de cadena de suministro satisfechas, downloaded0/added0. No se
+instalaron módulos locales. La revisión independiente de manifest/override/lock
+fue favorable; React/Sentry/next-intl conservan versión. secure-json-parse4.1.1
+y sonic-boom5.0.2 son transitivos de pino-pretty13.2.0. La validación de runtime
+de versiones nuevas corresponde a la instalación congelada de CI. El cierre de
+las PR originales queda condicionado a la fusión satisfactoria de la conjunta.
+
 Estado final actualizado: PR [#221](https://github.com/pipec80/iroko/pull/221)
 integrado por squash como `3bac4f9b6b8604d35ec594645a2c491d2c1ec83d` el
 2026-10-15. Todos los checks requeridos aprobaron. Los nueve PR Dependabot
