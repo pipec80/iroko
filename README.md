@@ -21,6 +21,11 @@ Antes de trabajar en el repositorio, lee [AGENTS.md](AGENTS.md) y
 [docs/current-state.md](docs/current-state.md). El mapa completo de
 documentación está en [docs/index.md](docs/index.md).
 
+Las [recetas de extensión](docs/modules/foundation-recipes.md) y la
+[guía de instalación independiente](docs/runbooks/independent-installation.md)
+preparan el ensayo015-T3. Su ejecución en un derivado todavía está
+**[NO VERIFICADO]**.
+
 ## Stack
 
 | Capa            | Tecnología                                        |

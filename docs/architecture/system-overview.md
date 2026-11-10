@@ -24,6 +24,11 @@ The [product strategy](product-strategy.md) defines the reusable foundation's
 promise and minimal complete integrations. Supabase-first does not require
 every application worker to execute in an Edge Function.
 
+The [foundation recipes](../modules/foundation-recipes.md) map extension points
+to the current modules. The [independent installation guide](../runbooks/independent-installation.md)
+defines the derived setup and upgrade contract; its T3 runtime remains
+**[NO VERIFICADO]**.
+
 This overview describes stable boundaries. The
 [execution-plan index](../exec-plans/README.md) explains active, deferred and
 completed work, while decision rationale belongs in [ADRs](../adr/).
@@ -103,14 +108,14 @@ that every tenant boundary outside that explicit scope is remediated.
 
 ## Change map
 
-| If changing                                               | Read first                                                                                                                                                                                |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tenant membership, authorization, or RLS                  | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                                                                  |
-| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [deferred Plan 011 evidence](../exec-plans/deferred/011-billing/README.md)                                                |
-| Security or pricing truth                                 | [Plan 012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md)                                                                                                           |
-| Commercial readiness                                      | [Deferred Plan 013](../exec-plans/deferred/013-launch-readiness-roadmap.md)                                                                                                               |
-| Completion claims                                         | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                                                                                 |
-| Adaptation, module availability, installation or upgrades | [Product strategy](product-strategy.md), [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) and active [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md) |
+| If changing                                               | Read first                                                                                                                                                                                   |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenant membership, authorization, or RLS                  | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                                                                     |
+| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [deferred Plan 011 evidence](../exec-plans/deferred/011-billing/README.md)                                                   |
+| Security or pricing truth                                 | [Plan 012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md)                                                                                                              |
+| Commercial readiness                                      | [Deferred Plan 013](../exec-plans/deferred/013-launch-readiness-roadmap.md)                                                                                                                  |
+| Completion claims                                         | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                                                                                    |
+| Adaptation, module availability, installation or upgrades | [Product strategy](product-strategy.md), [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) and active [Plan 015](../exec-plans/completed/015-reusable-foundation-acceptance.md) |
 
 ## Deliberate non-claims
 

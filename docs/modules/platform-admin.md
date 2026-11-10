@@ -1,9 +1,9 @@
 # Back-office de Super-Admin (`platform_admins`)
 
 > **Tarea F3-C1** · PR [#60](https://github.com/pipec80/iroko/pull/60) · Rama histórica `feat/f3-c1-admin-backoffice`
-> Estado actual: implementación verificada estáticamente el 2026-08-20. La operación con un
-> admin real y MFA está **[NO VERIFICADO]**; además permanece la limitación de filtros de
-> auditoría descrita en §3.
+> Auditoría global aceptada localmente2026-11-05 con admin+AAL2 real, filtros,
+> paginación y error/reintento. [Evidencia014](../audits/2026-11-05-plan-014-t2-t3-execution.md).
+> No certifica toda la administración ni su operación Cloud actual.
 
 ## 1. Qué es esto
 
@@ -89,12 +89,11 @@ qué cuenta pertenece esa fila) y "Suplantado por" — el admin real detrás de 
 durante una sesión de impersonation (C2, ver [`impersonation.md`](impersonation.md)); dice "—"
 en cualquier fila que no ocurrió durante una impersonation.
 
-> ⚠️ **Limitación conocida:** los filtros (por acción, por recurso) y el botón "Cargar más" de
-> esta tabla todavía apuntan internamente al endpoint del audit log _de cuenta_ (2G), no al
-> cross-account nuevo. La carga inicial de la página sí trae los datos correctos con
-> `get_platform_audit_logs`, pero interactuar con los filtros de esa tabla en la vista de
-> auditoría de plataforma no re-consulta el endpoint correcto todavía. Es un TODO documentado
-> a propósito (ver `src/app/[locale]/dashboard/admin/audit/page.tsx`), no un bug oculto.
+Filtros por acción/recurso y «Cargar más» reutilizan `getPlatformAuditLogs`,
+conservando IDs de cuenta/impersonador. Ante fallo se conservan filas, filtro
+aplicado y cursor; el mensaje ofrece reintento. Los controles se bloquean durante
+una solicitud y una nueva intención descarta reintentos antiguos. Aceptación
+local014 con24 eventos de dos cuentas; Cloud conserva su evidencia separada.
 
 ### Si NO sos admin
 

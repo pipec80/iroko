@@ -9,8 +9,10 @@ Direction accepted 2026-10-28: [ADR 0005](docs/adr/0005-replicable-saas-mvp-and-
 Deliver the replicable SaaS core before a Robot/client vertical. Editor R02 and
 its development runner are outside the MVP critical path; effective exclusion
 has local guards/unit evidence and bounded browser acceptance as of2026-10-29.
-The exclusion prerequisite of015-T1 is satisfied locally; composition/billing,
-reuse and remaining017 tasks stay open. See the dated current state and register.
+Plan015 accepted the bounded local reusable core on2026-11-10: public pages,
+signup/access, useful tenant record with private file, adaptation, update and
+recovery. Plan016 owns integrated acceptance and explicit operational/provider
+limits. See the dated current state and register.
 
 ## Authority boundary
 
@@ -21,6 +23,11 @@ conflict, apply the hierarchy in [AGENTS.md](AGENTS.md) and
 [ADR 0001](docs/adr/0001-documentation-authority-and-agent-contract.md).
 
 ## Feature freeze
+
+Entrada vigente2026-11-10: **015 cerrado localmente →016 aceptación integrada**.
+[Resultados y límites de015](docs/quality/reusable-foundation-evidence.md).
+No repetir pruebas vigentes; ejecutar sólo gaps del candidato y conservar
+gates de pago real, operación programada y Cloud donde correspondan.
 
 Until the MVP exit gates below are satisfied, work is limited to:
 
@@ -35,6 +42,11 @@ during this freeze. A new finding belongs in the plan that owns the affected
 surface; it does not silently expand the product.
 
 ## Ordered queue
+
+**Entrada vigente2026-11-05:**014 completó su aceptación local de imágenes y
+auditoría, conservando T1 histórico. [Evidencia y límites](docs/audits/2026-11-05-plan-014-t2-t3-execution.md).
+Siguiente **015 reutilización/configuración →016 aceptación final**. No se
+declara MVP ni Cloud aceptados. Secuencia inferior conservada como trazabilidad.
 
 **Entrada vigente2026-11-04:** 017 completó sus dos lotes bajo el contrato acotado,
 con [evidencia y límites](docs/audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04).

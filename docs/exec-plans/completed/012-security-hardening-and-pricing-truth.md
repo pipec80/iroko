@@ -38,10 +38,10 @@ metadata, without promising capabilities that have not passed acceptance.
 The target promise and allowed evidence stages are in
 [product strategy](../../architecture/product-strategy.md).
 
-Proposed [Plan 014](../active/014-reference-surface-correctness.md) owns robot
+Proposed [Plan 014](014-reference-surface-correctness.md) owns robot
 route/action/SQL correctness, image-origin validation and platform audit
 interaction. They do not expand this plan's historical «no RLS changes» scope.
-Proposed [Plan 015](../active/015-reusable-foundation-acceptance.md) owns configuration
+Proposed [Plan 015](../completed/015-reusable-foundation-acceptance.md) owns configuration
 without new subscription sales and independent reuse. Coordinate its public
 billing visibility with PR 5; do not create a second catalogue. Plan 012 still
 owns the security sweep and does not certify infrastructure merely from code.

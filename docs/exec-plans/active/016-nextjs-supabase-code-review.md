@@ -1,5 +1,50 @@
 # Plan 016 — Revisión de Next.js, seguridad Supabase y arquitectura de datos
 
+## Recepción del cierre local015 — 2026-11-10
+
+[015](../completed/015-reusable-foundation-acceptance.md) acepta el núcleo local
+acotado por el propietario. [Evidencia reutilizable](../../quality/reusable-foundation-evidence.md):
+instalación independiente, signup/confirmación/onboarding sin compras, registro
+privado útil, roles/RLS, archivo/notificación, marca, update014 y recuperación
+original. Browser creación/update PASS y consola0; no repetir este circuito por
+la mera transición de plan. Contrastar sólo código/configuración que cambie.
+
+016 conserva como **[NO VERIFICADO]**:
+
+- Compra y callbacks PSP reales según la oferta y matriz011 existente; no
+  convertir build/página billing sin credenciales en certificación de pago.
+- Entrega programada real del worker, alerta operacional y recuperación con
+  proveedor; worker10/10 usa proveedor simulado, SQL17/17 prueba cola y señales.
+- Paridad linked/Cloud y gates integrados que ya eran dueños de016.
+- Expiración runtime del enlace Storage previamente emitido tras revocación;
+  la nueva emisión está denegada por RLS, pero el bearer previo dura hasta60s.
+- Casos pendientes de la matriz DB-INTAKE que no cubrió el contrato acotado015.
+
+Prioridad del propietario: cerrar el circuito MVP y gaps backend concretos,
+reutilizando evidencias y QA manual reproducible cuando resulte más rápido.
+Esto no inicia operaciones Cloud ni amplía proveedores.
+
+## Recepción de investigación de datos — 2026-11-05
+
+Se recibe la [matriz DB-01…20 y su contraste preparatorio](../../audits/2026-11-05-plan-015-readiness.md)
+mediante `DB-INTAKE-20261105` del registro central. No son veinte defectos
+confirmados ni autorización para ejecutar el prompt adjunto. Renovar evidencia,
+deduplicar contra D-03/API/SEATS/WEBHOOKS, D-04, D-05 y demás IDs existentes.
+Priorizar perfiles, cuotas/flags y concurrencia de superficies ofrecidas.
+
+015-T1 recibe únicamente contratos de configuración/Free/derechos existentes
+DB-02/03/04 y015-T2/T3 la receta de bootstrap DB-16.016 conserva seguridad/datos,
+paridad y revisión integrada, incluida UI por rol; no crear otra fase Next.js
+paralela. Defectos nuevos confirmados requieren subfila con severidad, dueño,
+reproducción y reparación acotada; P0/P1 ofrecidos bloquean el recorrido afectado
+antes de aceptación, sin esperar a la ronda final. No reabrir017 por defecto.
+La recepción sólo cierra cuando cada referencia tiene evidencia/disposición o
+alias canónico. El gate integrado sigue después del último cambio015.
+
+La instantánea externa no renueva Cloud ni demuestra checkout, cargas, carreras
+o bypass. Mantener límites Free, migraciones manuales locales y autorización
+específica de escrituras remotas. Esta actualización es documental.
+
 ## Reauditoría final vigente — 2026-10-28
 
 ### Recepción acotada de evidencias017 —2026-11-02
@@ -464,9 +509,9 @@ esos checks. Cero hallazgos no significa ausencia garantizada de vulnerabilidade
   recuperación; este review evalúa implementación/contratos, no renueva evidencia Cloud.
 - [Plan 012](../completed/012-security-hardening-and-pricing-truth.md): recibe hardening y
   coherencia de pricing; evitar una segunda lista de correcciones sin dueño.
-- [Plan 014](014-reference-surface-correctness.md): conserva robot, orígenes de
+- [Plan 014](../completed/014-reference-surface-correctness.md): conserva robot, orígenes de
   imágenes y auditoría. Revalidar esos defectos, no presentarlos como nuevos.
-- [Plan 015](015-reusable-foundation-acceptance.md): recibe límites de módulos y
+- [Plan 015](../completed/015-reusable-foundation-acceptance.md): recibe límites de módulos y
   reutilización; la instalación independiente sigue siendo su criterio propio.
 - [Plan 013](../deferred/013-launch-readiness-roadmap.md): distribución comercial condicional.
 

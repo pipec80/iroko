@@ -9,6 +9,24 @@ import { cn } from '../utils';
 import { parseE164, PHONE_COUNTRIES } from '../phone-countries';
 
 describe('storageUrl', () => {
+  it.each([
+    'https://proj.supabase.co.attacker.example/a.png',
+    'https://proj.supabase.co@attacker.example/a.png',
+    'https://proj.supabase.co:444/a.png',
+    'https://user:pass@proj.supabase.co/a.png',
+    'https://user:pass@lh3.googleusercontent.com/a.png',
+    'https://lh3.googleusercontent.com:444/a.png',
+    'https://lh3.googleusercontent.com.attacker.example/a.png',
+    'https://[invalid/a.png',
+  ])('rejects an untrusted image URL: %s', (value) => {
+    expect(storageUrl(value)).toBeNull();
+  });
+
+  it.each(['https://proj.supabase.co:443/a.png', 'https://lh3.googleusercontent.com:443/a.png'])(
+    'accepts the standard HTTPS port: %s',
+    (value) => expect(storageUrl(value)).toBe(value),
+  );
+
   it('builds the public CDN URL from a storage path', () => {
     expect(storageUrl('avatars/abc-123/avatar.jpg')).toBe(
       'https://proj.supabase.co/storage/v1/object/public/avatars/abc-123/avatar.jpg',

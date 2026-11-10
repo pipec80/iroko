@@ -1,5 +1,110 @@
 # Plan 015 — Aceptación de la base reutilizable
 
+## Cierre local acotado — 2026-11-10
+
+**Estado: completado para el núcleo reutilizable local.** El propietario fijó
+como resultado práctico páginas públicas, registro/confirmación/acceso y una
+acción útil persistida en el área privada, con permisos backend. Se demostró
+además instalación independiente, marca/módulo, archivo privado, notificación,
+actualización real014 y recuperación de DB/Storage. T0/T1 implementados y
+verificados; T2 documentado; T3 aceptado en ese alcance. [Resultados y límites](../../quality/reusable-foundation-evidence.md).
+
+La checklist inferior conserva el contrato amplio original y checkpoints; las
+casillas abiertas no se presentan como ejecutadas. Su disposición final es:
+
+- **015 cerrado localmente:** composición y exclusión, secretos opcionales,
+  cuotas sin fail-open, instalación sin compras, superficie billing activa,
+  siete recetas documentadas, una extensión útil y actualización conservando
+  dato/archivo/marca; restauración original verificada.
+- **016 pendiente:** aceptación integrada/Cloud, operación programada real de
+  correo/alerta/recuperación, expiración runtime del enlace firmado y contratos
+  de datos pendientes de la matriz DB. No repetir las pruebas ya vigentes.
+- **011/016 pendiente según oferta:** compra real y callbacks del PSP con la
+  matriz existente; billing activo se construyó y renderizó sin credenciales,
+  con fallo explícito `provider_unavailable`, sin fallback.
+
+Esta disposición limita el cierre local; no acepta Cloud, pagos reales ni un
+producto instalable para clientes. Siguiente: **016 aceptación integrada**.
+Instalación y reset/restauración fueron autorizados específicamente. La
+integración Git posterior está en [PR250](https://github.com/pipec80/iroko/pull/250)
+y conserva los gates de la rama protegida. No se aplicaron migraciones Cloud.
+
+Base observada `032f1a30794241cebc97e0ccd32b48d836110475`, rama
+`codex/014-images-platform-audit`, con cambios014 staged/unstaged/untracked.
+El SHA no identifica por sí solo ese árbol. Preservar todos los cambios y
+material local; no checkout/reset/clean, commit, push, merge o deploy implícitos.
+
+[Contraste estático, reglas y recepción de la investigación de datos](../../audits/2026-11-05-plan-015-readiness.md).
+La auditoría externa y su prompt son insumos, no órdenes de ejecutar ni prueba
+de runtime vigente. Los IDs DB-01…20 son referencias de esa fuente; el registro
+central recibe su triage sin reemplazar IDs/cierres anteriores.
+
+| Etapa | Existe en el árbol inspeccionado                                                                                 | Falta para aceptación                                                                             |
+| ----- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| T0    | Sidebar por flags/rol, móvil compartido, atajo Projects condicionado y home sin consultas Projects al desactivar | Contraste de títulos/rutas hijas y adaptación real; extraer sólo metadatos necesarios             |
+| T1    | Wizard sin plan con billing=false y test existente; catálogo012.5; política mock restrictiva                     | Guard de página/checkout, requisitos opcionales, S-10 y contratos de flags/cuotas                 |
+| T2    | Patrones de Auth/RLS, Storage, API, correo y Realtime; catálogo de módulos                                       | Siete recetas y guía independiente contrastadas con código, límites y errores                     |
+| T3    | Evidencia histórica de superficies base, no de réplica                                                           | Instalación de ambas configuraciones, marca, extensión neutral, recuperación y actualización real |
+
+### Recepción acotada de datos antes de T1/T3
+
+DB-02/03/04 se revisan en T1 sólo por su efecto en configuración, límites Free
+y conservación de derechos existentes. La auditoría general de perfiles,
+grants/RLS, concurrencia, integridad financiera y paridad permanece en016.
+Si aparece un P0/P1 confirmado de una capacidad ofrecida, bloquea su aceptación:
+asignar reparación acotada en el registro y resolver antes del recorrido afectado,
+sin esperar al gate final ni reabrir017 por defecto. Un aviso no es un defecto.
+
+- [x] Trazar `src/lib/flags/index.ts`, `supabase/schemas/flags.sql`,
+      `src/lib/billing/entitlements.ts`, `supabase/schemas/private.sql`,
+      catálogo/migraciones y consumidores efectivos. Distinguir disponibilidad
+      de instalación, flag operacional, derecho comercial y autorización viva.
+      Documentar las claves `webhooks`/`webhooks_enabled` y
+      `api_keys`/`api_keys_enabled`; ningún override operacional concede permisos
+      ni cuotas por sí solo. No renombrar claves sin contrato y consumidores.
+- [ ] Fijar pruebas de T1 para Free sin compras, límite0, cupo alcanzado, clave
+      ausente/inválida y fallo de lectura: una operación sujeta a cuota no obtiene
+      derechos ilimitados por error. Separar el ilimitado explícitamente soportado
+      del dato faltante. Reproducir en el límite SQL/acción real, no sólo helper.
+      `withinLimit` TS sólo aparece usado en sus tests en esta búsqueda; eso no
+      demuestra un bypass productivo. Los tests actuales codifican el fallback:
+      actualizar contrato y negativos únicamente tras justificar el cambio.
+- [ ] Contrastar `active`, `trialing`, `canceled` con período futuro/vencido y
+      ausencia de suscripción: apagar nuevas compras no altera derechos vigentes
+      ni callbacks/worker. La matriz financiera completa y multiproveedor queda
+      en016/011 según oferta; no exigir nuevas certificaciones.
+- [ ] Si se confirma una incoherencia que afecta estos casos, reparación mínima
+      en los helpers/consumidores afectados, prueba RED/GREEN y, si hay SQL,
+      migración manual + espejo + pgTAP por runner atestado existente; regenerar
+      tipos sólo si cambia API expuesta. Identificar archivos exactos y escenario
+      antes de mutar; si excede estos contratos, disposición en016 y aprobación
+      del lote correspondiente. No habilitar módulos excluidos para probarlos.
+
+### Recursos y destino de los ensayos
+
+Antes de cada ejecución autorizada, medir RAM/procesos y comprobar destino.
+Host16GB: un worker; SQL, build, navegador y suites pesadas secuenciales.
+Tras dos fallos iguales sin evidencia nueva, detener ese método y proponer
+alternativa sin bajar assertions, cobertura ni guards. Reutilizar evidencia
+vigente por contenido/dependencias/configuración, no sólo por SHA o fecha.
+
+Usar exclusivamente el stack oficial `saas-boilerplate`. T3 admite un checkout
+derivado separado, pero no crea otro stack Supabase por defecto. Antes de T3
+presentar destino exacto y procedimiento revisable de instalación limpia y
+recuperación que preserve usuario del mantenedor, credenciales, datos a conservar
+y recursos ajenos. Si exige reset/recreación, requiere aprobación específica del
+procedimiento; fixtures sobre una base usada no prueban instalación limpia.
+La estrategia operativa todavía está **[NO VERIFICADO]** y bloquea ejecutar T3,
+no la preparación de T0/T1/T2. No ensayar recuperación sobre datos ajenos.
+
+Todos los proveedores son Free/gratis por declaración del propietario. Antes
+de operarlos, inventariar consumidores y comprobar capacidad/cuota oficial y
+estado efectivo de cuenta en lectura. No instalar herramientas, habilitar pagos
+ni ampliar recursos. Instalado/configurado no equivale a runtime aceptado.
+
+Los checkpoints inferiores conservan contexto histórico; este bloque gobierna
+el estado y las restricciones actuales.
+
 ## Contrato vigente de producto — 2026-10-28
 
 **Actualización2026-10-29:** prerrequisito de exclusión aceptado localmente:
@@ -45,7 +150,7 @@ de navegador pueden ser manuales reproducibles o automatizados, con evidencia y
 autorización de destino; no dependen del runner development del editor.
 
 **Coordinación — 2026-10-20:** se conserva este alcance y sus tareas.
-El [registro central](freeze-remediation-register.csv) asigna S-10 a T1:
+El [registro central](../active/freeze-remediation-register.csv) asigna S-10 a T1:
 `captureServer` debe respetar `appConfig.features.analytics=false`, además de
 token/consentimiento; añadir regresión con flag false y token/consentimiento
 positivos, sin envío de proveedor. Esto no cambia callbacks/worker de billing.
@@ -59,9 +164,10 @@ local; el resto deT1 y los ensayos siguen sin iniciar.
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
 > to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
-**Estado:** prerrequisito de exclusión aceptado localmente, incluido navegador;
-resto del plan y ensayos no iniciados. P1 para uso propio;
-no depende de decidir vender. Baseline: `f82d2fbe381014c80a090ba3c36c99e4778111c3`.
+**Estado:** preparación documental actualizada; prerrequisito de exclusión
+aceptado localmente, incluido navegador. Implementación restante y ensayos
+pendientes de autorización. P1 para uso propio; no depende de decidir vender.
+Baseline histórico: `f82d2fbe381014c80a090ba3c36c99e4778111c3`; candidato actual arriba.
 
 **Goal:** demostrar que una instalación nueva puede configurarse, extenderse y
 actualizarse sin conocimiento oculto ni cambios innecesarios del núcleo.
@@ -134,7 +240,9 @@ La ruta y su autorización real continúan implementándose explícitamente.
 El móvil reutiliza el mismo sidebar; se preservan rutas/admin, idiomas y enlaces
 profundos existentes. El catálogo no convierte un rol de UI en autorización.
 
-- [ ] **RED de comportamiento.** Con projects deshabilitado, verificar que
+- [ ] **Contraste y regresión de comportamiento.** Reutilizar tests existentes;
+      exigir RED sólo para divergencias nuevas reproducidas, nunca provocar
+      fallos artificiales en comportamiento ya correcto. Con projects deshabilitado, verificar que
       desaparecen entrada/acceso/atajo y que el home no llama a `listByAccount`.
       Con activity habilitado, un viewer no obtiene su entrada administrativa.
       Al cambiar de cuenta se deriva visibilidad del nuevo contexto. Comprobar
@@ -170,8 +278,9 @@ retirar la oferta de nuevas suscripciones.
   `src/lib/billing/__tests__/registry.test.ts`, `src/config/__tests__/app.config.test.ts`.
 - Create: `src/lib/config/integration-requirements.ts` y
   `src/lib/config/__tests__/integration-requirements.test.ts`.
-- Create: `src/components/dashboard/onboarding/__tests__/onboarding-wizard.test.tsx`
-  y `src/test/e2e/no-billing.spec.ts`.
+- Modify: `src/components/dashboard/onboarding/__tests__/onboarding-wizard.test.tsx`
+  (ya existe; conservar sus casos). Create: `src/test/e2e/no-billing.spec.ts`
+  sólo si no hay recorrido existente que cubra las mismas assertions.
 
 **Interfaces:** `appConfig.features.billing=false` significa que esta
 instalación no ofrece nuevas suscripciones. Página billing no disponible para
@@ -187,6 +296,12 @@ operación habilitada falla explícitamente si falta su configuración; nunca
 cambia silenciosamente a mock. Mailpit no exige una API key de Resend; el
 transporte Resend sí la exige. `FROM_EMAIL` sigue siendo necesario para enviar
 correo con cualquiera de los dos transportes.
+
+`mailTransport` del helper es un valor derivado de la selección existente por
+`MAILPIT_URL`, no una nueva variable de entorno. La función pura detecta
+credenciales faltantes; la admisibilidad mock se comprueba por separado con
+`mock-policy.ts` y sus tests, usando el contexto real existente, sin introducir
+lecturas de `process.env` en el helper puro ni rebajar sus guards.
 
 - [ ] **RED requisitos de integración.** Extraer una función pura tipada
       `missingIntegrationRequirements(input): string[]` cuyo input incluya
@@ -214,8 +329,11 @@ correo con cualquiera de los dos transportes.
   ).toContain('MOCK_BILLING_SECRET');
   ```
 
-  Agregar casos Resend sin key, Stripe con solo API key, MP sin URL webhook,
-  mock en producción sin opt-in y combinación completa. Conservar la
+  Agregar casos Resend sin key, Stripe con solo API key, MP sin URL webhook
+  y combinación completa. En los tests de política mock cubrir fuera de fixture
+  local, hosting y ausencia de opt-in.
+  Un opt-in no habilita mock en Cloud: conservar fixture explícita, loopback,
+  exclusión de hosting y todos los guards de `src/lib/billing/mock-policy.ts`. Conservar la
   semántica de `isMockBillingAllowed`; no debilitarla al hacer secretos
   condicionales. Ejecutar `pnpm test src/lib/config/__tests__/integration-requirements.test.ts`.
 
@@ -302,7 +420,10 @@ por tenant, un instalador visual o un generador.
       operacional, recuperación y procedimiento de actualización. Reutilizar
       estas secciones en la evidencia de T3; no crear otra fuente de entorno.
 - [ ] **Validación.** Ejecutar `node scripts/check-docs.mjs` y formato de los
-      archivos cambiados; revisar rutas contra `rg --files`. T3 debe ejecutar la
+      archivos cambiados; revisar rutas contra `rg --files`. Documentar separados
+      disponibilidad operacional, entitlements y autorización; usar roles reales
+      owner/admin/member/viewer. Bootstrap de plataforma exige procedimiento
+      explícito y AAL2, nunca un admin por defecto. T3 debe ejecutar la
       guía y un recorrido combinado de recetas; las restantes llevan estado de
       evidencia explícito. Commit: `docs: document foundation extension recipes`.
 
@@ -319,9 +440,13 @@ y limitaciones. El checkout/base desechables se identifican antes de cualquier
 reset; nunca se usa el otro proyecto personal por inferencia.
 
 - [ ] **Preparar ejecución autorizada.** Identificar ruta absoluta, recursos
-      aislados, puertos y comando de instalación congelada. Verificar que no son
-      el checkout/DB actual ni un proyecto linked. No realizar limpieza automática
-      posterior: preservar evidencia y pedir alcance específico para eliminarla.
+      identificados, puertos y comando de instalación congelada. El checkout
+      derivado no es el actual y el destino no es linked/Cloud. Aplicar el
+      procedimiento aprobado de instalación limpia sobre el stack oficial,
+      con preservación/restauración verificadas antes de cualquier reset.
+      No crear otro stack ni resetear la base usada por inferencia. Limpiar sólo
+      fixtures/recursos propios incluidos en la autorización y preservar evidencia;
+      otras eliminaciones requieren alcance específico.
 - [ ] **Recorrido de instalación.** Un ejecutor que siga solo la guía registra
       cada pregunta al mantenedor como defecto documental; tiempo activo separado
       de descargas/esperas. Ejecutar ambas configuraciones con datos ficticios.
@@ -333,7 +458,7 @@ reset; nunca se usa el otro proyecto personal por inferencia.
       registro de negocio por tenant reutilizando patrones de identidad/RLS, sin
       habilitar la UI/editor Projects diferida, con
       entrada validada, archivo privado y notificación. Crear dos cuentas, owner,
-      editor y viewer. Probar escritura permitida, rechazo viewer, aislamiento,
+      admin, member y viewer. Probar escritura permitida según contrato, rechazo viewer, aislamiento,
       revocación y persistencia tras reload. Explicar cada modificación del núcleo;
       si la tarea exige duplicar autorización, corregir receta/diseño antes de cerrar.
 - [ ] **Operación.** En el candidato, correlacionar solicitud y resultado de
@@ -371,6 +496,8 @@ probó y mantener abiertas las demás, sin llamar completo al plan.
 - [ ] Defectos 014 cerrados; Plan 012 y el alcance operativo 011 satisfechos.
 - [ ] Navegación, títulos, accesos y atajos usan el contrato de composición T0.
 - [ ] Ambas configuraciones instaladas y verificadas desde la guía.
+- [ ] DB-02/03/04 tienen contrato y evidencia en el recorrido afectado; ningún
+      P0/P1 confirmado de seguridad/integridad de la oferta queda sin resolver.
 - [ ] Extensión y actualización conservan aislamiento, datos y personalización.
 - [ ] Recetas, límites de coste y recuperación tienen evidencia explícita.
 - [ ] La promesa publicada corresponde a esa evidencia, no a todos los módulos futuros.

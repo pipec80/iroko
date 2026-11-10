@@ -146,8 +146,8 @@ docs/capabilities.md
 docs/current-state.md
 docs/exec-plans/active/012-security-hardening-and-pricing-truth.md
 docs/exec-plans/active/013-launch-readiness-roadmap.md
-docs/exec-plans/active/014-reference-surface-correctness.md
-docs/exec-plans/active/015-reusable-foundation-acceptance.md
+docs/exec-plans/completed/014-reference-surface-correctness.md
+docs/exec-plans/completed/015-reusable-foundation-acceptance.md
 docs/exec-plans/active/016-nextjs-supabase-code-review.md
 docs/index.md
 docs/modules/README.md
@@ -168,7 +168,7 @@ Run:
 ```powershell
 pnpm docs:check
 pnpm test:docs-check
-pnpm exec prettier --check README.md ROADMAP.md docs/architecture/system-overview.md docs/architecture/iot-vertical-pilot.md docs/architecture/product-strategy.md docs/audits/2026-09-24-reusable-saas-readiness.md docs/audits/2026-10-05-saas-template-competitive-landscape.md docs/capabilities.md docs/current-state.md docs/exec-plans/active/012-security-hardening-and-pricing-truth.md docs/exec-plans/active/013-launch-readiness-roadmap.md docs/exec-plans/active/014-reference-surface-correctness.md docs/exec-plans/active/015-reusable-foundation-acceptance.md docs/exec-plans/active/016-nextjs-supabase-code-review.md docs/index.md docs/modules/README.md docs/quality/testing-strategy.md docs/exec-plans/active/documentation-freeze-reorganization.md
+pnpm exec prettier --check README.md ROADMAP.md docs/architecture/system-overview.md docs/architecture/iot-vertical-pilot.md docs/architecture/product-strategy.md docs/audits/2026-09-24-reusable-saas-readiness.md docs/audits/2026-10-05-saas-template-competitive-landscape.md docs/capabilities.md docs/current-state.md docs/exec-plans/active/012-security-hardening-and-pricing-truth.md docs/exec-plans/active/013-launch-readiness-roadmap.md docs/exec-plans/completed/014-reference-surface-correctness.md docs/exec-plans/completed/015-reusable-foundation-acceptance.md docs/exec-plans/active/016-nextjs-supabase-code-review.md docs/index.md docs/modules/README.md docs/quality/testing-strategy.md docs/exec-plans/active/documentation-freeze-reorganization.md
 git diff --check
 ```
 

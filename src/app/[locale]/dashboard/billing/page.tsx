@@ -1,4 +1,6 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
+import { notFound } from 'next/navigation';
+import { appConfig } from '@/config/app.config';
 import { BillingTab } from '@/components/dashboard/org/billing-tab';
 import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
 
@@ -15,6 +17,7 @@ export async function generateMetadata({
 }
 
 export default async function BillingPage({ params }: { params: Promise<{ locale: string }> }) {
+  if (!appConfig.features.billing) notFound();
   const { locale } = await params;
   setRequestLocale(locale);
 

@@ -410,10 +410,10 @@ asumir que todos los planes gratuitos o todas sus prestaciones son equivalentes.
 No se convierte este mapa en un Plan 016 con archivos supuestos antes de
 inspeccionar el emisor y revisar las decisiones del paso 0. Los planes
 [012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md) y
-[014](../exec-plans/active/014-reference-surface-correctness.md) mantienen sus
+[014](../exec-plans/completed/014-reference-surface-correctness.md) mantienen sus
 correcciones; el piloto no las sustituye ni cierra billing de Plan 011.
 
-El [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md) puede
+El [Plan 015](../exec-plans/completed/015-reusable-foundation-acceptance.md) puede
 utilizar este dominio para su ensayo de extensión cuando se concrete, en vez
 de obligar a construir además otro vertical neutral. Debe conservar sus pruebas
 de instalación, permisos, archivo privado/notificación, actualización y operación;

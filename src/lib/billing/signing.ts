@@ -5,7 +5,7 @@ import { assertMockBillingAllowed, isMockBillingAllowed } from './mock-policy';
 const MAX_TOKEN_LENGTH = 65536;
 
 async function hmacKey(): Promise<CryptoKey> {
-  if (!/^[\da-f]{64}$/iu.test(env.MOCK_BILLING_SECRET))
+  if (!env.MOCK_BILLING_SECRET || !/^[\da-f]{64}$/iu.test(env.MOCK_BILLING_SECRET))
     throw new Error('invalid_mock_billing_secret');
   const bytes = Uint8Array.from(env.MOCK_BILLING_SECRET.match(/../g) ?? [], (hex) =>
     Number.parseInt(hex, 16),

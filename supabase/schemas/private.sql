@@ -631,14 +631,18 @@ CREATE OR REPLACE FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", 
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO ''
     AS $$
-  SELECT private.get_account_limit(p_account_id, p_key) IS NULL
-      OR (p_current + p_increment) <= private.get_account_limit(p_account_id, p_key);
+  SELECT CASE
+    WHEN private.get_account_limit(p_account_id, p_key) = -1 THEN true
+    WHEN private.get_account_limit(p_account_id, p_key) >= 0 THEN
+      (p_current + p_increment) <= private.get_account_limit(p_account_id, p_key)
+    ELSE false
+  END;
 $$;
 
 
 ALTER FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer) OWNER TO "postgres";
 
-COMMENT ON FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer) IS 'True si (current+increment) respeta el límite del plan; límite ausente = ilimitado. p_current es bigint porque count(*) devuelve bigint (3H-1.5).';
+COMMENT ON FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer) IS 'True si (current+increment) respeta un límite explícito no negativo, o si el límite explícito es -1 (ilimitado). Límite ausente o error de lectura no concede cuota. p_current es bigint porque count(*) devuelve bigint.';
 
 REVOKE ALL ON FUNCTION "private"."within_plan_limit"("p_account_id" "uuid", "p_key" "text", "p_current" bigint, "p_increment" integer) FROM PUBLIC;
 

@@ -42,6 +42,12 @@ import { updateLocalePreferenceAction } from '@/app/[locale]/dashboard/account/a
 import { routing } from '@/i18n/routing-config';
 import { Link, usePathname, useRouter } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
+import {
+  matchesProductRoute,
+  resolveProductModules,
+  resolveProductModuleTitle,
+} from '@/config/product-modules';
+import type { ProductModule } from '@/config/product-modules';
 import { createClient } from '@/lib/supabase/client';
 import { useDocumentDraftTransition } from '@/components/providers/document-draft-provider';
 import { useIdentityScope } from '@/components/providers/query-provider';
@@ -74,19 +80,7 @@ type Props = {
   activeAccountId: string | null;
 };
 
-// Matches NAV_ITEMS labels in sidebar exactly — values are Navigation namespace keys.
-const PAGE_TITLE_KEYS: Record<string, string> = {
-  '/dashboard': 'nav_overview',
-  '/dashboard/projects': 'nav_projects',
-  '/dashboard/members': 'nav_members',
-  '/dashboard/activity': 'nav_activity',
-  '/dashboard/billing': 'nav_billing',
-  '/dashboard/org/settings': 'nav_settings',
-  '/dashboard/account': 'nav_account',
-};
-
-// Admin routes aren't in the sidebar NAV_ITEMS the map above mirrors, so they
-// resolve their title from the same `Admin` namespace the admin tabs use.
+// Platform-admin titles are independent of account-level navigation.
 const ADMIN_PAGE_TITLE_KEYS: Record<string, string> = {
   '/dashboard/admin/accounts': 'nav_accounts',
   '/dashboard/admin/audit': 'nav_audit',
@@ -96,20 +90,18 @@ const ADMIN_PAGE_TITLE_KEYS: Record<string, string> = {
 
 function getPageTitle(
   pathname: string,
+  modules: readonly ProductModule[],
   tAdmin: ReturnType<typeof useTranslations>,
   tNav: ReturnType<typeof useTranslations>,
 ): string {
   for (const [route, key] of Object.entries(ADMIN_PAGE_TITLE_KEYS)) {
-    if (pathname.startsWith(route)) return tAdmin(key);
+    if (matchesProductRoute(pathname, route)) return tAdmin(key);
   }
-  if (appConfig.features.verticals.robot && pathname.startsWith('/dashboard/robot')) {
-    return `${appConfig.brand} Robot`;
-  }
-  for (const [route, key] of Object.entries(PAGE_TITLE_KEYS)) {
-    if (route === '/dashboard/projects' && !appConfig.features.projects) continue;
-    if (pathname === route || (route !== '/dashboard' && pathname.startsWith(route))) {
-      return tNav(key);
-    }
+  const productModule = resolveProductModuleTitle(pathname, modules);
+  if (productModule) {
+    return 'key' in productModule.label ?
+        tNav(productModule.label.key)
+      : `${appConfig.brand}${productModule.label.brandSuffix}`;
   }
   return tNav('nav_overview');
 }
@@ -132,8 +124,10 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
   const tAdmin = useTranslations('Admin');
   const tNav = useTranslations('Navigation');
   const { theme, setTheme } = useTheme();
-  const pageTitle = getPageTitle(pathname, tAdmin, tNav);
   const activeOrg = orgs.find((o) => o.account_id === activeAccountId) ?? orgs[0];
+  const modules = resolveProductModules(appConfig, activeOrg?.role);
+  const pageTitle = getPageTitle(pathname, modules, tAdmin, tNav);
+  const projectsModule = modules.find(({ id }) => id === 'projects');
   const orgLabel = activeOrg?.name.toUpperCase() ?? 'IROKO';
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -156,8 +150,7 @@ export function AppTopbarClient({ user, locale, orgs, activeAccountId }: Props) 
   useShortcut(
     'p',
     () => {
-      if (appConfig.features.projects)
-        router.push({ pathname: '/dashboard/projects', query: { new: '1' } });
+      if (projectsModule) router.push({ pathname: projectsModule.href, query: { new: '1' } });
     },
     {
       ctrlOrMeta: true,

@@ -17,6 +17,26 @@ vi.mock('@/env', () => ({
 import { getPaymentProvider, availableProviders, hasProviderCredentials } from '../registry';
 
 describe('payment provider registry', () => {
+  it('imports without payment secrets but rejects use without falling back', async () => {
+    const saved = { ...env };
+    Object.assign(env, {
+      MOCK_BILLING_SECRET: undefined,
+      STRIPE_SECRET_KEY: undefined,
+      STRIPE_WEBHOOK_SECRET: undefined,
+      MERCADOPAGO_ACCESS_TOKEN: undefined,
+      MERCADOPAGO_WEBHOOK_SECRET: undefined,
+      MERCADOPAGO_WEBHOOK_URL: undefined,
+    });
+    try {
+      vi.resetModules();
+      const registry = await import('../registry');
+      expect(registry.availableProviders()).toEqual([]);
+      expect(() => registry.getPaymentProvider('mock')).toThrow('provider_not_configured');
+      expect(() => registry.getPaymentProvider('stripe')).toThrow('provider_not_configured');
+    } finally {
+      Object.assign(env, saved);
+    }
+  });
   afterEach(() => {
     Object.assign(env, {
       NODE_ENV: 'test',

@@ -1,5 +1,9 @@
 # Iroko Engineering Documentation
 
+Estado vigente2026-11-10: [015 completado localmente](exec-plans/completed/015-reusable-foundation-acceptance.md)
+para el núcleo reutilizable; [evidencia y límites](quality/reusable-foundation-evidence.md).
+El siguiente gate es016; no se acepta Cloud ni pagos reales por este cierre.
+
 This directory is the versioned knowledge base for current status, architecture,
 execution plans, evidence, runbooks and durable technical decisions.
 
@@ -22,7 +26,23 @@ effective exclusion now has local guards/unit and bounded browser acceptance
 5. [Documentation history](history/README.md) — superseded versioned material,
    including the exact pre-freeze roadmap; non-authoritative.
 
-## Entrada vigente — 2026-11-04
+## Entrada vigente — 2026-11-05
+
+014 aceptado localmente: imágenes, auditoría global, SQL19 y navegador con
+cleanup verificado. [Cierre y límites](audits/2026-11-05-plan-014-t2-t3-execution.md).
+Siguiente015 →016. Los párrafos siguientes conservan checkpoints previos del día.
+
+Actualización de ejecución: T2 corregido con unit20/20; T3 implementado, con
+SQL/browser pendientes por destino Docker y presupuesto local.014 sigue activo.
+[Evidencia y límites](audits/2026-11-05-plan-014-t2-t3-execution.md).
+
+[014 actualizado para revisión](exec-plans/completed/014-reference-surface-correctness.md):
+T1 conserva su aceptación local; T2/T3 pendientes, sin autorización de implementación
+en esta actualización. El plan explicita servicios Free, fixtures en el stack oficial,
+pruebas secuenciales con recursos acotados y separación del gate integrado016.
+Orden conservado:014-T2/T3 →015 →016. La revisión documental no acepta runtime.
+
+## Cierre registrado — 2026-11-04
 
 017 completó su contrato acotado de seguridad/configuración y privacidad.
 [Cierre, revisión y límites](audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04).

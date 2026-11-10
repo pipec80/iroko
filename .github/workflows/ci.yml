@@ -130,6 +130,9 @@ jobs:
       - name: Audit production dependencies
         run: pnpm audit --prod --audit-level=high
 
+      - name: Verify local dependency security patches
+        run: pnpm test:dependency-security
+
   # ─────────────────────────────────────────────
   # JOB 2b: Escaneo de secretos (Gitleaks)
   # Corría solo como script local (pnpm security:gitleaks) sin estar

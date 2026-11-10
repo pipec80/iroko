@@ -176,7 +176,7 @@ Re-run the failing spec in isolation to narrow the cause; an isolated pass does
 not turn the full run green. Assign unresolved failures to the candidate's
 acceptance work and investigate shared state, timing and resource use before
 quarantining or classifying them. Do not rerun broadly merely to obtain a green
-result. Active [Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md)
+result. Active [Plan 015](../exec-plans/completed/015-reusable-foundation-acceptance.md)
 requires explicit candidate-level results for the independent reuse trial.
 
 ## Coverage

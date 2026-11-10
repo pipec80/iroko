@@ -2,7 +2,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(17);
+SELECT plan(21);
 
 -- Seed: 2 usuarios → handle_new_profile crea cuenta personal+owner por cada uno.
 -- Cuenta A queda en free (sin suscripción); cuenta B recibe sub pro vía RPC.
@@ -78,6 +78,26 @@ SELECT is(
 SELECT is(
   private.within_plan_limit('00000000-0000-0000-0000-000000001100', 'seats_max', 1, 2),
   false, 'cuenta free: seats_max=2, 1 actual + increment 2 excede el límite');
+
+SELECT is(
+  private.within_plan_limit('00000000-0000-0000-0000-000000001100', '__missing_limit__', 0),
+  false, 'límite ausente no concede cuota ilimitada por error de catálogo');
+
+SELECT is(
+  private.within_plan_limit('00000000-0000-0000-0000-000000001100', 'webhook_endpoints_max', 0),
+  false, 'límite explícito 0 no permite nuevas operaciones');
+
+UPDATE billing.plans
+SET limits = limits || '{"__test_unlimited__": -1, "__test_invalid__": "broken"}'::jsonb
+WHERE slug = 'free';
+
+SELECT is(
+  private.within_plan_limit('00000000-0000-0000-0000-000000001100', '__test_unlimited__', 9999),
+  true, 'sólo el sentinel explícito -1 permite cuota ilimitada');
+
+SELECT throws_like(
+  $$SELECT private.within_plan_limit('00000000-0000-0000-0000-000000001100', '__test_invalid__', 0)$$,
+  '%invalid input syntax for type integer%', 'límite inválido rechaza la operación');
 
 -- ── gate de webhooks ─────────────────────────────────────────────────────
 -- free (webhooks_enabled=false) no puede crear

@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { env } from '@/env';
 
+const config = vi.hoisted(() => ({ features: { billing: true } }));
+vi.mock('@/config/app.config', () => ({ appConfig: config }));
+
 const mocks = vi.hoisted(() => ({
   getActiveAccountId: vi.fn(),
   requireAccountRole: vi.fn(),
@@ -112,6 +115,7 @@ describe('billing actions', () => {
     expect(mocks.sign).not.toHaveBeenCalled();
   });
   beforeEach(() => {
+    config.features.billing = true;
     vi.clearAllMocks();
     mocks.getActiveAccountId.mockResolvedValue('a1');
     mocks.requireAccountRole.mockImplementation(async () => {});
@@ -132,6 +136,16 @@ describe('billing actions', () => {
       data: { claims: { sub: 'user-1', email: 'owner@example.com' } },
     });
     mocks.getLocale.mockResolvedValue('es');
+  });
+
+  it('rejects new checkout before provider selection and intent creation when billing is disabled', async () => {
+    config.features.billing = false;
+    expect(await startCheckout({ planSlug: 'pro', interval: 'month' })).toEqual({
+      data: null,
+      error: 'module_disabled',
+    });
+    expect(mocks.getPaymentProvider).not.toHaveBeenCalled();
+    expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 
   it('startCheckout returns the buyer to the locale they started in', async () => {

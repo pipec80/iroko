@@ -95,5 +95,9 @@ describe('Projects excluded from the offered configuration', () => {
     appConfig.features.projects = true;
     render(await ProjectsPage(props));
     expect(mocks.listByAccount).toHaveBeenCalledWith('account');
+    mocks.listByAccount.mockClear();
+    render(await DashboardPage(props));
+    expect(mocks.listByAccount).toHaveBeenCalledWith('account');
+    expect(screen.getByRole('link', { name: /quick_projects/ })).toBeDefined();
   });
 });

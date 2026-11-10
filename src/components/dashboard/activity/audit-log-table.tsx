@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useRef, useState, useTransition } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 
 import type {
@@ -9,7 +9,9 @@ import type {
   AuditLogEntry,
 } from '@/app/[locale]/dashboard/activity/actions';
 import { getAccountAuditLogs } from '@/app/[locale]/dashboard/activity/actions';
+import { getPlatformAuditLogs } from '@/app/[locale]/dashboard/admin/audit/actions';
 import { AUDIT_ACTIONS, AUDIT_RESOURCE_TYPES } from '@/lib/validation/audit-log';
+import type { AuditLogQueryInput } from '@/lib/validation/audit-log';
 
 const ACTION_LABELS: Record<AuditAction, string> = {
   create: 'action_create',
@@ -51,6 +53,27 @@ type Props = {
   timezone?: string;
 };
 
+type ResourceFilter = (typeof AUDIT_RESOURCE_TYPES)[number] | '';
+type AuditRequest = { query: AuditLogQueryInput; append: boolean };
+
+async function fetchAuditPage(variant: Props['variant'], query: AuditLogQueryInput) {
+  if (variant !== 'platform') return getAccountAuditLogs(query);
+  const result = await getPlatformAuditLogs(query);
+  if (!result.data) return { data: null, error: result.error };
+  return {
+    ...result,
+    data: {
+      ...result.data,
+      entries: result.data.entries.map((entry) => ({
+        ...entry,
+        avatarUrl: null,
+        accountName: entry.accountId,
+        impersonatorName: entry.impersonatorId,
+      })),
+    },
+  };
+}
+
 export function AuditLogTable({
   variant = 'account',
   initialEntries,
@@ -63,30 +86,47 @@ export function AuditLogTable({
   const [entries, setEntries] = useState(initialEntries);
   const [cursor, setCursor] = useState(initialCursor);
   const [actionFilter, setActionFilter] = useState<AuditAction | ''>('');
-  const [resourceFilter, setResourceFilter] = useState<string>('');
+  const [resourceFilter, setResourceFilter] = useState<ResourceFilter>('');
+  const [failedRequest, setFailedRequest] = useState<AuditRequest | null>(null);
+  const requestInFlight = useRef(false);
   const [isPending, startTransition] = useTransition();
 
-  function applyFilters(nextAction: AuditAction | '', nextResource: string) {
+  function requestPage(request: AuditRequest) {
+    if (requestInFlight.current) return;
+    requestInFlight.current = true;
+    setFailedRequest(null);
     startTransition(async () => {
-      const result = await getAccountAuditLogs({
-        action: nextAction || null,
-        resourceType: (nextResource || null) as never,
-      });
-      setEntries(result.data?.entries ?? []);
-      setCursor(result.data?.nextCursor ?? null);
+      try {
+        const result = await fetchAuditPage(variant, request.query);
+        if (result.error || !result.data) {
+          setFailedRequest(request);
+          return;
+        }
+        const page = result.data;
+        setEntries((previous) => (request.append ? [...previous, ...page.entries] : page.entries));
+        setCursor(page.nextCursor);
+        setActionFilter(request.query.action ?? '');
+        setResourceFilter(request.query.resourceType ?? '');
+      } catch {
+        setFailedRequest(request);
+      } finally {
+        requestInFlight.current = false;
+      }
+    });
+  }
+
+  function applyFilters(nextAction: AuditAction | '', nextResource: ResourceFilter) {
+    requestPage({
+      query: { action: nextAction || null, resourceType: nextResource || null },
+      append: false,
     });
   }
 
   function loadMore() {
     if (!cursor) return;
-    startTransition(async () => {
-      const result = await getAccountAuditLogs({
-        cursor,
-        action: actionFilter || null,
-        resourceType: (resourceFilter || null) as never,
-      });
-      setEntries((prev) => [...prev, ...(result.data?.entries ?? [])]);
-      setCursor(result.data?.nextCursor ?? null);
+    requestPage({
+      query: { cursor, action: actionFilter || null, resourceType: resourceFilter || null },
+      append: true,
     });
   }
 
@@ -96,9 +136,9 @@ export function AuditLogTable({
       <div className="flex flex-col gap-2.5 md:flex-row md:items-center">
         <select
           value={actionFilter}
+          disabled={isPending}
           onChange={(e) => {
             const value = e.target.value as AuditAction | '';
-            setActionFilter(value);
             applyFilters(value, resourceFilter);
           }}
           aria-label={t('filter_action_label')}
@@ -112,9 +152,9 @@ export function AuditLogTable({
         </select>
         <select
           value={resourceFilter}
+          disabled={isPending}
           onChange={(e) => {
-            const value = e.target.value;
-            setResourceFilter(value);
+            const value = e.target.value as ResourceFilter;
             applyFilters(actionFilter, value);
           }}
           aria-label={t('filter_resource_label')}
@@ -127,6 +167,19 @@ export function AuditLogTable({
           ))}
         </select>
       </div>
+
+      {failedRequest && (
+        <div role="alert" className="text-destructive flex items-center gap-3 text-sm">
+          <span>{t('load_failed')}</span>
+          <button
+            type="button"
+            disabled={isPending}
+            onClick={() => requestPage(failedRequest)}
+            className="underline">
+            {t('retry')}
+          </button>
+        </div>
+      )}
 
       {/* Table card */}
       <div className="card overflow-x-auto">

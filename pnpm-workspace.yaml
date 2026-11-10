@@ -25,11 +25,14 @@ minimumReleaseAgeExclude:
   - '@next/swc-win32-x64-msvc@16.4.1'
   - eslint-config-next@16.4.1
   - next@16.4.1
+  - minimatch@11.0.6
 overrides:
   archiver: 7.0.1
   unzipper: 0.12.5
   readdir-glob: 3.0.0
-  'glob@10>minimatch': 10.2.5
+  # GHSA-3g3m-2fjr-6pw4 / GHSA-g3hv-75wg-m249; Node24 supports these releases.
+  'glob@>=9 <14.0.2': 14.0.4
+  'minimatch@>=7 <11.0.1': 11.0.6
   'minimatch@3>brace-expansion': 5.0.12
   'brace-expansion@5.0.9': 5.0.12
   'source-map-js@1.2.1': 1.2.2
@@ -57,7 +60,7 @@ overrides:
   # @react-email/ui (solo usado por `email:dev`, preview local) fija next@16.2.6
   # como dependencia directa exacta — nunca sigue el bump del next raíz. Forzar
   # acá para que no quede una segunda instancia vulnerable en el árbol.
-  next: 16.4.3
+  next: 16.4.5
   # Advisories on dev-scope transitive dependencies (Dependabot #80, #89, #91, #94).
   smol-toml: 1.9.1
   postcss-selector-parser: 7.1.6
@@ -65,4 +68,5 @@ overrides:
   'fast-copy@4.0.3': 4.1.0
   '@modelcontextprotocol/sdk': 1.32.0
 patchedDependencies:
+  deepmerge@4.3.1: patches/deepmerge@4.3.1.patch
   minimatch@3.1.5: patches/minimatch@3.1.5.patch

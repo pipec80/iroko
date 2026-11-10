@@ -16,13 +16,18 @@ The cross-cutting [capability inventory](../capabilities.md) answers what the
 foundation provides as a product and how Supabase/external services are used.
 This catalog remains the entry point for detailed module contracts.
 
+Plan015 provides [foundation extension recipes](foundation-recipes.md) and an
+[independent installation guide](../runbooks/independent-installation.md).
+Their execution in a derived installation is **[NO VERIFICADO]** until T3
+records the actual setup, extension, update and recovery evidence.
+
 ## Foundation capability map
 
 These are implementation entry points, not a list of certified deployments.
 Paths are relative to the repository. See the
 [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) for test paths,
 observed checks and defects. Active
-[Plan 015](../exec-plans/active/015-reusable-foundation-acceptance.md) supplies
+[Plan 015](../exec-plans/completed/015-reusable-foundation-acceptance.md) supplies
 the extension recipes and independent acceptance; no recipe execution is
 claimed by this map.
 

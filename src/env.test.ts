@@ -4,10 +4,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 type EnvDefinition = {
   server: {
     BILLING_DEFAULT_PROVIDER: ZodType<string>;
+    MOCK_BILLING_SECRET: ZodType;
+    RESEND_API_KEY: ZodType;
   };
 };
 
 const createEnv = vi.hoisted(() => vi.fn((_definition: EnvDefinition) => ({})));
+const config = vi.hoisted(() => ({ features: { billing: true } }));
+vi.mock('@/config/app.config', () => ({ appConfig: config }));
 
 vi.mock('@t3-oss/env-nextjs', () => ({ createEnv }));
 
@@ -20,6 +24,7 @@ function getBillingDefaultProviderSchema(): ZodType<string> {
 describe('billing environment validation', () => {
   beforeEach(() => {
     vi.resetModules();
+    config.features.billing = true;
     vi.clearAllMocks();
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('BILLING_DEFAULT_PROVIDER', 'mock');
@@ -34,6 +39,27 @@ describe('billing environment validation', () => {
     await import('./env');
 
     expect(getBillingDefaultProviderSchema().safeParse('mock').success).toBe(false);
+  });
+
+  it('allows absent payment secrets and Resend key with Mailpit when billing is disabled', async () => {
+    const absent: unknown = undefined;
+    config.features.billing = false;
+    vi.stubEnv('MAILPIT_URL', 'http://localhost:54324');
+    await import('./env');
+    const schema = createEnv.mock.calls.at(-1)![0].server;
+    expect(schema.BILLING_DEFAULT_PROVIDER.safeParse('mock').success).toBe(true);
+    expect(schema.MOCK_BILLING_SECRET.safeParse(absent).success).toBe(true);
+    expect(schema.RESEND_API_KEY.safeParse(absent).success).toBe(true);
+    expect(schema.MOCK_BILLING_SECRET.safeParse('invalid').success).toBe(false);
+  });
+
+  it('requires Resend key when Mailpit is not configured', async () => {
+    const absent: unknown = undefined;
+    vi.stubEnv('MAILPIT_URL', '');
+    await import('./env');
+    expect(createEnv.mock.calls.at(-1)![0].server.RESEND_API_KEY.safeParse(absent).success).toBe(
+      false,
+    );
   });
 
   it('accepts mock billing in production when explicitly allowed', async () => {

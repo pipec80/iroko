@@ -286,9 +286,9 @@ conecta hallazgos con código y propietarios. No duplicar planes:
   conserva evidencia y escenarios pendientes sin declararlos completos.
 - [012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md): grants,
   salida HTTP, rate limit, CSP/secretos y pricing/copy coherente.
-- [014](../exec-plans/active/014-reference-surface-correctness.md), activo:
+- [014](../exec-plans/completed/014-reference-surface-correctness.md), activo:
   cerrar superficies de ejemplo, confianza de URLs e interacción de auditoría.
-- [015](../exec-plans/active/015-reusable-foundation-acceptance.md), activo:
+- [015](../exec-plans/completed/015-reusable-foundation-acceptance.md), activo:
   configuraciones mínimas, recetas, instalación independiente, operación y
   ensayo de actualización; aporta valor aunque no se venda la base.
 - [013](../exec-plans/deferred/013-launch-readiness-roadmap.md), diferido: distribución,

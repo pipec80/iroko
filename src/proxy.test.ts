@@ -126,6 +126,12 @@ describe('buildCspHeader', () => {
       }),
     ).not.toContain('report-uri');
   });
+  it('keeps local HTTP navigation and prefetch on loopback during local validation', () => {
+    expect(
+      buildPolicy({ ...options, supabaseUrl: LOCAL_SUPABASE_URL, localValidation: true }),
+    ).not.toContain('upgrade-insecure-requests');
+    expect(buildPolicy(options)).toContain('upgrade-insecure-requests');
+  });
   it('should NOT allow vercel.live in production (isPreview=false)', () => {
     const csp = buildCspHeader(false, false, CLOUD_SUPABASE_URL);
     expect(csp).not.toContain('vercel.live');
