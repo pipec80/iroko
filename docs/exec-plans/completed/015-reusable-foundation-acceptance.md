@@ -25,8 +25,9 @@ casillas abiertas no se presentan como ejecutadas. Su disposición final es:
 
 Esta disposición limita el cierre local; no acepta Cloud, pagos reales ni un
 producto instalable para clientes. Siguiente: **016 aceptación integrada**.
-Instalación y reset/restauración fueron autorizados específicamente; no hubo
-commit, push, merge, deploy ni escritura Cloud.
+Instalación y reset/restauración fueron autorizados específicamente. La
+integración Git posterior está en [PR250](https://github.com/pipec80/iroko/pull/250)
+y conserva los gates de la rama protegida. No se aplicaron migraciones Cloud.
 
 Base observada `032f1a30794241cebc97e0ccd32b48d836110475`, rama
 `codex/014-images-platform-audit`, con cambios014 staged/unstaged/untracked.
@@ -38,12 +39,12 @@ La auditoría externa y su prompt son insumos, no órdenes de ejecutar ni prueba
 de runtime vigente. Los IDs DB-01…20 son referencias de esa fuente; el registro
 central recibe su triage sin reemplazar IDs/cierres anteriores.
 
-| Etapa | Existe en el árbol inspeccionado | Falta para aceptación |
-| --- | --- | --- |
-| T0 | Sidebar por flags/rol, móvil compartido, atajo Projects condicionado y home sin consultas Projects al desactivar | Contraste de títulos/rutas hijas y adaptación real; extraer sólo metadatos necesarios |
-| T1 | Wizard sin plan con billing=false y test existente; catálogo012.5; política mock restrictiva | Guard de página/checkout, requisitos opcionales, S-10 y contratos de flags/cuotas |
-| T2 | Patrones de Auth/RLS, Storage, API, correo y Realtime; catálogo de módulos | Siete recetas y guía independiente contrastadas con código, límites y errores |
-| T3 | Evidencia histórica de superficies base, no de réplica | Instalación de ambas configuraciones, marca, extensión neutral, recuperación y actualización real |
+| Etapa | Existe en el árbol inspeccionado                                                                                 | Falta para aceptación                                                                             |
+| ----- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| T0    | Sidebar por flags/rol, móvil compartido, atajo Projects condicionado y home sin consultas Projects al desactivar | Contraste de títulos/rutas hijas y adaptación real; extraer sólo metadatos necesarios             |
+| T1    | Wizard sin plan con billing=false y test existente; catálogo012.5; política mock restrictiva                     | Guard de página/checkout, requisitos opcionales, S-10 y contratos de flags/cuotas                 |
+| T2    | Patrones de Auth/RLS, Storage, API, correo y Realtime; catálogo de módulos                                       | Siete recetas y guía independiente contrastadas con código, límites y errores                     |
+| T3    | Evidencia histórica de superficies base, no de réplica                                                           | Instalación de ambas configuraciones, marca, extensión neutral, recuperación y actualización real |
 
 ### Recepción acotada de datos antes de T1/T3
 

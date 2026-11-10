@@ -137,16 +137,16 @@ observado, sin declarar RPO/RTO por intuición.
 
 ## Ficha de entrega del derivado
 
-| Campo | Registro requerido en evidencia T3 |
-| --- | --- |
-| Base y destino | SHA + manifiesto del árbol sucio, ruta absoluta, stack/puertos, revisión origen/destino |
-| Oferta | billing y proveedor, módulos, idiomas, flags; configuración no secreta |
-| Diferencias | código, SQL/migraciones/espejos, tokens de marca, traducciones, archivos preservados |
-| Operación | responsable, correo/worker, alertas, fallo/reintento/agotamiento, cuotas Free comprobadas |
-| Seguridad | matriz tenant/rol/operación, Data API/RPC/Storage, URL directa y acción |
-| Recuperación | alcance backup DB/Auth/Vault/Storage, comprobación de restauración y destino |
-| Actualización | corrección real, conflictos, estado antes/después, pruebas y tiempo activo |
-| Límites | preguntas al mantenedor, pasos ocultos, bloqueos, [NO VERIFICADO] y siguiente prueba |
+| Campo          | Registro requerido en evidencia T3                                                        |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| Base y destino | SHA + manifiesto del árbol sucio, ruta absoluta, stack/puertos, revisión origen/destino   |
+| Oferta         | billing y proveedor, módulos, idiomas, flags; configuración no secreta                    |
+| Diferencias    | código, SQL/migraciones/espejos, tokens de marca, traducciones, archivos preservados      |
+| Operación      | responsable, correo/worker, alertas, fallo/reintento/agotamiento, cuotas Free comprobadas |
+| Seguridad      | matriz tenant/rol/operación, Data API/RPC/Storage, URL directa y acción                   |
+| Recuperación   | alcance backup DB/Auth/Vault/Storage, comprobación de restauración y destino              |
+| Actualización  | corrección real, conflictos, estado antes/después, pruebas y tiempo activo                |
+| Límites        | preguntas al mantenedor, pasos ocultos, bloqueos, [NO VERIFICADO] y siguiente prueba      |
 
 El resultado se registra en `docs/quality/reusable-foundation-evidence.md`
 al ejecutar. Antes de eso, la ficha es un contrato de evidencia, no un PASS.

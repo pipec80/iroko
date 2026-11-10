@@ -18,7 +18,7 @@ La estructura de Iroko **es apta como base arquitectónica para un SaaS B2B mult
 
 No es necesario reemplazar PostgreSQL, crear otra identidad, introducir un ORM por defecto ni rediseñar los esquemas fundamentales. El siguiente salto de calidad no proviene de agregar más tablas sino de **hacer verificables y consistentes los contratos de autorización, cuotas, facturación y extensibilidad**.
 
-El modelo no debe comercializarse todavía como producto listo para instalar de forma independiente: el repositorio mantiene un *feature freeze*; el plan `015` debe demostrar instalación derivada, marca, extensión y actualización; el plan `016` debe completar la reauditoría y aceptación. El plan `014` tiene trabajo previo de presentación/seguridad. El cierre acotado de `017` no representa aceptación global del MVP.
+El modelo no debe comercializarse todavía como producto listo para instalar de forma independiente: el repositorio mantiene un _feature freeze_; el plan `015` debe demostrar instalación derivada, marca, extensión y actualización; el plan `016` debe completar la reauditoría y aceptación. El plan `014` tiene trabajo previo de presentación/seguridad. El cierre acotado de `017` no representa aceptación global del MVP.
 
 ### 1.2. Decisiones principales
 
@@ -74,56 +74,56 @@ Windows + Docker Desktop (16 GB RAM): no ejecutar procesos pesados simultáneame
 
 **43 tablas propias observadas** y 2 vistas propias; distribuidas en cuatro esquemas:
 
-| Esquema | Tablas | Vistas | Alcance |
-|---|---:|---:|---|
-| `public` | 20 | 0 | Identidad extendida, tenants, RBAC y servicios comunes |
-| `billing` | 14 | 1 | Catálogo comercial, pagos, estado de suscripciones y reconciliación |
-| `private` | 8 | 0 | Helpers, controles de seguridad, workers y estados internos |
-| `audit` | 1 | 1 | Trazabilidad y lectura administrativa |
+| Esquema   | Tablas | Vistas | Alcance                                                             |
+| --------- | -----: | -----: | ------------------------------------------------------------------- |
+| `public`  |     20 |      0 | Identidad extendida, tenants, RBAC y servicios comunes              |
+| `billing` |     14 |      1 | Catálogo comercial, pagos, estado de suscripciones y reconciliación |
+| `private` |      8 |      0 | Helpers, controles de seguridad, workers y estados internos         |
+| `audit`   |      1 |      1 | Trazabilidad y lectura administrativa                               |
 
 ### 3.1. Tablas del esquema `public` (20)
 
-| Tabla | Función principal |
-|---|---|
-| `profiles` | Perfil ampliado de `auth.users` |
-| `accounts` | Tenant personal o de equipo |
-| `accounts_memberships` | Membership N:M, rol del usuario por tenant |
-| `invitations` | Invitaciones con tokens hash y expiración |
-| `auth_recovery_codes` | Códigos de recuperación MFA almacenados como hash |
-| `platform_admins` | Lista de administradores globales; separada de roles tenant |
-| `impersonation_sessions` | Registro acotado de sesiones «ver como» |
-| `memberships_history` | Historial de cambios de membership, protegido contra mutaciones |
-| `announcements` | Avisos globales de plataforma |
-| `notifications` | Notificaciones por usuario y publicación Realtime |
-| `feature_flags` | Catálogo de toggles operacionales |
-| `feature_flag_overrides` | Overrides por tenant |
-| `projects` | Recurso de referencia por cuenta |
-| `documents` | Recurso de referencia perteneciente a cuenta y proyecto |
-| `api_keys` | Claves por cuenta, guardadas como hash |
-| `webhook_endpoints` | Endpoints suscritos y secreto gestionado aparte |
-| `webhook_deliveries` | Entregas, intentos y estados de reintento |
-| `robot_contacts` | Vertical Robot diferida |
-| `robot_memories` | Vertical Robot diferida |
-| `robot_routines` | Vertical Robot diferida |
+| Tabla                    | Función principal                                               |
+| ------------------------ | --------------------------------------------------------------- |
+| `profiles`               | Perfil ampliado de `auth.users`                                 |
+| `accounts`               | Tenant personal o de equipo                                     |
+| `accounts_memberships`   | Membership N:M, rol del usuario por tenant                      |
+| `invitations`            | Invitaciones con tokens hash y expiración                       |
+| `auth_recovery_codes`    | Códigos de recuperación MFA almacenados como hash               |
+| `platform_admins`        | Lista de administradores globales; separada de roles tenant     |
+| `impersonation_sessions` | Registro acotado de sesiones «ver como»                         |
+| `memberships_history`    | Historial de cambios de membership, protegido contra mutaciones |
+| `announcements`          | Avisos globales de plataforma                                   |
+| `notifications`          | Notificaciones por usuario y publicación Realtime               |
+| `feature_flags`          | Catálogo de toggles operacionales                               |
+| `feature_flag_overrides` | Overrides por tenant                                            |
+| `projects`               | Recurso de referencia por cuenta                                |
+| `documents`              | Recurso de referencia perteneciente a cuenta y proyecto         |
+| `api_keys`               | Claves por cuenta, guardadas como hash                          |
+| `webhook_endpoints`      | Endpoints suscritos y secreto gestionado aparte                 |
+| `webhook_deliveries`     | Entregas, intentos y estados de reintento                       |
+| `robot_contacts`         | Vertical Robot diferida                                         |
+| `robot_memories`         | Vertical Robot diferida                                         |
+| `robot_routines`         | Vertical Robot diferida                                         |
 
 ### 3.2. Tablas del esquema `billing` (14)
 
-| Tabla | Función principal |
-|---|---|
-| `plans` | Planes comerciales con precio, moneda, periodo, features y limits |
-| `provider_prices` | Mapeo plan/precio externo por proveedor y moneda |
-| `customers` | Identidad comercial de una cuenta en un proveedor |
-| `subscriptions` | Estado, plan, período, cancelación y proveedor |
-| `subscription_items` | Ítems flat/per-seat/metered/tiered; modelo no implica motor de cobro completo |
-| `invoices` | Facturas y totales |
-| `invoice_line_items` | Líneas por factura |
-| `payment_methods` | Referencias tokenizadas a métodos del proveedor |
-| `payment_attempts` | Intentos y resultados de cobro |
-| `events` | Eventos entrantes deduplicados por proveedor |
-| `checkout_intents` | Reserva/estado de checkout e idempotencia de inicio |
-| `reconciliation_state` | Marca de avance y leasing de reconciliación |
-| `recovery_jobs` | Trabajos de recuperación, intentos y leases |
-| `financial_anomalies` | Refund/chargeback/divergencias y su resolución |
+| Tabla                  | Función principal                                                             |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| `plans`                | Planes comerciales con precio, moneda, periodo, features y limits             |
+| `provider_prices`      | Mapeo plan/precio externo por proveedor y moneda                              |
+| `customers`            | Identidad comercial de una cuenta en un proveedor                             |
+| `subscriptions`        | Estado, plan, período, cancelación y proveedor                                |
+| `subscription_items`   | Ítems flat/per-seat/metered/tiered; modelo no implica motor de cobro completo |
+| `invoices`             | Facturas y totales                                                            |
+| `invoice_line_items`   | Líneas por factura                                                            |
+| `payment_methods`      | Referencias tokenizadas a métodos del proveedor                               |
+| `payment_attempts`     | Intentos y resultados de cobro                                                |
+| `events`               | Eventos entrantes deduplicados por proveedor                                  |
+| `checkout_intents`     | Reserva/estado de checkout e idempotencia de inicio                           |
+| `reconciliation_state` | Marca de avance y leasing de reconciliación                                   |
+| `recovery_jobs`        | Trabajos de recuperación, intentos y leases                                   |
+| `financial_anomalies`  | Refund/chargeback/divergencias y su resolución                                |
 
 Vista `billing.v_mrr_by_plan`: agregación de suscripciones activas sobre precio actual del catálogo; **no** una fuente financiera definitiva.
 
@@ -230,24 +230,24 @@ Las FKs, índices parciales para IDs externos, unicidad `(account_id, provider)`
 
 ### 6.2. Catálogo Cloud observado
 
-| `slug` | Nombre visible | Periodo | Precio base | Moneda |
-|---|---|---|---:|---|
-| `free` | Free | month | 0 | USD |
-| `pro` | Plus | month | 2.900 centavos | USD |
-| `pro` | Plus | year | 29.000 centavos | USD |
-| `scale` | Pro | month | 9.900 centavos | USD |
-| `scale` | Pro | year | 99.000 centavos | USD |
+| `slug`  | Nombre visible | Periodo |     Precio base | Moneda |
+| ------- | -------------- | ------- | --------------: | ------ |
+| `free`  | Free           | month   |               0 | USD    |
+| `pro`   | Plus           | month   |  2.900 centavos | USD    |
+| `pro`   | Plus           | year    | 29.000 centavos | USD    |
+| `scale` | Pro            | month   |  9.900 centavos | USD    |
+| `scale` | Pro            | year    | 99.000 centavos | USD    |
 
 Moneda real del proveedor (p. ej. CLP para Mercado Pago) se configura en `billing.provider_prices`; no asumir que el catálogo USD es la oferta activa en cada pasarela. No hay fila Enterprise al corte. Los planes no son por sí mismos un «producto SaaS» separado dentro de una misma instancia.
 
 ### 6.3. Cuotas y features del catálogo
 
-| Límite | Free | Plus | Pro |
-|---|---:|---:|---:|
-| `seats_max` | 2 | 10 | 50 |
-| `teams_max` | 1 | 3 | 10 |
-| `api_keys_max` | 2 | 20 | 100 |
-| `webhook_endpoints_max` | 0 | 10 | 50 |
+| Límite                  | Free | Plus | Pro |
+| ----------------------- | ---: | ---: | --: |
+| `seats_max`             |    2 |   10 |  50 |
+| `teams_max`             |    1 |    3 |  10 |
+| `api_keys_max`          |    2 |   20 | 100 |
+| `webhook_endpoints_max` |    0 |   10 |  50 |
 
 Features declaradas: `api_keys_enabled`, `webhooks_enabled`, `priority_support`; los niveles comerciales alteran esos booleanos. RPCs `get_account_entitlements`, `get_account_subscription`, helpers `get_account_plan_row`, `within_plan_limit`, `account_has_feature` y validadores de recursos aplican aspectos del contrato. Invitar miembros, aceptar invitaciones, crear API Keys y crear webhooks tienen verificaciones explícitas de límite; no son solo textos de pricing.
 
@@ -278,13 +278,13 @@ Cuatro registros de `subscriptions`: tres `canceled`, uno `paused`; ninguno `act
 
 El esquema tiene `feature_flags`, `feature_flag_overrides` y la función `is_flag_enabled`. Según la implementación, la resolución prevista es: override por cuenta → plan activo → default global → falso. Sin embargo, el catálogo de flags y el JSONB de plan **usan nombres diferentes**.
 
-| `feature_flags.name` | En `billing.plans.features` | Efecto directo del desajuste |
-|---|---|---|
-| `api_keys` | `api_keys_enabled` | `resolve_flag('api_keys', ...)` no lee la feature del plan |
-| `webhooks` | `webhooks_enabled` | `resolve_flag('webhooks', ...)` no lee la feature del plan |
-| `notifications` | sin clave equivalente | usa default global/override |
-| `jobs` | sin clave equivalente | usa default global/override |
-| `feature_flags_admin` | sin clave equivalente | usa default global/override |
+| `feature_flags.name`  | En `billing.plans.features` | Efecto directo del desajuste                               |
+| --------------------- | --------------------------- | ---------------------------------------------------------- |
+| `api_keys`            | `api_keys_enabled`          | `resolve_flag('api_keys', ...)` no lee la feature del plan |
+| `webhooks`            | `webhooks_enabled`          | `resolve_flag('webhooks', ...)` no lee la feature del plan |
+| `notifications`       | sin clave equivalente       | usa default global/override                                |
+| `jobs`                | sin clave equivalente       | usa default global/override                                |
+| `feature_flags_admin` | sin clave equivalente       | usa default global/override                                |
 
 Datos globales observados: `notifications=true`; `api_keys=false`, `webhooks=false`, `jobs=false`, `feature_flags_admin=false`.
 
@@ -317,16 +317,16 @@ El catálogo mostró `has_column_privilege('authenticated', 'public.profiles', c
 
 ### 8.3. Avisos de advisors, no todos defectos
 
-| Grupo | Cantidad | Lectura correcta |
-|---|---:|---|
-| `rls_enabled_no_policy` | 6 | Puede ser deny-all previsto en tablas internas/API keys |
-| `function_search_path_mutable` | 1 | `billing.assert_provider_price_matches_plan`; invoker, fijar contexto si procede |
-| `anon_security_definer_function_executable` | 2 | `check_request` y `get_active_plans`, posiblemente públicos deliberadamente |
-| `authenticated_security_definer_function_executable` | 56 | Verificar autorización, grants y propósito RPC a RPC |
-| `auth_leaked_password_protection` | 1 | Revisar disponibilidad/plan/activación |
-| FK sin índice | 1 | `(project_id, account_id)` en `public.documents` |
-| Tabla sin PK | 1 | `private.rate_limits` (posible registro append-only) |
-| Índices sin uso | 37 | Muestra pequeña; no retirar índices sin observabilidad |
+| Grupo                                                | Cantidad | Lectura correcta                                                                 |
+| ---------------------------------------------------- | -------: | -------------------------------------------------------------------------------- |
+| `rls_enabled_no_policy`                              |        6 | Puede ser deny-all previsto en tablas internas/API keys                          |
+| `function_search_path_mutable`                       |        1 | `billing.assert_provider_price_matches_plan`; invoker, fijar contexto si procede |
+| `anon_security_definer_function_executable`          |        2 | `check_request` y `get_active_plans`, posiblemente públicos deliberadamente      |
+| `authenticated_security_definer_function_executable` |       56 | Verificar autorización, grants y propósito RPC a RPC                             |
+| `auth_leaked_password_protection`                    |        1 | Revisar disponibilidad/plan/activación                                           |
+| FK sin índice                                        |        1 | `(project_id, account_id)` en `public.documents`                                 |
+| Tabla sin PK                                         |        1 | `private.rate_limits` (posible registro append-only)                             |
+| Índices sin uso                                      |       37 | Muestra pequeña; no retirar índices sin observabilidad                           |
 
 **No resolver automáticamente las 56 RPCs** con `REVOKE`: muchas son la API deliberada del producto y tienen `SECURITY DEFINER`, `search_path=''` y checks internos. Verificar que la exposición efectiva y pruebas de acceso negativo coinciden con el contrato. Lo mismo con las vistas `audit.v_recent_activity` y `billing.v_mrr_by_plan`: no tienen `security_invoker` explícito, pero tampoco grants directos a roles de usuario inspeccionados; mantener fuera de acceso directo y revisar privilegios/owners.
 
@@ -381,17 +381,17 @@ Cloud tenía un bucket privado `robot_configs`; el `config.toml` inspeccionado d
 
 Extensiones instaladas observadas: `pg_cron`, `pgmq`, `pg_net`, `pgcrypto`, `supabase_vault`, `pg_stat_statements`, `pg_trgm`, `pg_partman`, `vector` (`pgvector`), `postgis`, `uuid-ossp`, `unaccent`, `moddatetime`, entre otras. Instalación no implica que cada capacidad tenga módulo, pruebas ni necesidad actual.
 
-| Extensión | Decisión |
-|---|---|
-| `pg_cron`, `pgmq`, `pg_net` | Mantener para tareas, correo, reconciliación y jobs ya existentes |
-| `supabase_vault`, `pgcrypto` | Mantener para claves/secretos, verificar privilegios y uso real |
-| `pg_stat_statements` | Explotar métricas para consultas lentas; no diseñar índices a ciegas |
-| `pg_trgm`, `unaccent` | Disponibles para búsquedas de texto si una vertical lo requiere |
-| `vector` | No construir RAG hasta tener caso, indexación y costo definidos |
-| `postgis` | Mantener si existen consumidores o se prevé necesidad fundada; no convertirlo en módulo del MVP |
-| `pg_partman` | No particionar prematuramente logs/eventos; medir volumen |
-| `pg_jsonschema` | Opción futura para validar JSONB de plan tras definir contrato; no instalar por moda |
-| `pg_graphql` | No hace falta para el modelo actual PostgREST + RPC |
+| Extensión                    | Decisión                                                                                        |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| `pg_cron`, `pgmq`, `pg_net`  | Mantener para tareas, correo, reconciliación y jobs ya existentes                               |
+| `supabase_vault`, `pgcrypto` | Mantener para claves/secretos, verificar privilegios y uso real                                 |
+| `pg_stat_statements`         | Explotar métricas para consultas lentas; no diseñar índices a ciegas                            |
+| `pg_trgm`, `unaccent`        | Disponibles para búsquedas de texto si una vertical lo requiere                                 |
+| `vector`                     | No construir RAG hasta tener caso, indexación y costo definidos                                 |
+| `postgis`                    | Mantener si existen consumidores o se prevé necesidad fundada; no convertirlo en módulo del MVP |
+| `pg_partman`                 | No particionar prematuramente logs/eventos; medir volumen                                       |
+| `pg_jsonschema`              | Opción futura para validar JSONB de plan tras definir contrato; no instalar por moda            |
+| `pg_graphql`                 | No hace falta para el modelo actual PostgREST + RPC                                             |
 
 La decisión no debe orientarse a «encender todas las extensiones», sino a minimizar costo operacional y superficie de ataque con un caso verificable por módulo.
 
@@ -401,28 +401,28 @@ La decisión no debe orientarse a «encender todas las extensiones», sino a min
 
 > **P0/P1/P2** propuestos para triage: no reemplazan los IDs ni severidades del registro oficial. Si el plan vigente ya tiene un hallazgo equivalente, usar su ID y no crear duplicados.
 
-| ID local | Riesgo o mejora | Evidencia | Certeza | Acción / validación |
-|---|---|---|---|---|
-| DB-01 | UPDATE de todas las columnas en `profiles` | `has_column_privilege` Cloud + RLS propia | CONFIRMADO en grants | Reproducir edición directa; restringir campos internos sin romper cuenta/consentimiento |
-| DB-02 | Claves de flags no coinciden con features comerciales | `resolve_flag`, tablas de planes/flags | CONFIRMADO en SQL | Definir contrato dual o canónico, corregir consumidores y tests |
-| DB-03 | Límite ausente/error se interpreta como ilimitado | `within_plan_limit`, TS `withinLimit` | CONFIRMADO en implementación | Reproducir condiciones; fail-closed para límites exigibles |
-| DB-04 | `canceled` paid-through difiere entre entitlements y flags | `get_account_plan_row` vs `resolve_flag` | CONFIRMADO en SQL | Tabla de verdad de estados y cambio mínimo consistente |
-| DB-05 | Riesgo de race en `create_team` | count → insert sin lock visible | HIPÓTESIS | Dos sesiones concurrentes, última cuota; reparar solo si se reproduce |
-| DB-06 | Dos suscripciones pagas potenciales entre proveedores | modelo indirecto customers/subscriptions | HIPÓTESIS | Test de intents simultáneos, eventos y transición provider; no unique prematura |
-| DB-07 | FK compuesta de documentos sin índice de cobertura | Supabase performance adviser | CONFIRMADO en adviser | EXPLAIN/benchmark e índice compuesto si procede |
-| DB-08 | `search_path` mutable en una función billing | Adviser / función invoker | CONFIRMADO en adviser | Revisar definición y fijar configuración mínima si procede |
-| DB-09 | RPCs privilegiadas expuestas según advisories | 2 anon, 56 authenticated | CONFIRMADO en grants | Auditar intención y permisos efectivos por RPC, sin revocar a ciegas |
-| DB-10 | Tablas RLS sin policies | 6 advisories | CONFIRMADO, no necesariamente bug | Documentar deny-all previsto y pruebas negativas |
-| DB-11 | Leaked-password protection deshabilitada/no disponible | Adviser Auth | CONFIRMADO como aviso | Verificar disponibilidad/plan y control alternativo |
-| DB-12 | `v_mrr_by_plan` es aproximación de catálogo | Definición de vista | CONFIRMADO en SQL | Etiquetar métrica y evitar uso contable hasta modelo apropiado |
-| DB-13 | Índices unused (37) | Adviser en DB pequeña | CONFIRMADO como métrica limitada | No borrar sin carga/estadísticas significativas |
-| DB-14 | `private.rate_limits` sin PK | Adviser | CONFIRMADO como diseño | Validar semántica append-only y operación; no crear PK sin caso |
-| DB-15 | Drift bucket Robot `robot_configs` | Cloud vs `config.toml` | CONFIRMADO en inventario | Documentar propiedad/consumidores, no borrar |
-| DB-16 | Superadmin sin usuario asignado | `platform_admins` count=0 | CONFIRMADO Cloud | Documentar bootstrap seguro; no crear admin por defecto |
-| DB-17 | Auditor tenant como rol no existe | Enum memberships | CONFIRMADO, feature diferida | No agregar al freeze sin requisito |
-| DB-18 | Billing metered/asientos no está certificado | Enum + diseño v2 | LIMITACIÓN | No prometer; diferir modelos avanzados |
-| DB-19 | Cobro real y escalabilidad sin evidencia | 4 subs no activas / base pequeña | NO VERIFICADO | E2E proveedor real, staging, benchmarks y límites por escenario |
-| DB-20 | Revisión UI por rol no realizada | Fase 2 deliberada | NO VERIFICADO | Handoff de rutas, actions, hooks y E2E, sin ampliar este requerimiento |
+| ID local | Riesgo o mejora                                            | Evidencia                                 | Certeza                           | Acción / validación                                                                     |
+| -------- | ---------------------------------------------------------- | ----------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------- |
+| DB-01    | UPDATE de todas las columnas en `profiles`                 | `has_column_privilege` Cloud + RLS propia | CONFIRMADO en grants              | Reproducir edición directa; restringir campos internos sin romper cuenta/consentimiento |
+| DB-02    | Claves de flags no coinciden con features comerciales      | `resolve_flag`, tablas de planes/flags    | CONFIRMADO en SQL                 | Definir contrato dual o canónico, corregir consumidores y tests                         |
+| DB-03    | Límite ausente/error se interpreta como ilimitado          | `within_plan_limit`, TS `withinLimit`     | CONFIRMADO en implementación      | Reproducir condiciones; fail-closed para límites exigibles                              |
+| DB-04    | `canceled` paid-through difiere entre entitlements y flags | `get_account_plan_row` vs `resolve_flag`  | CONFIRMADO en SQL                 | Tabla de verdad de estados y cambio mínimo consistente                                  |
+| DB-05    | Riesgo de race en `create_team`                            | count → insert sin lock visible           | HIPÓTESIS                         | Dos sesiones concurrentes, última cuota; reparar solo si se reproduce                   |
+| DB-06    | Dos suscripciones pagas potenciales entre proveedores      | modelo indirecto customers/subscriptions  | HIPÓTESIS                         | Test de intents simultáneos, eventos y transición provider; no unique prematura         |
+| DB-07    | FK compuesta de documentos sin índice de cobertura         | Supabase performance adviser              | CONFIRMADO en adviser             | EXPLAIN/benchmark e índice compuesto si procede                                         |
+| DB-08    | `search_path` mutable en una función billing               | Adviser / función invoker                 | CONFIRMADO en adviser             | Revisar definición y fijar configuración mínima si procede                              |
+| DB-09    | RPCs privilegiadas expuestas según advisories              | 2 anon, 56 authenticated                  | CONFIRMADO en grants              | Auditar intención y permisos efectivos por RPC, sin revocar a ciegas                    |
+| DB-10    | Tablas RLS sin policies                                    | 6 advisories                              | CONFIRMADO, no necesariamente bug | Documentar deny-all previsto y pruebas negativas                                        |
+| DB-11    | Leaked-password protection deshabilitada/no disponible     | Adviser Auth                              | CONFIRMADO como aviso             | Verificar disponibilidad/plan y control alternativo                                     |
+| DB-12    | `v_mrr_by_plan` es aproximación de catálogo                | Definición de vista                       | CONFIRMADO en SQL                 | Etiquetar métrica y evitar uso contable hasta modelo apropiado                          |
+| DB-13    | Índices unused (37)                                        | Adviser en DB pequeña                     | CONFIRMADO como métrica limitada  | No borrar sin carga/estadísticas significativas                                         |
+| DB-14    | `private.rate_limits` sin PK                               | Adviser                                   | CONFIRMADO como diseño            | Validar semántica append-only y operación; no crear PK sin caso                         |
+| DB-15    | Drift bucket Robot `robot_configs`                         | Cloud vs `config.toml`                    | CONFIRMADO en inventario          | Documentar propiedad/consumidores, no borrar                                            |
+| DB-16    | Superadmin sin usuario asignado                            | `platform_admins` count=0                 | CONFIRMADO Cloud                  | Documentar bootstrap seguro; no crear admin por defecto                                 |
+| DB-17    | Auditor tenant como rol no existe                          | Enum memberships                          | CONFIRMADO, feature diferida      | No agregar al freeze sin requisito                                                      |
+| DB-18    | Billing metered/asientos no está certificado               | Enum + diseño v2                          | LIMITACIÓN                        | No prometer; diferir modelos avanzados                                                  |
+| DB-19    | Cobro real y escalabilidad sin evidencia                   | 4 subs no activas / base pequeña          | NO VERIFICADO                     | E2E proveedor real, staging, benchmarks y límites por escenario                         |
+| DB-20    | Revisión UI por rol no realizada                           | Fase 2 deliberada                         | NO VERIFICADO                     | Handoff de rutas, actions, hooks y E2E, sin ampliar este requerimiento                  |
 
 **Orden recomendado:** DB-01/02/03/04; después DB-05/06/07/08/09/10; luego evidencias, documentación, performance y capacidades diferidas. Si un hallazgo confirma un P0/P1 en una superficie ofertada, resolverlo antes de seguir expandiendo el análisis.
 
@@ -430,25 +430,25 @@ La decisión no debe orientarse a «encender todas las extensiones», sino a min
 
 ## 13. Matriz de pruebas y aceptación recomendada
 
-| Escenario | Esperado | Superficie / evidencia |
-|---|---|---|
-| Nuevo usuario y perfil | Perfil + cuenta personal + membership owner atómicos; ningún duplicado | Triggers, FKs, tests SQL |
-| Usuario ajeno a cuenta | 0 filas o error de autorización; nunca filtrar información | RLS, RPC, Data API |
-| Viewer modifica proyecto/documento | Denegado | RLS + acciones de referencia |
-| Member edita recurso propio del tenant | Permitido donde contrato indique | RLS + FK + test |
-| Admin cambia rol a otro admin/owner | Solo si contrato lo permite; no escalada lateral | RPC + tests SQL |
-| Último owner sale/transfiere | Garantizar owner; sin deadlock con concurrencia | Trigger + RPC + concurrencia |
-| Admin global sin AAL2 | Denegado | `private.assert_platform_admin` |
-| Usuario edita columna interna de perfil | Denegado si campo es reservado; datos legítimos siguen editables | Grants de columna, Data API directa |
-| Cuenta Free agota API Keys/seats/teams/webhooks | Rechazo atómico y error estable | RPC + dos conexiones |
-| Falta clave JSONB de límite | No se transforma silenciosamente en ilimitado | Helper SQL + TS |
-| Cancelación con período pagado futuro | Acceso comercial coherente hasta el límite elegido | Entitlements + features + RLS de recursos |
-| Past_due/paused/unpaid/incomplete | Matriz explícita de acceso; no inventar estado activo | Billing RPCs |
-| Webhook repetido/reordenado | Idempotencia y reconciliación consistente | Event reducer + SQL |
-| Dos checkouts simultáneos | No suscripciones pagadas duplicadas indebidamente | Lease + serialización + E2E |
-| Documento enlazado con proyecto de otra cuenta | Rechazado por FK compuesta | DB constraint |
-| Consulta de auditoría tenant | Solo cuenta autorizada; sin PII innecesaria | RPC de auditoría |
-| Proyecto derivado instala/cambia branding/agrega vertical | Mismas reglas base y migración incremental segura | Plan 015 |
+| Escenario                                                 | Esperado                                                               | Superficie / evidencia                    |
+| --------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------- |
+| Nuevo usuario y perfil                                    | Perfil + cuenta personal + membership owner atómicos; ningún duplicado | Triggers, FKs, tests SQL                  |
+| Usuario ajeno a cuenta                                    | 0 filas o error de autorización; nunca filtrar información             | RLS, RPC, Data API                        |
+| Viewer modifica proyecto/documento                        | Denegado                                                               | RLS + acciones de referencia              |
+| Member edita recurso propio del tenant                    | Permitido donde contrato indique                                       | RLS + FK + test                           |
+| Admin cambia rol a otro admin/owner                       | Solo si contrato lo permite; no escalada lateral                       | RPC + tests SQL                           |
+| Último owner sale/transfiere                              | Garantizar owner; sin deadlock con concurrencia                        | Trigger + RPC + concurrencia              |
+| Admin global sin AAL2                                     | Denegado                                                               | `private.assert_platform_admin`           |
+| Usuario edita columna interna de perfil                   | Denegado si campo es reservado; datos legítimos siguen editables       | Grants de columna, Data API directa       |
+| Cuenta Free agota API Keys/seats/teams/webhooks           | Rechazo atómico y error estable                                        | RPC + dos conexiones                      |
+| Falta clave JSONB de límite                               | No se transforma silenciosamente en ilimitado                          | Helper SQL + TS                           |
+| Cancelación con período pagado futuro                     | Acceso comercial coherente hasta el límite elegido                     | Entitlements + features + RLS de recursos |
+| Past_due/paused/unpaid/incomplete                         | Matriz explícita de acceso; no inventar estado activo                  | Billing RPCs                              |
+| Webhook repetido/reordenado                               | Idempotencia y reconciliación consistente                              | Event reducer + SQL                       |
+| Dos checkouts simultáneos                                 | No suscripciones pagadas duplicadas indebidamente                      | Lease + serialización + E2E               |
+| Documento enlazado con proyecto de otra cuenta            | Rechazado por FK compuesta                                             | DB constraint                             |
+| Consulta de auditoría tenant                              | Solo cuenta autorizada; sin PII innecesaria                            | RPC de auditoría                          |
+| Proyecto derivado instala/cambia branding/agrega vertical | Mismas reglas base y migración incremental segura                      | Plan 015                                  |
 
 **Gate:** pruebas positivas y negativas, escenario real de instalación derivada, `pnpm typecheck && pnpm lint` y pgTAP seleccionados, sin Cloud mutations no autorizadas. El MVP solo sale del freeze cuando sus planes de aceptación vigentes se cierran con evidencia.
 
@@ -534,7 +534,7 @@ El producto es un **SaaS Boilerplate reutilizable basado en Supabase + Next.js**
 - Catálogo observado: `free` US$0 mensual; `pro`/Plus US$29 mensual y US$290 anual; `scale`/Pro US$99 mensual y US$990 anual. Son precios de catálogo internos; los proveedores pueden tener precios/monedas propios. No hay Enterprise registrado. Cuotas `seats_max`, `teams_max`, `api_keys_max`, `webhook_endpoints_max`.
 - `pg_cron`, `pgmq`, `pg_net`, `pg_stat_statements`, `pg_trgm`, `vector`, `postgis`, `pg_partman`, `pgcrypto` y Vault estaban instaladas. No agregues extensiones sin necesidad verificada.
 - Todas las tablas `public` inspeccionadas tenían RLS habilitado; `billing.*` también. Los grants son restrictivos en tablas críticas. Había 49 triggers, 52 foreign keys de aplicación inspeccionadas, una vista en `billing` y una en `audit`.
-- El asesor Cloud reportó un `search_path` mutable (`billing.assert_provider_price_matches_plan`, invoker), 2 RPC `SECURITY DEFINER` invocables por `anon`, 56 por `authenticated`, 6 tablas RLS sin policies (potencialmente *deny-all*), una advertencia de leaked-password protection, 1 FK sin índice compuesto (`documents_project_account_fkey`), `private.rate_limits` sin PK y 37 índices sin uso. **Son advertencias a clasificar, no 104 defectos demostrados.**
+- El asesor Cloud reportó un `search_path` mutable (`billing.assert_provider_price_matches_plan`, invoker), 2 RPC `SECURITY DEFINER` invocables por `anon`, 56 por `authenticated`, 6 tablas RLS sin policies (potencialmente _deny-all_), una advertencia de leaked-password protection, 1 FK sin índice compuesto (`documents_project_account_fkey`), `private.rate_limits` sin PK y 37 índices sin uso. **Son advertencias a clasificar, no 104 defectos demostrados.**
 - `public.profiles` tenía `UPDATE` concedido a `authenticated` sobre **todas las columnas** de su propia fila, incluyendo `onboarding_completed`, `created_at`, `deleted_at`, `active_account_id` y `metadata`. RLS protege la fila, no las columnas. Impacto exacto por demostrar.
 - La función `private.resolve_flag()` busca `p.features -> p_flag_name` y los flags globales se llaman `webhooks`/`api_keys`, mientras el JSONB de planes usa `webhooks_enabled`/`api_keys_enabled`; otra función (`private.account_has_feature`) busca directamente las claves `*_enabled` y se usa para gating de webhooks. **Divergencia funcional confirmada; investigar consumidores antes de cambiar nombres.**
 - `get_account_entitlements()` y `private.get_account_plan_row()` admiten `active`/`trialing` y `canceled` pagado-hasta; `private.resolve_flag()` solo `active`/`trialing`. Verificar semántica de acceso paid-through y downgrade.

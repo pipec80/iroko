@@ -7,14 +7,14 @@ propietario:** páginas públicas, registro/confirmación/acceso y una acción �
 persistida en área privada; permisos y aislamiento siguen siendo obligatorios.
 Los checkpoints inferiores son históricos y no sustituyen este veredicto.
 
-| Resultado final | Evidencia |
-| --- | --- |
-| Circuito útil sin ventas | Signup y confirmación Mailpit, onboarding sin plan, dashboard; registro con archivo privado, recarga y bytes correctos; notificación persistida; browser PASS y 0 errores de consola |
-| Adaptación | Tilia, Records, cuatro traducciones y contrato de composición; sin editar navegación compartida para añadir la entrada; SQL12/12, unit59/59, tipos y lint enfocado PASS |
-| Actualización real | Versión anterior de `storage.ts` desde base032f1a3 → corrección014 del candidato; dos builds productivos PASS; registro, archivo, marca y módulo conservados; móvil, billing activo y cuatro páginas públicas PASS, consola0 |
-| Operación backend acotada | Cola/notificaciones SQL17/17 y worker Deno10/10; rechazos, reintento, agotamiento y cierre de conexión con proveedor simulado; no demuestra entrega programada real a Resend |
-| Recuperación final | Hashes offline de2228 archivos DB y1 Storage idénticos; arranque desde checkout original PASS; conteos1 usuario/2 cuentas/1 objeto/179 migraciones; tabla sample_records ausente; servicios principales saludables |
-| Revisión | Revisión independiente final sin nuevos P0/P1 por inspección; acepta núcleo local con los límites siguientes |
+| Resultado final           | Evidencia                                                                                                                                                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Circuito útil sin ventas  | Signup y confirmación Mailpit, onboarding sin plan, dashboard; registro con archivo privado, recarga y bytes correctos; notificación persistida; browser PASS y 0 errores de consola                                         |
+| Adaptación                | Tilia, Records, cuatro traducciones y contrato de composición; sin editar navegación compartida para añadir la entrada; SQL12/12, unit59/59, tipos y lint enfocado PASS                                                      |
+| Actualización real        | Versión anterior de `storage.ts` desde base032f1a3 → corrección014 del candidato; dos builds productivos PASS; registro, archivo, marca y módulo conservados; móvil, billing activo y cuatro páginas públicas PASS, consola0 |
+| Operación backend acotada | Cola/notificaciones SQL17/17 y worker Deno10/10; rechazos, reintento, agotamiento y cierre de conexión con proveedor simulado; no demuestra entrega programada real a Resend                                                 |
+| Recuperación final        | Hashes offline de2228 archivos DB y1 Storage idénticos; arranque desde checkout original PASS; conteos1 usuario/2 cuentas/1 objeto/179 migraciones; tabla sample_records ausente; servicios principales saludables           |
+| Revisión                  | Revisión independiente final sin nuevos P0/P1 por inspección; acepta núcleo local con los límites siguientes                                                                                                                 |
 
 **Límites con dueño:** 016 conserva la aceptación integrada y paridad Cloud;
 011/016 conservan pago real y callbacks PSP usando la matriz ya existente.
@@ -23,8 +23,10 @@ real, y comprobación runtime de expiración del enlace firmado tras revocación
 SQL verifica que la revocación bloquea nueva emisión/lectura; un enlace ya emitido
 puede durar60 segundos. La página billing activa se probó sin credenciales de
 pago: el catálogo registró `provider_unavailable`, sin fallback ni compra.
-Estos límites no reciben PASS por el cierre local015. No hubo commit, push,
-merge, deploy ni escritura Cloud. Los respaldos originales y el derivado se
+Estos límites no reciben PASS por el cierre local015. La aceptación local precedió
+la integración Git del [PR250](https://github.com/pipec80/iroko/pull/250), que
+también registra la [actualización de dependencias](dependency-security.md).
+No se aplicaron migraciones Cloud. Los respaldos originales y el derivado se
 conservan ignorados; los datos del ensayo ya no están en el stack oficial.
 
 ## Checkpoint local — 2026-11-06
@@ -35,13 +37,13 @@ base `032f1a30794241cebc97e0ccd32b48d836110475`, con cambios previos de
 014 y de planificación preservados. SHA por sí solo no identifica este
 candidato. No hubo commit, push, deploy ni escritura Cloud.
 
-| Alcance | Evidencia ejecutada ahora | Límite |
-| --- | --- | --- |
-| T0 navegación/composición | RED 5 fallos reales/17; GREEN 30/30 en tres archivos; regresión final 22/22 junto a `env.test.ts` | Navegador desktop/móvil y extensión real pendientes T3 |
-| T1 sin nuevas compras | RED 11 fallos/106; GREEN 106/106 en nueve archivos; controles analytics/callback/worker 49/49 | Build, signup y recorrido billing=false en derivado pendientes T3 |
-| T1 SQL DB-03 | PgTAP RED: caso 10 devolvió `true` para cuota ausente; migración local `20261106170000_plan_limit_fail_closed.sql`; pgTAP GREEN 21/21 | Paridad linked/Cloud [NO VERIFICADO]; error de lectura específico pendiente de prueba |
-| Calidad | `pnpm typecheck` PASS; `pnpm lint` PASS, 0 errores/35 warnings; `git -c core.whitespace=cr-at-eol diff --check` PASS | No es gate de instalación independiente |
-| T2 | `node scripts/check-docs.mjs` PASS, 193 Markdown; Prettier de cinco documentos PASS; revisión independiente sin nuevo P0/P1 | Recetas aún no ejecutadas |
+| Alcance                   | Evidencia ejecutada ahora                                                                                                             | Límite                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| T0 navegación/composición | RED 5 fallos reales/17; GREEN 30/30 en tres archivos; regresión final 22/22 junto a `env.test.ts`                                     | Navegador desktop/móvil y extensión real pendientes T3                                |
+| T1 sin nuevas compras     | RED 11 fallos/106; GREEN 106/106 en nueve archivos; controles analytics/callback/worker 49/49                                         | Build, signup y recorrido billing=false en derivado pendientes T3                     |
+| T1 SQL DB-03              | PgTAP RED: caso 10 devolvió `true` para cuota ausente; migración local `20261106170000_plan_limit_fail_closed.sql`; pgTAP GREEN 21/21 | Paridad linked/Cloud [NO VERIFICADO]; error de lectura específico pendiente de prueba |
+| Calidad                   | `pnpm typecheck` PASS; `pnpm lint` PASS, 0 errores/35 warnings; `git -c core.whitespace=cr-at-eol diff --check` PASS                  | No es gate de instalación independiente                                               |
+| T2                        | `node scripts/check-docs.mjs` PASS, 193 Markdown; Prettier de cinco documentos PASS; revisión independiente sin nuevo P0/P1           | Recetas aún no ejecutadas                                                             |
 
 La revisión independiente señaló el fail-open de cuota como P1 de aceptación;
 la migración y el pgTAP lo cerraron en el stack local. No encontró otro P0/P1

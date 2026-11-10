@@ -176,13 +176,13 @@ navegación. Resultado T3: [NO VERIFICADO].
 
 ## Ficha de adaptación y entrega
 
-| Petición ficticia | Clase y ámbito | Responsable/mecanismo | Validación y efecto en upgrade |
-| --- | --- | --- | --- |
-| A cambia marca, soporte y módulos visibles | Configuración de instalación | Instalador; tokens/datos/capacidades existentes | Registrar archivos y valores no secretos; probar rutas/acciones; conservar diff al actualizar |
-| B pide un expediente privado por cuenta | Extensión de instalación con dato por tenant | Desarrollador; migración, acción, página y policy explícitas | Dos cuentas/roles y archivo privado; upgrade aditivo conserva dato |
-| A pide su idioma personal | Preferencia de usuario dentro de idiomas existentes | Usuario; perfil/navegación vigente | Persistencia y fallback; no añadir locale sin traducciones completas |
-| B pide jerarquías de organizaciones o roles arbitrarios | Cambio estructural | Decisión de producto y diseño separado | No soportado por configuración actual; coste/migración propios |
-| A pide configuración dinámica por tenant o cobro por consumo | Cambio estructural | Decisión futura fuera de015 | No hay panel ni motor genérico para prometerlo |
+| Petición ficticia                                            | Clase y ámbito                                      | Responsable/mecanismo                                        | Validación y efecto en upgrade                                                                |
+| ------------------------------------------------------------ | --------------------------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| A cambia marca, soporte y módulos visibles                   | Configuración de instalación                        | Instalador; tokens/datos/capacidades existentes              | Registrar archivos y valores no secretos; probar rutas/acciones; conservar diff al actualizar |
+| B pide un expediente privado por cuenta                      | Extensión de instalación con dato por tenant        | Desarrollador; migración, acción, página y policy explícitas | Dos cuentas/roles y archivo privado; upgrade aditivo conserva dato                            |
+| A pide su idioma personal                                    | Preferencia de usuario dentro de idiomas existentes | Usuario; perfil/navegación vigente                           | Persistencia y fallback; no añadir locale sin traducciones completas                          |
+| B pide jerarquías de organizaciones o roles arbitrarios      | Cambio estructural                                  | Decisión de producto y diseño separado                       | No soportado por configuración actual; coste/migración propios                                |
+| A pide configuración dinámica por tenant o cobro por consumo | Cambio estructural                                  | Decisión futura fuera de015                                  | No hay panel ni motor genérico para prometerlo                                                |
 
 La [guía de instalación](../runbooks/independent-installation.md) conserva una
 ficha real por derivado: revisión origen/destino, cambios de código y SQL,
