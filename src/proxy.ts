@@ -137,7 +137,7 @@ export function buildCspHeader(options: CspOptions): string {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    'upgrade-insecure-requests',
+    ...(options.localValidation && local ? [] : ['upgrade-insecure-requests']),
     ...(report ? [`report-uri ${report}`, 'report-to csp-endpoint'] : []),
   ];
 

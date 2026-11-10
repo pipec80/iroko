@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Bot, CreditCard, FolderOpen, Users } from 'lucide-react';
 
 import { createClient } from '@/lib/supabase/server';
 import { listByAccount } from '@/lib/projects';
@@ -8,6 +7,8 @@ import { logger } from '@/lib/logger';
 import { getActiveAccountId } from '@/lib/active-account';
 import { Link } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
+import { resolveProductModules } from '@/config/product-modules';
+import type { Database } from '@/types/database';
 
 export async function generateMetadata({
   params,
@@ -24,6 +25,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
   setRequestLocale(locale);
 
   const t = await getTranslations('Dashboard');
+  const tNav = await getTranslations('Navigation');
 
   const supabase = await createClient();
   const [{ data: claimsData }, accountId] = await Promise.all([
@@ -38,16 +40,21 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
     '';
 
   let workspaceName = '';
+  let accountRole: Database['public']['Enums']['membership_role'] | undefined;
   if (accountId) {
     const { data: accounts, error: accountsError } = await supabase.rpc('get_my_accounts');
     if (accountsError) {
       logger.error({ action: 'get_account_name', accountId }, accountsError.message);
     }
-    workspaceName = accounts?.find((a) => a.account_id === accountId)?.name ?? '';
+    const account = accounts?.find((a) => a.account_id === accountId);
+    workspaceName = account?.name ?? '';
+    accountRole = account?.role;
   }
 
+  const modules = resolveProductModules(appConfig, accountRole);
+  const projectsEnabled = modules.some(({ id }) => id === 'projects');
   const projects =
-    appConfig.features.projects && accountId ?
+    projectsEnabled && accountId ?
       await listByAccount(accountId).catch((err: unknown) => {
         logger.error(
           { action: 'list_projects', accountId },
@@ -57,65 +64,20 @@ export default async function DashboardPage({ params }: { params: Promise<{ loca
       })
     : [];
 
-  type QuickLink = {
-    Icon: React.ElementType;
-    title: string;
-    desc: string;
-    href: string;
-    color: string;
-    count: number | null;
-  };
-
-  const quickLinks: QuickLink[] = [
-    ...(appConfig.features.projects ?
-      [
-        {
-          Icon: FolderOpen,
-          title: t('quick_projects'),
-          desc: t('quick_projects_desc'),
-          href: '/dashboard/projects',
-          color: 'var(--color-cobalt)',
-          count: projects.length,
-        },
-      ]
-    : []),
-    ...(appConfig.features.members ?
-      [
-        {
-          Icon: Users,
-          title: t('quick_members'),
-          desc: t('quick_members_desc'),
-          href: '/dashboard/members',
-          color: 'var(--color-gold)',
-          count: null,
-        },
-      ]
-    : []),
-    ...(appConfig.features.billing ?
-      [
-        {
-          Icon: CreditCard,
-          title: t('quick_billing'),
-          desc: t('quick_billing_desc'),
-          href: '/dashboard/billing',
-          color: 'var(--color-poppy)',
-          count: null,
-        },
-      ]
-    : []),
-    ...(appConfig.features.verticals.robot ?
-      [
-        {
-          Icon: Bot,
-          title: `${appConfig.brand} Robot`,
-          desc: t('quick_robot_desc'),
-          href: '/dashboard/robot',
-          color: 'var(--color-ink)',
-          count: null,
-        },
-      ]
-    : []),
-  ];
+  const quickLinks = modules
+    .flatMap((module) => (module.home ? [{ ...module, home: module.home }] : []))
+    .sort((left, right) => left.home.order - right.home.order)
+    .map(({ id, href, label, home }) => ({
+      Icon: home.Icon,
+      title:
+        home.titleKey ? t(home.titleKey)
+        : 'brandSuffix' in label ? `${appConfig.brand}${label.brandSuffix}`
+        : tNav(label.key),
+      desc: t(home.descriptionKey),
+      href,
+      color: home.color,
+      count: id === 'projects' ? projects.length : null,
+    }));
 
   return (
     <div className="flex flex-col gap-8">

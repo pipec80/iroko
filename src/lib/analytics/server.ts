@@ -2,6 +2,7 @@ import 'server-only';
 
 import { cookies } from 'next/headers';
 import { PostHog } from 'posthog-node';
+import { appConfig } from '@/config/app.config';
 
 import { CONSENT_COOKIE_NAME, parseConsentValue } from '@/lib/cookie-consent';
 import { logger } from '@/lib/logger';
@@ -79,6 +80,7 @@ export type CaptureServerInput<TName extends AnalyticsEventName> = {
 export async function captureServer<TName extends AnalyticsEventName>(
   input: CaptureServerInput<TName>,
 ): Promise<void> {
+  if (!appConfig.features.analytics) return;
   if (!env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) {
     warnMissingTokenOnce();
     return;

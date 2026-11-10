@@ -419,7 +419,9 @@
     "unknown_actor": "Sistema",
     "no_logs": "Todavía no hay actividad registrada.",
     "load_more": "Cargar más",
-    "loading_more": "Cargando…"
+    "loading_more": "Cargando…",
+    "load_failed": "No se pudo cargar la actividad. Inténtalo de nuevo.",
+    "retry": "Reintentar"
   },
   "Admin": {
     "nav_accounts": "Cuentas",

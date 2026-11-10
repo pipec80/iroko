@@ -19,8 +19,9 @@ function isTrustedAbsoluteUrl(value: string): boolean {
     return false;
   }
   if (parsed.protocol !== 'https:') return false;
-  if (value.startsWith(SUPABASE_URL)) return true;
-  return TRUSTED_IMAGE_HOSTS.has(parsed.hostname);
+  if (parsed.username || parsed.password) return false;
+  if (parsed.origin === new URL(SUPABASE_URL).origin) return true;
+  return parsed.port === '' && TRUSTED_IMAGE_HOSTS.has(parsed.hostname);
 }
 
 /** Convierte un path de storage en URL pública del CDN.

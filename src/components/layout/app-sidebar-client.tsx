@@ -2,22 +2,13 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import {
-  ChevronDown,
-  ChevronUp,
-  CreditCard,
-  FolderTree,
-  LayoutGrid,
-  Settings,
-  Users,
-  Bot,
-  Activity,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { Link, usePathname } from '@/i18n/routing';
 import type { Database } from '@/types/database';
 import { appConfig } from '@/config/app.config';
+import { matchesProductRoute, resolveProductModules } from '@/config/product-modules';
 import { storageUrl } from '@/lib/storage';
 import { cn } from '@/lib/utils';
 
@@ -48,28 +39,9 @@ export function AppSidebarClient({ orgs, activeAccountId = null }: Props) {
   const selectedOrg = orgs.find((o) => o.account_id === activeAccountId) ?? orgs[0] ?? null;
   const selectedIndex = orgs.findIndex((o) => o.account_id === selectedOrg?.account_id);
 
-  const navItems = [
-    { id: 'overview', Icon: LayoutGrid, label: t('nav_overview'), href: '/dashboard' },
-    ...(appConfig.features.projects ?
-      [{ id: 'projects', Icon: FolderTree, label: t('nav_projects'), href: '/dashboard/projects' }]
-    : []),
-    ...(appConfig.features.verticals.robot ?
-      [{ id: 'robot', Icon: Bot, label: `${appConfig.brand} Robot`, href: '/dashboard/robot' }]
-    : []),
-    ...(appConfig.features.members ?
-      [{ id: 'members', Icon: Users, label: t('nav_members'), href: '/dashboard/members' }]
-    : []),
-    ...((
-      appConfig.features.activityLog &&
-      (selectedOrg?.role === 'owner' || selectedOrg?.role === 'admin')
-    ) ?
-      [{ id: 'activity', Icon: Activity, label: t('nav_activity'), href: '/dashboard/activity' }]
-    : []),
-    ...(appConfig.features.billing ?
-      [{ id: 'billing', Icon: CreditCard, label: t('nav_billing'), href: '/dashboard/billing' }]
-    : []),
-    { id: 'settings', Icon: Settings, label: t('nav_settings'), href: '/dashboard/org/settings' },
-  ];
+  const navItems = resolveProductModules(appConfig, selectedOrg?.role)
+    .filter((module) => module.sidebarOrder !== undefined)
+    .sort((left, right) => (left.sidebarOrder ?? 0) - (right.sidebarOrder ?? 0));
 
   return (
     <aside className="border-border bg-surface-2 flex h-full w-[248px] flex-col border-r">
@@ -208,8 +180,7 @@ export function AppSidebarClient({ orgs, activeAccountId = null }: Props) {
       {/* Nav */}
       <nav className="flex flex-1 flex-col gap-0.5 px-3 py-1.5">
         {navItems.map(({ id, Icon, label, href }) => {
-          const isActive =
-            pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+          const isActive = matchesProductRoute(pathname, href);
           return (
             <Link
               key={id}
@@ -219,7 +190,7 @@ export function AppSidebarClient({ orgs, activeAccountId = null }: Props) {
                 style={{ width: 17, height: 17, flexShrink: 0 }}
                 strokeWidth={isActive ? 1.5 : 1.25}
               />
-              {label}
+              {'key' in label ? t(label.key) : `${appConfig.brand}${label.brandSuffix}`}
               {isActive && (
                 <div
                   className="ml-auto shrink-0 rounded-full"

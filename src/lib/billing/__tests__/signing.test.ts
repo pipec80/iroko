@@ -25,10 +25,15 @@ describe('mock payload signing', () => {
   });
   afterEach(() => {
     Object.assign(env, {
+      MOCK_BILLING_SECRET: 'cd'.repeat(32),
       NODE_ENV: 'test',
       ALLOW_MOCK_BILLING: undefined,
       BILLING_DEFAULT_PROVIDER: 'mock',
     });
+  });
+  it('rejects signing explicitly when the optional mock secret is absent', async () => {
+    Object.assign(env, { MOCK_BILLING_SECRET: undefined });
+    await expect(signMockPayload({ test: true })).rejects.toThrow('invalid_mock_billing_secret');
   });
   it('rejects an extra token segment', async () => {
     const token = await signMockPayload({ test: true });

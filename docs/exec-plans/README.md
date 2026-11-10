@@ -22,6 +22,16 @@ migrations or dated observations.
 
 ## Current freeze
 
+Entrada vigente2026-11-10: [015](completed/015-reusable-foundation-acceptance.md)
+cierra el núcleo reutilizable local con circuito útil, extensión, actualización
+y recuperación verificadas. [Evidencia y límites](../quality/reusable-foundation-evidence.md).
+Siguiente016; pagos reales/operación programada/Cloud conservan sus gates.
+
+Entrada vigente2026-11-05: [014](completed/014-reference-surface-correctness.md)
+aceptado localmente; [evidencia](../audits/2026-11-05-plan-014-t2-t3-execution.md).
+Siguiente015 y después016. Cloud/MVP no se aceptan por este cierre.
+Las entradas fechadas inferiores conservan la secuencia de su checkpoint.
+
 Entrada vigente2026-11-04: el [padre017](completed/017-freeze-remediation.md)
 completó sus dos lotes acotados; siguiente014-T2/T3, después015/016. Se conservan
 los hijos técnicos para resultados históricos, alcances diferidos y recepción
@@ -40,12 +50,12 @@ Plan012 está cerrado por entregables2026-11-02; [disposición de seguimientos](
 
 Active product plans are:
 
-- [Plan 014 — reference-surface correctness](active/014-reference-surface-correctness.md)
-- [Plan 015 — reusable-foundation acceptance](active/015-reusable-foundation-acceptance.md)
 - [Plan 016 — Next.js and Supabase code review](active/016-nextjs-supabase-code-review.md)
 
 Completed bounded remediation:
 
+- [Plan 015 — reusable-foundation acceptance](completed/015-reusable-foundation-acceptance.md) — núcleo local aceptado2026-11-10; límites operativos explícitos en016/011.
+- [Plan 014 — reference-surface correctness](completed/014-reference-surface-correctness.md) — cierre local2026-11-05; Cloud y gate integrado separados.
 - [Plan 017 — freeze remediation](completed/017-freeze-remediation.md) — sólo el padre y su contrato acotado; hijos técnicos/diferidos y pendientes016 conservados.
 
 The [central disposition register](active/freeze-remediation-register.csv)

@@ -194,7 +194,6 @@ describe('sendEmail — transporte local', () => {
     // Arrange
     vi.doMock('@/env', () => ({
       env: {
-        RESEND_API_KEY: 're_test_key',
         FROM_EMAIL: 'noreply@test.com',
         SITE_URL: 'http://localhost:3000',
         MAILPIT_URL: 'http://127.0.0.1:54324',
@@ -219,6 +218,17 @@ describe('sendEmail — transporte local', () => {
       To: [{ Email: 'user@example.com' }],
       Subject: 'Asunto',
     });
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it('rejects Resend delivery explicitly without an API key', async () => {
+    vi.doMock('@/env', () => ({
+      env: { FROM_EMAIL: 'noreply@test.com', SITE_URL: 'http://localhost:3000' },
+    }));
+    const { sendEmail } = await import('@/lib/email');
+    await expect(sendEmail('user@example.com', 'Subject', fakeElement)).rejects.toThrow(
+      'email_not_configured',
+    );
     expect(mockSend).not.toHaveBeenCalled();
   });
 

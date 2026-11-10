@@ -2,6 +2,7 @@
 
 import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
+import { appConfig } from '@/config/app.config';
 
 import { getActiveAccountId } from '@/lib/active-account';
 import { captureServer } from '@/lib/analytics/server';
@@ -109,6 +110,7 @@ export const startCheckout = withServerAction(async function startCheckout(input
   planSlug: string;
   interval: string;
 }): Promise<ActionResult<CheckoutStartResult>> {
+  if (!appConfig.features.billing) return { data: null, error: 'module_disabled' };
   const parsed = checkoutSchema.safeParse(input);
   if (!parsed.success) return { data: null, error: 'validation_error' };
 

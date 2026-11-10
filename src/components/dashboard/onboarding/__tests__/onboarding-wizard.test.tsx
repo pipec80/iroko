@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  features: { billing: true },
   confirmOrgName: vi.fn(),
   completeOnboarding: vi.fn(),
 }));
@@ -13,7 +14,7 @@ vi.mock('@/app/[locale]/dashboard/onboarding/actions', () => ({
 }));
 
 vi.mock('@/config/app.config', () => ({
-  appConfig: { features: { billing: true } },
+  appConfig: { features: mocks.features },
 }));
 
 vi.mock('@/app/[locale]/dashboard/team/actions', () => ({
@@ -38,7 +39,7 @@ vi.mock('@/app/[locale]/dashboard/billing/actions', () => ({
 }));
 
 vi.mock('@/app/[locale]/dashboard/org/settings/actions-logo', () => ({
-  getOrgLogo: vi.fn(),
+  getOrgLogo: vi.fn().mockResolvedValue({ data: null }),
   updateOrgLogo: vi.fn(),
   removeOrgLogo: vi.fn(),
 }));
@@ -63,6 +64,9 @@ const messages = {
     back: 'Atrás',
     skip_setup: 'Omitir configuración',
     invite_later: 'Invitar más tarde',
+    upload_logo: 'Subir logo',
+    finish: 'Finalizar',
+    finishing: 'Finalizando',
   },
 };
 
@@ -77,7 +81,24 @@ function renderWithIntl(ui: React.ReactElement) {
 import { OnboardingWizard } from '../onboarding-wizard';
 
 describe('OnboardingWizard', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.features.billing = true;
+  });
+
+  it('omits plan selection and finishes onboarding when billing is disabled', async () => {
+    mocks.features.billing = false;
+    renderWithIntl(
+      <OnboardingWizard initialOrgName="Mi Empresa" initialAccountId="account-confirmed" />,
+    );
+    expect(screen.getByText('Paso 2 de 3')).toBeDefined();
+    expect(screen.queryByText('Elegir plan')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Invitar más tarde' }));
+    await waitFor(() => expect(screen.getByText('Paso 3 de 3')).toBeDefined());
+    expect(screen.queryByTestId('billing-account')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Finalizar' }));
+    await waitFor(() => expect(mocks.completeOnboarding).toHaveBeenCalledTimes(1));
+  });
 
   it('starts on the Org step', () => {
     renderWithIntl(<OnboardingWizard initialOrgName="Mi Empresa" />);

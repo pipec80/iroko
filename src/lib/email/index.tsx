@@ -35,6 +35,7 @@ export type NotificationEmailOpts = {
 let resendClient: Resend | null = null;
 
 function getResend(): Resend {
+  if (!env.RESEND_API_KEY) throw new Error('email_not_configured');
   if (!resendClient) {
     resendClient = new Resend(env.RESEND_API_KEY);
   }

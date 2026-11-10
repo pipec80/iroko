@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const config = vi.hoisted(() => ({ features: { analytics: true } }));
+vi.mock('@/config/app.config', () => ({ appConfig: config }));
+
 const { captureMock, shutdownMock, PostHogMock } = vi.hoisted(() => {
   const captureMock = vi.fn();
   const shutdownMock = vi.fn(async () => {});
@@ -45,11 +48,24 @@ function consentCookieValue(analytics: boolean): string {
 describe('captureServer', () => {
   beforeEach(() => {
     vi.resetModules();
+    config.features.analytics = true;
     envMock.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN = 'phc_test_token';
     // Default: consented via cookie, matching every pre-existing test below
     // that isn't specifically exercising the consent gate.
     cookieGetMock.mockReturnValue({ value: consentCookieValue(true) });
     maybeSingleMock.mockResolvedValue({ data: null });
+  });
+
+  it('does not read consent or initialize delivery when analytics is disabled', async () => {
+    config.features.analytics = false;
+    const { captureServer } = await import('../server');
+    await expect(
+      captureServer({ event: 'mfa_challenge_completed', properties: {}, distinctId: 'user-uuid' }),
+    ).resolves.toBeUndefined();
+    expect(cookieGetMock).not.toHaveBeenCalled();
+    expect(maybeSingleMock).not.toHaveBeenCalled();
+    expect(PostHogMock).not.toHaveBeenCalled();
+    expect(captureMock).not.toHaveBeenCalled();
   });
 
   it('is a no-op when the project token is missing', async () => {

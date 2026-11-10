@@ -419,7 +419,9 @@
     "unknown_actor": "System",
     "no_logs": "No activity recorded yet.",
     "load_more": "Load more",
-    "loading_more": "Loading…"
+    "loading_more": "Loading…",
+    "load_failed": "Activity could not be loaded. Please try again.",
+    "retry": "Retry"
   },
   "Admin": {
     "nav_accounts": "Accounts",

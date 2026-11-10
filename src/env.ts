@@ -1,6 +1,8 @@
 import { createEnv } from '@t3-oss/env-nextjs';
 import { z } from 'zod';
+import { appConfig } from '@/config/app.config';
 import { isMockBillingOptedIn } from '@/lib/billing/mock-policy';
+import { missingIntegrationRequirements } from '@/lib/config/integration-requirements';
 export { isMockBillingAllowed } from '@/lib/billing/mock-policy';
 
 export const env = createEnv({
@@ -20,7 +22,24 @@ export const env = createEnv({
     SENTRY_AUTH_TOKEN: z.string().min(1).optional(),
     SENTRY_UPLOAD_SOURCE_MAPS: z.enum(['true', 'false']).optional(),
     LOCAL_VALIDATION: z.enum(['true']).optional(),
-    RESEND_API_KEY: z.string().min(1),
+    RESEND_API_KEY: z
+      .string()
+      .min(1)
+      .optional()
+      .refine(
+        (key) =>
+          !missingIntegrationRequirements({
+            billingEnabled: false,
+            provider: 'mock',
+            mailTransport: process.env.MAILPIT_URL ? 'mailpit' : 'resend',
+            credentials: {
+              FROM_EMAIL: process.env.FROM_EMAIL,
+              MAILPIT_URL: process.env.MAILPIT_URL,
+              RESEND_API_KEY: key,
+            },
+          }).includes('RESEND_API_KEY'),
+        { message: 'RESEND_API_KEY is required for Resend delivery.' },
+      ),
     FROM_EMAIL: z.string().email(),
     // Catcher de email local (Mailpit, incluido en el stack de Supabase CLI).
     // Cuando está definida, TODOS los emails de la app van ahí en vez de a
@@ -35,6 +54,7 @@ export const env = createEnv({
       .default('mock')
       .refine(
         (provider) =>
+          !appConfig.features.billing ||
           provider !== 'mock' ||
           isMockBillingOptedIn({
             nodeEnv: process.env.NODE_ENV,
@@ -46,7 +66,10 @@ export const env = createEnv({
       ),
     ALLOW_MOCK_BILLING: z.enum(['true']).optional(),
     MOCK_BILLING_FIXTURE: z.literal('true').optional(),
-    MOCK_BILLING_SECRET: z.string().regex(/^[0-9a-f]{64}$/i),
+    MOCK_BILLING_SECRET: z
+      .string()
+      .regex(/^[0-9a-f]{64}$/i)
+      .optional(),
     STRIPE_SECRET_KEY: z.string().min(1).optional(),
     STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
     MERCADOPAGO_ACCESS_TOKEN: z.string().min(1).optional(),

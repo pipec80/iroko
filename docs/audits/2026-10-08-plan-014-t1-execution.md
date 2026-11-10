@@ -1,6 +1,6 @@
 # Plan 014 T1 — registro de ejecución
 
-Plan: [014](../exec-plans/active/014-reference-surface-correctness.md).
+Plan: [014](../exec-plans/completed/014-reference-surface-correctness.md).
 Fecha: 2026-10-08. Rama: `codex/014-t1-robot-permissions`.
 Base: `dfa228fb63e762a77beb291b828561d4547ed2e9`.
 Estado: 014-T1 aceptado localmente; SQL, build webpack, E2E y checks finales aprobados.
