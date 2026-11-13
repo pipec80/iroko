@@ -553,7 +553,8 @@ jobs:
   # ─────────────────────────────────────────────
   e2e-webkit:
     name: E2E Smoke (WebKit)
-    runs-on: ubuntu-latest
+    # WebKit binaries depend on distro-specific ICU; ubuntu-latest moved to26.04.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       SITE_URL: http://localhost:3000
@@ -583,7 +584,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-webkit-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          key: playwright-webkit-ubuntu24.04-${{ runner.arch }}-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'

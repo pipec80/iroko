@@ -11,6 +11,19 @@ la contención/rotación autorizada del13/11 se detalla abajo.
 
 ## Resultado vigente de la continuación
 
+### Entrega Git y CI — 2026-11-13
+
+PR251: commits72cc609 y cce9e3a. En CI43493924001 pasan SQL59archivos/1192asserts,
+tipos DB, Edge, Quality, Gitleaks, Docs y CodeQL. Unit155archivos,
+1745PASS/1skip; cobertura91.25/84.79/96.23/93.73. El primer fallo de formato se
+corrigió con el ignore-path documental de CI. Gitleaks confundió el SHA real
+5dd46f9 con una clave en CSV; excepción exacta SHA+archivo, sin excluir secretos.
+WebKit falló antes de ejecutar los casos: runner ubuntu-latest pasó a26.04 y
+la caché Linux conservaba un binario24.04 que exige libicudata.so.74. Reparación
+acotada: job WebKit fijado en24.04 y caché separada por distro/arquitectura.
+No cambia paquetes ni versiones; retest CI de esa reparación aún pendiente.
+Estos resultados no acreditan merge, main READY ni revocación de credenciales.
+
 ### Incidente P1 confirmado — 2026-11-13
 
 Registro único `S-016.CLOUD-TRACE`, dueño ejecución016/operaciones, **abierto**.
