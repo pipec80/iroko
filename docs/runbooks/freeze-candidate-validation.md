@@ -1,6 +1,45 @@
 # Freeze — validación del candidato y contrato de evidencia
 
-## Alcance vigente y reauditoría — 2026-10-28
+## Capturas Cloud y credenciales — 2026-11-13
+
+Las pruebas Cloud con credenciales no generan trazas, screenshots, video ni
+reportes HTML publicables. Un APIRequestContext separado también puede aparecer
+en una traza de Playwright: su aislamiento no redacta cabeceras. El escenario
+MP-01 conserva sólo errores saneados y estado HTTP; nunca respuestas Auth ni OTP.
+
+El bootstrap Vercel se ejecuta fuera de TestInfo, en origen canónico y sin seguir
+redirects. Sólo admite la cookie de protección del host exacto; ante307 al locale
+exacto del alias público usa estado vacío. Descarta cookies de aplicación y
+localStorage, crea el fichero temporal exclusivamente y borra sólo el suyo.
+Una página pública accesible no prueba revocación del bypass ni salud de WAF.
+
+Ante exposición: inventariar consumidores; obtener autorización específica para
+rotación; actualizar sustitutas y consumidores; verificar SHA/READY del despliegue
+automático Git; después revocar exactamente las anteriores y comprobar salud y
+denegación pertinente. Preservar claves locales, JWT, Vault y otros proyectos.
+
+## Uso vigente — 2026-11-10
+
+Este runbook ejecuta los gates del mismo [Plan016](../exec-plans/active/016-nextjs-supabase-code-review.md):
+Bloque1 → V0; bloque2 → V1/V2 y reproducción focalizada; bloque3 → V3/V4;
+bloque4 → V5. La preparación documental no ejecuta estos gates ni autoriza
+operaciones externas. El contrato operativo del plan prevalece sobre checkpoints
+históricos conservados abajo.
+
+015 ya cerró su aceptación local acotada. Reutilizar su
+[evidencia](../quality/reusable-foundation-evidence.md) cuando escenario y fuentes
+sigan vigentes; contrastar cambios posteriores. PR250/main `5dd46f9` y CI main
+42866480336 son baseline fechado, no prueba Cloud ni excusa para omitir un gate
+invalidado. No repetir una suite completa sólo por cambiar de plan.
+
+Fijar la oferta desde código/configuración: compras habilitadas requieren aceptar
+su escenario PSP o cambiar efectivamente la oferta mediante trabajo autorizado;
+no declarar pagos fuera de alcance mientras sigan ofrecidos. Incluso sin nuevas
+compras, contratos existentes de callbacks/worker conservan sus obligaciones.
+Manual QA requiere pasos, esperado/observado, candidato y cleanup; no sustituye
+negativas SQL, carreras independientes, build ni cobertura.
+
+## Alcance y método conservados — 2026-10-28
 
 Aplicar [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
 Este es el gate final de una base replicable, después de015; no una certificación
@@ -23,7 +62,8 @@ recorridos ni viceversa. No eliminar assertions, bajar umbrales o marcar un
 escenario fuera de alcance como PASS. CI debe reflejar el alcance aprobado y
 reportar exclusiones: todavía no se modificó su selección por este documento.
 
-Estado: protocolo de ejecución **planificado**, 2026-10-20. Implementa la
+Estado: protocolo integrado pendiente; preparación actualizada2026-11-10.
+El diseño original del protocolo data de2026-10-20. Implementa la
 validación final de [016-T2/T3](../exec-plans/active/016-nextjs-supabase-code-review.md)
 y las evidencias funcionales recibidas desde [017](../exec-plans/completed/017-freeze-remediation.md),
 sin mantener ese plan abierto hasta este gate. El orden lo
@@ -38,9 +78,11 @@ común de ese plan para validación proporcional y límites de reintento.
 ## Seguimientos recibidos de012 — 2026-11-02
 
 El cierre por entregables de012 conserva estos controles, sin ejecutarlos aquí:
-RL-F01→017.1-T9 (confianza IP Data API) y RL-F03→017.2-T6 (grants accounts)
-requieren triage/decisión técnica; V4/V5 valida resultado y severidad, no sustituye
-su reparación. RL-F02/V4 conserva ensayo aislado503/500; RL-F04/V4 correlación
+RL-F01 (confianza IP Data API) conserva disposición técnica documentada y
+condición de retorno; no es un bypass de autorización demostrado. RL-F03
+(grants accounts) conserva reparación local y aplicación Cloud registrada
+el2026-11-04; revisar diferencias, no reabrirlo por este checkpoint. V4/V5
+valida evidencia y condiciones de retorno del registro central. RL-F02/V4 conserva ensayo aislado503/500; RL-F04/V4 correlación
 de origen independiente; RL-F05/V4 usa escenarios por integración y matriz011
 MP, sin certificar otros protocolos. RL-F06/V4 conserva inventario WAF y retoma
 ante cambios de hosts/deployment/secreto/reglas, con autenticación, readback y
@@ -52,7 +94,7 @@ Estados/condiciones originales: [registro012.3](../audits/2026-10-14-plan-012-3-
 - [ ] Registrar branch/HEAD, git status, diff autorizado, fecha y versiones instaladas. Comprobar comandos existentes con Get-Command/where/version antes de declararlos ausentes. No instalar ni actualizar herramientas para obtener verde sin petición explícita.
 - [ ] Identificar qué evidencia previa sigue siendo válida: mismo contenido, dependencias/configuración no afectadas y escenario relevante. Un SHA distinto exige justificar reuso; un conteo histórico no se renueva por copiarlo.
 - [ ] Enumerar consumers/proveedores de las superficies modificadas. No leer valores de .env, secretos ni payloads personales al informe.
-- [ ] Confirmar stack local `saas-boilerplate`, URL loopback, project_id, contenedor/labels y puertos. Verificar helpers de E2E y dblink antes de escribir fixtures. Corregir 017.5-T11 antes de usar el fixture afectado.
+- [ ] Confirmar stack local `saas-boilerplate`, URL loopback, project_id, contenedor/labels y puertos. Verificar helpers de E2E y dblink antes de escribir fixtures. Verificar que la corrección heredada de017.5-T11 siga presente antes de usar el fixture afectado.
 - [ ] Clasificar toda operación: lectura, fixture local, reset autorizado, Cloud. Ninguna URL confirmada ni MCP autenticado sustituye autorización de una escritura.
 - [ ] Verificar gate Sentry cerrado por defecto y tráfico de pruebas confinado. Build/E2E no deben subir sourcemaps, enviar emails reales, telemetría ni pagos. Reusar runner de validación local existente y sus sumideros; no modificar secretos privados del mantenedor.
 

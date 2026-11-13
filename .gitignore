@@ -107,6 +107,7 @@ supabase/snippets/
 # QA screenshots y artefactos de automatización
 *.png
 .playwright-mcp/
+/.playwright-auth/
 
 # pytest (artefactos de tooling local)
 .pytest_cache/

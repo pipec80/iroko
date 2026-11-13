@@ -2,6 +2,11 @@ import { existsSync, readFileSync } from 'fs';
 
 import { defineConfig, devices } from '@playwright/test';
 import { appConfig } from './src/config/app.config';
+import {
+  cloudCapturePolicy,
+  cloudProtectionStatePath,
+  isCloudBrowserTarget,
+} from './src/test/cloud-protection';
 import { offeredE2eScope } from './src/test/e2e-scope';
 
 // .env.local is loaded by Next.js for the dev server automatically, but Playwright
@@ -21,6 +26,9 @@ if (existsSync('.env.local')) {
 // y captchaReady arranca en true → botones habilitados desde el inicio.
 delete process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
+const hosted = isCloudBrowserTarget(process.env.PLAYWRIGHT_BASE_URL);
+const protectedCloud = hosted && Boolean(process.env.VERCEL_AUTOMATION_BYPASS_SECRET);
+
 /**
  * Playwright configuration for Next.js E2E testing.
  * See https://playwright.dev/docs/test-configuration.
@@ -37,24 +45,14 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: hosted ? 'line' : 'html',
+  ...(protectedCloud ? { globalSetup: './src/test/cloud-protection-setup.ts' } : {}),
   use: {
     // PLAYWRIGHT_BASE_URL overrides local default — used by nightly production monitoring.
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
-    trace: 'retain-on-failure',
-    screenshot: 'only-on-failure',
-    // Vercel's firewall challenges GitHub runners with its Security Checkpoint
-    // (HTTP 429 + JS challenge). The official escape hatch for automation is the
-    // Protection Bypass secret; the set-bypass-cookie header persists it across
-    // subsequent navigations. No-op when the env var is absent (local/CI runs).
-    ...(process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?
-      {
-        extraHTTPHeaders: {
-          'x-vercel-protection-bypass': process.env.VERCEL_AUTOMATION_BYPASS_SECRET,
-          'x-vercel-set-bypass-cookie': 'true',
-        },
-      }
-    : {}),
+    ...cloudCapturePolicy(hosted),
+    // Only a host-scoped cookie reaches browser workers, never bypass headers.
+    ...(protectedCloud ? { storageState: cloudProtectionStatePath(__dirname) } : {}),
   },
 
   /* Configure projects for major browsers.

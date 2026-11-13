@@ -29,6 +29,15 @@ Instalación y reset/restauración fueron autorizados específicamente. La
 integración Git posterior está en [PR250](https://github.com/pipec80/iroko/pull/250)
 y conserva los gates de la rama protegida. No se aplicaron migraciones Cloud.
 
+### Checkpoint histórico de preparación — 2026-11-05
+
+El resto del contrato conserva sus casillas originales, no una nueva cola
+activa. Los pendientes transferidos se ejecutan únicamente desde los cuatro
+bloques del [016 vigente](../active/016-nextjs-supabase-code-review.md): evidencia
+reutilizable en el bloque1; datos e integración en el2; operación/Cloud y PSP
+según oferta en el3; disposición final en el4. No reabrir015 ni marcar como
+probadas las casillas históricas abiertas.
+
 Base observada `032f1a30794241cebc97e0ccd32b48d836110475`, rama
 `codex/014-images-platform-audit`, con cambios014 staged/unstaged/untracked.
 El SHA no identifica por sí solo ese árbol. Preservar todos los cambios y

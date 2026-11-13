@@ -1,5 +1,16 @@
 export const MERCADOPAGO_PRODUCTION_URL = 'https://project-a89lv.vercel.app';
 
+/** Headers for the protected Node-side Auth admin request, never a browser request. */
+export function supabaseAdminHeaders(secretKey: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    apikey: secretKey,
+    // Node-only bootstrap: secret keys must not use a browser identity.
+    'User-Agent': 'Iroko-Cloud-Acceptance/1.0',
+  };
+  if (!secretKey.startsWith('sb_secret_')) headers.Authorization = `Bearer ${secretKey}`;
+  return headers;
+}
+
 /**
  * Production acceptance must exercise the stable application origin used by
  * Mercado Pago and Cloudflare. Per-deployment Vercel URLs are not webhook

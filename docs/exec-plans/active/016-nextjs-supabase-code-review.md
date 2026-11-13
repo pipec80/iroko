@@ -1,5 +1,152 @@
 # Plan 016 — Revisión de Next.js, seguridad Supabase y arquitectura de datos
 
+## Entrada operativa — 2026-11-10
+
+> **Para agentes:** aplicar `superpowers:executing-plans` por bloques y revisión
+> independiente antes del veredicto. Esta preparación documental no ejecuta T2/T3.
+
+**Objetivo:** aceptar el circuito MVP de la base Supabase + presentación Next.js,
+reutilizando evidencia válida y corrigiendo sólo defectos confirmados del alcance
+ofrecido. **Arquitectura:** conservar el monolito modular, Supabase como backend
+principal y los consumidores Next existentes. **Stack:** Next.js/React/TypeScript,
+Supabase/PostgreSQL, Vitest y Playwright instalados; renovar versiones al iniciar.
+**Decisión de alcance:** [ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+No hace falta otro ADR: se ordena la ejecución de la decisión ya aceptada.
+
+Estado2026-11-12: **ejecución parcial;016 permanece activo**.
+Actualización2026-11-13: **P1 abierto S-016.CLOUD-TRACE**. El artefacto13999499918
+del run43343240727 contenía credenciales Supabase/bypass Vercel sin redactar;
+eliminado y ausencia verificada0. Rotación específicamente autorizada: preparación
+completada (sustituta RPC200, GitHub y Vercel production/preview actualizados),
+revocación pendiente. Captura/artefactos reparados localmente con33tests PASS,
+lint0errores/4warnings y tsc0 antes del último ajuste trivial de test; revisión
+final en curso. Revocar credenciales anteriores sólo después de entrega Git y deploy
+automático READY con sustitutas; comprobar salud y política segura de artefactos
+antes de repetir MP Cloud. Dueño ejecución016/operaciones; no hay cierre016
+por eliminar el artefacto ni por separar la aceptación de pasarelas.
+[Evidencia, clasificación DB y límites](../../audits/2026-11-12-nextjs-supabase-code-review.md):
+D-03.TEAMS/DB-05 reparado localmente, SQL58 archivos1189 asserts PASS y consumidor
+Next6/6. Cloud/local180 tras dos migraciones específicamente autorizadas y readback.
+Worker real programado/entrega/rechazo/archivo/alerta/recuperación PASS, fixtures0.
+Billing habilitado conserva obligaciones PSP.
+Los16 IDs N/seguimientos no reciben PASS por disposición. Gates obligatorios
+[NO VERIFICADO] impiden cierre. Preparación documental previa preservada sin integrar.
+T0/T1 están cerrados para su candidato histórico; no se reabren ni se presentan
+como lectura del código actual. Los cuatro bloques siguientes son la entrada
+vigente del mismo016; los criterios N/S/D y registros históricos siguen debajo.
+
+Baseline de preparación: `5dd46f9d4e5463155754a592ca4e8febd745a39d` (PR250,
+main), Next16.4.5, Supabase JS2.119.0,179 migraciones y57 archivos pgTAP.
+CI de PR250 y main42866480336 verde es evidencia fechada, no aceptación Cloud.
+Al ejecutar, registrar HEAD real y decidir qué resultados siguen siendo válidos.
+
+### Bloque 1 — Candidato, oferta y evidencia (actualización T0)
+
+- [x] Registrar HEAD/status/versiones y diferencias respecto del baseline; preservar
+      fuentes pendientes, secretos y material ignorado de015.
+- [x] Fijar oferta efectiva desde `src/config/app.config.ts`, `src/env.ts`, rutas,
+      acciones y configuración. Billing habilitado exige decidir sus escenarios;
+      projects/Robot excluidos requieren denegación efectiva, no sólo texto.
+- [x] Actualizar inventario y hashes del candidato, enlazando el manifiesto T1.
+      Releer archivos/consumidores modificados e interfaces afectadas; conservar
+      cobertura histórica de lo que no cambió con justificación, sin otra lectura
+      masiva automática ni afirmar que los947 archivos históricos son actuales.
+- [x] Usar [capabilities](../../capabilities.md) y el
+      [registro central](freeze-remediation-register.csv), sin crear otro backlog.
+      En la evidencia de ejecución mapear capacidad ofrecida → productor
+      Supabase/backend → consumidor Next → autorización → evidencia → gap.
+      Inventariar servicios/consumidores existentes antes de intervenirlos.
+
+**Salida:** candidato y alcance identificados, evidencia reutilizada/invalidada
+con motivo y lista finita de comprobaciones faltantes. Runbook V0.
+
+### Bloque 2 — Integración y brechas técnicas (contraste T1 del candidato)
+
+- [x] Contrastar consumidores Next de Auth: signup/confirmación/login/recovery,
+      modificación/borrado de cuenta y sesiones; administración/ban sólo donde
+      se ofrezca, con autorización y AAL2 pertinentes. OAuth/MFA/CAPTCHA según
+      configuración, sin implementar toda API disponible de Supabase.
+- [x] Revisar Actions/Handlers, cookies, caché A→B, errores, validación de entrada,
+      límites cliente/servidor y UI por rol contra RLS/grants/RPC/Storage reales.
+      Aplicar criterios N/S/D existentes a superficies cambiadas y gaps recibidos.
+- [x] Disponer cada DB-01…20 de DB-INTAKE: evidencia, alias o diferido con motivo;
+      conservar la matriz original enlazada abajo. Investigación no equivale a
+      defecto: no añadir índices, roles, restricciones o capacidades por intuición.
+- [x] Confirmar reproducción o trazado preciso y segunda lectura de P0/P1;
+      realizar la reparación local mínima necesaria del defecto ofrecido, con
+      regresión pertinente y retest de consumidores afectados. No refactorizar
+      por preferencia, ampliar producto ni crear un plan paralelo de Next.
+
+**Salida:** gaps confirmados corregidos o bloqueos explícitos con reproducción,
+impacto y dueño. Un P0/P1 ofrecido pendiente impide aceptar esa capacidad.
+Runbook V1/V2 y casos concretos V3/V4 según naturaleza del gap.
+
+### Bloque 3 — Circuito integrado (T2)
+
+- [ ] Recorrer público → registro/confirmación → ingreso → área privada → acción
+      útil persistida → cierre/reingreso. Reusar015 donde contrato/código/config
+      sigan vigentes; cubrir negativas de acceso, roles y módulos excluidos.
+- [ ] Completar sólo evidencia faltante de los16 IDs N recibidos de017, según
+      su tabla V2/V3; un recorrido puede cubrir varios contratos explícitos.
+- [ ] Ejecutar gates proporcionales del
+      [runbook V0–V4](../../runbooks/freeze-candidate-validation.md), reutilizando
+      CI/evidencia válida y registrando comando, candidato, resultado y cleanup.
+      QA manual reproducible sirve para navegador; no sustituye SQL negativo,
+      concurrencia con sesiones independientes, tipos, cobertura ni build.
+- [ ] Resolver alcance/evidencia de015-OPERATIONS, RL-F02/04/05/06 y FOLLOW-TTL.
+      PSP real, worker programado/alerta/recuperación, paridad Cloud y expiración
+      de bearer previo conservan [NO VERIFICADO] hasta prueba o disposición
+      compatible con oferta. No inferirlos de mocks, CI o HTTP200.
+
+**Salida:** circuito ofrecido demostrado con evidencia por caso y límites
+local/Cloud; escenario omitido no se convierte en PASS. No certificar otros PSP,
+editor avanzado ni Robot. Runbook V3/V4.
+
+### Bloque 4 — Veredicto y consolidación (T3)
+
+- [x] Deduplicar por causa manteniendo IDs/alias; cerrar DB-INTAKE sólo con sus20
+      disposiciones. RL-F01 conserva decisión sobre confianza IP, RL-F03 su
+      reparación local/Cloud registrada; no reabrirlos por una nota histórica.
+      RL-F06 se retoma ante su condición de cambio, no como ensayo universal.
+- [ ] Revisar independientemente integración y seguridad/datos sobre cambios y
+      evidencia; resolver observaciones confirmadas y repetir sólo lo afectado.
+- [ ] Actualizar registro, current-state, capabilities, roadmap y referencias
+      con un único veredicto del candidato: aceptado, parcial o bloqueado, con
+      evidencia y pendientes. Mantener diferidos con dueño/condición de retorno.
+- [ ] Cerrar016 sólo si no quedan P0/P1 ofrecidos y todos los gates acordados
+      tienen resultado suficiente; [NO VERIFICADO] obligatorio no permite cierre.
+      Reutilización local015 no equivale a distribución comercial013 ni a cierre
+      de todos los escenarios históricos011/017. Runbook V5.
+
+### Límites de ejecución y aplicación de reglas
+
+La siguiente sesión debe recibir orden de ejecutar016. Esa ejecución incluye
+inspección, fixtures locales acotados y reparaciones locales mínimas confirmadas;
+no exige pedir permiso por cada ajuste rutinario dentro del alcance aprobado.
+Reset/restauración destructiva, instalación/actualización de dependencias,
+escrituras Cloud/proveedores, pagos, deploy, push y merge requieren autorización
+específica para la operación; no heredar permisos agotados del procedimiento015.
+Verificar destino/recursos y límites Free antes de operar; serializar suites
+pesadas y usar concurrencia de lectura sólo con responsabilidades separadas.
+
+Aplicar las ocho `.codex/rules` actuales: TypeScript/Next y JavaScript (tipos,
+fronteras y JSDoc de contratos), calidad y principios (KISS/DRY/YAGNI), pruebas,
+SQL y Realtime. Resolver contradicciones por AGENTS/código/ADR: `src/env.ts`
+prevalece sobre la referencia vieja `env.js`; `cacheComponents: false` no se
+migra para cumplir una receta `use cache`; diseño canónico ADR0002 prevalece
+sobre tokens Material antiguos. En Windows: migración manual versionada + espejo
+SQL, pruebas locales y tipos si cambia esquema expuesto. Realtime conserva
+seguridad, evento útil y cleanup; no migrar transporte sin defecto confirmado.
+Clean Code y Superpowers apoyan el método, no justifican sobreingeniería.
+Esta preparación no cambia código ni tests: no aplica inventar pruebas/TDD
+para texto; antes de una regresión de producto leer `TESTING-PLAN.md`.
+
+Mantenimiento: conservar [seguridad de dependencias](../../quality/dependency-security.md),
+incluida alerta135 low/deepmerge mitigada localmente sin fingir cierre upstream.
+El [prompt de nueva sesión](../../runbooks/plan-016-session-start.md) referencia
+este contrato. Los checkpoints siguientes conservan fecha; donde describen un
+método anterior, manda esta entrada operativa.
+
 ## Recepción del cierre local015 — 2026-11-10
 
 [015](../completed/015-reusable-foundation-acceptance.md) acepta el núcleo local
@@ -92,13 +239,14 @@ no nueva ronda completa automática ni ampliación de producto. Gates integrados
 una vez sobre candidato identificado, con reuso justificado de evidencia vigente.
 Aplicar el runbook final actualizado; un bloqueo no se convierte en PASS.
 
-## Disposición vigente — 2026-10-20
+## Disposición histórica — 2026-10-20
 
 La [auditoría dirigida](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md)
 y el [registro central](freeze-remediation-register.csv) consolidan los 53 IDs
 históricos y sus alias/seguimientos. Las reparaciones están asignadas a
 [017](../completed/017-freeze-remediation.md), 012.5, 014 o 015; 016 conserva revisión,
-validación y disposición, sin implementar esas reparaciones.
+validación y disposición según la asignación de esa fecha. La entrada operativa
+de2026-11-10 habilita reparaciones locales mínimas confirmadas al ejecutar016.
 Esta asignación documentada no cierra todo T3 ni renueva la lectura exhaustiva
 T1 del candidato histórico. Final T2/T3 sucede después de los últimos cambios
 de 015 según el roadmap actualizado; precondiciones y comandos en el
@@ -132,7 +280,7 @@ antes de cualquier propuesta que cambie pruebas.
 
 Fuentes técnicas de referencia:
 
-- Next.js instalado: `16.3.5`, con documentación en
+- Next.js del inventario histórico: `16.3.5`, con documentación en
   `node_modules/next/dist/docs/01-app/`. Verificar de nuevo la versión al ejecutar.
   Usar guías `authentication.md`, `data-security.md`,
   `server-and-client-boundary.md`, `caching-without-cache-components.md`,
@@ -149,7 +297,7 @@ Fuentes técnicas de referencia:
   `supabase-postgres-best-practices`; pruebas según `TESTING-PLAN.md`.
   Las skills son apoyo local, no autoridad sobre el contrato del repositorio.
 
-La inspección de planificación registra `reactCompiler: true` y
+La inspección histórica de planificación registra `reactCompiler: true` y
 `cacheComponents: false` en Next, PostgreSQL 17 y exposición API local de
 `public` en `supabase/config.toml`. El inventario inicial de datos cuenta 159
 migraciones y 42 archivos pgTAP; estos conteos no son cobertura ni paridad Cloud.
@@ -161,8 +309,9 @@ Comprobar la configuración efectiva antes de recomendar cambios.
 
 ## Responsables y límites
 
-Los tres agentes trabajan en lectura. El coordinador es el único escritor del
-informe consolidado y de los enlaces de estado. Los nombres identifican roles;
+Los revisores trabajan en lectura; el coordinador integra informe y enlaces.
+Durante ejecución autorizada, asignar cada reparación local a un escritor con
+propiedad de archivos y revisión independiente; no compartir escrituras simultáneas. Los nombres identifican roles;
 las conclusiones dependen de evidencia, no de la etiqueta del agente.
 
 | Frente                    | Responsable                                           | Propiedad principal                                                                              | Segunda lectura                                                    |
@@ -176,6 +325,11 @@ La concurrencia del trabajo de lectura no implica ejecutar tres suites contra
 el mismo entorno. El coordinador serializa build, E2E y pruebas de base de datos.
 
 ## Alcance y cobertura
+
+Este apartado conserva la definición de cobertura que rigió T0/T1 históricos.
+En el candidato nuevo se aplica el bloque1: actualizar manifiesto, contrastar
+cambios y sus consumidores y justificar reuso por contenido/contrato. No ordena
+repetir todas las lecturas históricas ni transforma su fecha en evidencia actual.
 
 Ampliación solicitada por el mantenedor: revisar cada archivo y cada línea del
 código propio, cada configuración y cada regla aplicable. Se retira el muestreo
@@ -418,8 +572,9 @@ propuesto. No convertir una ausencia de prueba en una vulnerabilidad confirmada.
 
 La continuación se organiza con el
 [subplan T1 — seguridad, integridad y flujos críticos](016-t1-security-integrity-critical-flows.md).
-Su mapa asigna las 947 rutas sin reducir alcance. Es planificación de las tareas
-pendientes, no evidencia de un nuevo lote ni una segunda secuencia de roadmap.
+Su mapa histórico asignó947 rutas y cerró el contraste estático el8de octubre.
+No es una checklist vigente de trabajo pendiente ni una segunda secuencia;
+actualizar el candidato por diferencias conforme al bloque1.
 
 - [x] Cada frente entrega criterios aplicados, referencias, archivos revisados,
       candidatos a hallazgo, fortalezas observadas y vacíos de evidencia.
@@ -433,8 +588,8 @@ pendientes, no evidencia de un nuevo lote ni una segunda secuencia de roadmap.
 ### T2 — Validación común del candidato
 
 Ejecutar una vez los checks comunes y luego solo los relevantes para reproducir
-un candidato. No modificar código ni tests como parte de la revisión; las pruebas
-de regresión permanentes pertenecen a las correcciones posteriores.
+un candidato, justificando reuso de evidencia válida. Las correcciones locales
+confirmadas y sus regresiones siguen el bloque2; no ampliar producto.
 
 | Comando existente                   | Precondición y alcance de la evidencia                                                                                                                |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -451,8 +606,8 @@ Playwright carga `.env.local`, puede reutilizar un servidor y ejecuta build/star
 sus fixtures pueden crear/eliminar usuarios. Verificar proyecto, URL, puerto y
 contenedor local seleccionados por los helpers antes de ejecutar. No basta con
 que el navegador use localhost si Supabase apunta a Cloud. Un entorno existente
-del mantenedor no se considera desechable por defecto. El helper SQL puede elegir
-el primer contenedor `supabase_db`: confirmar cuál escogerá. Los tests de cola
+del mantenedor no se considera desechable por defecto. El helper ya selecciona
+proyecto/contenedor exactos (S-08); comprobar su identidad efectiva al ejecutar. Los tests de cola
 incluyen purga/borrado de fixtures; tampoco son inspección de solo lectura.
 
 Si se comparan tipos generados, producir una copia temporal: `supa:gen:types`
@@ -472,7 +627,8 @@ deploy, push y merge no forman parte de este plan de revisión.
       distintas aunque compartan archivo. Calibrar severidad con impacto y
       condiciones demostradas; documentar desacuerdos todavía abiertos.
 - [ ] Asignar cada corrección a un plan existente o proponer una tarea nueva
-      acotada. No implementar correcciones desde este plan.
+      acotada sólo si excede el alcance; reparar localmente los defectos
+      confirmados del alcance ofrecido según bloque2 y registrar su cierre.
 - [ ] Registrar fecha/SHA y resultados de comandos; si cambia el candidato,
       revalidar únicamente las conclusiones afectadas antes de publicarlas.
 
@@ -518,17 +674,14 @@ esos checks. Cero hallazgos no significa ausencia garantizada de vulnerabilidade
 No hace falta un ADR para asignar revisores. Proponer uno solo si un hallazgo
 requiere una decisión duradera que cambie los límites arquitectónicos aceptados.
 
-La entrega estática puede completarse con SQL/E2E **[NO VERIFICADO]**, siempre
-que identifique las limitaciones y sus siguientes pasos. Esto no cierra el plan
-integral. Para cerrar Plan 016, el 100% de archivos y rangos de líneas incluidos
-debe tener lectura completa con contraste; todas las opciones/reglas inventariadas
-deben tener decisión documentada; no deben quedar archivos propios sin asignar ni
-exclusiones sin justificar. Los tres frentes deben entregar cobertura trazable,
-los hallazgos estar contrastados y priorizados, y las validaciones obligatorias
-acordadas tener resultados registrados y analizados (incluidos fallos reales).
-Asignar dueño a una validación pendiente no equivale a ejecutarla. Las
-correcciones pueden quedar en sus planes con responsable y prueba de cierre;
-terminar este review no declara preparación productiva ni cierra implementación.
+La cobertura T1 histórica permanece cerrada para su manifiesto y fecha. El
+bloque1 actualiza candidato y diferencias, justificando reuso y cubriendo nuevas
+fuentes/consumidores; no basta copiar conteos antiguos. Una entrega sólo estática
+con SQL/E2E **[NO VERIFICADO]** no cierra aceptación integrada. El cierre vigente
+es el bloque4: evidencia suficiente de todos los gates del alcance ofrecido,
+ningún P0/P1 ofrecido pendiente y disposiciones trazables de los demás IDs.
+Asignar dueño no equivale a ejecutar. Excluir una capacidad exige frontera
+efectiva; una documentación o merge verde no certifica runtime.
 
 ## Registro de planificación
 

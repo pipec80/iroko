@@ -1,8 +1,20 @@
 # Iroko Engineering Documentation
 
+Continuación2026-11-13: [016 sigue activo](audits/2026-11-12-nextjs-supabase-code-review.md).
+Reporte Cloud con credenciales eliminado; sustitutas Supabase/Vercel y consumidores
+preparados con autorización. Revocación anterior pendiente de despliegue automático
+Git READY y comprobación posterior. Reparación de capturas33/33; navegación pública
+real1/1 y cleanup PASS, tipos PASS. Esto no certifica WAF, pagos ni cierre016.
+Dependabot:0PR abiertos; alerta135 deepmerge conserva mitigación y seguimiento.
+
+Ejecución vigente2026-11-12: [016 parcial](audits/2026-11-12-nextjs-supabase-code-review.md),
+cuota equipos reparada localmente, SQL1189 PASS y clasificación DB-01…20.
+Cloud/local180 tras dos migraciones autorizadas y readback; evidencia operacional
+y del proveedor ofrecido aún pendiente impide cierre integrado.
+
 Estado vigente2026-11-10: [015 completado localmente](exec-plans/completed/015-reusable-foundation-acceptance.md)
 para el núcleo reutilizable; [evidencia y límites](quality/reusable-foundation-evidence.md).
-El siguiente gate es016; no se acepta Cloud ni pagos reales por este cierre.
+El siguiente gate es [016](exec-plans/active/016-nextjs-supabase-code-review.md): candidato/evidencia, integración y brechas confirmadas, circuito integrado y veredicto. Es la única entrada de ejecución; T1 y los hijos017 conservan referencias históricas. No se acepta Cloud ni pagos reales por este cierre.
 
 This directory is the versioned knowledge base for current status, architecture,
 execution plans, evidence, runbooks and durable technical decisions.
@@ -13,7 +25,7 @@ Direction accepted 2026-10-28: [replicable SaaS MVP and bounded acceptance,
 ADR0005](adr/0005-replicable-saas-mvp-and-bounded-acceptance.md). Core first,
 then optional verticals. Editor runner is not on the MVP critical path; its
 effective exclusion now has local guards/unit and bounded browser acceptance
-(2026-10-29); composition and independent reuse remain pending. See the dated current state.
+(2026-10-29); composition and independent reuse were accepted within the bounded local015 drill on2026-11-10. Integrated acceptance remains in016; see the dated current state.
 
 1. [Current state](current-state.md) — implemented behavior, dated evidence,
    operational gaps and verification boundaries. The [freeze progress table](current-state.md#freeze-work-status) summarizes completed scopes and remaining work.
@@ -26,7 +38,7 @@ effective exclusion now has local guards/unit and bounded browser acceptance
 5. [Documentation history](history/README.md) — superseded versioned material,
    including the exact pre-freeze roadmap; non-authoritative.
 
-## Entrada vigente — 2026-11-05
+## Checkpoints históricos — 2026-11-05
 
 014 aceptado localmente: imágenes, auditoría global, SQL19 y navegador con
 cleanup verificado. [Cierre y límites](audits/2026-11-05-plan-014-t2-t3-execution.md).
@@ -42,7 +54,7 @@ en esta actualización. El plan explicita servicios Free, fixtures en el stack o
 pruebas secuenciales con recursos acotados y separación del gate integrado016.
 Orden conservado:014-T2/T3 →015 →016. La revisión documental no acepta runtime.
 
-## Cierre registrado — 2026-11-04
+## Cierre histórico registrado — 2026-11-04
 
 017 completó su contrato acotado de seguridad/configuración y privacidad.
 [Cierre, revisión y límites](audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04).
@@ -63,7 +75,7 @@ y privacidad; dieciséis IDs funcionales pasan a016 con estados pendientes.
 Puede cerrar su remediación antes de015/016 al cumplir el contrato actualizado;
 no se exige mantenerlo abierto por el gate final ni se declaran casos PASS.
 
-## Freeze remediation — 2026-10-20
+## Historical freeze remediation — 2026-10-20
 
 Execution simplification, 2026-10-27: the existing 017 parent owns the shared
 model-independent contract and re-entry queue; its five children own technical

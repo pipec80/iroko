@@ -129,19 +129,13 @@ jobs:
         env:
           # PLAYWRIGHT_BASE_URL desactiva el webServer local en playwright.config.ts
           PLAYWRIGHT_BASE_URL: ${{ secrets.SITE_URL }}
-          # playwright.config.ts lo convierte en extraHTTPHeaders para saltar
-          # el Security Checkpoint de Vercel en cada request de los tests.
+          # globalSetup obtiene una cookie sólo para el host canónico de Iroko;
+          # el navegador no reenvía cabeceras secretas a proveedores externos.
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
           # AUD-024: construye el envelope real del smoke check de /sentry-tunnel.
           NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
 
-      - name: Upload Playwright report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        if: failure()
-        with:
-          name: nightly-playwright-report
-          path: playwright-report/
-          retention-days: 14
+      # Cloud captures/report uploads are disabled to contain protected cookies.
 
   # ─────────────────────────────────────────────
   # JOB 1b: Salud del worker de email en Cloud (AUD-025)

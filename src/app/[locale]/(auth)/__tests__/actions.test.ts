@@ -414,11 +414,8 @@ describe('verifyMfaAction', () => {
         PREV,
         makeFormData({ code: '123456', factorId: 'factor-1', next: invitation }),
       ),
-    ).rejects.toThrow('NEXT_REDIRECT');
-    expect(mocks.redirect).toHaveBeenCalledWith({
-      href: '/auth/accept-invitation?token=fixture-token',
-      locale: 'es',
-    });
+    ).resolves.toEqual({ documentRedirect: invitation });
+    expect(mocks.redirect).not.toHaveBeenCalled();
 
     mocks.redirect.mockClear();
     await expect(

@@ -1,5 +1,11 @@
 # Iroko MVP Freeze Roadmap
 
+Checkpoint2026-11-12: [016 execution remains partial](docs/audits/2026-11-12-nextjs-supabase-code-review.md).
+Local team-quota race repaired and SQL gate renewed; DB intake classified.
+Cloud/local180 after two specifically authorized migrations and definition/ACL
+readback; offered billing and remaining runtime gates prevent closure.
+No additional plan, integration or deployment is authorized by this checkpoint.
+
 Iroko is an internal-first reusable SaaS foundation built with Next.js and
 Supabase. The current objective is a solid MVP candidate that demonstrates the
 capabilities already present with clear evidence, safe defaults and a coherent
@@ -43,18 +49,29 @@ surface; it does not silently expand the product.
 
 ## Ordered queue
 
-**Entrada vigente2026-11-05:**014 completó su aceptación local de imágenes y
+Current execution entry,2026-11-10: [existing Plan016](docs/exec-plans/active/016-nextjs-supabase-code-review.md), in four blocks:
+
+1. Identify the current candidate, offered capabilities and reusable evidence.
+2. Verify Next/Supabase integration and repair only confirmed defects in the offered scope.
+3. Validate the integrated circuit using the existing runbook, including backend negatives and concurrency where applicable.
+4. Consolidate dispositions and issue a bounded acceptance verdict.
+
+T0/T1 remain historical completed reviews; T2/T3 remain pending. Preserve the central register and inherited IDs. Actual PSP acceptance, scheduled worker/alert recovery, Cloud parity and elapsed signed-URL expiry require their own evidence when applicable to the offered configuration. Conditional/deferred cases do not become automatic MVP blockers.
+
+### Historical sequence and completed milestones
+
+**Checkpoint histórico2026-11-05:**014 completó su aceptación local de imágenes y
 auditoría, conservando T1 histórico. [Evidencia y límites](docs/audits/2026-11-05-plan-014-t2-t3-execution.md).
 Siguiente **015 reutilización/configuración →016 aceptación final**. No se
 declara MVP ni Cloud aceptados. Secuencia inferior conservada como trazabilidad.
 
-**Entrada vigente2026-11-04:** 017 completó sus dos lotes bajo el contrato acotado,
+**Checkpoint histórico2026-11-04:** 017 completó sus dos lotes bajo el contrato acotado,
 con [evidencia y límites](docs/audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04).
 Siguiente **014-T2/T3**, después015 y016. Se conserva la cola histórica inferior
 para trazabilidad; los dieciséis IDs transferidos siguen pendientes en016 y
 editor/Robot continúan diferidos. No se acepta el MVP por este hito.
 
-This is the single execution sequence for the freeze:
+The following sequence preserves the historical task ownership; completed stages are not a new execution queue:
 
 1. **Plan 011 freeze scope satisfied; remaining scenarios deferred.** Preserve
    the scenario-specific billing evidence without treating deferred provider

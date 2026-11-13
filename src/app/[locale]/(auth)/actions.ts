@@ -44,7 +44,18 @@ export type AuthActionState = {
   fieldErrors?: Record<string, string[]>;
   success?: string;
   mfaFactorId?: string;
+  documentRedirect?: string;
 };
+
+/** Invitation handlers must run as document requests so their redirects and
+ * refreshed session cookies reach the browser, outside the action's RSC fetch. */
+function finishAuthRedirect(href: string, locale: string): AuthActionState {
+  if (href.split(/[?#]/, 1)[0] === '/auth/accept-invitation') {
+    return { documentRedirect: `/${locale}${href}` };
+  }
+  redirect({ href, locale });
+  return {};
+}
 
 function flattenFieldErrors(
   errors: Record<string, string[] | undefined>,
@@ -111,8 +122,7 @@ export async function signInAction(
     hrefWithoutLocale,
     claimsData?.claims.app_metadata?.onboarding_completed,
   );
-  redirect({ href, locale });
-  return {};
+  return finishAuthRedirect(href, locale);
 }
 
 export async function verifyMfaAction(
@@ -172,8 +182,7 @@ export async function verifyMfaAction(
     hrefWithoutLocale,
     claimsData?.claims.app_metadata?.onboarding_completed,
   );
-  redirect({ href, locale });
-  return {};
+  return finishAuthRedirect(href, locale);
 }
 
 export async function signUpAction(

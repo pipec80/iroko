@@ -5,11 +5,10 @@
 - Approval date: 2026-10-05
 - Repository baseline: `f82d2fbe381014c80a090ba3c36c99e4778111c3`
 
-Lifecycle note,2026-11-02: this accepted design records the documentation
+Lifecycle note,2026-11-10: this accepted design records the documentation
 reorganization at its October5 baseline. Its plan lists and sequence below are
 historical, not the current queue. Use the [plan lifecycle](../exec-plans/README.md)
-and [current state](../current-state.md):012 is completed by deliveries;
-014/015/016/017 remain active. No architectural decision is changed here.
+and [current state](../current-state.md):012 is completed by deliveries;014/015 are completed within their bounded local scopes and017 within its bounded remediation contract.016 is the sole product execution entry; historical T1 and017 children are reference material with explicit pending/deferred dispositions. The four current blocks are candidate/evidence, integration and confirmed gaps, integrated circuit, and verdict. No architectural decision is changed here.
 
 ## Context
 

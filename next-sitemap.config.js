@@ -56,6 +56,24 @@ module.exports = {
   generateRobotsTxt: true,
   sitemapSize: 7000,
   exclude: ['/api/*', '/dashboard/*', '/auth/*'],
+  // Dynamic [locale] routes have no concrete entries in Next's prerender manifest.
+  additionalPaths: async (config) => {
+    const publicPaths = [
+      '',
+      '/product',
+      '/solutions',
+      '/pricing',
+      '/contact',
+      '/legal/terms',
+      '/legal/privacy',
+    ];
+    const entries = await Promise.all(
+      locales.flatMap((locale) =>
+        publicPaths.map((path) => config.transform(config, `/${locale}${path}`)),
+      ),
+    );
+    return entries.filter(Boolean);
+  },
   transform: async (config, path) => {
     if (isPrivatePath(path)) return null;
     return {

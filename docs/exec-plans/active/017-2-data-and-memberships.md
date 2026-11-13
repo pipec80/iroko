@@ -1,5 +1,14 @@
 # 017.2 — Data and memberships implementation plan
 
+**Referencia técnica, no entrada de ejecución — 2026-11-10.**
+La entrada vigente es [016](016-nextjs-supabase-code-review.md), en sus cuatro
+bloques de candidato/evidencia, integración, circuito y veredicto. Las tareas,
+IDs y checklists siguientes preservan su contrato y evidencia históricos;
+no ordenan reejecutar017 ni certifican su alcance completo. Resolver únicamente
+los casos ofrecidos transferidos mediante sus filas del
+[registro central](freeze-remediation-register.csv). Las condiciones y exclusiones
+diferidas permanecen; no se habilita editor/Robot ni otro proveedor por esta revisión.
+
 **Registro técnico conservado tras el cierre acotado del padre,2026-11-04.**
 El [padre017](../completed/017-freeze-remediation.md) está completed únicamente
 para sus dos lotes aprobados. Este hijo conserva resultados, especificaciones y
@@ -12,7 +21,7 @@ regresiones SQL ya incorporadas aunque editor se difiera. T5/Robot conserva
 su evidencia corrected-local; no ampliar ni repetir su vertical como gate de
 la base. La exclusión efectiva de referencias pertenece a015-T1.
 
-> **Ejecución:** aplicar el [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
+> **Contrato histórico de ejecución:** [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
 
 **Goal:** Hacer cumplir cuotas, pertenencia documento/proyecto y transiciones de membresía bajo concurrencia real.
 

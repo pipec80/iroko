@@ -2,6 +2,7 @@ import { expect, test as baseTest } from '@playwright/test';
 
 import { runAxeCheck } from './axe';
 import { test as authTest } from './fixtures/auth';
+import { loginViaUi } from './helpers';
 
 /**
  * Settings page E2E tests.
@@ -64,6 +65,52 @@ authTest.describe('Settings page — authenticated', () => {
 
       // La sesión actual siempre debe estar presente después del login
       await expect(page.locator('[data-testid="session-item"]').first()).toBeVisible();
+    },
+  );
+
+  authTest(
+    'identifies the current session beyond the first row and recovers from a failed revocation',
+    async ({ authenticatedPage: page, browser }) => {
+      await page.goto('/es/dashboard/account?tab=profile');
+      const email = await page
+        .locator('strong')
+        .filter({ hasText: /^e2e\+settings\+/ })
+        .textContent();
+      if (!email || !/^e2e\+settings\+\d+@saasboilerplate\.local$/.test(email)) {
+        throw new Error('Expected the owned authenticated fixture');
+      }
+      const otherContext = await browser.newContext();
+      try {
+        const otherPage = await otherContext.newPage();
+        await loginViaUi(otherPage, email, 'TestPass123!');
+        await page.goto('/es/dashboard/account?tab=sessions');
+        const rows = page.getByTestId('session-item');
+        await expect(rows).toHaveCount(2);
+        await expect(rows.first()).not.toContainText('Esta sesión');
+        const current = rows.filter({ hasText: 'Esta sesión' });
+        await expect(current).toHaveCount(1);
+        await expect(current.getByRole('button')).toBeDisabled();
+
+        await page.route('**/es/dashboard/account?tab=sessions', async (route) => {
+          if (route.request().method() === 'POST') await route.abort('failed');
+          else await route.continue();
+        });
+        await rows.first().getByRole('button').click();
+        await expect(
+          page.getByRole('alert').filter({ hasText: 'Ocurrió un error.' }),
+        ).toBeVisible();
+        await expect(rows).toHaveCount(2);
+        await page.unroute('**/es/dashboard/account?tab=sessions');
+        await rows.first().getByRole('button').click();
+        await expect(page.getByText('Sesión cerrada.', { exact: true })).toBeVisible();
+        await expect(rows).toHaveCount(1);
+        await expect(rows.first()).toContainText('Esta sesión');
+        await page.reload();
+        await expect(page.getByTestId('session-item')).toHaveCount(1);
+        await expect(page.getByTestId('session-item')).toContainText('Esta sesión');
+      } finally {
+        await otherContext.close();
+      }
     },
   );
 

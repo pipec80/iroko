@@ -4,7 +4,23 @@ import {
   assertCanonicalCloudAcceptanceUrl,
   assertSupabaseGenerateLinkStatus,
   MERCADOPAGO_PRODUCTION_URL,
+  supabaseAdminHeaders,
 } from './e2e/mercadopago-cloud-acceptance-config';
+
+describe('protected Auth admin requests', () => {
+  it('identifies its server caller and sends an opaque secret only as an API key', () => {
+    const headers = supabaseAdminHeaders('sb_secret_fixture_not_a_real_key');
+    expect(headers.apikey).toBe('sb_secret_fixture_not_a_real_key');
+    expect(headers.Authorization).toBeUndefined();
+    expect(headers['User-Agent']).toBe('Iroko-Cloud-Acceptance/1.0');
+  });
+
+  it('retains JWT authorization for a legacy service key without a browser user agent', () => {
+    const headers = supabaseAdminHeaders('eyJfixture.payload.signature');
+    expect(headers.Authorization).toBe('Bearer eyJfixture.payload.signature');
+    expect(headers['User-Agent']).toBe('Iroko-Cloud-Acceptance/1.0');
+  });
+});
 
 describe('assertCanonicalCloudAcceptanceUrl', () => {
   it('rejects a temporary Vercel deployment URL for production acceptance', () => {

@@ -1,5 +1,14 @@
 # 017.3 — Billing integrity implementation plan
 
+**Referencia técnica, no entrada de ejecución — 2026-11-10.**
+La entrada vigente es [016](016-nextjs-supabase-code-review.md), en sus cuatro
+bloques de candidato/evidencia, integración, circuito y veredicto. Las tareas,
+IDs y checklists siguientes preservan su contrato y evidencia históricos;
+no ordenan reejecutar017 ni certifican su alcance completo. Resolver únicamente
+los casos ofrecidos transferidos mediante sus filas del
+[registro central](freeze-remediation-register.csv). Las condiciones y exclusiones
+diferidas permanecen; no se habilita editor/Robot ni otro proveedor por esta revisión.
+
 **Registro técnico conservado tras el cierre acotado del padre,2026-11-04.**
 El [padre017](../completed/017-freeze-remediation.md) está completed únicamente
 para sus dos lotes aprobados. Este hijo conserva resultados, especificaciones y
@@ -12,7 +21,7 @@ billing por un estado documental antiguo. Distinguir fixtures/proveedor simulado
 de recibo Cloud. Una instalación sin nuevas compras conserva suscripciones/jobs
 existentes. No añadir proveedor ni activar escenarios diferidos de011.
 
-> **Ejecución:** aplicar el [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
+> **Contrato histórico de ejecución:** [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
 
 **Goal:** Impedir efectos de recovery con lease obsoleto y evitar contabilizar una invoice cuyo estado contradice el payment fresco.
 

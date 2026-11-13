@@ -1,5 +1,5 @@
 'use client';
-import React, { useActionState, useState, useTransition } from 'react';
+import React, { useActionState, useEffect, useState, useTransition } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
@@ -55,6 +55,10 @@ export default function LoginPage() {
   }
   const [oauthPending, startOAuth] = useTransition();
   const [showRecovery, setShowRecovery] = useState(false);
+  const documentRedirect = signInState.documentRedirect ?? mfaState.documentRedirect;
+  useEffect(() => {
+    if (documentRedirect) window.location.assign(safeRedirectPath(documentRedirect, locale));
+  }, [documentRedirect, locale]);
 
   const isMfaRequired = signInState.success === 'mfa_required';
   const mfaFactorId = signInState.mfaFactorId;

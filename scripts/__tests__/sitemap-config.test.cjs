@@ -1,5 +1,7 @@
 const assert = require('node:assert/strict');
 const test = require('node:test');
+const { dirname, resolve } = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const configPath = require.resolve('../../next-sitemap.config.js');
 
@@ -46,4 +48,37 @@ test('localized private and Auth routes stay out of the sitemap', async () => {
   }
   assert.equal((await config.transform(config, '/es/pricing')).loc, '/es/pricing');
   assert.equal((await config.transform(config, '/pt/legal/privacy')).loc, '/pt/legal/privacy');
+});
+
+test('dynamic locale manifests still emit public pages in every locale', async () => {
+  const builderPath = resolve(
+    dirname(require.resolve('next-sitemap')),
+    '../esm/builders/url-set-builder.js',
+  );
+  const { UrlSetBuilder } = await import(pathToFileURL(builderPath).href);
+  const config = loadConfig('https://current.example');
+  const urls = await new UrlSetBuilder(config, {
+    build: { pages: { '/[locale]': [], '/[locale]/pricing': [] } },
+    preRender: { routes: {}, notFoundRoutes: [] },
+    routes: {},
+  }).createUrlSet();
+  const locations = urls.map((entry) => entry.loc);
+  assert.equal(locations.length, 28);
+  assert.equal(new Set(locations).size, 28);
+  for (const locale of ['en', 'es', 'pt', 'fr']) {
+    for (const suffix of [
+      '',
+      '/product',
+      '/solutions',
+      '/pricing',
+      '/contact',
+      '/legal/terms',
+      '/legal/privacy',
+    ]) {
+      assert.ok(locations.includes(`https://current.example/${locale}${suffix}`));
+    }
+  }
+  assert.ok(
+    locations.every((loc) => !/dashboard|login|signup|confirmation|reset-password/.test(loc)),
+  );
 });
