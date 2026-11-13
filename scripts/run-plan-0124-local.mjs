@@ -754,6 +754,19 @@ export function writeE2eHarness(
     fixture,
     "export const dynamic='force-dynamic';export default function Plan0124SyntheticErrorPage(){throw new Error('Plan0124 synthetic runtime error');}\n",
   );
+  if (specs.includes('auth-retry-016.confined.ts')) {
+    const layout = resolve(scratch, 'src/app/layout.tsx');
+    const source = readFileSync(layout, 'utf8');
+    if (!source.includes('  await connection();'))
+      throw new Error('Root error fixture target changed');
+    writeFileSync(
+      layout,
+      source.replace(
+        '  await connection();',
+        "  await connection();\n  if ((await headers()).get('cookie')?.includes('plan016-root-failure=1')) throw new Error('Plan016 controlled root error');",
+      ),
+    );
+  }
   return config;
 }
 
@@ -1023,6 +1036,7 @@ async function runE2e(
       cases,
       excludedCloudTest: 'Cloud @smoke: a real envelope through /sentry-tunnel reaches Sentry',
       syntheticTestRoutes: ['/[locale]/csp-runtime-error'],
+      syntheticRootErrorFixture: specs.includes('auth-retry-016.confined.ts'),
     };
     writeFileSync(resolve(scratchBase, 'e2e-results.json'), JSON.stringify(evidence, null, 2));
     console.log('E2E actual counts: ' + JSON.stringify(result.stats));
@@ -1073,10 +1087,13 @@ export async function runLocalValidation({
   compiler = 'turbopack',
   runtime = 'production',
   evidenceDirectory = '.superpowers/sdd/012-4-csp-and-secrets',
+  captchaMode = 'synthetic',
   signal,
   onProgress = () => {},
 } = {}) {
   signal?.throwIfAborted();
+  if (!['synthetic', 'disabled'].includes(captchaMode))
+    throw new Error('Invalid local CAPTCHA fixture mode');
   onProgress('local-preflight');
   assertLocalParent(process.env);
   if (
@@ -1193,7 +1210,8 @@ export async function runLocalValidation({
       env.TURBO_TASKS_AVAILABLE_PARALLELISM = '2';
     }
     if (mode === '--e2e') {
-      env.NEXT_PUBLIC_TURNSTILE_SITE_KEY = '1x00000000000000000000AA';
+      env.NEXT_PUBLIC_TURNSTILE_SITE_KEY =
+        captchaMode === 'synthetic' ? '1x00000000000000000000AA' : '';
       writeE2eHarness(
         scratch,
         env.SITE_URL,
@@ -1314,6 +1332,7 @@ export async function runLocalValidation({
       publicMapCount: 0,
       isolatedFilesystemRoot: 'repository source root',
       syntheticTestRoutes: mode === '--e2e' ? ['/[locale]/csp-runtime-error'] : [],
+      syntheticRootErrorFixture: mode === '--e2e' && specs.includes('auth-retry-016.confined.ts'),
       perRouteSizes:
         'not inferred; only emitted route matrix and total static asset bytes recorded',
     };

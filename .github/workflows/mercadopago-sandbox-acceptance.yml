@@ -46,7 +46,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run MP-01 against the deployed application
-        run: pnpm exec playwright test src/test/e2e/mercadopago-cloud-acceptance.spec.ts --project=chromium
+        run: pnpm exec playwright test src/test/e2e/mercadopago-cloud-acceptance.spec.ts --project=chromium --reporter=line --trace=off
         env:
           PLAYWRIGHT_BASE_URL: https://project-a89lv.vercel.app
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
@@ -55,10 +55,5 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           MERCADOPAGO_CLOUD_ACCEPTANCE: '1'
 
-      - name: Upload Playwright report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: mercadopago-sandbox-playwright-report
-          path: playwright-report/
-          retention-days: 14
+      # Privileged Cloud acceptance emits sanitized status only. Browser reports
+      # can embed credentials and one-use login URLs, including on failure.

@@ -1,5 +1,52 @@
 # Current State
 
+Read the latest dated entry and the [freeze status](#freeze-work-status) for current ownership. Older dated checkpoints preserve what was known then; their pending/active statements do not reopen subsequently completed work. Local results, CI and provider evidence retain separate boundaries.
+
+## Incidente P1 de aceptación Cloud016 — 2026-11-13
+
+**016 sigue abierto; MVP no aceptado.** La revisión independiente confirmó
+`S-016.CLOUD-TRACE`: el artefacto13999499918 del run43343240727 de MP-01
+contenía credenciales privilegiadas Supabase y bypass de Vercel sin redactar.
+El artefacto fue eliminado y su ausencia verificada (0); no se ha comprobado
+acceso por terceros. Rotación específicamente autorizada: **preparación completada**
+el13/11, clave sustituta con RPC200, GitHub actualizado y Vercel production/preview
+actualizados. La revocación anterior y la salud posterior al deploy siguen pendientes.
+La revocación de las credenciales anteriores debe esperar a que la entrega Git
+y su despliegue automático estén READY con las sustitutas. Eliminar el artefacto
+no completa la contención ni autoriza declarar cerrado el incidente.
+Dueño: ejecución016/operaciones. Reparación de captura/artefactos preparada;
+33tests focales PASS, lint0errores/4warnings y tsc0 antes del último ajuste trivial
+de test. Revisión independiente de captura favorable tras corregir el contrato
+loopback compartido por config/setup. Retorno: entrega READY, revocación y
+comprobación de salud sin imprimir secretos. No hay readback posterior al deploy.
+No repetir aceptación MP Cloud hasta completar esa secuencia.
+
+## Ejecución parcial016 — 2026-11-12
+
+[Evidencia del candidato](audits/2026-11-12-nextjs-supabase-code-review.md):
+HEAD5dd46f9 más preparación documental preservada y reparación local de cuota
+de equipos D-03.TEAMS/DB-05. Carrera reproducida RED2/5; GREEN21/21 focalizado,
+suite SQL58 archivos1189 aserciones y consumidor Next6/6. Cleanup1/2/1 y180
+migraciones locales. Con autorización específica se aplicaron exclusivamente
+20261106170000 y20261112173000 en Iroko Cloud:180 versiones, definiciones/ACL
+releídas y hashes de ambas funciones iguales a local. Esto no certifica todo el runtime Cloud.
+DB-01…20 clasificados individualmente; no veinte defectos. Los16 N y seguimientos
+se conservan con disposición individual; varias pruebas locales ya pasaron.
+Billing sigue habilitado;
+Webhooks último cupo SQL58 pasó3/3; Storage local probó TTL60 con rechazo exp
+tras65s y owner positivo contemporáneo, cleanup0. Worker programado real:
+dos entregas Resend, cuatro422, archivo read_ct5, alerta Actions y recuperación
+verde; fixtures0,6 peticiones de envío y cuota final2/100 diarios. PSP real,
+TTL Cloud de impersonación y otros gates obligatorios
+siguen **[NO VERIFICADO]**.016 permanece activo, veredicto parcial, MVP no aceptado.
+CI main42866480336 del HEAD reutilizado según contenido/contrato; no repetido
+por transición. Sin reset, push, merge ni deploy. Sitemap XML28URLs públicas,
+sesiones browser8/8; Retry global reparado y probado en navegador. Contratos
+Auth/global-error49/49; invitación/MFA y subidas consecutivas aceptadas localmente:
+9casos productivos válidos más retest dirigido root/logo2/2, sin skips/flaky.
+MP-01 autorizado falló401 antes de checkout,0intents/eventos nuevos; cliente de
+prueba corregido localmente6/6, aún sin entrega Git/retest remoto.
+
 ## Cierre local015 — 2026-11-10
 
 [015](exec-plans/completed/015-reusable-foundation-acceptance.md) cierra el núcleo
@@ -12,7 +59,7 @@ servicios principales saludables. [Evidencia y límites](quality/reusable-founda
 Siguiente016 integrado. Compra/callback PSP real, operación programada del worker,
 expiración runtime de URL firmada y paridad Cloud conservan estado pendiente.
 
-## Ejecución local 015 — 2026-11-06
+## Checkpoint histórico de ejecución local015 — 2026-11-06
 
 T0/T1 tienen implementación y pruebas focalizadas en verde; T2 tiene recetas y
 guía revisadas. El defecto de cuota ausente se reprodujo RED en pgTAP, se
@@ -21,7 +68,7 @@ errores/35 warnings. [Comandos, resultados y procedimiento T3](quality/reusable-
 T3, navegación browser del derivado, instalación nueva, actualización y
 recuperación siguen **[NO VERIFICADO]**. La base reutilizable no está aceptada.
 
-## Preparación015 y recepción de datos — 2026-11-05
+## Preparación histórica015 y recepción de datos — 2026-11-05
 
 [015](exec-plans/completed/015-reusable-foundation-acceptance.md) actualizado para
 aprobación de implementación, con tabla existente/faltante y criterios T0–T3.
@@ -784,6 +831,8 @@ remaining Plan 012 product/security gates have their own status.
 
 ## Current technical baseline
 
+Recorded repository candidate2026-11-10: `5dd46f9` (PR250), Next.js16.4.5, Supabase JS2.119.0,179 versioned migrations and57 pgTAP files. PR/main CI passed; this does not renew Cloud/provider evidence. Revalidate the candidate and changed consumers at016 entry. The dated baseline below retains historical results.
+
 ### Rate limiting local acceptance — 2026-10-13
 
 Plan 012.3 is accepted locally. Three new migrations bring the official local
@@ -853,34 +902,33 @@ required before real users; they are not deferred to selling the boilerplate.
 
 ## Freeze work status
 
-Updated **2026-11-04** after bounded017 closure and authorized Cloud verification. The
+Updated **2026-11-10** after bounded local015 closure. The
 [root roadmap](../ROADMAP.md) owns the single execution sequence. This table
 summarizes recorded evidence, not a new runtime audit or a second task checklist.
 A closed bounded scope does not close inherited follow-ups or certify the whole
-platform. Current entry: **014-T2/T3**, then015 reuse proof and016 final
-acceptance. Bounded017 is completed; its transferred cases remain pending. Editor and Robot are
+platform. Current entry: **016 integrated acceptance**, organized as candidate/evidence, integration and confirmed gaps, integrated circuit, and verdict. Bounded017 is completed; its transferred cases remain pending. Editor and Robot are
 not prerequisites of the replicable base under ADR0005. Plans/rows are not runtime evidence.
 
-| Work item                                                                                        | Recorded status                                                    | Remaining work / evidence boundary                                                                                                                                                                                                                        |
-| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [011 — Billing](exec-plans/deferred/011-billing/README.md)                                       | Freeze scope satisfied; remainder deferred                         | Preserve dated Mercado Pago/core/worker evidence. Renewal, refunds, omitted-invoice recovery and other provider certifications are not completed.                                                                                                         |
-| [016 T0/T1 — Review](audits/2026-10-08-plan-016-t1-closure.md)                                   | Static review closed, 2026-10-08                                   | 947 paths: 874 complete readings and 73 alternative methods; zero pending inventory rows. Findings and later revisions still require validation/consolidation in T2/T3.                                                                                   |
-| [014 T1 — Robot permissions](exec-plans/completed/014-reference-surface-correctness.md)          | Accepted locally; SQL applied to Cloud                             | Local route/action/RLS evidence exists. Robot-specific Cloud functional acceptance remains **[NO VERIFICADO]**; the October 13 selective-deployment limitation below is historical. Later overall builds do not independently prove Robot roles in Cloud. |
-| [012.1 — Grants](exec-plans/completed/012-security-hardening-and-pricing-truth.md)               | Bounded grants scope closed                                        | Local SQL and Cloud grant changes recorded; October 13 adds bounded Auth/Storage/Realtime acceptance. This does not certify all billing/provider paths or eliminate later inherited ACL follow-ups.                                                       |
-| [012.3 — Rate limiting](audits/2026-10-14-plan-012-3-follow-ups.md)                              | Bounded local/Cloud/API acceptance closed                          | Concurrency, isolation and public stable-domain checks passed. Legacy hook header trust, Cloud 500/503 injection, independent external-IP confirmation and inherited service-role ACL differences remain explicit follow-ups.                             |
-| [012.2 — SSRF / outbound HTTP](audits/2026-10-13-plan-012-2-cloud-acceptance.md)                 | Bounded operational scope closed                                   | Validated Node sender, controlled HTTPS/HMAC delivery and worker wake observed; implementation consolidated through PR #221. This is not acceptance of every business trigger or Mercado Pago callback.                                                   |
-| [012.4 — CSP / secrets](audits/2026-10-19-plan-012-4-cloud-closure.md)                           | Closed, 2026-10-19; PRs #229 / #230 merged                         | Browser baseline, provider receipts, owner MFA/impersonation/recovery retries and fixture cleanup recorded. Nonfatal blocked Zod probe and unexecuted Cloud elapsed TTL remain explicit limitations.                                                      |
-| [017 — Remediation](exec-plans/completed/017-freeze-remediation.md)                              | Completed bounded scope,2026-11-04                                 | Two lots resolved with explicit limits; Cloud178/ACL and hosted mock exclusion verified. RL-F01 Cloud IP trust remains [NO VERIFICADO]. Sixteen functional IDs retain pending states in016; no MVP or exhaustive Cloud acceptance.                        |
-| [012.5 — Pricing truth](exec-plans/completed/012-5-pricing-truth.md)                             | Completed within approved012 scope; PR241 merged2026-11-02         | Shared catalog/copy and confined checkout accepted locally; integrated CI green, Vercel READY at7ea1953. Public Cloud rendering remains unverified due to checkpoint; no real-charge or016 acceptance.                                                    |
-| [014 T2 — Trusted image origins](exec-plans/completed/014-reference-surface-correctness.md)      | Accepted locally2026-11-05                                         | Exact origin, credentials/ports denied; unit20/20.                                                                                                                                                                                                        |
-| [014 T3 — Platform audit interaction](exec-plans/completed/014-reference-surface-correctness.md) | Accepted locally2026-11-05                                         | Unit9/9+action4/4, SQL19 15/15, production browser1/1; Cloud separate.                                                                                                                                                                                    |
-| [016 T2 — Candidate validation](exec-plans/active/016-nextjs-supabase-code-review.md)            | Pending as an integrated review deliverable                        | Reuse applicable commit-bound evidence and run remaining checks against the corrected candidate, including Edge Functions/SQL/E2E as required. Individual 012.4 CI passes do not complete T2.                                                             |
-| [016 T3 — Consolidation](exec-plans/active/016-nextjs-supabase-code-review.md)                   | Pending                                                            | Deduplicate, reproduce/revalidate and assign remaining findings, including account cache, password, leases, editor, concurrent limits and document invariants. A historical finding is not proof that it remains unfixed today.                           |
-| [015 — Reusable foundation](exec-plans/completed/015-reusable-foundation-acceptance.md)          | Active; exclusion prerequisite accepted locally, remainder pending | Guards and browser exclusion2/2 accepted2026-10-29. Composition, billing configurations, recipes, independent installation, extension and update preserving data/customization are not accepted.                                                          |
-| [Solid MVP candidate](../ROADMAP.md)                                                             | Not yet accepted                                                   | Evaluate all freeze exit gates together after the remaining work. No overall percentage is inferred from heterogeneous tasks.                                                                                                                             |
+| Work item                                                                                        | Recorded status                                            | Remaining work / evidence boundary                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [011 — Billing](exec-plans/deferred/011-billing/README.md)                                       | Freeze scope satisfied; remainder deferred                 | Preserve dated Mercado Pago/core/worker evidence. Renewal, refunds, omitted-invoice recovery and other provider certifications are not completed.                                                                                                                             |
+| [016 T0/T1 — Review](audits/2026-10-08-plan-016-t1-closure.md)                                   | Static review closed, 2026-10-08                           | 947 paths: 874 complete readings and 73 alternative methods; zero pending inventory rows. Findings and later revisions still require validation/consolidation in T2/T3.                                                                                                       |
+| [014 T1 — Robot permissions](exec-plans/completed/014-reference-surface-correctness.md)          | Accepted locally; SQL applied to Cloud                     | Local route/action/RLS evidence exists. Robot-specific Cloud functional acceptance remains **[NO VERIFICADO]**; the October 13 selective-deployment limitation below is historical. Later overall builds do not independently prove Robot roles in Cloud.                     |
+| [012.1 — Grants](exec-plans/completed/012-security-hardening-and-pricing-truth.md)               | Bounded grants scope closed                                | Local SQL and Cloud grant changes recorded; October 13 adds bounded Auth/Storage/Realtime acceptance. This does not certify all billing/provider paths or eliminate later inherited ACL follow-ups.                                                                           |
+| [012.3 — Rate limiting](audits/2026-10-14-plan-012-3-follow-ups.md)                              | Bounded local/Cloud/API acceptance closed                  | Concurrency, isolation and public stable-domain checks passed. Legacy hook header trust, Cloud 500/503 injection, independent external-IP confirmation and inherited service-role ACL differences remain explicit follow-ups.                                                 |
+| [012.2 — SSRF / outbound HTTP](audits/2026-10-13-plan-012-2-cloud-acceptance.md)                 | Bounded operational scope closed                           | Validated Node sender, controlled HTTPS/HMAC delivery and worker wake observed; implementation consolidated through PR #221. This is not acceptance of every business trigger or Mercado Pago callback.                                                                       |
+| [012.4 — CSP / secrets](audits/2026-10-19-plan-012-4-cloud-closure.md)                           | Closed, 2026-10-19; PRs #229 / #230 merged                 | Browser baseline, provider receipts, owner MFA/impersonation/recovery retries and fixture cleanup recorded. Nonfatal blocked Zod probe and unexecuted Cloud elapsed TTL remain explicit limitations.                                                                          |
+| [017 — Remediation](exec-plans/completed/017-freeze-remediation.md)                              | Completed bounded scope,2026-11-04                         | Two lots resolved with explicit limits; Cloud178/ACL and hosted mock exclusion verified. RL-F01 Cloud IP trust remains [NO VERIFICADO]. Sixteen functional IDs retain pending states in016; no MVP or exhaustive Cloud acceptance.                                            |
+| [012.5 — Pricing truth](exec-plans/completed/012-5-pricing-truth.md)                             | Completed within approved012 scope; PR241 merged2026-11-02 | Shared catalog/copy and confined checkout accepted locally; integrated CI green, Vercel READY at7ea1953. Public Cloud rendering remains unverified due to checkpoint; no real-charge or016 acceptance.                                                                        |
+| [014 T2 — Trusted image origins](exec-plans/completed/014-reference-surface-correctness.md)      | Accepted locally2026-11-05                                 | Exact origin, credentials/ports denied; unit20/20.                                                                                                                                                                                                                            |
+| [014 T3 — Platform audit interaction](exec-plans/completed/014-reference-surface-correctness.md) | Accepted locally2026-11-05                                 | Unit9/9+action4/4, SQL19 15/15, production browser1/1; Cloud separate.                                                                                                                                                                                                        |
+| [016 T2 — Candidate validation](exec-plans/active/016-nextjs-supabase-code-review.md)            | Pending as an integrated review deliverable                | Reuse applicable commit-bound evidence and run remaining checks against the corrected candidate, including Edge Functions/SQL/E2E as required. Individual 012.4 CI passes do not complete T2.                                                                                 |
+| [016 T3 — Consolidation](exec-plans/active/016-nextjs-supabase-code-review.md)                   | Pending                                                    | Deduplicate, reproduce/revalidate and assign remaining findings, including offered account/auth flows, concurrent limits and data invariants; editor/Robot remain deferred. A historical finding is not proof that it remains unfixed today.                                  |
+| [015 — Reusable foundation](exec-plans/completed/015-reusable-foundation-acceptance.md)          | Completed bounded local scope,2026-11-10                   | Independent derived installation, useful tenant record/private file, configuration/brand, extension, update and restoration accepted within the local drill. Actual PSP, scheduled operations, signed-URL expiry and Cloud remain separate; see reusable-foundation evidence. |
+| [Solid MVP candidate](../ROADMAP.md)                                                             | Not yet accepted                                           | Evaluate all freeze exit gates together after the remaining work. No overall percentage is inferred from heterogeneous tasks.                                                                                                                                                 |
 
 Parent **012 is completed by approved deliveries**, with inherited follow-ups
-transferred explicitly. **014,015 and016 remain active; bounded017 is completed**. Plan
+transferred explicitly. **014 and015 are completed within their recorded local scopes;016 remains active; bounded017 is completed**. Plan
 [013 — commercial preparation](exec-plans/deferred/013-launch-readiness-roadmap.md),
 new providers and verticals remain outside this freeze. The
 [external-services map](exec-plans/deferred/external-services-map.md) is a
@@ -1104,11 +1152,8 @@ packaging, support and buyer onboarding if selling is chosen.
   visual inspection and per-screen production parity are **[NO VERIFICADO]**.
 - The eight guides in `docs/modules/` are current at static-code level as of
   2026-08-20; their runtime and Cloud behavior remains **[NO VERIFICADO]**.
-- In the platform-wide audit table, initial data is cross-account, but filters
-  and `Cargar más` still call `getAccountAuditLogs`; remediation is proposed in
-  Plan 014 T3.
-- The documentation workflow is versioned. Its current enforcement as a
-  required branch-protection check is **[NO VERIFICADO]** in this local audit.
+- Platform-wide audit filters, pagination and error/retry were accepted locally in014-T3 on2026-11-05; Cloud and integrated016 evidence remain separate.
+- Documentation CI passed with PR250/main. Required branch-protection enforcement retains its provider-specific evidence; a passing workflow alone does not prove that setting.
 
 Fresh operational status and expiry rules live in the
 [operational evidence register](quality/operational-evidence.md).

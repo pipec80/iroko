@@ -1,6 +1,12 @@
 # Estrategia de producto — base SaaS reutilizable
 
-## Dirección vigente — 2026-10-28
+## Estado de ejecución — 2026-11-10
+
+[015](../exec-plans/completed/015-reusable-foundation-acceptance.md) completó el ensayo local acotado de composición/configuración, instalación derivada, marca, extensión, actualización y restauración. [Evidencia y límites](../quality/reusable-foundation-evidence.md).014 y017 conservan sus cierres acotados. [016](../exec-plans/active/016-nextjs-supabase-code-review.md) es la única entrada de ejecución: candidato/evidencia, integración y brechas confirmadas, circuito integrado y veredicto. Pagos PSP reales, operación programada/alertas, paridad Cloud y expiración runtime de URL firmada conservan sus disposiciones pendientes cuando correspondan a la oferta; no se aceptan por el cierre local.
+
+La dirección aceptada y la investigación fechada siguientes conservan sus decisiones y contexto; las promesas comerciales y verticales diferidas no se amplían.
+
+## Dirección aceptada — 2026-10-28
 
 [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md) formaliza
 la prioridad del mantenedor: primero un núcleo SaaS replicable y adaptable;
@@ -15,7 +21,7 @@ perseguir paridad de catálogo ni preparar aún distribución comercial del kit.
 La comparación competitiva permanece como evidencia fechada, no como backlog.
 
 Robot/IoT y editor Markdown avanzado salen del camino crítico. Su exclusión
-debe ser efectiva y comprobada por015-T1 antes de ofrecer el candidato. No
+fue comprobada localmente por015-T1 y debe mantenerse efectiva en el candidato016. No
 se borra su trabajo, no se declara runtime aceptado y no se abandonan datos/jobs.
 No sacrificar seguridad de superficies accesibles para acortar pruebas.
 La reauditoría final016 verifica el candidato después de015 con evidencia
@@ -45,7 +51,7 @@ el chat de su vertical IoT, con el robot como primer consumidor: el
 entre núcleo, vertical y robot. Después se inspeccionó selectivamente el
 servidor oficial y su contrato HTTP en modo lectura: existen señales de
 disponibilidad y latencia, pero no se verificó una integración cloud ni se
-modificó ese repositorio. Plan 015 T0 propone la composición común de menús,
+modificó ese repositorio. Plan 015 T0 implementó y verificó localmente la composición común de menús,
 títulos y accesos del dashboard. Vender una licencia del boilerplate es una
 opción posterior y distinta de entregar un SaaS adaptado.
 
@@ -154,14 +160,14 @@ comparaciones históricas de `docs/local/` no son autoridad actual.
 
 ### Brechas que sí cambian el cierre
 
-| Dimensión anunciada por referentes                          | Situación de Iroko en esta investigación                                                                   | Decisión                                                                                                  |
-| ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| Instalación, guías y actualizaciones para reutilizar el kit | Hay setup y guías; no hay ensayo independiente observado de instalación/extensión/upgrade                  | Plan 015, necesario incluso para uso propio                                                               |
-| Configuraciones coherentes de organizaciones y billing      | Hay flags y modelo de cuentas; ocultar enlaces no garantiza ausencia de dependencias o bloqueo de acciones | Plan 015 demuestra solo dos configuraciones; no prometer presets adicionales                              |
-| Servicios comunes listos para extender                      | Existe una base amplia, con defectos concretos y recetas incompletas                                       | Plan 014 corrige; Plan 015 documenta y prueba la extensión                                                |
-| Varios proveedores y cobros avanzados                       | Core extensible y adapters no equivalen a certificación; la evidencia MP está acotada por escenario        | Plan 011 diferido para escenarios/proveedores adicionales; no agregar uso/asientos para igualar una tabla |
-| IA monetizada, créditos o stacks alternativos               | No hay vertical IA completo ni soporte multi-framework demostrado                                          | Fuera del cierre; no mejora por sí solo la promesa acordada                                               |
-| Empaquetado, soporte y entrega comercial                    | Iroko no está aceptado como producto instalable para terceros                                              | Plan 013 diferido hasta decidir vender, reutilizando evidencia de 015                                     |
+| Dimensión anunciada por referentes                          | Situación de Iroko en esta investigación                                                                      | Decisión                                                                                                  |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Instalación, guías y actualizaciones para reutilizar el kit | Ensayo independiente local de instalación/extensión/update aceptado en015; distribución comercial no aceptada | 015 completado localmente;016 verifica aceptación integrada                                               |
+| Configuraciones coherentes de organizaciones y billing      | Hay flags y modelo de cuentas; ocultar enlaces no garantiza ausencia de dependencias o bloqueo de acciones    | Plan 015 demuestra solo dos configuraciones; no prometer presets adicionales                              |
+| Servicios comunes listos para extender                      | Existe una base amplia, con defectos concretos y recetas incompletas                                          | Plan 014 corrige; Plan 015 documenta y prueba la extensión                                                |
+| Varios proveedores y cobros avanzados                       | Core extensible y adapters no equivalen a certificación; la evidencia MP está acotada por escenario           | Plan 011 diferido para escenarios/proveedores adicionales; no agregar uso/asientos para igualar una tabla |
+| IA monetizada, créditos o stacks alternativos               | No hay vertical IA completo ni soporte multi-framework demostrado                                             | Fuera del cierre; no mejora por sí solo la promesa acordada                                               |
+| Empaquetado, soporte y entrega comercial                    | Iroko no está aceptado como producto instalable para terceros                                                 | Plan 013 diferido hasta decidir vender, reutilizando evidencia de 015                                     |
 
 La hipótesis es **adaptación rápida sobre Supabase con operación explicable y
 una ruta de cobro Chile/CLP aceptada**. Mercado Pago puede aportar valor regional,
@@ -286,20 +292,16 @@ conecta hallazgos con código y propietarios. No duplicar planes:
   conserva evidencia y escenarios pendientes sin declararlos completos.
 - [012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md): grants,
   salida HTTP, rate limit, CSP/secretos y pricing/copy coherente.
-- [014](../exec-plans/completed/014-reference-surface-correctness.md), activo:
-  cerrar superficies de ejemplo, confianza de URLs e interacción de auditoría.
-- [015](../exec-plans/completed/015-reusable-foundation-acceptance.md), activo:
-  configuraciones mínimas, recetas, instalación independiente, operación y
-  ensayo de actualización; aporta valor aunque no se venda la base.
+- [014](../exec-plans/completed/014-reference-surface-correctness.md), completado en su alcance local:
+  superficies de ejemplo, confianza de URLs e interacción de auditoría con límites explícitos.
+- [015](../exec-plans/completed/015-reusable-foundation-acceptance.md), completado localmente:
+  configuraciones mínimas, recetas, instalación independiente y ensayo de actualización/restauración; operación Cloud/PSP conserva límites explícitos.
 - [013](../exec-plans/deferred/013-launch-readiness-roadmap.md), diferido: distribución,
   documentación comercial, licencias y soporte cuando se decida vender.
 
-Corregir los defectos independientes de 014 no requiere esperar una renovación
-externa. La planificación/documentación de 015 puede avanzar; su aceptación
-operativa depende de 011 en el alcance ofrecido, 012 y 014. Las certificaciones
-de proveedores no ofrecidos no bloquean la base Chile/MP.
+016 reutiliza los cierres anteriores y verifica las brechas confirmadas del candidato ofrecido. Las certificaciones de proveedores no ofrecidos no bloquean la base Chile/MP; la aceptación operativa ofrecida requiere evidencia propia.
 
-Medir en 015 tiempo activo y esperas externas por separado, archivos cambiados,
+El contrato de medición del ensayo015 conserva tiempo activo y esperas externas por separado, archivos cambiados,
 preguntas al mantenedor, defectos de instrucciones, modificaciones del núcleo
 y conflictos de actualización. Primera ejecución: línea base, sin inventar
 un SLA de instalación ni un porcentaje de ahorro. El siguiente ensayo compara

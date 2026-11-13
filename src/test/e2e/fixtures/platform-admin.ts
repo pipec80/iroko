@@ -17,7 +17,7 @@ type PlatformAdminFixtures = {
     adminId: string;
     targetId: string;
     targetEmail: string;
-    loginAdmin: () => Promise<void>;
+    loginAdmin: (next?: string) => Promise<void>;
   };
 };
 
@@ -77,9 +77,12 @@ export const test = base.extend<PlatformAdminFixtures>({
       await verifyTotpFactor(request, adminAccessToken, apikey, factorId, enrollCode);
 
       let lastCode = enrollCode;
-      const loginAdmin = async () => {
+      const loginAdmin = async (next?: string) => {
+        if (next && (!next.startsWith('/es/') || next.includes('://'))) {
+          throw new Error('Platform fixture requires a local Spanish destination');
+        }
         // Login real por UI: password -> pantalla de MFA -> código TOTP -> aal2.
-        await page.goto('/es/login');
+        await page.goto(next ? `/es/login?next=${encodeURIComponent(next)}` : '/es/login');
         await page.locator('input[name="email"][type="email"]').fill(adminEmail);
         await page.locator('input[name="password"]').fill(password);
         await page.getByRole('button', { name: /iniciar sesión/i }).click();
@@ -97,7 +100,27 @@ export const test = base.extend<PlatformAdminFixtures>({
         await page.locator('#code').fill(loginCode);
         lastCode = loginCode;
         await page.getByRole('button', { name: /verificar y continuar/i }).click();
-        await page.waitForURL(/\/es\/dashboard/, { timeout: localE2eBudget(20_000, 'navigation') });
+        try {
+          await page.waitForURL(/\/es\/dashboard/, {
+            timeout: localE2eBudget(20_000, 'navigation'),
+          });
+        } catch {
+          const current = new URL(page.url());
+          throw new Error(
+            `Platform login destination failure: ${JSON.stringify({
+              phase: next ? 'return-next' : 'initial',
+              pathname: current.pathname,
+              hasNext: current.searchParams.has('next'),
+              hasToken: current.searchParams.has('token'),
+              hasError: current.searchParams.has('error'),
+              hasAlert: (await page.getByRole('alert').count()) > 0,
+            })}`,
+          );
+        }
+
+        // Explicit destinations must remain observable to the caller (for example,
+        // an invitation that redirects to the dashboard after acceptance).
+        if (next) return;
 
         // Sanity gate del propio fixture: si esto falla, el problema es el
         // fixture (aal2/whitelist), no el test real que lo usa.

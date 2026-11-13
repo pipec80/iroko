@@ -5,7 +5,7 @@ Este desgloseT1 y su evidencia histórica se conservan. La reauditoría nueva de
 candidato ocurre en016-T2/T3 después de015, con alcance ofrecido y exclusiones
 verificadas; no reactivar tareas históricas ni editor/Robot por recorrer esta lista.
 
-> **Para agentes:** ejecutar como revisión en lectura dentro del Plan 016,
+> **Contrato histórico para agentes (T1, cerrado2026-10-08):** revisión en lectura dentro del Plan 016,
 > con coordinación principal y contraste N/S/D. Usar
 > `superpowers:executing-plans` para seguimiento por tareas y `clean-code`
 > para criterios de mantenibilidad; sus recetas de implementación no autorizan
@@ -34,6 +34,17 @@ toolchain instalada, Git y documentos versionados. Ninguna dependencia nueva.
 [arquitectura](../../architecture/system-overview.md) y
 [estrategia](../../architecture/product-strategy.md). La
 [roadmap](../../../ROADMAP.md) conserva el único orden entre planes.
+
+## Uso actual de esta referencia — 2026-11-10
+
+La ejecución pendiente se sigue exclusivamente desde los cuatro bloques del
+[padre016](016-nextjs-supabase-code-review.md). T0/T1 conservan su cierre y
+cobertura históricos; el candidato vigente se contrasta por cambios y por
+contratos ofrecidos, sin presentar las lecturas antiguas como revisión del árbol
+actual. Las instrucciones de ejecución, baseline y casillas inferiores describen
+el contrato histórico y no autorizan una nueva ronda exhaustiva ni reparaciones.
+Las reparaciones mínimas confirmadas y su validación pertenecen al alcance
+vigente del padre, una vez autorizada su ejecución.
 
 ## Baseline y autoridad
 

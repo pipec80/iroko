@@ -1364,6 +1364,10 @@ BEGIN
 
   -- La Personal account tiene id = user id (invariante de handle_new_profile);
   -- el límite de Teams se mide contra el plan de esa cuenta.
+  -- Serializar la admisión antes del conteo; el UPDATE de profile al final
+  -- llega demasiado tarde para impedir dos creaciones sobre el último cupo.
+  PERFORM 1 FROM public.accounts WHERE id = v_uid FOR UPDATE;
+
   SELECT count(*) INTO v_team_count
   FROM public.accounts_memberships m
   JOIN public.accounts a ON a.id = m.account_id

@@ -7,6 +7,7 @@ import {
   fetchInvitationLinkTo,
   loginViaUi,
   querySqlAsPostgres,
+  SUPABASE_URL,
 } from './helpers';
 
 /**
@@ -28,39 +29,113 @@ const TINY_PNG = Buffer.from(
 test.describe('QA — avatar', () => {
   test.setTimeout(60_000);
 
-  test('should persist the avatar after upload and reload', async ({ authenticatedPage: page }) => {
+  test('should reject invalid selections and persist two successive avatar uploads', async ({
+    authenticatedPage: page,
+    request,
+  }) => {
     await page.goto('/es/dashboard/account?tab=profile');
     await page.waitForURL(/\/es\/dashboard\/account/);
 
     const avatarForm = page.getByTestId('avatar-form');
     const submitButton = avatarForm.locator('button[type="submit"]');
 
-    // setInputFiles dispara el evento `change` nativo apenas termina de subir
-    // el buffer al navegador — si corre antes de que React hidrate el listener
-    // onChange del input (frecuente en un runner de CI compartido, casi nunca
-    // en local), el evento se pierde y el botón queda disabled para siempre.
-    // Se reintenta la acción completa, no solo la espera, hasta que el submit
-    // se habilite: confirma que React sí procesó el archivo.
-    await expect(async () => {
+    const email = await page
+      .locator('strong')
+      .filter({ hasText: /^e2e\+settings\+/ })
+      .textContent();
+    if (!email || !/^e2e\+settings\+\d+@saasboilerplate\.local$/.test(email)) {
+      throw new Error('Expected the owned authenticated fixture');
+    }
+    const userId = querySqlAsPostgres(`SELECT id FROM auth.users WHERE email='${email}'`);
+    if (!/^[0-9a-f-]{36}$/.test(userId)) throw new Error('Owned avatar user missing');
+    try {
       await avatarForm.locator('input[name="avatar"]').setInputFiles({
-        name: 'avatar.png',
+        name: 'valid-before-invalid.png',
         mimeType: 'image/png',
         buffer: TINY_PNG,
       });
-      await expect(submitButton).toBeEnabled({ timeout: 2_000 });
-    }).toPass({ timeout: 20_000 });
+      await expect(submitButton).toBeEnabled();
+      await avatarForm.locator('input[name="avatar"]').setInputFiles({
+        name: 'invalid.txt',
+        mimeType: 'text/plain',
+        buffer: Buffer.from('not an image'),
+      });
+      await expect(avatarForm.getByRole('alert')).toContainText('Formato no permitido.');
+      await expect(submitButton).toBeDisabled();
+      await avatarForm.locator('input[name="avatar"]').setInputFiles({
+        name: 'oversized.png',
+        mimeType: 'image/png',
+        buffer: Buffer.alloc(2 * 1024 * 1024 + 1),
+      });
+      await expect(avatarForm.getByRole('alert')).toContainText('El archivo supera los 2 MB.');
+      await expect(submitButton).toBeDisabled();
 
-    await submitButton.click();
+      // setInputFiles dispara el evento `change` nativo apenas termina de subir
+      // el buffer al navegador — si corre antes de que React hidrate el listener
+      // onChange del input (frecuente en un runner de CI compartido, casi nunca
+      // en local), el evento se pierde y el botón queda disabled para siempre.
+      // Se reintenta la acción completa, no solo la espera, hasta que el submit
+      // se habilite: confirma que React sí procesó el archivo.
+      const boundaryImage = Buffer.concat([
+        TINY_PNG,
+        Buffer.alloc(2 * 1024 * 1024 - TINY_PNG.length),
+      ]);
+      await expect(async () => {
+        await avatarForm.locator('input[name="avatar"]').setInputFiles({
+          name: 'avatar.png',
+          mimeType: 'image/png',
+          buffer: boundaryImage,
+        });
+        await expect(submitButton).toBeEnabled({ timeout: 2_000 });
+      }).toPass({ timeout: 20_000 });
 
-    await expect(page.getByText('Foto actualizada.')).toBeVisible({ timeout: 15_000 });
+      await submitButton.click();
 
-    // El guardado fue real, no solo estado de cliente: sobrevive a un reload y
-    // el <img> pasa a apuntar al bucket de avatares en Storage (unoptimized=true
-    // en el <Image>, así que el src no pasa por el proxy de _next/image).
-    await page.reload();
-    const avatarImg = page.locator('img[alt="avatar"]');
-    await expect(avatarImg).toBeVisible();
-    await expect(avatarImg).toHaveAttribute('src', /\/avatars\//);
+      await expect(page.getByText('Foto actualizada.')).toBeVisible({ timeout: 15_000 });
+
+      // Keep this form mounted for both equal success codes. A reload here
+      // would conceal a stale action-state/selection bug on the second upload.
+      await expect(submitButton).toBeDisabled();
+      await expect(avatarForm.locator('input[name="avatar"]')).toHaveValue('');
+      const avatarImg = page.locator('img[alt="avatar"]');
+      await expect(avatarImg).toBeVisible();
+      // The mounted form may keep its blob preview after a successful save.
+      // Read the owned persisted object directly; reload is checked after both saves.
+      const boundaryStored = await request.get(
+        `${SUPABASE_URL}/storage/v1/object/public/avatars/${userId}/avatar.png?plan016=${Date.now()}`,
+      );
+      expect(boundaryStored.ok()).toBe(true);
+      expect(await boundaryStored.body()).toEqual(boundaryImage);
+      const secondBytes = Buffer.concat([TINY_PNG, Buffer.from('second-upload')]);
+      await avatarForm.locator('input[name="avatar"]').setInputFiles({
+        name: 'second.png',
+        mimeType: 'image/png',
+        buffer: secondBytes,
+      });
+      await expect(submitButton).toBeEnabled();
+      await expect(avatarForm.getByRole('status')).toHaveCount(0);
+      await submitButton.click();
+      await expect(avatarForm.getByRole('status')).toContainText('Foto actualizada.');
+      await expect(submitButton).toBeDisabled();
+      await expect(avatarForm.locator('input[name="avatar"]')).toHaveValue('');
+      await expect(submitButton).toBeDisabled();
+      await page.reload();
+      const source = await page.locator('img[alt="avatar"]').getAttribute('src');
+      if (!source) throw new Error('Persisted avatar URL missing');
+      const avatarUrl = new URL(source, page.url());
+      expect(['localhost', '127.0.0.1']).toContain(avatarUrl.hostname);
+      avatarUrl.searchParams.set('plan016', String(Date.now()));
+      const stored = await request.get(avatarUrl.href);
+      expect(stored.ok()).toBe(true);
+      expect(await stored.body()).toEqual(secondBytes);
+    } finally {
+      const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
+      const cleanup = await request.delete(`${SUPABASE_URL}/storage/v1/object/avatars`, {
+        headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+        data: { prefixes: [`${userId}/avatar.png`] },
+      });
+      expect(cleanup.ok(), 'owned avatar bytes cleanup').toBe(true);
+    }
   });
 });
 
@@ -117,6 +192,7 @@ test.describe('QA — notifications realtime', () => {
       });
     } finally {
       await inviteeContext.close();
+      execSqlAsPostgres(`DELETE FROM public.accounts WHERE id='${inviteeId}'`);
       await deleteUserById(request, inviteeId, serviceKey);
     }
   });
@@ -217,6 +293,7 @@ test.describe('QA — presence', () => {
       });
     } finally {
       await teammateContext?.close();
+      execSqlAsPostgres(`DELETE FROM public.accounts WHERE id='${mateId}'`);
       await deleteUserById(request, mateId, serviceKey);
     }
   });

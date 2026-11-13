@@ -6,10 +6,10 @@ import { AlertCircle } from 'lucide-react';
 
 export default function GlobalError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   useEffect(() => {
     Sentry.captureException(error);
@@ -31,7 +31,7 @@ export default function GlobalError({
             </p>
             <button
               type="button"
-              onClick={reset}
+              onClick={retry}
               className="bg-primary text-on-primary mt-4 rounded-md px-4 py-2 text-sm font-medium">
               Retry
             </button>

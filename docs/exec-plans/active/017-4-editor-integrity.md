@@ -1,5 +1,14 @@
 # 017.4 — Editor integrity Implementation Plan
 
+**Referencia técnica, no entrada de ejecución — 2026-11-10.**
+La entrada vigente es [016](016-nextjs-supabase-code-review.md), en sus cuatro
+bloques de candidato/evidencia, integración, circuito y veredicto. Las tareas,
+IDs y checklists siguientes preservan su contrato y evidencia históricos;
+no ordenan reejecutar017 ni certifican su alcance completo. Resolver únicamente
+los casos ofrecidos transferidos mediante sus filas del
+[registro central](freeze-remediation-register.csv). Las condiciones y exclusiones
+diferidas permanecen; no se habilita editor/Robot ni otro proveedor por esta revisión.
+
 **Registro técnico conservado tras el cierre acotado del padre,2026-11-04.**
 El [padre017](../completed/017-freeze-remediation.md) está completed únicamente
 para sus dos lotes aprobados. Este hijo conserva resultados, especificaciones y
@@ -17,12 +26,12 @@ para desbloquear el núcleo. Conservar reparación, pruebas y fallos históricos
 no hay aceptación browser. Las tareas y checklists siguientes son contrato de
 retorno, NO una orden de ejecución durante el cierre actual.
 
-RS-05/015-T1 debe demostrar exclusión efectiva de Projects/editor en la
-configuración MVP; sigue pendiente en código. No basta ocultar el botón. Si
-se decide ofrecerlo, reabrir este hijo, verificar revisión origen/CAS y sus
+La exclusión efectiva de Projects/editor cuenta con evidencia local de
+RS-05/015-T1;016 comprueba su vigencia para el candidato seleccionado. No basta
+ocultar el botón. Si se decide ofrecerlo, reabrir este hijo, verificar revisión origen/CAS y sus
 escenarios por un método adecuado, sin reducir cobertura ni afirmar PASS previo.
 
-> **Ejecución:** aplicar el [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
+> **Contrato histórico de ejecución:** [contrato común de 017](../completed/017-freeze-remediation.md#contrato-de-ejecución-independiente-del-modelo--2026-10-27). No requiere plugins específicos.
 
 **Goal:** Evitar pérdida silenciosa de borradores y sobrescritura de documentos entre sesiones concurrentes.
 

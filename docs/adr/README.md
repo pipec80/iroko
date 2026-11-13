@@ -11,24 +11,19 @@ and be lost to future sessions.
 | ---------------------------------------------------------- | -------------------------------------------------- | -------- | ---------- |
 | [0001](0001-documentation-authority-and-agent-contract.md) | Documentation authority and shared agent contract  | Accepted | 2026-08-20 |
 | [0002](0002-canonical-design-system-authority.md)          | Canonical design-system authority and preservation | Accepted | 2026-08-20 |
+| [0003](0003-mercadopago-reliability-boundaries.md)         | Mercado Pago reliability boundaries                | Accepted | 2026-09-09 |
+| [0004](0004-csp-nonce-and-rendering-boundary.md)           | CSP nonce and rendering boundary                   | Accepted | 2026-10-15 |
+| [0005](0005-replicable-saas-mvp-and-bounded-acceptance.md) | Replicable SaaS MVP and bounded acceptance         | Accepted | 2026-10-28 |
 
 Filename convention: `NNNN-short-title.md`, numbered sequentially.
 
-- [0005 — Replicable SaaS MVP and bounded acceptance](0005-replicable-saas-mvp-and-bounded-acceptance.md)
-  — **Accepted**,2026-10-28. Core replication before optional verticals;
-  editor runner off critical path. Local scope exclusion passed2026-10-29;
-  independent reuse and final integrated acceptance remain pending. The accepted
-  ADR text preserves its original decision date, not a live task status.
-
-- [0003 — Mercado Pago reliability boundaries](0003-mercadopago-reliability-boundaries.md)
-  — **Accepted**, 2026-09-09. Durable checkout coordination and recovery through
-  the existing billing reducer; not implementation or runtime evidence.
-
-- [0004 - CSP nonce and rendering boundary](0004-csp-nonce-and-rendering-boundary.md)
-  - **Accepted**, 2026-10-15. The rendering baseline and bounded local/Cloud
-    acceptance were completed under Plan 012.4; the
-    [closure record](../audits/2026-10-19-plan-012-4-cloud-closure.md) preserves
-    the nonfatal Zod probe, inline-style and other acceptance limits.
+Execution status2026-11-10: ADR0005 remains the accepted scope decision.
+[015 local reuse evidence](../quality/reusable-foundation-evidence.md) closes the bounded local drill;
+[016](../exec-plans/active/016-nextjs-supabase-code-review.md) owns integrated acceptance.
+No new architecture decision is introduced by reorganizing its execution tasks.
+Accepted ADR text retains its decision date and rationale; neither its status nor
+this index proves current runtime or Cloud health. ADR0004's bounded acceptance
+and limitations remain in its [closure record](../audits/2026-10-19-plan-012-4-cloud-closure.md).
 
 Use `Proposed`, `Accepted`, `Superseded`, or `Deprecated` as the status. Do not
 rewrite an accepted decision to hide a change in direction: add a new ADR and

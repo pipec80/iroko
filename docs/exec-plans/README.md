@@ -27,19 +27,19 @@ cierra el núcleo reutilizable local con circuito útil, extensión, actualizaci
 y recuperación verificadas. [Evidencia y límites](../quality/reusable-foundation-evidence.md).
 Siguiente016; pagos reales/operación programada/Cloud conservan sus gates.
 
-Entrada vigente2026-11-05: [014](completed/014-reference-surface-correctness.md)
+Checkpoint histórico2026-11-05: [014](completed/014-reference-surface-correctness.md)
 aceptado localmente; [evidencia](../audits/2026-11-05-plan-014-t2-t3-execution.md).
 Siguiente015 y después016. Cloud/MVP no se aceptan por este cierre.
 Las entradas fechadas inferiores conservan la secuencia de su checkpoint.
 
-Entrada vigente2026-11-04: el [padre017](completed/017-freeze-remediation.md)
+Checkpoint histórico2026-11-04: el [padre017](completed/017-freeze-remediation.md)
 completó sus dos lotes acotados; siguiente014-T2/T3, después015/016. Se conservan
 los hijos técnicos para resultados históricos, alcances diferidos y recepción
 en016. No se promueven sus pendientes por el movimiento del padre ni se cierra
 el MVP o Cloud exhaustivo. Véase la [evidencia](../audits/2026-10-20-017-p1-execution.md#cierre-acotado-del-017--2026-11-04).
 
 Direction 2026-10-28: [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
-The base must be replicable before a Robot/client vertical. Current entry,2026-11-02:
+The base must be replicable before a Robot/client vertical. Historical queue,2026-11-02:
 triage017.1-T9/017.2-T6 →014-T2/T3 →remaining offered017 →015 reuse proof
 →016-T2/T3 final acceptance. The exclusion prerequisite of015-T1 passed locally;
 012 is completed by its approved deliveries. Editor017.4 is deferred, with preserved tests
@@ -68,16 +68,28 @@ Read the root roadmap for the single ordered queue. Maintenance records that
 change documentation structure live with completed plans after their own
 validation contract passes.
 
-For 017, start with its parent execution contract and then the selected child
-task and CSV rows. Local repair acceptance permits the next roadmap phase;
+For historical 017 evidence, read its completed parent, the relevant child
+reference and CSV rows; these are not a new execution entry. Local repair acceptance permits the next roadmap phase;
 integrated acceptance remains after 015 under 016. 017 may close its bounded remediation independently under the November2
 contract;016 owns the transferred final evidence and integrated acceptance. Evidence belongs in the existing dated audit
 for its subsystem; a rerun alone does not require another plan or audit file.
 
-Plan 016 T1 has an
-[operational task breakdown](active/016-t1-security-integrity-critical-flows.md)
-for security, integrity and critical flows. It preserves the parent plan's full
-inventory and lifecycle; its task map records planning, not completed review.
+### Una entrada de ejecución; referencias conservadas
+
+[016](active/016-nextjs-supabase-code-review.md) organiza el trabajo pendiente en
+cuatro bloques: candidato/oferta/evidencia; integración y brechas confirmadas;
+circuito integrado; veredicto y consolidación. Conserva los IDs T0–T3 y el
+[registro central](active/freeze-remediation-register.csv), sin crear otra cola.
+Su preparación documental no constituye autorización para ejecutar el producto.
+
+El [desglose016-T1](active/016-t1-security-integrity-critical-flows.md) es una
+referencia histórica: la revisión estática cerró el2026-10-08. Sus checklists de
+planificación no reabren esa cobertura ni aceptan cambios posteriores.
+Los cinco hijos017 conservados en `active/` son referencias técnicas de Auth,
+datos, billing, editor y web; su ubicación no los convierte en planes activos.
+Los casos ofrecidos transferidos se resuelven desde016 y sus filas existentes;
+editor/Robot y los demás casos diferidos requieren su condición de retorno.
+No se mueven a completed porque sus alcances completos no fueron aceptados.
 
 Plan 012 PR4 has a [completed bounded execution record](completed/012-4-csp-and-secrets.md)
 and [Cloud closure evidence](../audits/2026-10-19-plan-012-4-cloud-closure.md).

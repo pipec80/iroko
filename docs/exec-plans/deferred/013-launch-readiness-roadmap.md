@@ -24,12 +24,15 @@
 
 La [estrategia acordada](../../architecture/product-strategy.md) exige que la
 base ahorre trabajo al construir el siguiente SaaS, aunque no se venda como
-boilerplate. El propuesto [Plan 015](../completed/015-reusable-foundation-acceptance.md)
+boilerplate. El [Plan 015](../completed/015-reusable-foundation-acceptance.md)
 asume la guía Markdown de instalación interna, recetas, configuración mínima y
 ensayo de extensión/actualización. Este trabajo no espera Fumadocs ni decisión
 de comercialización. D-1/D-2/D-3 reutilizarán su evidencia y añadirán audiencia
 externa, entrega, licencia, soporte y proceso comercial; no repetirán el ensayo
-como si nunca hubiera existido. La implementación de 015 aún no comenzó.
+como si nunca hubiera existido. Actualización2026-11-10:015 cerró el núcleo
+reutilizable local, con [evidencia y límites](../../quality/reusable-foundation-evidence.md).
+La aceptación integrada y los pendientes operacionales corresponden a016 según
+la oferta;013 permanece diferido y no agrega gates comerciales al MVP.
 
 El mantenedor aportó el contexto de su
 [vertical IoT](../../architecture/iot-vertical-pilot.md), candidata para probar

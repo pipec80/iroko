@@ -1,5 +1,5 @@
-// Root 404 — shown when no [locale] segment matches (e.g. /unknown-path).
-// Provides its own html/body since root layout no longer includes them.
+// Root fallback for unmatched routes that bypass locale rewriting.
+// RootLayout defines the document; verify composed HTML before changing tags.
 export default function GlobalNotFound() {
   return (
     <html lang="en">
