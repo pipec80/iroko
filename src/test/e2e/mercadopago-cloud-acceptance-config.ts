@@ -1,5 +1,18 @@
 export const MERCADOPAGO_PRODUCTION_URL = 'https://project-a89lv.vercel.app';
 
+/** Raw GoTrue HTTP responses are flat; only the SDK wraps them in properties. */
+export function supabaseGenerateLinkTokenHash(body: unknown): string {
+  if (
+    typeof body === 'object' &&
+    body !== null &&
+    'hashed_token' in body &&
+    typeof body.hashed_token === 'string' &&
+    body.hashed_token.length > 0
+  )
+    return body.hashed_token;
+  throw new Error('mercadopago_cloud_acceptance_invalid_generate_link_response');
+}
+
 /** Headers for the protected Node-side Auth admin request, never a browser request. */
 export function supabaseAdminHeaders(secretKey: string): Record<string, string> {
   const headers: Record<string, string> = {
