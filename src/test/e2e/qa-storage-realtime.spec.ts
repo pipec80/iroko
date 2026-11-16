@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/auth';
+import { selectValidFile } from './file-selection';
 import {
   createConfirmedUser,
   createTeamViaUi,
@@ -49,12 +50,11 @@ test.describe('QA — avatar', () => {
     const userId = querySqlAsPostgres(`SELECT id FROM auth.users WHERE email='${email}'`);
     if (!/^[0-9a-f-]{36}$/.test(userId)) throw new Error('Owned avatar user missing');
     try {
-      await avatarForm.locator('input[name="avatar"]').setInputFiles({
+      await selectValidFile(avatarForm.locator('input[name="avatar"]'), submitButton, {
         name: 'valid-before-invalid.png',
         mimeType: 'image/png',
         buffer: TINY_PNG,
       });
-      await expect(submitButton).toBeEnabled();
       await avatarForm.locator('input[name="avatar"]').setInputFiles({
         name: 'invalid.txt',
         mimeType: 'text/plain',
@@ -70,24 +70,15 @@ test.describe('QA — avatar', () => {
       await expect(avatarForm.getByRole('alert')).toContainText('El archivo supera los 2 MB.');
       await expect(submitButton).toBeDisabled();
 
-      // setInputFiles dispara el evento `change` nativo apenas termina de subir
-      // el buffer al navegador — si corre antes de que React hidrate el listener
-      // onChange del input (frecuente en un runner de CI compartido, casi nunca
-      // en local), el evento se pierde y el botón queda disabled para siempre.
-      // Se reintenta la acción completa, no solo la espera, hasta que el submit
-      // se habilite: confirma que React sí procesó el archivo.
       const boundaryImage = Buffer.concat([
         TINY_PNG,
         Buffer.alloc(2 * 1024 * 1024 - TINY_PNG.length),
       ]);
-      await expect(async () => {
-        await avatarForm.locator('input[name="avatar"]').setInputFiles({
-          name: 'avatar.png',
-          mimeType: 'image/png',
-          buffer: boundaryImage,
-        });
-        await expect(submitButton).toBeEnabled({ timeout: 2_000 });
-      }).toPass({ timeout: 20_000 });
+      await selectValidFile(avatarForm.locator('input[name="avatar"]'), submitButton, {
+        name: 'avatar.png',
+        mimeType: 'image/png',
+        buffer: boundaryImage,
+      });
 
       await submitButton.click();
 
@@ -107,12 +98,11 @@ test.describe('QA — avatar', () => {
       expect(boundaryStored.ok()).toBe(true);
       expect(await boundaryStored.body()).toEqual(boundaryImage);
       const secondBytes = Buffer.concat([TINY_PNG, Buffer.from('second-upload')]);
-      await avatarForm.locator('input[name="avatar"]').setInputFiles({
+      await selectValidFile(avatarForm.locator('input[name="avatar"]'), submitButton, {
         name: 'second.png',
         mimeType: 'image/png',
         buffer: secondBytes,
       });
-      await expect(submitButton).toBeEnabled();
       await expect(avatarForm.getByRole('status')).toHaveCount(0);
       await submitButton.click();
       await expect(avatarForm.getByRole('status')).toContainText('Foto actualizada.');
