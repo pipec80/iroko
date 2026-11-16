@@ -89,6 +89,21 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # A root bump can otherwise be silently defeated by a workspace override.
+      - name: Verify effective Next toolchain
+        run: |
+          node <<'NODE'
+          const assert = require('node:assert/strict');
+          const {readFileSync} = require('node:fs');
+          const manifest = require('./package.json');
+          for (const name of ['next', '@next/bundle-analyzer', 'eslint-config-next']) {
+            const declared = manifest.dependencies?.[name] ?? manifest.devDependencies?.[name];
+            const installed = JSON.parse(readFileSync(`node_modules/${name}/package.json`, 'utf8')).version;
+            assert.equal(installed, declared, `${name}: installed version differs from manifest`);
+            console.log(`${name}: ${installed}`);
+          }
+          NODE
+
       - name: TypeScript check
         run: pnpm typecheck
 

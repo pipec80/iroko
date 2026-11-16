@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -5,6 +6,7 @@ import {
   assertSupabaseGenerateLinkStatus,
   MERCADOPAGO_PRODUCTION_URL,
   supabaseAdminHeaders,
+  supabaseGenerateLinkTokenHash,
 } from './e2e/mercadopago-cloud-acceptance-config';
 
 describe('protected Auth admin requests', () => {
@@ -19,6 +21,24 @@ describe('protected Auth admin requests', () => {
     const headers = supabaseAdminHeaders('eyJfixture.payload.signature');
     expect(headers.Authorization).toBe('Bearer eyJfixture.payload.signature');
     expect(headers['User-Agent']).toBe('Iroko-Cloud-Acceptance/1.0');
+  });
+});
+
+describe('raw GoTrue generate_link response', () => {
+  it('reads the top-level token returned by the HTTP endpoint', () => {
+    expect(supabaseGenerateLinkTokenHash({ hashed_token: 'fixture-hash' })).toBe('fixture-hash');
+  });
+
+  it.each([
+    null,
+    {},
+    { hashed_token: '' },
+    { hashed_token: 123 },
+    { properties: { hashed_token: 'fixture-hash' } },
+  ])('rejects invalid or SDK-wrapped input without reflecting it', (body) => {
+    expect(() => supabaseGenerateLinkTokenHash(body)).toThrow(
+      'mercadopago_cloud_acceptance_invalid_generate_link_response',
+    );
   });
 });
 

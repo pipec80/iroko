@@ -5,6 +5,7 @@ import {
   assertCanonicalCloudAcceptanceUrl,
   assertSupabaseGenerateLinkStatus,
   supabaseAdminHeaders,
+  supabaseGenerateLinkTokenHash,
 } from './mercadopago-cloud-acceptance-config';
 
 const requiredSecrets = [
@@ -64,22 +65,9 @@ async function signInTestAccountThroughOtp(page: Page) {
   } finally {
     await adminRequest.dispose();
   }
-  const tokenHash =
-    (
-      typeof body === 'object' &&
-      body !== null &&
-      'properties' in body &&
-      typeof body.properties === 'object' &&
-      body.properties !== null &&
-      'hashed_token' in body.properties &&
-      typeof body.properties.hashed_token === 'string'
-    ) ?
-      body.properties.hashed_token
-    : null;
-
-  expect(tokenHash, 'Supabase generate_link response must include a hashed OTP').toBeTruthy();
+  const tokenHash = supabaseGenerateLinkTokenHash(body);
   const confirmation = await page.request.get(
-    `/es/auth/confirm?token_hash=${encodeURIComponent(tokenHash!)}&type=magiclink&next=/es/dashboard/billing`,
+    `/es/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=magiclink&next=/es/dashboard/billing`,
     { maxRedirects: 0 },
   );
   expect(
@@ -119,7 +107,9 @@ test('MP-01 starts a hosted Mercado Pago checkout from the deployed app', async 
     const safeStatus =
       (
         error instanceof Error &&
-        /^mercadopago_cloud_acceptance_generate_link_failed_[1-5]\d{2}$/.test(error.message)
+        /^mercadopago_cloud_acceptance_(?:generate_link_failed_[1-5]\d{2}|invalid_generate_link_response)$/.test(
+          error.message,
+        )
       ) ?
         error.message
       : 'mercadopago_cloud_acceptance_scenario_failed';

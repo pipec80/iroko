@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -31,17 +32,21 @@ vi.mock('@playwright/test', () => {
 
 import './e2e/mercadopago-cloud-acceptance.spec';
 
+function configureCloudFixture() {
+  vi.stubEnv('PLAYWRIGHT_BASE_URL', 'https://project-a89lv.vercel.app');
+  vi.stubEnv('MERCADOPAGO_CLOUD_ACCEPTANCE', '1');
+  vi.stubEnv('IROKO_E2E_TEST_USER_EMAIL', 'fixture@example.invalid');
+  vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://fixture.supabase.co');
+  vi.stubEnv('SUPABASE_SECRET_KEY', 'sb_secret_fixture_canary');
+}
+
 describe('Cloud acceptance credential containment', () => {
   it('disables every browser capture for the privileged scenario', () => {
     expect(harness.capture).toEqual({ trace: 'off', screenshot: 'off', video: 'off' });
   });
 
   it('does not reflect transport headers or OTP URLs in public failure output', async () => {
-    vi.stubEnv('PLAYWRIGHT_BASE_URL', 'https://project-a89lv.vercel.app');
-    vi.stubEnv('MERCADOPAGO_CLOUD_ACCEPTANCE', '1');
-    vi.stubEnv('IROKO_E2E_TEST_USER_EMAIL', 'fixture@example.invalid');
-    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://fixture.supabase.co');
-    vi.stubEnv('SUPABASE_SECRET_KEY', 'sb_secret_fixture_canary');
+    configureCloudFixture();
     harness.post.mockRejectedValueOnce(
       new Error('apikey: sb_secret_fixture_canary token_hash=canary'),
     );
@@ -50,6 +55,53 @@ describe('Cloud acceptance credential containment', () => {
         /^mercadopago_cloud_acceptance_scenario_failed$/,
       );
       expect(harness.dispose).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('exchanges the raw HTTP token through the application before checkout', async () => {
+    configureCloudFixture();
+    harness.post.mockResolvedValueOnce({
+      status: () => 200,
+      json: async () => ({ hashed_token: 'fixture-hash' }),
+    });
+    const confirm = vi.fn(async () => ({ status: () => 302 }));
+    const stopBeforeCheckout = vi.fn(async () => {
+      throw new Error('fixture_stop_before_checkout');
+    });
+    const page = {
+      request: { get: confirm },
+      goto: vi.fn(),
+      waitForURL: vi.fn(),
+      getByTestId: () => ({ click: stopBeforeCheckout }),
+    };
+    try {
+      if (!harness.scenario) throw new Error('scenario not registered');
+      await expect(harness.scenario({ page })).rejects.toThrow(
+        'mercadopago_cloud_acceptance_scenario_failed',
+      );
+      expect(confirm).toHaveBeenCalledWith(
+        '/es/auth/confirm?token_hash=fixture-hash&type=magiclink&next=/es/dashboard/billing',
+        { maxRedirects: 0 },
+      );
+      expect(stopBeforeCheckout).toHaveBeenCalledOnce();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it('reports an invalid successful Auth response without leaking its contents', async () => {
+    configureCloudFixture();
+    harness.post.mockResolvedValueOnce({
+      status: () => 200,
+      json: async () => ({ unexpected: 'fixture-canary' }),
+    });
+    try {
+      if (!harness.scenario) throw new Error('scenario not registered');
+      await expect(harness.scenario({ page: {} })).rejects.toThrow(
+        /^mercadopago_cloud_acceptance_invalid_generate_link_response$/,
+      );
     } finally {
       vi.unstubAllEnvs();
     }

@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures/auth';
+import { selectValidFile } from './file-selection';
 import { createTeamViaUi, querySqlAsPostgres, SUPABASE_URL } from './helpers';
 
 const png = Buffer.from(
@@ -34,8 +35,7 @@ test('logo accepts its5MiB transport boundary and persists a second upload witho
     const input = page.locator('input[name="logo"]');
     const form = page.locator('form').filter({ has: input });
     const submit = form.locator('button[type="submit"]');
-    await input.setInputFiles({ name: 'valid.png', mimeType: 'image/png', buffer: png });
-    await expect(submit).toBeEnabled();
+    await selectValidFile(input, submit, { name: 'valid.png', mimeType: 'image/png', buffer: png });
     await input.setInputFiles({
       name: 'invalid.txt',
       mimeType: 'text/plain',
@@ -53,8 +53,11 @@ test('logo accepts its5MiB transport boundary and persists a second upload witho
     await expect(submit).toBeDisabled();
     const boundary = Buffer.concat([png, Buffer.alloc(5 * 1024 * 1024 - png.length)]);
     for (const bytes of [boundary, Buffer.concat([png, Buffer.from('second-logo')])]) {
-      await input.setInputFiles({ name: 'logo.png', mimeType: 'image/png', buffer: bytes });
-      await expect(submit).toBeEnabled();
+      await selectValidFile(input, submit, {
+        name: 'logo.png',
+        mimeType: 'image/png',
+        buffer: bytes,
+      });
       await expect(form.getByRole('status')).toHaveCount(0);
       const completed = page.waitForResponse(
         (response) =>
