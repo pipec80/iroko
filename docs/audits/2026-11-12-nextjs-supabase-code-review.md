@@ -11,6 +11,33 @@ la contención/rotación autorizada del13/11 se detalla abajo.
 
 ## Resultado vigente de la continuación
 
+### Reparación focal del monitor nocturno — 2026-11-16
+
+Lectura del nightly43848678892 (candidato5f68684): Email Worker Health
+133235304593 PASS y Database Advisors PASS; Production Smoke133235304622
+falló antes de los casos con `cloud_protection_requires_canonical_origin`.
+El SITE_URL secreto no coincide exactamente con el origen permitido; su valor
+no se recuperó y no se atribuye el fallo a una barra final ni a otra forma concreta.
+El guard cerró correctamente: no demuestra caída o defecto del producto.
+
+Reparación local mínima en nightly.yml: preflight y navegador usan el origen
+MVP canónico literal; curl no sigue redirects y sólo envía el header de bypass,
+sin setter de cookie. Este último usa redirect/Set-Cookie y corresponde al
+bootstrap separado del navegador, que conserva guards/capturas y su contrato.
+No se recomienda desactivar WAF. Otros jobs y secretos permanecen intactos.
+Regresión de argumentos reales del workflow RED3→GREEN3; revisión independiente
+focal favorable sin P0/P1 nuevo. No se ejecuta un smoke Cloud adicional con
+envío Sentry: su resultado runtime tras esta reparación sigue [NO VERIFICADO],
+P2 QA/operaciones con retorno en la próxima ejecución programada, sin inventar
+un gate universal adicional al alcance016 ya observado.
+[Comportamiento oficial del setter](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation#advanced-configuration).
+
+La consolidación se entrega en [PR258](https://github.com/pipec80/iroko/pull/258).
+Los cambios posteriores a118fedf son documentación, workflow de monitorización
+y su regresión: no cambian aplicación, SQL ni el protocolo MP. Se reutilizan
+las observaciones Cloud del candidato118fedf con ese límite; no se repite TTL
+por el cambio de SHA documental/CI.
+
 ### Resultado final FOLLOW-TTL — 2026-11-16
 
 **Gate aceptado por evidencia observada, con diagnóstico P2 del runner.**

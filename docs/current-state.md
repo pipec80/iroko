@@ -15,6 +15,17 @@ ingreso oficial autenticado de Mercado Pago actual**, autorizado sin pago pero
 pendiente de sesión/OAuth. Evento975 de20:00 es reconciliación programada del
 pending, no callback; total21eventos/5intents.016 permanece activo/parcial.
 
+### Monitor nocturno y evidencia reutilizada
+
+Actualización posterior del monitor: nightly43848678892 tuvo Email Worker
+Health PASS; smoke falló antes de sus casos por origen no canónico. Se reparó
+localmente el caller a origen MVP fijo y preflight sin redirects/settercookie;
+3regresiones PASS y revisión independiente favorable. Guard y capturas intactos,
+otros jobs sin cambio. Runtime del smoke reparado [NO VERIFICADO], P2 QA/operaciones
+con retorno en próximo cron; no equivale a aceptación Sentry/WAF. Entrega en
+[PR258](https://github.com/pipec80/iroko/pull/258), sin cambios app/SQL frente a
+118fedf, candidato de las observaciones Cloud reutilizadas.
+
 ### Checkpoint previo a las20:07Z
 
 `main` quedó en `118fedf` tras integrar PR 252. Pasaron todos los controles de CI del candidato, incluidos build, unitarios, SQL, E2E Chromium y WebKit. El candidato incorpora Next.js 16.4.6, Sentry 10.78.0, next-intl 4.15.1, Playwright 1.65.0 y Prettier 3.10.1. La alerta 135 de `deepmerge` conserva su mitigación local y sigue abierta upstream. [PR 252](https://github.com/pipec80/iroko/pull/252) · [CI del candidato integrado](https://github.com/pipec80/iroko/actions/runs/43914308776).
