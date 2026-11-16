@@ -1,5 +1,23 @@
 # Freeze — validación del candidato y contrato de evidencia
 
+## Expiración de bearer: observación temporal — 2026-11-16
+
+PostgREST documenta30s de tolerancia al validar `exp`; programar el sondeo
+después de la tolerancia efectiva comprobada, sin modificar relojes ni TTL.
+Un200 a exp+5s no demuestra un defecto. Exigir el bearer original rechazado
+por expiración y un control fresco autorizado contemporáneo, antes de cleanup.
+La prueba acepta el instante observado, no rechazo exactamente en exp ni
+revocación inmediata por cerrar la sesión web.
+[Contrato oficial](https://docs.postgrest.org/en/stable/references/auth.html#time-based-claims-validation).
+
+En016 se conservó el exit1 por timeout de liberación del navegador, separado
+de la aceptación funcional: éxitos tardíos del BrowserServer y ausencia propia
+confirmada por Windows resolvieron su liberación, con cleanup Cloud0 y auditoría
+preservada. Disposición P2 del harness, dueño QA, retorno antes del próximo uso;
+no eliminar el diagnóstico ni repetir una hora sólo para ocultar ese exit1.
+La demora puntual del observador quedó registrada y revisada independientemente
+en la [evidencia016](../audits/2026-11-12-nextjs-supabase-code-review.md).
+
 ## Capturas Cloud y credenciales — 2026-11-13
 
 Las pruebas Cloud con credenciales no generan trazas, screenshots, video ni

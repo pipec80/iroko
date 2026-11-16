@@ -1,5 +1,22 @@
 # Dependency security — integration 2026-11-10
 
+## Renewal2026-11-16
+
+[PR252](https://github.com/pipec80/iroko/pull/252) integrated the five
+Dependabot updates253–257 with full Quality/SQL/unit/build/Chromium/WebKit
+checks in [CI43914308776](https://github.com/pipec80/iroko/actions/runs/43914308776).
+Next, analyzer and ESLint config resolve to16.4.6, including the workspace
+override; CI reads the installed package manifests to prevent an apparent
+manifest-only upgrade. Sentry resolves to10.78.0, next-intl4.15.1,
+Playwright1.65.0 and Prettier3.10.1. PR253–257 are closed as superseded.
+
+Alert135 remains open/low with no upstream patched version. The deepmerge4.3.1
+patch is preserved with SHA-256
+`d0b09c0c7f6badc39a9816270406c175f63e3402e126a23a748ca35e1a43ace6`.
+Keep the existing dependency-security regression and replace the patch only
+after verifying an upstream fix and consumer compatibility. The earlier
+checkpoint below remains historical; an open advisory is not silently dismissed.
+
 [PR250](https://github.com/pipec80/iroko/pull/250) consolidates the pending
 Dependabot updates245–249 with the local014/015 closure. Next, its analyzer and
 ESLint config are aligned at16.4.5; Supabase is2.119.0; Tailwind/PostCSS4.3.5,

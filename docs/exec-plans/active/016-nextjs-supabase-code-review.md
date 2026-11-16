@@ -14,7 +14,34 @@ Supabase/PostgreSQL, Vitest y Playwright instalados; renovar versiones al inicia
 No hace falta otro ADR: se ordena la ejecución de la decisión ya aceptada.
 
 Estado2026-11-12: **ejecución parcial;016 permanece activo**.
-Actualización2026-11-13: **P1 abierto S-016.CLOUD-TRACE**. El artefacto13999499918
+Resultado2026-11-16T20:07Z: FOLLOW-TTL aceptado por observación real (bearer
+original401 expirado tras exp+tolerancia, control fresco200, cap web/cookies,
+cleanup0 y auditoría264/265). Runnerexit1 por diagnóstico P2 de cierre tardío
+del navegador; ausencia propia confirmada, sin ocultar el fallo del harness.
+La auditoría documenta método/revisión/límites. Sólo queda corroborar ingreso
+oficial autenticado Mercado Pago actual, autorizado sin pago y pendiente de
+sesión/OAuth. No cerrar016 antes de ese gate; no exige otra compra ni toda011.
+Checkpoint2026-11-16: PR252 integrado en118fedf, CI43914308776 verde incluidos
+build/Chromium/WebKit y producción READY del mismo SHA. MP-01run43933678786
+PASS para apertura alojada sin login/pago;1intent nuevo persistido,0artefactos.
+No acepta compra/callback. El antiguo ensayo TTL interrumpido quedó limpio0,
+con auditoría229/230 preservada; expiración natural de su bearer no demostrada.
+Nuevo ensayo terminó19:00:27Z por fallo al guardar evidencia, antes de observar
+SQLexp/JWTexp; cleanup0 y auditoría246/248 preservada. No es PASS de TTL.
+La evidencia del16/11 en la auditoría enlazada prevalece sobre
+los estados históricos siguientes. Billing sigue habilitado y conserva sus gates.
+Actualización2026-11-13 posterior: PR251 integrado5f686841, CI43495317730 verde,
+Vercel dpl_3arqTZmHCJ7nh9sUTQgapPWLbyk4 READY exactmain. Contención
+S-016.CLOUD-TRACE resuelta: artifact ausente, vieja clave Supabase ausente/401,
+nueva200 y bypass anterior ausente/nuevo presente en API, otros IDs preservados.
+Endpoint público404 no demuestra denegación de bypass ni certifica WAF; RL-F06
+conserva límite condicional, sin cambios WAF. Chromium89PASS/2skip/1flaky logo
+(P2 QA asociado N-27), confinados21/8/7 sin flaky; no ocultar el retry.
+FOLLOW-TTL Cloud en curso: T0 SQL20:15:05Z, sesión exp20:45:05Z, JWTexp21:15:06Z;
+primer RLS200 sólo target, sin PASS/cleanup final. MP01retry43500143734 en curso
+sin pago. No hay cierre016 mientras falten esos resultados y aceptación PSP.
+
+Checkpoint previo2026-11-13: **entonces P1 abierto S-016.CLOUD-TRACE**. El artefacto13999499918
 del run43343240727 contenía credenciales Supabase/bypass Vercel sin redactar;
 eliminado y ausencia verificada0. Rotación específicamente autorizada: preparación
 completada (sustituta RPC200, GitHub y Vercel production/preview actualizados),
@@ -30,7 +57,7 @@ Next6/6. Cloud/local180 tras dos migraciones específicamente autorizadas y read
 Worker real programado/entrega/rechazo/archivo/alerta/recuperación PASS, fixtures0.
 Billing habilitado conserva obligaciones PSP.
 Los16 IDs N/seguimientos no reciben PASS por disposición. Gates obligatorios
-[NO VERIFICADO] impiden cierre. Preparación documental previa preservada sin integrar.
+[NO VERIFICADO] impiden cierre. Preparación documental previa preservada e integrada en PR251.
 T0/T1 están cerrados para su candidato histórico; no se reabren ni se presentan
 como lectura del código actual. Los cuatro bloques siguientes son la entrada
 vigente del mismo016; los criterios N/S/D y registros históricos siguen debajo.
@@ -83,10 +110,10 @@ Runbook V1/V2 y casos concretos V3/V4 según naturaleza del gap.
 
 ### Bloque 3 — Circuito integrado (T2)
 
-- [ ] Recorrer público → registro/confirmación → ingreso → área privada → acción
+- [x] Recorrer público → registro/confirmación → ingreso → área privada → acción
       útil persistida → cierre/reingreso. Reusar015 donde contrato/código/config
       sigan vigentes; cubrir negativas de acceso, roles y módulos excluidos.
-- [ ] Completar sólo evidencia faltante de los16 IDs N recibidos de017, según
+- [x] Completar sólo evidencia faltante de los16 IDs N recibidos de017, según
       su tabla V2/V3; un recorrido puede cubrir varios contratos explícitos.
 - [ ] Ejecutar gates proporcionales del
       [runbook V0–V4](../../runbooks/freeze-candidate-validation.md), reutilizando
@@ -108,9 +135,9 @@ editor avanzado ni Robot. Runbook V3/V4.
       disposiciones. RL-F01 conserva decisión sobre confianza IP, RL-F03 su
       reparación local/Cloud registrada; no reabrirlos por una nota histórica.
       RL-F06 se retoma ante su condición de cambio, no como ensayo universal.
-- [ ] Revisar independientemente integración y seguridad/datos sobre cambios y
+- [x] Revisar independientemente integración y seguridad/datos sobre cambios y
       evidencia; resolver observaciones confirmadas y repetir sólo lo afectado.
-- [ ] Actualizar registro, current-state, capabilities, roadmap y referencias
+- [x] Actualizar registro, current-state, capabilities, roadmap y referencias
       con un único veredicto del candidato: aceptado, parcial o bloqueado, con
       evidencia y pendientes. Mantener diferidos con dueño/condición de retorno.
 - [ ] Cerrar016 sólo si no quedan P0/P1 ofrecidos y todos los gates acordados

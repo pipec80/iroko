@@ -1,9 +1,25 @@
 # Plan 011 Billing Family — Deferred
 
-The scope required by the current freeze is satisfied. Implemented and
-verified evidence remains valid only for its recorded scenario and date.
+The earlier freeze scope was satisfied for its recorded candidate. Implemented
+and verified evidence remains valid only for its recorded scenario and date.
 Remaining provider and operational scenarios are deferred; they are not
 erased, completed or implied by the freeze decision.
+
+Current bridge2026-11-13: [016](../../active/016-nextjs-supabase-code-review.md)
+remains active. Billing is enabled; separating payment gateways into this family
+does not remove the offered checkout/callback obligations. The current candidate
+needs applicable real-provider evidence or an explicit bounded reuse decision.
+The authorized MP-01 retry opens at most one pending hosted checkout and stops
+before provider login/payment; it cannot certify a purchase, callback, recurring
+worker or another gateway. Owner: billing/maintainer; return through the existing
+Chile acceptance matrix with a named sandbox scenario and specific authorization.
+No new payment plan, provider rollout, card or charge is authorized here.
+
+Update2026-11-16: PR252/main118fedf is READY. MP-01 run43933678786 passed
+hosted-checkout opening, stopping before provider login/payment, with one new
+persisted intent and no published artifacts. This supersedes the earlier
+MP-01 bootstrap failure, without certifying purchase, callback or financial
+worker recovery. Billing remains enabled and its evidence obligations remain.
 
 This directory preserves the Plan 011 design, task breakdown, Mercado Pago
 acceptance matrices and operational follow-ups. Use each document's own

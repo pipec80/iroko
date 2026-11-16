@@ -11,7 +11,136 @@ la contención/rotación autorizada del13/11 se detalla abajo.
 
 ## Resultado vigente de la continuación
 
+### Resultado final FOLLOW-TTL — 2026-11-16
+
+**Gate aceptado por evidencia observada, con diagnóstico P2 del runner.**
+Ensayo636c3511 sobre main118fedf: cap SQL30m y navegación/cookies PASS a
+19:36:52Z; bearer original todavía200 sólo target antes de su exp20:06:33Z.
+Después de exp+tolerancia, el mismo bearer dio401 con razón de expiración a
+20:07:15.870Z; control fresco del mismo target200 sólo su perfil, antes de
+borrar fixtures. Cleanup0 de usuarios/perfiles/cuentas/miembros/grants/sesiones/
+factores/impersonaciones, auditoría inmutable264/265 preservada.
+
+Se conserva el **exit1 real** del supervisor2e4876b4 a20:07:20Z y la única
+falla `BROWSER_RELEASE_UNCONFIRMED`: el timeout15s dejó un resultado inmutable,
+aunque BrowserServer registró kill/close tardíos exitosos19:37:13Z. Windows
+confirmó ausencia del PID propio30064 y sus hijos directos a19:39:32Z y de
+nuevo al postflight; observador27360 y watchdog32232 también ausentes. No se
+reescribió el ledger ni se convirtió el proceso en exit0. Disposición P2 QA:
+reconciliar confirmación tardía antes del próximo uso del harness; no exige
+otro ensayo Cloud ni modifica el contrato de seguridad observado.
+
+Demora del observador verificada20:06:20.2555882Z→20:07:15.0176979Z,
+NtResumeProcess0 y watchdog independiente listo. Relojes/TTL/JWT/app intactos;
+la prueba demuestra rechazo natural después de exp+tolerancia, no exactamente
+en exp ni revocación inmediata por cierre web. La revisión independiente
+aprobó este método alternativo condicionado a los resultados ahora observados.
+Evidencia privada saneada: ledger636c3511, supervisor2e4876b4,
+ttl-browser-release-20261116.json y ttl-observer-delay-20261116.json.
+
+**016 sigue parcial únicamente por corroboración actual del ingreso oficial
+autenticado Mercado Pago**, ya autorizada sin pago y pendiente de acceso al
+panel/OAuth. Readback20:07Z muestra21eventos: el nuevo975 es reconciliación
+programada del pending de MP-01 a20:00:01Z, no callback entrante. No sustituye
+ese gate ni certifica recuperación financiera. Se conservan5intents.
+
+### Renovación del candidato — 2026-11-16
+
+PR252 integrado en `118fedfe57bdbc17f23d7d2a7aca9fe407d61c11` tras
+CI43914308776 verde, incluidos build, Chromium y WebKit. Producción
+`dpl_573cBiowDKQfCdL4DHknDsRWPTRM` READY del mismo SHA. Se conserva la
+preparación documental pendiente y el material ignorado de015. No se repite T1.
+El ajuste del fixture de selección válida de archivos conserva negativas,
+persistencia, bytes y cleanup; no demuestra una causa de hidratación del producto.
+Next/analyzer/eslint16.4.6, Sentry10.78.0, next-intl4.15.1, Playwright1.65.0 y
+Prettier3.10.1 quedaron integrados con override efectivo de Next comprobado en CI.
+PR253–257 quedan supersedidos; alerta135 deepmerge conserva mitigación local,
+sin versión upstream reparada ni cierre fingido.
+
+CI automático de main43932958196 también PASS: Unit155archivos1753PASS/1skip,
+cobertura91.25/84.75/96.23/93.73; SQL59archivos1192asserts PASS;
+Chromium90PASS/2skip y WebKit16PASS/1skip, sin flaky reportado en sus resúmenes.
+Build, Quality, DBtypes, Edge, auditoría de dependencias y Gitleaks PASS.
+El árbol del candidato ae1377b y main118fedf es idéntico
+(`71229d188b276c93bf3465323481554fec784d86`); no se renuevan pruebas por
+copiar conteos históricos ni se interpretan skips como casos aceptados.
+Los dos skips Chromium corresponden a MP Cloud (requiere workflow manual
+protegido) y envío real al túnel Sentry (Cloud-only); WebKit smoke omite este
+último. MP-01 tiene su run autorizado separado. El skip unitario de discovery
+permanece explícito, sin convertirlo en certificación del worker financiero.
+
+MP-01 **PASS sólo para apertura del checkout alojado**, run43933678786 sobre
+ese candidato. El escenario se detuvo antes de login/pago del proveedor. Readback:
+5intents totales,1nuevo desde18:53Z,20eventos y5suscripciones; el total de
+suscripciones no prueba una compra de este ensayo. Artefactos publicados:0.
+La reparación del parser distingue el `hashed_token` HTTP plano de la envoltura
+del SDK;41tests focales PASS. No certifica compra, callback ni worker financiero.
+
+El ensayo TTL del13/11 se interrumpió después del cap web: se conserva su
+resultado SQL/cookies y auditoría229/230. El16/11 se verificó cleanup0 de sus
+fixtures; borrar usuarios no prueba expiración natural del bearer anterior.
+Nuevo ensayo autorizado sobre118fedf con exactamente dos usuarios propios,
+MFA real y acceso RLS200 sólo al objetivo: **en curso**, sin PASS anticipado.
+SQL inicia18:54:33.7516Z y expira19:24:33.7516Z; JWT original expira19:54:34Z
+(lifetime3600s). Ledger privado sanitizado
+`plan016-ttl-a229f7d0-ff97-45bb-b0a8-81608555e338.json`; supervisión persistente,
+credenciales sólo en memoria/stdin y navegador Edge existente157.0.4341.60.
+Resultado posterior19:00:27Z: supervisor terminó exit1 por
+`EVIDENCE_WRITE_FAILED`, seguido de `INTERRUPTED`; no se registró el errno y
+no se atribuye una causa todavía. Cleanup0 de usuarios/perfiles/cuentas/miembros/
+grants/sesiones/factores/impersonaciones; auditoría246/248 preservada.
+Liberación del navegador no confirmada dentro del timeout. No se alcanzó cap web
+ni expiración natural. FOLLOW-TTL sigue **[NO VERIFICADO]** y016 parcial.
+
+La reproducción local Windows con lector sin permiso Delete confirmó que un
+lock de lectura provoca `EPERM/rename`, sin corromper el snapshot anterior.
+No demuestra el errno del intento a229, que no se registró. Reparación acotada
+del escritor: hasta5intentos de rename sólo para EACCES/EPERM/EBUSY,185ms de
+espera máxima, flush y reemplazo atómico preservados; diagnóstico saneado.
+Regresión lifecycle/supervisor12/12 PASS. Nuevo ensayo636c3511 autorizado en
+curso con supervisor2e4876b4, separado del fracaso anterior; no anticipar PASS.
+
+Corrección del método de observación: PostgREST documenta30s de tolerancia para
+`exp`; el sondeo previsto a exp+5s era prematuro. Se programó una demora sólo
+del observador propio27360, con identidad/creationtime comprobados, handle propio,
+resume en finally y watchdog independiente32232 listo:20:06:20Z→20:07:15Z.
+Self-test nativo con proceso desechable propio PASS. No se alteran reloj, TTL,
+JWT, configuración, aplicación ni datos. La revisión independiente admite este
+ajuste transparente; sólo probará rechazo después de exp+tolerancia, nunca el
+borde exacto. [Contrato temporal oficial](https://docs.postgrest.org/en/stable/references/auth.html#time-based-claims-validation).
+
+Revisión independiente final de integración/evidencia: sin nuevo P0/P1 ofrecido
+confirmado;125IDs sin pérdidas/duplicados,20DB y16N conservados. Gates finitos:
+FOLLOW-TTL natural/control fresco/cleanup y recepción autenticada oficial MP
+actual. No exige repetir toda011 ni inventa Cloud Storage TTL/RL-F02/04 universal.
+El propietario autorizó una notificación oficial sin pago; MCP historia rechaza
+OAuth y el panel requiere sesión, pendiente de acceso del propietario.
+
 ### Entrega Git y CI — 2026-11-13
+
+**Resultado posterior vigente:** PR251 MERGED en5f686841 a20:11:09Z,
+CI43495317730 ALL GREEN: Unit155archivos1745PASS/1skip, SQL59/1192,
+WebKit16PASS, Chromium89PASS/2skip/1flaky, confinados21/8/7 sin flaky y
+Build PASS. Vercel dpl_3arqTZmHCJ7nh9sUTQgapPWLbyk4 READY exactmain.
+El flaky logo falla habilitación inicial antes de upload (uploads-016:38),
+retry PASS; P2 QA alias N-27, sin defecto P0/P1 producto confirmado ni causa
+demostrada. Dueño QA/Next; retorno si recurre/cambia fixture, prueba focal
+con readiness observable; no exige repetir suites válidas ni oculta el flaky.
+
+Contención S-016.CLOUD-TRACE **resuelta** después de READY, según readback
+privado rotation-revoked.json: vieja clave Supabase ausente y401, sustituta200;
+bypass anterior ausente/nuevo presente vía API, conjuntos de otros IDs preservados.
+Endpoint público responde404 tanto anónimo como con antiguo/nuevo: no prueba
+rechazo diferencial del bypass, ni certifica WAF. RL-F06 conserva ese límite
+condicional, sin cambios WAF. No se comprobó acceso por terceros al artefacto.
+
+FOLLOW-TTL Cloud autorizado **en curso**: SQL T0 20:15:05Z, sesión exp20:45:05Z,
+JWTexp21:15:06Z, lifetime3600; primer RLS200 sólo target. No hay PASS ni cleanup
+final todavía. MP01retry autorizado43500143734 corre sobre main sin pago;
+no anticipar resultado ni aceptación checkout/callback.016 permanece parcial.
+
+El siguiente checkpoint de preparación conserva los intentos previos y queda
+supersedido por el resultado posterior sólo en las superficies recién enumeradas.
 
 PR251: commits72cc609 y cce9e3a. En CI43493924001 pasan SQL59archivos/1192asserts,
 tipos DB, Edge, Quality, Gitleaks, Docs y CodeQL. Unit155archivos,
@@ -26,7 +155,8 @@ Estos resultados no acreditan merge, main READY ni revocación de credenciales.
 
 ### Incidente P1 confirmado — 2026-11-13
 
-Registro único `S-016.CLOUD-TRACE`, dueño ejecución016/operaciones, **abierto**.
+Registro único `S-016.CLOUD-TRACE`, dueño ejecución016/operaciones, **abierto en
+este checkpoint previo; contención resuelta en actualización posterior arriba**.
 La revisión independiente detectó que tracing de Playwright incluía los headers
 de contextos API y que el workflow MP Cloud publicaba el informe HTML completo.
 El scan privado del artefacto13999499918, run43343240727/job131616364223,
@@ -59,14 +189,14 @@ eliminado por teardown. Inventario actualizado1220rutas con hashes por contenido
 sin otra auditoría exhaustiva. Esto
 no certifica eficacia WAF/bypass ni sustituye comprobaciones de acceso a la app.
 
-| Superficie               | Evidencia vigente y límite                                                                                                                                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Datos                    | Carrera de equipos RED→GREEN; SQL completo58/1189 más nuevo webhook independiente3/3; Cloud180 y dos definiciones/ACL iguales a local tras aplicación autorizada                                              |
-| Web/Auth                 | Sitemap real28URLs públicas; sesiones8/8; integrated-final productivo9/10 y retest dirigido root/logo2/2, sin skips/flaky. No se afirma una corrida única11/11                                                |
-| Reparaciones de producto | Cuota equipos; sitemap dinámico; retry global según Next instalado; continuación de invitación por petición de documento después de password/MFA. Root404 sólo corrige comentario; markup no cambió           |
-| Worker email             | Cron real,2entregas al destino oficial de pruebas,4rechazos422, archivo read_ct5, alerta Actions y recuperación verde. Fixtures0; no prueba recepción por personas/dominio propio                             |
-| MP-01                    | Run autorizado43343240727 falla Auth bootstrap401 antes de checkout;0intents/eventos nuevos. Cliente Node reparado localmente y6tests PASS; causa remota/retest pendientes de entrega Git                     |
-| Cierre                   | Git/CI/Vercel del árbol nuevo, aceptación PSP y TTL Cloud de impersonación siguen pendientes. N15 conserva disposición condicional de CAPTCHA Cloud. Ningún resultado local sustituye esos gates obligatorios |
+| Superficie               | Evidencia vigente y límite                                                                                                                                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Datos                    | Carrera de equipos RED→GREEN; SQL completo58/1189 más nuevo webhook independiente3/3; Cloud180 y dos definiciones/ACL iguales a local tras aplicación autorizada                                                            |
+| Web/Auth                 | Sitemap real28URLs públicas; sesiones8/8; integrated-final productivo9/10 y retest dirigido root/logo2/2, sin skips/flaky. No se afirma una corrida única11/11                                                              |
+| Reparaciones de producto | Cuota equipos; sitemap dinámico; retry global según Next instalado; continuación de invitación por petición de documento después de password/MFA. Root404 sólo corrige comentario; markup no cambió                         |
+| Worker email             | Cron real,2entregas al destino oficial de pruebas,4rechazos422, archivo read_ct5, alerta Actions y recuperación verde. Fixtures0; no prueba recepción por personas/dominio propio                                           |
+| MP-01                    | Run autorizado43343240727 falla Auth bootstrap401 antes de checkout;0intents/eventos nuevos. Cliente Node reparado localmente y6tests PASS; causa remota/retest pendientes de entrega Git                                   |
+| Cierre                   | PR251 integrado y main READY; contención de credenciales resuelta. CI verde conserva1flaky logo P2. FOLLOW-TTL Cloud y MP01retry en curso, sin anticipar PASS/cleanup. Compra/callback PSP sigue pendiente; N15 condicional |
 
 Las secciones de ingreso y los intentos conservan su fecha/resultado; las
 continuaciones finales los superseden sólo donde hay evidencia nueva.
@@ -286,8 +416,8 @@ Lectura no demuestra configuración Auth/Storage ni salud completa.
 | RL-F02                  | 503 limitador/500 posterior desplegado con inyección aislada pendiente; dueño API/operación; [NO VERIFICADO], sin indisponibilidad global                                                                                                                                                                                                                        |
 | RL-F04                  | Segunda fuente independiente de origen pendiente; dueño red/operación; cambio ingress o garantía pública                                                                                                                                                                                                                                                         |
 | RL-F05                  | Aceptación específica por integración, MP matriz011; no inferir de worker saliente ni mocks                                                                                                                                                                                                                                                                      |
-| RL-F06                  | Condicional cambio hosts/deployment/secreto/reglas; no cambio en esta ejecución, no ensayo universal. Inventario WAF runtime [NO VERIFICADO]                                                                                                                                                                                                                     |
-| FOLLOW-TTL              | TTL Cloud de impersonación pendiente; dueño Auth/operación; prueba dirigida autorizada. Distinto de Storage                                                                                                                                                                                                                                                      |
+| RL-F06                  | Condicional hosts/deployment/secreto/reglas: entrega y rotación nuevas registradas; bypass antiguo ausente/nuevo presente API, otros IDs preservados. Sin cambios WAF. Endpoint público404 anónimo/antiguo/nuevo no prueba denegación diferencial ni certifica WAF; dueño operación, retorno scope efectivo                                                      |
+| FOLLOW-TTL              | Cloud autorizado en curso: T0 SQL20:15:05Z, sesión exp20:45:05Z, JWTexp21:15:06Z lifetime3600, primer RLS200 sólo target. Sin PASS/cleanup final; dueño Auth/operación. Distinto de Storage                                                                                                                                                                      |
 | 015-OPERATIONS PSP      | Billing habilitado; compra/callback real, proveedor ofrecido y matriz011 pendientes. Dueño billing/propietario; operación externa requiere autorización específica y sólo Free/test sin cobro                                                                                                                                                                    |
 | 015-OPERATIONS worker   | Ensayo real específicamente autorizado PASS: cron, entrega Resend, cuatro422, archivo read_ct5, alerta job131604242774 y recuperación job131605491365; fixtures0. Dueño operación; retorno cambio worker/cron/proveedor/alerta                                                                                                                                   |
 | 015-OPERATIONS Storage  | Backend local aceptado en bucket documents privado: nueva emisión denegada tras revocación, bearer previo funciona antesTTL60, rechazo específico exp después65s y owner positivo contemporáneo. Fixture2 usuarios/equipo/objeto retirado, residual0. No reinstala derivado ni acepta Cloud/browser. Dueño Storage; retorno cambio de TTL/policy/consumidor      |

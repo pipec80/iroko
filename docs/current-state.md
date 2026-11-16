@@ -2,7 +2,59 @@
 
 Read the latest dated entry and the [freeze status](#freeze-work-status) for current ownership. Older dated checkpoints preserve what was known then; their pending/active statements do not reopen subsequently completed work. Local results, CI and provider evidence retain separate boundaries.
 
-## Incidente P1 de aceptación Cloud016 — 2026-11-13
+## Entrega de PR 252 y aceptación parcial de 016 — 2026-11-16
+
+Resultado posterior20:07Z: **FOLLOW-TTL aceptado por evidencia observada**.
+JWT original401 por expiración a20:07:15.870Z (después de exp+tolerancia),
+control fresco del mismo target200, cap web/SQL y cookies0 PASS, cleanup0 y
+auditoría264/265 conservada. Se mantiene exit1 del runner por timeout de cierre
+del navegador: éxitos tardíos y ausencia de su PID/hijos confirmados por Windows;
+P2 del harness, dueño QA y retorno antes del próximo uso. No prueba revocación
+inmediata ni rechazo exactamente en exp. **Único gate obligatorio pendiente:
+ingreso oficial autenticado de Mercado Pago actual**, autorizado sin pago pero
+pendiente de sesión/OAuth. Evento975 de20:00 es reconciliación programada del
+pending, no callback; total21eventos/5intents.016 permanece activo/parcial.
+
+### Checkpoint previo a las20:07Z
+
+`main` quedó en `118fedf` tras integrar PR 252. Pasaron todos los controles de CI del candidato, incluidos build, unitarios, SQL, E2E Chromium y WebKit. El candidato incorpora Next.js 16.4.6, Sentry 10.78.0, next-intl 4.15.1, Playwright 1.65.0 y Prettier 3.10.1. La alerta 135 de `deepmerge` conserva su mitigación local y sigue abierta upstream. [PR 252](https://github.com/pipec80/iroko/pull/252) · [CI del candidato integrado](https://github.com/pipec80/iroko/actions/runs/43914308776).
+
+**MP-01 pasó en el despliegue.** El flujo abrió el checkout alojado de Mercado Pago sin efectuar un pago. La lectura posterior de la base encontró cinco intenciones de checkout (una nueva), veinte eventos y cinco suscripciones. Pago y callback del candidato siguen **[NO VERIFICADO]**. [Ejecución de MP-01](https://github.com/pipec80/iroko/actions/runs/43933678786).
+
+**FOLLOW-TTL sigue pendiente.** El intento del 13/11 acreditó el cierre web a los 30 minutos. La recuperación del 16/11 dejó cero fixtures propios y conservó los eventos de auditoría 229 y 230. La respuesta del JWT original después de su `exp` quedó **[NO VERIFICADO]**.
+
+El intento `a229f7d0` en `118fedf` terminó a las 19:00:27 UTC con código 1. La lectura inicial devolvió HTTP 200 y únicamente el perfil del usuario de prueba. El runner registró `EVIDENCE_WRITE_FAILED`, `INTERRUPTED` y `BROWSER_RELEASE_UNCONFIRMED` antes del vencimiento SQL previsto a las 19:24:33 UTC y del JWT a las 19:54:34 UTC. El postflight verificó cero fixtures Cloud propios y conservó los eventos 246 y 248. La causa del fallo de escritura sigue en investigación. Este intento dejó pendientes ambos vencimientos y el control fresco. **016 permanece activo con veredicto parcial.** [Evidencia de 016](audits/2026-11-12-nextjs-supabase-code-review.md).
+
+El checkpoint anterior se complementa con la reproducción local del lock Windows
+`EPERM/rename` y la reparación acotada del escritor (12tests PASS). Esto no
+identifica retrospectivamente el errno de a229. Nuevo ensayo636c3511 en curso,
+sin PASS anticipado. La revisión independiente no detectó otro P0/P1 ofrecido;
+conserva como gates finitos FOLLOW-TTL y recepción oficial MP actual. El reenvío
+sin pago está autorizado y espera sesión del propietario; el MCP history falla
+por OAuth. Los cobros históricos se reutilizan sólo para sus contratos intactos.
+
+## Entrega y contención016 — 2026-11-13
+
+PR251 integrado en `5f686841` el13/11 a20:11:09Z. CI43495317730 verde:
+unit1745PASS/1skip (155archivos), SQL59/1192, WebKit16PASS, Chromium89PASS/
+2skip/1flaky, confinados21/8/7 sin flaky y build PASS. Logo falló inicialmente
+al habilitar botón antes de upload y pasó en retry: seguimiento P2 QA/N-27,
+causa no demostrada, sin P0/P1 de producto confirmado. Dueño QA/Next; retorno
+si recurre o cambia el fixture, con prueba focal y readiness observable.
+Vercel `dpl_3arqTZmHCJ7nh9sUTQgapPWLbyk4` READY del main exacto.
+Contención de credenciales S-016.CLOUD-TRACE resuelta tras entrega: antigua
+clave Supabase ausente/401, sustituta200; bypass antiguo ausente/nuevo presente
+en API y otros IDs conservados. El endpoint público respondió404 con anónimo,
+antiguo y nuevo: no demuestra denegación diferencial ni certifica WAF (RL-F06
+condicional, sin cambios WAF). Evidencia privada sin secretos: rotation-revoked.json.
+
+FOLLOW-TTL Cloud **en curso**, sin PASS ni cleanup final: SQL T0 20:15:05Z,
+sesión expira20:45:05Z; JWT expira21:15:06Z (lifetime3600). Primer acceso RLS200
+sólo al target. No confundir expiración de sesión de impersonación con JWT.
+MP-01 retry autorizado43500143734 en ejecución, sin pago; no acepta PSP todavía.
+016 permanece abierto por resultados finales/gates obligatorios pendientes.
+
+### Checkpoint anterior de preparación del incidente
 
 **016 sigue abierto; MVP no aceptado.** La revisión independiente confirmó
 `S-016.CLOUD-TRACE`: el artefacto13999499918 del run43343240727 de MP-01
@@ -902,11 +954,11 @@ required before real users; they are not deferred to selling the boilerplate.
 
 ## Freeze work status
 
-Updated **2026-11-10** after bounded local015 closure. The
+Updated **2026-11-16** after PR 252 and the Cloud checkout and impersonation trials. The
 [root roadmap](../ROADMAP.md) owns the single execution sequence. This table
 summarizes recorded evidence, not a new runtime audit or a second task checklist.
 A closed bounded scope does not close inherited follow-ups or certify the whole
-platform. Current entry: **016 integrated acceptance**, organized as candidate/evidence, integration and confirmed gaps, integrated circuit, and verdict. Bounded017 is completed; its transferred cases remain pending. Editor and Robot are
+platform. Current entry: **016 integrated acceptance**, organized as candidate/evidence, integration and confirmed gaps, integrated circuit, and verdict. Bounded 017 is complete. Its transferred cases retain their individual dispositions. Editor and Robot are
 not prerequisites of the replicable base under ADR0005. Plans/rows are not runtime evidence.
 
 | Work item                                                                                        | Recorded status                                            | Remaining work / evidence boundary                                                                                                                                                                                                                                            |
@@ -922,7 +974,7 @@ not prerequisites of the replicable base under ADR0005. Plans/rows are not runti
 | [012.5 — Pricing truth](exec-plans/completed/012-5-pricing-truth.md)                             | Completed within approved012 scope; PR241 merged2026-11-02 | Shared catalog/copy and confined checkout accepted locally; integrated CI green, Vercel READY at7ea1953. Public Cloud rendering remains unverified due to checkpoint; no real-charge or016 acceptance.                                                                        |
 | [014 T2 — Trusted image origins](exec-plans/completed/014-reference-surface-correctness.md)      | Accepted locally2026-11-05                                 | Exact origin, credentials/ports denied; unit20/20.                                                                                                                                                                                                                            |
 | [014 T3 — Platform audit interaction](exec-plans/completed/014-reference-surface-correctness.md) | Accepted locally2026-11-05                                 | Unit9/9+action4/4, SQL19 15/15, production browser1/1; Cloud separate.                                                                                                                                                                                                        |
-| [016 T2 — Candidate validation](exec-plans/active/016-nextjs-supabase-code-review.md)            | Pending as an integrated review deliverable                | Reuse applicable commit-bound evidence and run remaining checks against the corrected candidate, including Edge Functions/SQL/E2E as required. Individual 012.4 CI passes do not complete T2.                                                                                 |
+| [016 T2 — Candidate validation](exec-plans/active/016-nextjs-supabase-code-review.md)            | Partial on `118fedf` (2026-11-16)                          | Main CI and MP-01 hosted checkout passed. The current payment/callback and original JWT expiry remain pending. Both Cloud impersonation fixture sets have verified cleanup.                                                                                                   |
 | [016 T3 — Consolidation](exec-plans/active/016-nextjs-supabase-code-review.md)                   | Pending                                                    | Deduplicate, reproduce/revalidate and assign remaining findings, including offered account/auth flows, concurrent limits and data invariants; editor/Robot remain deferred. A historical finding is not proof that it remains unfixed today.                                  |
 | [015 — Reusable foundation](exec-plans/completed/015-reusable-foundation-acceptance.md)          | Completed bounded local scope,2026-11-10                   | Independent derived installation, useful tenant record/private file, configuration/brand, extension, update and restoration accepted within the local drill. Actual PSP, scheduled operations, signed-URL expiry and Cloud remain separate; see reusable-foundation evidence. |
 | [Solid MVP candidate](../ROADMAP.md)                                                             | Not yet accepted                                           | Evaluate all freeze exit gates together after the remaining work. No overall percentage is inferred from heterogeneous tasks.                                                                                                                                                 |

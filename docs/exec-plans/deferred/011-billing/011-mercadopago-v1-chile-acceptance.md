@@ -1,5 +1,61 @@
 # Mercado Pago — matriz de certificación interna para v1 Chile
 
+## Retorno acotado desde016 — 2026-11-13
+
+Actualización2026-11-16: PR252 integrado118fedf, producción READY y
+MP-01run43933678786 **PASS para abrir checkout alojado**, sin login ni pago.
+Readback:1intent nuevo (5totales),20eventos y5suscripciones; no atribuir una
+compra/callback al conteo total. No publicó artefactos. El parser HTTP corregido
+tiene41tests focales PASS y aceptación remota de apertura. El fallo43500143734
+siguiente se conserva como checkpoint histórico, supersedido para MP-01.
+La compra/callback y el worker financiero mantienen sus límites de evidencia.
+
+El frente de pasarelas continúa en esta familia011, sin otro plan. Billing sigue
+habilitado en Iroko; las pruebas históricas conservan candidato, fecha y escenario,
+sin convertirse automáticamente en aceptación de la oferta/configuración actual.
+PR251 ya se entregó en main5f68684 con Vercel READY. La repetición autorizada
+MP-01 (run43500143734) falló antes de checkout:0intents nuevos,20eventos y4suscripciones
+sin cambio,0artefactos. Se confirmó un defecto adicional del cliente: HTTP GoTrue
+devuelve hashed_token plano; properties es una envoltura del SDK. Reparación local
+41tests PASS y revisión independiente favorable, todavía sin retest remoto.
+El escenario se detiene antes del login/pago del PSP y no certifica compra ni
+callback. El intento anterior43343240727 falló401 antes de
+checkout; su informe con credenciales fue eliminado y las claves expuestas
+rotadas/revocadas con autorización. La prueba actual usa capturas deshabilitadas
+y errores saneados. Mantener pendientes los demás escenarios que no tengan
+evidencia reutilizable vigente; no suplirlos con mocks ni CI.
+
+### Reuso por diferencias, no repetición de toda la matriz
+
+Revisión independiente2026-11-16 extendida hasta118fedf: se confirma que los
+cuatro contratos siguientes permanecen intactos. MP-01 actual renueva apertura,
+configuración saliente y persistencia pending; los cobros reales correlacionados
+históricos conservan su escenario/fecha. Falta corroborar identidad/configuración
+entrante y una recepción autenticada actual. Una notificación oficial dirigida
+sobre recurso propio, sin compra, puede renovar transporte/firma/deduplicación,
+unida al cobro histórico. Autorización específica concedida; pendiente acceso al
+panel (MCP history rechaza OAuth). Dueño billing/operaciones; retorno antes de
+aceptar operativamente las suscripciones habilitadas. No fabricar un webhook local.
+
+Comparación acotada220caa7→5f68684: service.ts, catalog.ts, webhook-handler.ts y
+la ruta entrante Mercado Pago no cambiaron; creación /preapproval, external_reference,
+back_url y notification_url conservan su contrato. Los pagos/callbacks correlacionados,
+idempotencia y cancelaciones reales históricos conservan esa evidencia específica.
+No se borran ni se transforman en pruebas actuales de interfaz/configuración.
+
+El catálogo público común, los requisitos de integración sin fallback y la
+disponibilidad efectiva de checkout cambiaron desde aquel candidato; hay que probar
+el recorrido ofrecido actual. Recovery añadió fencing de lease/token y aplicación
+atómica (20261020110000), por lo que el worker financiero histórico no acepta esa
+implementación nueva. Discovery añadió rechazo payment_status_divergence; afecta
+reconciliación, sin invalidar por sí solo el parser directo del callback intacto.
+La entrega actual de016 no modifica código productivo billing respecto de5dd46f9.
+Dueño billing/operación: renovar identidad/configuración y correlación aplicable
+del circuito ofrecido; cualquier evidencia histórica reutilizada debe conservar
+escenario/fecha y límites operacionales. El worker email no certifica el financiero.
+
+## Checkpoints históricos
+
 Actualización documental inicial: **2026-09-11**, inspección estática de `main`
 en `66bc9b2`. Evidencia local de Plan 011a / Task 4 actualizada el
 **2026-09-14** en `feat/mercadopago-v1-implementation`. Pertenece a
