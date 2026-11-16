@@ -1,10 +1,16 @@
 # Iroko Engineering Documentation
 
+**Estado al 16/11/2026,20:07Z.** PR252/main118fedf y CI43932958196 aprobados. MP-01 abrió checkout sin pago. FOLLOW-TTL aceptado por evidencia observada: bearer original401 por expiración tras tolerancia, control fresco200 y cleanup0/auditoría conservada; exit1 del runner por cierre tardío del navegador permanece explícito. Sólo falta corroborar ingreso oficial autenticado MP actual, ya autorizado y pendiente de sesión/OAuth. **016 permanece activo/parcial.** [Estado actual](current-state.md) · [Evidencia](audits/2026-11-12-nextjs-supabase-code-review.md).
+
 Continuación2026-11-13: [016 sigue activo](audits/2026-11-12-nextjs-supabase-code-review.md).
-Reporte Cloud con credenciales eliminado; sustitutas Supabase/Vercel y consumidores
-preparados con autorización. Revocación anterior pendiente de despliegue automático
-Git READY y comprobación posterior. Reparación de capturas33/33; navegación pública
-real1/1 y cleanup PASS, tipos PASS. Esto no certifica WAF, pagos ni cierre016.
+PR251 integrado en main5f68684, CI43495317730 y despliegue automático READY.
+Reporte Cloud con credenciales eliminado; sustitutas Supabase/Vercel aplicadas,
+anteriores retiradas: Supabase anterior401/nueva200, bypass ausente por API.
+El sondeo público no demuestra rechazo runtime del bypass ni WAF completo.
+Reparación de capturas33/33. SQL1192 y WebKit16PASS; Chromium89PASS/2skip/1flaky
+de logo dispuesto como P2 QA; selección confinada016:7PASS sin skips/flaky.
+FOLLOW-TTL Cloud autorizado está en curso, sin PASS anticipado; PSP y veredicto
+conservan sus límites. Esto no certifica pagos ni cierre016.
 Dependabot:0PR abiertos; alerta135 deepmerge conserva mitigación y seguimiento.
 
 Ejecución vigente2026-11-12: [016 parcial](audits/2026-11-12-nextjs-supabase-code-review.md),

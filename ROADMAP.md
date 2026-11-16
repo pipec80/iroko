@@ -1,5 +1,20 @@
 # Iroko MVP Freeze Roadmap
 
+Checkpoint2026-11-16: PR252/main118fedf delivered with full CI gates green
+and canonical deployment READY. Current MP-01 passed hosted-checkout opening
+without payment; historical paid/callback evidence retains its dated boundaries.
+Current authenticated provider ingress and the original impersonation bearer
+expiry remain acceptance gates. The interrupted TTL trial cleaned its own
+fixtures; a bounded evidence-writer repair passed local tests before a new
+authorized trial. Plan016 remains active/partial; no new plan or vertical.
+
+Later20:07Z: FOLLOW-TTL accepted from observed natural expiry after the
+documented tolerance, fresh positive control and cleanup0. The runner exit1
+remains recorded for a late browser-release diagnostic, with independent
+process-absence evidence. Only current official authenticated Mercado Pago
+ingress remains mandatory and unverified; notification authorized without pay,
+pending owner session/OAuth. Do not close016 from the historical payment alone.
+
 Checkpoint2026-11-12: [016 execution remains partial](docs/audits/2026-11-12-nextjs-supabase-code-review.md).
 Local team-quota race repaired and SQL gate renewed; DB intake classified.
 Cloud/local180 after two specifically authorized migrations and definition/ACL
