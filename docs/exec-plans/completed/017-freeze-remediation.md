@@ -175,7 +175,7 @@ atribuirla al candidato nuevo y `documentation-only` no certifica producto.
 | [012.5](../completed/012-5-pricing-truth.md)              | Catálogo público/dashboard/checkout, nombres, límites, copy y metadata                                      | Sigue independiente; después de los P1 de 017                            |
 | [014-T2/T3](014-reference-surface-correctness.md)         | Imágenes por origen y auditoría global                                                                      | Conservar tareas y criterios existentes; no duplicarlas en 017           |
 | [015](../completed/015-reusable-foundation-acceptance.md) | Composición, integraciones opcionales, recetas y reuso independiente                                        | S-10 pertenece a T1; pruebas de marketing coordinan 012.5                |
-| [016](../active/016-nextjs-supabase-code-review.md)       | Consolidación inicial/final y validación del candidato                                                      | Revisa/asigna, no implementa las reparaciones de 017                     |
+| [016](../completed/016-nextjs-supabase-code-review.md)    | Consolidación inicial/final y validación del candidato                                                      | Revisa/asigna, no implementa las reparaciones de 017                     |
 
 El mantenedor conserva la decisión de producto y los permisos de Cloud; el ejecutor de cada PR es propietario de su diff; un revisor distinto comprueba aceptación y regresiones. No se inventan responsables humanos ni fechas de entrega.
 

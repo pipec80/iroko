@@ -1,5 +1,41 @@
 # Plan 016 — Revisión de Next.js, seguridad Supabase y arquitectura de datos
 
+## Cierre del núcleo técnico con alcance enmendado — 2026-11-17
+
+**Estado: completado en su alcance técnico acordado.** Decisión del propietario
+y [enmienda ADR0005](../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+El ingreso oficial PSP pendiente pasa a la [aceptación011](../deferred/011-billing/011-mercadopago-v1-chile-acceptance.md),
+con sus IDs, evidencia y [NO VERIFICADO]. Billing permanece true, precios visibles
+y checkout operativo: no se modifica aplicación, configuración, rutas, claves,
+migraciones ni proveedores. No se certifica pago/callback actual ni MVP monetizado.
+
+Los cuatro bloques quedan satisfechos por evidencia y disposiciones del alcance
+enmendado: inventario/diferencias, integración y reparaciones confirmadas,
+circuito útil con negativos/concurrencia y veredicto.125IDs/20DB/16N conservados;
+el intake no equivalía a20defectos. No se reabren T0/T1/017 ni015.
+
+Evidencia: PR251/252/258/259; baseline entregado main916b525, CI43984737759
+completo PASS y Vercel automático READY del SHA exacto. SQL59/1192 y
+unit156/1756PASS1skip; Chromium90PASS2skip y WebKit16PASS1skip conservan sus
+límites. Cloud/repo180migraciones. Worker real con entrega/rechazo/alerta/recuperación
+y cleanup; Storage localTTL y FOLLOW-TTL Cloud observados, con control fresco
+y cleanup0/auditoría preservada. El exit1 del harness por cierre tardío del
+navegador permanece registrado, con liberación posterior comprobada y P2 QA.
+
+Readback17Nov: nightly programado44073438546 sobre916b525 PASS en Production
+Smoke Tests, Email Worker Health y Database Advisors. Resuelve el retorno del
+caller nocturno reparado; no certifica todo Sentry/WAF. El429 del sondeo anónimo
+anterior conserva su alcance y RL-F06 condicional.
+
+Reuso justificado: este cierre sólo cambia documentación y ubicación del plan;
+fuentes, dependencias, SQL, configuración ofrecida y protocolo PSP se conservan.
+Ver [auditoría y límites](../../audits/2026-11-12-nextjs-supabase-code-review.md)
+y [registro central](../active/freeze-remediation-register.csv).
+Revisión independiente documental favorable, sin P0/P1; observación P2 de
+orientación obsoleta corregida en los índices. Checks de entrega y manifiesto
+se registran en la misma auditoría antes de integrar. Los checkpoints siguientes son históricos;
+sus frases «016 abierto» describen la situación anterior a esta enmienda.
+
 ## Entrada operativa — 2026-11-10
 
 > **Para agentes:** aplicar `superpowers:executing-plans` por bloques y revisión
@@ -84,7 +120,7 @@ Al ejecutar, registrar HEAD real y decidir qué resultados siguen siendo válido
       cobertura histórica de lo que no cambió con justificación, sin otra lectura
       masiva automática ni afirmar que los947 archivos históricos son actuales.
 - [x] Usar [capabilities](../../capabilities.md) y el
-      [registro central](freeze-remediation-register.csv), sin crear otro backlog.
+      [registro central](../active/freeze-remediation-register.csv), sin crear otro backlog.
       En la evidencia de ejecución mapear capacidad ofrecida → productor
       Supabase/backend → consumidor Next → autorización → evidencia → gap.
       Inventariar servicios/consumidores existentes antes de intervenirlos.
@@ -120,12 +156,12 @@ Runbook V1/V2 y casos concretos V3/V4 según naturaleza del gap.
       sigan vigentes; cubrir negativas de acceso, roles y módulos excluidos.
 - [x] Completar sólo evidencia faltante de los16 IDs N recibidos de017, según
       su tabla V2/V3; un recorrido puede cubrir varios contratos explícitos.
-- [ ] Ejecutar gates proporcionales del
+- [x] Ejecutar gates proporcionales del
       [runbook V0–V4](../../runbooks/freeze-candidate-validation.md), reutilizando
       CI/evidencia válida y registrando comando, candidato, resultado y cleanup.
       QA manual reproducible sirve para navegador; no sustituye SQL negativo,
       concurrencia con sesiones independientes, tipos, cobertura ni build.
-- [ ] Resolver alcance/evidencia de015-OPERATIONS, RL-F02/04/05/06 y FOLLOW-TTL.
+- [x] Resolver alcance/evidencia de015-OPERATIONS, RL-F02/04/05/06 y FOLLOW-TTL.
       PSP real, worker programado/alerta/recuperación, paridad Cloud y expiración
       de bearer previo conservan [NO VERIFICADO] hasta prueba o disposición
       compatible con oferta. No inferirlos de mocks, CI o HTTP200.
@@ -145,7 +181,7 @@ editor avanzado ni Robot. Runbook V3/V4.
 - [x] Actualizar registro, current-state, capabilities, roadmap y referencias
       con un único veredicto del candidato: aceptado, parcial o bloqueado, con
       evidencia y pendientes. Mantener diferidos con dueño/condición de retorno.
-- [ ] Cerrar016 sólo si no quedan P0/P1 ofrecidos y todos los gates acordados
+- [x] Cerrar016 sólo si no quedan P0/P1 ofrecidos y todos los gates acordados
       tienen resultado suficiente; [NO VERIFICADO] obligatorio no permite cierre.
       Reutilización local015 no equivale a distribución comercial013 ni a cierre
       de todos los escenarios históricos011/017. Runbook V5.
@@ -274,7 +310,7 @@ Aplicar el runbook final actualizado; un bloqueo no se convierte en PASS.
 ## Disposición histórica — 2026-10-20
 
 La [auditoría dirigida](../../audits/2026-10-19-freeze-code-and-documentation-revalidation.md)
-y el [registro central](freeze-remediation-register.csv) consolidan los 53 IDs
+y el [registro central](../active/freeze-remediation-register.csv) consolidan los 53 IDs
 históricos y sus alias/seguimientos. Las reparaciones están asignadas a
 [017](../completed/017-freeze-remediation.md), 012.5, 014 o 015; 016 conserva revisión,
 validación y disposición según la asignación de esa fecha. La entrada operativa
@@ -603,7 +639,7 @@ propuesto. No convertir una ausencia de prueba en una vulnerabilidad confirmada.
 ### T1 — Tres revisiones en lectura
 
 La continuación se organiza con el
-[subplan T1 — seguridad, integridad y flujos críticos](016-t1-security-integrity-critical-flows.md).
+[subplan T1 — seguridad, integridad y flujos críticos](../active/016-t1-security-integrity-critical-flows.md).
 Su mapa histórico asignó947 rutas y cerró el contraste estático el8de octubre.
 No es una checklist vigente de trabajo pendiente ni una segunda secuencia;
 actualizar el candidato por diferencias conforme al bloque1.

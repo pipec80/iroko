@@ -1,5 +1,12 @@
 # Architecture Decision Records
 
+## Enmienda vigente — 2026-11-17
+
+ADR0005 conserva su decisión original y añade la enmienda explícita del propietario:
+cierre016 del núcleo técnico, con billing/precios/checkout habilitados y aceptación
+PSP independiente en011. No es desactivación ni certificación de proveedor, MVP
+monetizado o distribución013. Ver el texto aceptado y el índice de planes.
+
 One file per significant, hard-to-reverse technical decision — what was
 decided, what alternatives were considered, and why. Write one when a
 decision would otherwise only live in a PR description or a chat transcript
@@ -19,7 +26,7 @@ Filename convention: `NNNN-short-title.md`, numbered sequentially.
 
 Execution status2026-11-10: ADR0005 remains the accepted scope decision.
 [015 local reuse evidence](../quality/reusable-foundation-evidence.md) closes the bounded local drill;
-[016](../exec-plans/active/016-nextjs-supabase-code-review.md) owns integrated acceptance.
+[016](../exec-plans/completed/016-nextjs-supabase-code-review.md) owns integrated acceptance.
 No new architecture decision is introduced by reorganizing its execution tasks.
 Accepted ADR text retains its decision date and rationale; neither its status nor
 this index proves current runtime or Cloud health. ADR0004's bounded acceptance

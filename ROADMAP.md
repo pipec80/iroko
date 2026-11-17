@@ -1,5 +1,34 @@
 # Iroko MVP Freeze Roadmap
 
+## Salida técnica016 y cola vigente — 2026-11-17
+
+**016 completado en su alcance enmendado por el propietario.**
+[Decisión](docs/adr/0005-replicable-saas-mvp-and-bounded-acceptance.md),
+[cierre](docs/exec-plans/completed/016-nextjs-supabase-code-review.md) e
+[inventario completo de planes](docs/exec-plans/README.md).
+001–010,012,014,015 y padre017 conservan sus cierres acotados; se suma016.
+No queda otro plan de implementación activo por defecto.011 conserva aceptación
+de pasarelas pendiente como frente independiente;013 distribución comercial
+sigue diferido. Hijos/referencias no se cuentan como planes nuevos activos.
+
+Billing, precios, planes y apertura de checkout permanecen habilitados, sin
+cambios de código ni configuración. Se separan sus pruebas, no la funcionalidad.
+La recepción oficial MP, pago/activación y recuperación conservan [NO VERIFICADO]
+en011; no se aceptan mediante el cierre técnico016 ni por configurar keys.
+La obligación anterior de resolver ese gate dentro016 queda sustituida por la
+enmienda expresa; antes de confiar dinero real permanece la aceptación PSP.
+
+Siguiente: mantenimiento P2 en sus retornos; sesión visual011 con el propietario
+cuando acuerde sandbox/cuentas/ventana y autorización de cada operación.
+Luego evaluar el MVP monetizado con esa evidencia.013 requiere decisión de venta;
+Robot/editor y nuevos proveedores no se activan. La auditoría futura de la idea
+original se hará en otra conversación, sin iniciar ahora una nueva ronda.
+
+El núcleo técnico y la réplica acotada tienen evidencia, pero este cierre no
+declara un producto comercial instalable ni toda la integración financiera
+certificada. Los exit gates de abajo conservan seguridad/integridad y usan la
+asignación de aceptación PSP de17Nov. Los checkpoints anteriores son históricos.
+
 Checkpoint2026-11-16: PR252/main118fedf delivered with full CI gates green
 and canonical deployment READY. Current MP-01 passed hosted-checkout opening
 without payment; historical paid/callback evidence retains its dated boundaries.
@@ -64,7 +93,7 @@ surface; it does not silently expand the product.
 
 ## Ordered queue
 
-Current execution entry,2026-11-10: [existing Plan016](docs/exec-plans/active/016-nextjs-supabase-code-review.md), in four blocks:
+Historical execution entry,2026-11-10: [existing Plan016](docs/exec-plans/completed/016-nextjs-supabase-code-review.md), in four blocks:
 
 1. Identify the current candidate, offered capabilities and reusable evidence.
 2. Verify Next/Supabase integration and repair only confirmed defects in the offered scope.

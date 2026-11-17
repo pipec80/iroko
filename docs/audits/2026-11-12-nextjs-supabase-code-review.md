@@ -1,5 +1,37 @@
 # Plan016 — candidato y veredicto integrado parcial, 2026-11-12
 
+## Veredicto final enmendado — 2026-11-17
+
+**Núcleo técnico016 aceptado y plan completado en su alcance acordado.**
+El propietario aprobó mantener billing/precios/checkout y separar las pruebas
+profundas de pasarelas en011. La enmienda ADR0005 sustituye expresamente el
+gate PSP dentro016; no afirma que el ingreso oficial actual haya sido probado.
+015-OPERATIONS conserva su evidencia ya aceptada y transfiere sólo el residuo
+PSP a011; RL-F05 permanece pendiente allí. FREEZE-VALIDATION y RS-09 quedan
+dispuestos por alcance y subfilas, sin PASS global de hardening/proveedores.
+125IDs/20DB/16N y alias se conservan.
+
+Se reutilizan fuentes del núcleo entregadas en916b525 y CI43984737759 completo
+PASS; PR258/259 conservan despliegue automático exacto READY. Este cambio es
+documental: no hay delta de aplicación, dependencias, SQL ni oferta efectiva.
+Los controles reales worker/Storage/FOLLOW-TTL preservan sus resultados y límites,
+incluido exit1 del harness con cierre posterior confirmado y cleanup0.
+
+Readback programado44073438546 (17Nov11:22:29Z, event=schedule,916b525):
+Production Smoke Tests134005200075, Email Worker Health134005200606 y
+Database Advisors134005200531 PASS. Cierra el seguimiento del caller nightly;
+no extrapolar a certificación global Sentry/WAF ni borrar el429 automatizado.
+
+Pendientes: aceptación operativa PSP/011 con propietario+billing, sesión visual,
+cuentas vendedor/comprador propias, sandbox/cuotas y escenarios acordados.
+No se ejecutan pagos, notificaciones o pruebas nuevas ahora.013 requiere decisión
+comercial posterior. QA conserva harness antes de próximo uso y N-27 ante
+recurrencia; Datos/Auth conserva DB-01 ante cambios de lifecycle/grants o promesa
+de inmutabilidad. Condicionales RL-F02/04/06 y N-15 conservan sus retornos.
+Los resultados anteriores «parcial/abierto» siguen siendo checkpoints históricos.
+
+Revisión documental independiente scope_closure_final_review favorable: sin P0/P1; verificó125IDs,20DB,16N/alias y recepción011. Se corrigió el P2 de orientación obsoleta en la tabla vigente y los índices, con checker documental y lectura focal. La revisión no acepta operaciones PSP/Cloud nuevas, Sentry/WAF universal o distribución comercial; esos límites y responsables quedan explícitos. Manifiesto y entrega se verifican por el ejecutor antes de integrar.
+
 **Veredicto: parcial;016 permanece abierto.** Reparación local de cuota de equipos
 demostrada RED→GREEN. No se acepta el MVP integrado: hay gates obligatorios
 sin evidencia suficiente. La diferencia de dos migraciones Cloud quedó resuelta

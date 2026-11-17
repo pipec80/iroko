@@ -1,5 +1,16 @@
 # Testing Strategy
 
+## Disposición de cierre016 — 2026-11-17
+
+El núcleo técnico016 queda cerrado por alcance enmendado del propietario.
+Reusar resultados válidos de tipos/lint/cobertura/SQL/build/browser y operaciones
+con su candidato, configuración y límites; no relanzar suites por un movimiento
+documental. La aceptación PSP permanece en011 mediante sesiones visuales
+supervisadas, identidades/cuentas de prueba y operaciones autorizadas.
+Billing y sus pruebas existentes se conservan; no se oculta el checkout ni se
+eliminan assertions, umbrales o guards. Un futuro plan de auditoría requiere
+su alcance propio; esta actualización no lo ejecuta.
+
 ## Principle
 
 MVP scope accepted 2026-10-28: [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
