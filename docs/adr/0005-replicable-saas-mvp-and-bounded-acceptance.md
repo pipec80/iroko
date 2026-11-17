@@ -1,5 +1,39 @@
 # ADR 0005: MVP SaaS replicable y aceptación acotada
 
+## Enmienda aceptada — 2026-11-17, America/Santiago
+
+Decisión explícita del propietario: cerrar016 por el núcleo técnico revisado y
+separar la aceptación profunda de pasarelas en la familia011 existente.
+**Billing sigue habilitado:** planes/precios, navegación y apertura del checkout
+Mercado Pago permanecen como están. No se ocultan rutas, no se apagan compras,
+no se añade inteligencia ni se implementan proveedores nuevos. Las pasarelas
+no son aquí funcionalidad excluida: se separa el trabajo de aceptación del
+proveedor, con su obligación operativa pendiente y visible.
+
+Esta enmienda sustituye, para el cierre de016, la condición anterior que exigía
+renovar el ingreso oficial PSP dentro de ese mismo plan por estar billing activo.
+No borra sus resultados ni convierte compra/callback/recuperación financiera
+en PASS. MP-01 demuestra apertura alojada sin pago; la evidencia real histórica
+se reutiliza sólo donde contrato y escenario permanecen vigentes.
+
+011 conserva [NO VERIFICADO] y la aceptación necesaria antes de confiar dinero
+real o prometer suscripciones certificadas: identidad vendedor/comprador, sandbox
+y cuotas reales disponibles, pago/estado/callback y autorización de la cuenta,
+duplicados/errores/recuperación según el escenario acordado. Dueños: billing y
+propietario. Retorno mediante sesión visual supervisada con cuentas de prueba
+correctas y autorización específica; configurar access keys no prueba por sí
+solo esos resultados. No se infiere un defecto del MCP a partir del login fallido.
+
+016 puede cerrarse con evidencia del núcleo, revisión independiente y disposición
+trazable del residuo PSP en011. Ese cierre no certifica un MVP monetizado completo
+ni distribución comercial013. P0/P1 conocidos de seguridad/integridad siguen
+bloqueando su capacidad; esta decisión no acepta vulnerabilidades ni debilita
+guards. Editor/Robot conservan su exclusión efectiva y sus condiciones de retorno.
+
+Los apartados fechados originales siguientes conservan el alcance histórico.
+La enmienda prevalece sólo en la asignación de aceptación PSP y en el significado
+del cierre016; el resto del contrato se mantiene.
+
 - Estado: Accepted.
 - Fecha: 2026-10-28, America/Santiago.
 - Decisor: propietario del repositorio, instrucción explícita en esta sesión.

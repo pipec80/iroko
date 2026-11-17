@@ -1,12 +1,25 @@
 # Inicio de sesión — ejecución del Plan016
 
+## Relevo tras el cierre — 2026-11-17
+
+016 queda completado en su alcance técnico enmendado. El prompt original de
+abajo es histórico: no ejecutar otra vez016 ni reabrir T1/017.
+Para la siguiente conversación, comenzar por docs/current-state.md, ROADMAP.md,
+el índice docs/exec-plans/README.md, ADR0005 y su enmienda. Contrastar la idea
+original con implementación/evidencia/pendientes sin tratar este relevo como una
+nueva auditoría ya autorizada. Pasarelas quedan en011 para trabajo visual con
+el propietario, cuentas de prueba y operaciones específicamente autorizadas.
+Conservar precios/checkout y todos los guards.013/editor/Robot no se activan.
+
+## Prompt histórico de ejecución — supersedido para el cierre actual
+
 Copiar el siguiente prompt en una nueva sesión del mismo repositorio. Este
 archivo prepara el relevo; no constituye evidencia de ejecución ni un plan nuevo.
 
 ```text
 Trabajamos en C:\_PROYECTOS_DOCKERS\saasboilerplate, proyecto Iroko.
 Ejecuta el Plan016 existente, preparado documentalmente el2026-11-10:
-docs/exec-plans/active/016-nextjs-supabase-code-review.md.
+docs/exec-plans/completed/016-nextjs-supabase-code-review.md.
 No crees otro plan ni repitas la auditoría completa histórica de017/T1.
 
 Primero verifica git status, rama y HEAD; preserva cambios ajenos y material

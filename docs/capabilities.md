@@ -1,5 +1,18 @@
 # Iroko Capability Inventory
 
+## Acceptance boundary — 2026-11-17
+
+Plan016 completed for the technical core under the owner's dated ADR0005 amendment.
+Billing remains enabled: prices, plans and hosted checkout are unchanged.
+Provider acceptance remains pending in the existing011 family; current purchase,
+callback and financial recovery do not receive PASS from the016 closure.
+Configuring credentials alone does not certify the integration. Core evidence
+retains its scenario/date; advanced editor/Robot remain effectively excluded.
+Nightly schedule44073438546 passed production smoke, email health and advisors;
+this resolves the monitor caller follow-up, without universal Sentry/WAF proof.
+See [scope decision](adr/0005-replicable-saas-mvp-and-bounded-acceptance.md) and
+[plan inventory](exec-plans/README.md). Earlier checkpoints are historical.
+
 Delivery readback2026-11-16,23:57Z: PR258/main8f13892 and CI43949809330 passed;
 automatic Vercel deployment READY at the exact revision. Application/SQL/MP
 protocol unchanged from runtime118fedf. FOLLOW-TTL accepted with the documented
@@ -33,7 +46,7 @@ archive, Actions alert and recovery passed a bounded authorized real test.
 PSP and remaining required runtime evidence are not accepted. DB intake dispositions
 and16 N cases preserve their limits; no integrated MVP acceptance.
 
-Current disposition2026-11-10: [015 bounded local reuse accepted](quality/reusable-foundation-evidence.md). [016](exec-plans/active/016-nextjs-supabase-code-review.md) is the sole integrated acceptance entry, using candidate/evidence, integration and confirmed gaps, integrated circuit, and verdict. The capability rows retain dated evidence; no blanket runtime/Cloud PASS is implied. Actual PSP, scheduled worker/alerts, Cloud parity and signed-URL expiry remain pending where offered.
+Current disposition2026-11-10: [015 bounded local reuse accepted](quality/reusable-foundation-evidence.md). [016](exec-plans/completed/016-nextjs-supabase-code-review.md) is the sole integrated acceptance entry, using candidate/evidence, integration and confirmed gaps, integrated circuit, and verdict. The capability rows retain dated evidence; no blanket runtime/Cloud PASS is implied. Actual PSP, scheduled worker/alerts, Cloud parity and signed-URL expiry remain pending where offered.
 
 Historical dated checkpoints follow; newer evidence supersedes their rollout status.
 

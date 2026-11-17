@@ -1,8 +1,19 @@
 # Estrategia de producto — base SaaS reutilizable
 
+## Decisión de cierre técnico — 2026-11-17
+
+El propietario cierra016 por el núcleo revisado y separa aceptación PSP en011,
+según la [enmiendaADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md).
+Precios, planes y checkout siguen habilitados e implementados; no se oculta billing.
+Su configuración y apertura probada no certifican cobro/callback/recuperación:
+esa obligación operativa permanece en011 antes de confiar dinero real.
+El núcleo reutilizable tiene aceptación técnica acotada; no se declara producto
+comercial instalable ni se activa013, Robot o editor. El índice de planes y
+roadmap fijan la siguiente secuencia; las entradas anteriores conservan su fecha.
+
 ## Estado de ejecución — 2026-11-10
 
-[015](../exec-plans/completed/015-reusable-foundation-acceptance.md) completó el ensayo local acotado de composición/configuración, instalación derivada, marca, extensión, actualización y restauración. [Evidencia y límites](../quality/reusable-foundation-evidence.md).014 y017 conservan sus cierres acotados. [016](../exec-plans/active/016-nextjs-supabase-code-review.md) es la única entrada de ejecución: candidato/evidencia, integración y brechas confirmadas, circuito integrado y veredicto. Pagos PSP reales, operación programada/alertas, paridad Cloud y expiración runtime de URL firmada conservan sus disposiciones pendientes cuando correspondan a la oferta; no se aceptan por el cierre local.
+[015](../exec-plans/completed/015-reusable-foundation-acceptance.md) completó el ensayo local acotado de composición/configuración, instalación derivada, marca, extensión, actualización y restauración. [Evidencia y límites](../quality/reusable-foundation-evidence.md).014 y017 conservan sus cierres acotados. [016](../exec-plans/completed/016-nextjs-supabase-code-review.md) es la única entrada de ejecución: candidato/evidencia, integración y brechas confirmadas, circuito integrado y veredicto. Pagos PSP reales, operación programada/alertas, paridad Cloud y expiración runtime de URL firmada conservan sus disposiciones pendientes cuando correspondan a la oferta; no se aceptan por el cierre local.
 
 La dirección aceptada y la investigación fechada siguientes conservan sus decisiones y contexto; las promesas comerciales y verticales diferidas no se amplían.
 

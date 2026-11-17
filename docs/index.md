@@ -1,5 +1,28 @@
 # Iroko Engineering Documentation
 
+## Cierre016 y siguiente trabajo — 2026-11-17
+
+**016 completado por el núcleo técnico, con alcance enmendado por el propietario.**
+[Decisión](adr/0005-replicable-saas-mvp-and-bounded-acceptance.md),
+[plan cerrado](exec-plans/completed/016-nextjs-supabase-code-review.md) y
+[evidencia](audits/2026-11-12-nextjs-supabase-code-review.md).
+Billing sigue habilitado: planes, precios y apertura de Mercado Pago se conservan.
+Su aceptación profunda permanece pendiente en011, independiente del cierre016;
+no se certifica compra/callback actual ni un MVP monetizado listo para clientes.
+
+No quedan pruebas obligatorias adicionales del núcleo016 bajo este alcance.
+Se reutiliza CI/SQL/build/browser/worker/TTL registrados; no se ejecutan otra vez
+por mover el plan. Nightly programado44073438546 PASS sobre916b525 en smoke,
+correo y advisors; no equivale a aceptación global Sentry/WAF. P2 del harness,
+DB-01, N-27 y seguimientos condicionales conservan dueño y retorno en el registro.
+
+Siguiente orden: preparar el retorno visual a011 con el propietario cuando haya
+sesión/sandbox/cuentas de prueba disponibles; después evaluar el MVP con pagos
+según esa evidencia.013 sigue diferido hasta decidir distribución comercial;
+editor/Robot no se activan. El [índice de planes](exec-plans/README.md) distingue
+familias cerradas, pendientes y referencias históricas. Los checkpoints previos
+se conservan con sus fechas.
+
 Readback2026-11-16,23:57Z: PR258 integrado en main8f13892, CI43949809330
 completo PASS y Vercel automático READY del SHA exacto. FOLLOW-TTL aceptado
 con sus límites y exit1 del harness conservado. Sólo queda recepción oficial
@@ -27,7 +50,7 @@ y del proveedor ofrecido aún pendiente impide cierre integrado.
 
 Estado vigente2026-11-10: [015 completado localmente](exec-plans/completed/015-reusable-foundation-acceptance.md)
 para el núcleo reutilizable; [evidencia y límites](quality/reusable-foundation-evidence.md).
-El siguiente gate es [016](exec-plans/active/016-nextjs-supabase-code-review.md): candidato/evidencia, integración y brechas confirmadas, circuito integrado y veredicto. Es la única entrada de ejecución; T1 y los hijos017 conservan referencias históricas. No se acepta Cloud ni pagos reales por este cierre.
+El siguiente gate es [016](exec-plans/completed/016-nextjs-supabase-code-review.md): candidato/evidencia, integración y brechas confirmadas, circuito integrado y veredicto. Es la única entrada de ejecución; T1 y los hijos017 conservan referencias históricas. No se acepta Cloud ni pagos reales por este cierre.
 
 This directory is the versioned knowledge base for current status, architecture,
 execution plans, evidence, runbooks and durable technical decisions.
@@ -38,7 +61,7 @@ Direction accepted 2026-10-28: [replicable SaaS MVP and bounded acceptance,
 ADR0005](adr/0005-replicable-saas-mvp-and-bounded-acceptance.md). Core first,
 then optional verticals. Editor runner is not on the MVP critical path; its
 effective exclusion now has local guards/unit and bounded browser acceptance
-(2026-10-29); composition and independent reuse were accepted within the bounded local015 drill on2026-11-10. Integrated acceptance remains in016; see the dated current state.
+(2026-10-29); composition and independent reuse were accepted within the bounded local015 drill on2026-11-10. Technical integrated016 acceptance closed under the17Nov amendment; provider acceptance remains independently in011. See the dated current state.
 
 1. [Current state](current-state.md) — implemented behavior, dated evidence,
    operational gaps and verification boundaries. The [freeze progress table](current-state.md#freeze-work-status) summarizes completed scopes and remaining work.

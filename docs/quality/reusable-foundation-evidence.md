@@ -1,5 +1,15 @@
 # Plan 015 — evidencia de base reutilizable
 
+## Recepción posterior del núcleo016 — 2026-11-17
+
+015 conserva su aceptación local y el alcance de sus ensayos fechados.
+016 completó su núcleo técnico bajo enmienda ADR0005: worker real, migraciones,
+StorageTTL y FOLLOW-TTL conservan su evidencia específica en la auditoría016.
+Sólo el residuo de aceptación PSP de015-OPERATIONS queda recibido en011,
+con billing/precios/checkout habilitados y pruebas posteriores con el propietario.
+No marcar compra/callback actual PASS ni repetir el derivado015 por esta transición.
+Los checkpoints siguientes describen lo conocido en su fecha.
+
 ## Veredicto vigente — 2026-11-10
 
 **Aceptado localmente el núcleo reutilizable, con alcance acotado por el

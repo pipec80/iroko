@@ -22,7 +22,7 @@ seguridad, integridad y flujos esenciales, sin retirar ninguna ruta, opción,
 regla o método alternativo del contrato original.
 
 **Arquitectura de trabajo:** subplan operativo del
-[Plan 016](016-nextjs-supabase-code-review.md). Revisar conjuntos relacionados
+[Plan 016](../completed/016-nextjs-supabase-code-review.md). Revisar conjuntos relacionados
 de productor, consumidor, autorización, persistencia y pruebas. La coordinación
 escribe artefactos; los frentes N/S/D entregan lecturas y contrastes independientes.
 
@@ -38,7 +38,7 @@ toolchain instalada, Git y documentos versionados. Ninguna dependencia nueva.
 ## Uso actual de esta referencia — 2026-11-10
 
 La ejecución pendiente se sigue exclusivamente desde los cuatro bloques del
-[padre016](016-nextjs-supabase-code-review.md). T0/T1 conservan su cierre y
+[padre016](../completed/016-nextjs-supabase-code-review.md). T0/T1 conservan su cierre y
 cobertura históricos; el candidato vigente se contrasta por cambios y por
 contratos ofrecidos, sin presentar las lecturas antiguas como revisión del árbol
 actual. Las instrucciones de ejecución, baseline y casillas inferiores describen

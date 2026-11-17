@@ -1,5 +1,60 @@
 # Execution Plan Lifecycle
 
+## Inventario autoritativo de cierre — 2026-11-17
+
+La [enmienda ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md)
+cierra016 por el núcleo técnico. No queda otro plan de implementación activo
+por defecto. Las carpetas contienen también referencias históricas y documentos
+de una misma familia; un archivo en active/ no equivale a una tarea abierta.
+
+| Familia                         | Estado vigente                           | Alcance / siguiente condición                                              |
+| ------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------- |
+| 001 — deriva Supabase           | Completado                               | Mantenimiento ante cambios/regresión de migraciones                        |
+| 002 — worker Cloud              | Completado                               | Operaciones ante incidentes o cambios                                      |
+| 003 — Sentry                    | Completado acotado                       | Observabilidad ante regresión; no certificación global                     |
+| 004 — alineación Next           | Completado                               | Plataforma en próximas actualizaciones                                     |
+| 005 — calidad                   | Completado acotado                       | QA/operaciones conservan seguimientos registrados                          |
+| 006 — PostHog                   | Completado acotado                       | Analítica ante cambios de contrato                                         |
+| 007 — túnel Sentry Cloud        | Completado acotado                       | Observabilidad ante fallos del túnel                                       |
+| 008 — salud email               | Completado acotado                       | Operaciones ante alarmas/incidentes                                        |
+| 009 — RBAC/miembros             | Completado                               | Backend ante regresión de autorización                                     |
+| 010 — aislamiento tenant        | Completado                               | Backend ante regresión/ampliación                                          |
+| 011 — pasarelas                 | Pendiente/diferido, frente independiente | Billing/propietario; sesión visual, sandbox/cuentas y escenario autorizado |
+| 012 — hardening/pricing         | Completado por entregables               | Hijos012.2/.3/.4/.5 conservan límites; RL-F según retorno                  |
+| 013 — preparación comercial     | Diferido                                 | Propietario decide vender/distribuir boilerplate; no activación automática |
+| 014 — superficies de referencia | Completado local acotado                 | QA ante cambios que invaliden evidencia                                    |
+| 015 — base reutilizable         | Completado local acotado                 | Plataforma/QA ante nueva adaptación o evidencia invalidada                 |
+| 016 — revisión integrada        | Completado, alcance enmendado            | Núcleo técnico; aceptación PSP transferida a011, billing sigue habilitado  |
+| 017 — remediación               | Padre completado acotado                 | Sólo los dos lotes aprobados; cada pendiente conserva su dueño             |
+
+### Referencias y auxiliares que no crean otra cola
+
+- 016-T1: revisión estática histórica cerrada08/10; no se reabre.
+- 017.1–017.5: referencias técnicas en active/, con evidencia, transferencias y
+  diferidos. No se marcan sus alcances enteros como completados. Editor avanzado
+  sigue diferido y efectivamente excluido; Robot conserva la frontera aceptada.
+- 011: una familia, no17 iniciativas nuevas. Fase1/corev2 cerrado; Mercado Pago
+  fases2/6 y matrices con aceptación parcial; Stripe/Paddle/Lemon certificaciones
+  diferidas.011a–g son desgloses/referencias de esa familia, no ejecución aprobada.
+- Reorganización documental: completada en su alcance fechado.
+- Mapa de servicios externos: auxiliar diferido; operaciones/propietario lo
+  priorizan expresamente. La dependencia histórica012.4 satisfecha no lo ejecutó.
+
+### Orden siguiente y significado de «MVP»
+
+1. Mantener cerrado016 y sus pruebas válidas; atender P2 sólo en su retorno.
+2. Retomar011 visualmente con el propietario cuando acuerde ventana, cuentas,
+   configuración y operaciones. Mantener precios/checkout visibles y funcionales.
+3. Con esa evidencia, decidir aceptación del uso monetizado. Configurar claves
+   o abrir checkout no certifica pago/callback/recuperación.
+   4.013 sólo si se decide distribución comercial. Auditoría de idea original e
+   implementación se propone para otra conversación; no se ejecuta aquí.
+
+Núcleo técnico aceptado no significa todos los proveedores certificados, MVP
+monetizado aceptado ni producto comercial instalable. Los criterios generales de
+seguridad y los [125IDs](active/freeze-remediation-register.csv) conservan vigencia.
+Los listados y checkpoints históricos siguientes se leen con esta actualización.
+
 Execution plans translate approved scope into bounded work and acceptance
 criteria. Their directory records lifecycle; it does not by itself authorize
 execution or prove a result.
@@ -20,7 +75,7 @@ operational status. Plans may describe intended work and historical evidence,
 but they do not override newer executable code, tests, configuration,
 migrations or dated observations.
 
-## Current freeze
+## Historical freeze checkpoints
 
 Entrada vigente2026-11-10: [015](completed/015-reusable-foundation-acceptance.md)
 cierra el núcleo reutilizable local con circuito útil, extensión, actualización
@@ -48,9 +103,9 @@ Keep deferred child scope identifiable; do not move its failed checks to complet
 
 Plan012 está cerrado por entregables2026-11-02; [disposición de seguimientos](../audits/2026-11-02-plan-012-integration-and-disposition.md). No acepta todo el MVP.
 
-Active product plans are:
+No product implementation plan is active by default after the17Nov closure.
 
-- [Plan 016 — Next.js and Supabase code review](active/016-nextjs-supabase-code-review.md)
+- [Plan016 — completed technical scope](completed/016-nextjs-supabase-code-review.md)
 
 Completed bounded remediation:
 
@@ -61,7 +116,7 @@ Completed bounded remediation:
 The [central disposition register](active/freeze-remediation-register.csv)
 preserves all historical IDs, partial splits, aliases and follow-ups. Detailed
 [012.5](completed/012-5-pricing-truth.md) is completed locally2026-11-02 under Plan012, after the P1
-remediation phase. Final 016 validation follows the final changes from 015,
+remediation phase. Final technical016 validation completed after015 under the17Nov amendment,
 using the [candidate runbook](../runbooks/freeze-candidate-validation.md).
 
 Read the root roadmap for the single ordered queue. Maintenance records that
@@ -70,13 +125,13 @@ validation contract passes.
 
 For historical 017 evidence, read its completed parent, the relevant child
 reference and CSV rows; these are not a new execution entry. Local repair acceptance permits the next roadmap phase;
-integrated acceptance remains after 015 under 016. 017 may close its bounded remediation independently under the November2
+technical integrated acceptance closed after015 under016; provider acceptance remains011. 017 may close its bounded remediation independently under the November2
 contract;016 owns the transferred final evidence and integrated acceptance. Evidence belongs in the existing dated audit
 for its subsystem; a rerun alone does not require another plan or audit file.
 
-### Una entrada de ejecución; referencias conservadas
+### Entrada histórica de ejecución; referencias conservadas
 
-[016](active/016-nextjs-supabase-code-review.md) organiza el trabajo pendiente en
+[016](completed/016-nextjs-supabase-code-review.md) organizó la ejecución histórica en
 cuatro bloques: candidato/oferta/evidencia; integración y brechas confirmadas;
 circuito integrado; veredicto y consolidación. Conserva los IDs T0–T3 y el
 [registro central](active/freeze-remediation-register.csv), sin crear otra cola.
@@ -87,7 +142,7 @@ referencia histórica: la revisión estática cerró el2026-10-08. Sus checklist
 planificación no reabren esa cobertura ni aceptan cambios posteriores.
 Los cinco hijos017 conservados en `active/` son referencias técnicas de Auth,
 datos, billing, editor y web; su ubicación no los convierte en planes activos.
-Los casos ofrecidos transferidos se resuelven desde016 y sus filas existentes;
+Los casos transferidos quedaron dispuestos en016 y sus filas existentes; la aceptación PSP pendiente pertenece a011;
 editor/Robot y los demás casos diferidos requieren su condición de retorno.
 No se mueven a completed porque sus alcances completos no fueron aceptados.
 

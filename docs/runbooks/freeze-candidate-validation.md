@@ -1,5 +1,18 @@
 # Freeze — validación del candidato y contrato de evidencia
 
+## Enmienda de salida016 — 2026-11-17
+
+Aplicar la enmienda aceptada de [ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md):
+016 cierra el núcleo técnico con evidencia existente y disposición explícita
+del residuo PSP en011. Billing permanece habilitado y visible; no es una exclusión
+técnica ni se certifica una compra/callback no observados. La obligación antes
+del uso monetizado se conserva en011, con dueño billing/propietario y retorno
+visual supervisado. Esta disposición sustituye la exigencia histórica de obtener
+esa aceptación dentro016 por el solo hecho de tener billing habilitado.
+No repetir suites/TTL ni lanzar pagos o escrituras Cloud por cerrar documentación.
+V5 verifica cierre del alcance enmendado y trazabilidad de lo transferido;
+no declara lanzamiento comercial ni aceptación de todos los proveedores.
+
 ## Expiración de bearer: observación temporal — 2026-11-16
 
 PostgREST documenta30s de tolerancia al validar `exp`; programar el sondeo
@@ -38,7 +51,7 @@ denegación pertinente. Preservar claves locales, JWT, Vault y otros proyectos.
 
 ## Uso vigente — 2026-11-10
 
-Este runbook ejecuta los gates del mismo [Plan016](../exec-plans/active/016-nextjs-supabase-code-review.md):
+Este runbook ejecuta los gates del mismo [Plan016](../exec-plans/completed/016-nextjs-supabase-code-review.md):
 Bloque1 → V0; bloque2 → V1/V2 y reproducción focalizada; bloque3 → V3/V4;
 bloque4 → V5. La preparación documental no ejecuta estos gates ni autoriza
 operaciones externas. El contrato operativo del plan prevalece sobre checkpoints
@@ -82,7 +95,7 @@ reportar exclusiones: todavía no se modificó su selección por este documento.
 
 Estado: protocolo integrado pendiente; preparación actualizada2026-11-10.
 El diseño original del protocolo data de2026-10-20. Implementa la
-validación final de [016-T2/T3](../exec-plans/active/016-nextjs-supabase-code-review.md)
+validación final de [016-T2/T3](../exec-plans/completed/016-nextjs-supabase-code-review.md)
 y las evidencias funcionales recibidas desde [017](../exec-plans/completed/017-freeze-remediation.md),
 sin mantener ese plan abierto hasta este gate. El orden lo
 define [ROADMAP](../../ROADMAP.md); ejecutar este protocolo después de los últimos

@@ -1,11 +1,36 @@
 # Plan 011 Billing Family — Deferred
 
+## Frente independiente de aceptación PSP — 2026-11-17
+
+Recibe el residuo de016 por decisión del propietario y enmienda ADR0005.
+Billing sigue habilitado, con planes/precios y apertura del checkout actuales;
+no se cambia código ni se añade inteligencia.016 cierra el núcleo técnico;
+compra/callback actual, autorización de suscripción y recuperación financiera
+conservan [NO VERIFICADO] donde falte evidencia, aunque el plan técnico cierre.
+IDs015-OPERATIONS y RL-F05 permanecen aquí pendientes; DB-19 conserva su alias.
+
+Dueños: billing y propietario. Retorno posterior mediante sesión visual/browser
+con el propietario, sin automatizar evasión de CAPTCHA. Verificar por separado
+identidad del desarrollador, vendedor de prueba y comprador de prueba; comprobar
+sandbox, configuración, credenciales, tarjetas y cuotas efectivamente disponibles
+sin asumir saldo infinito. El fallo de login/MCP no prueba por sí solo defecto.
+
+Antes de ejecutar fijar escenario, candidato, URL canónica, recurso/cuenta propios,
+autorización, esperado, observación y cleanup. Correlacionar evento oficial,
+firma/origen, persistencia/deduplicación y permiso de la cuenta. Configurar keys
+no sustituye aceptación. No se crean usuarios, configuran proveedores, pagan,
+envían notificaciones ni instalan herramientas por esta decisión documental.
+La autorización anterior del reenvío no se ejecuta durante esta separación.
+Reusar sólo evidencia histórica válida y MP-01run43933678786 apertura sin pago.
+Otras pasarelas siguen diferidas; no duplicar un nuevo plan paralelo a011.
+El cierre016 no acepta MVP monetizado ni promesas comerciales de proveedores.
+
 The earlier freeze scope was satisfied for its recorded candidate. Implemented
 and verified evidence remains valid only for its recorded scenario and date.
 Remaining provider and operational scenarios are deferred; they are not
 erased, completed or implied by the freeze decision.
 
-Current bridge2026-11-13: [016](../../active/016-nextjs-supabase-code-review.md)
+Current bridge2026-11-13: [016](../../completed/016-nextjs-supabase-code-review.md)
 remains active. Billing is enabled; separating payment gateways into this family
 does not remove the offered checkout/callback obligations. The current candidate
 needs applicable real-provider evidence or an explicit bounded reuse decision.

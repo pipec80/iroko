@@ -1,5 +1,13 @@
 # External services and connector map
 
+## Disposición vigente — 2026-11-17
+
+Auxiliar diferido, no otro gate de016. Dueños: operaciones/propietario; retorno
+al priorizar expresamente inventario/arquitectura de servicios o cambiar una
+integración. La condición antigua «después de012.4» ya se cumplió, pero no
+demuestra que este documento se haya ejecutado. No instalar ni reconfigurar
+proveedores automáticamente. Ver índice autoritativo de planes.
+
 - Status: deferred follow-up, requested 2026-10-19.
 - Resume after Plan 012.4 acceptance and closure; not an additional 012.4 gate.
 - Purpose: one readable inventory of the third-party services Iroko actually

@@ -33,7 +33,7 @@ y conserva los gates de la rama protegida. No se aplicaron migraciones Cloud.
 
 El resto del contrato conserva sus casillas originales, no una nueva cola
 activa. Los pendientes transferidos se ejecutan únicamente desde los cuatro
-bloques del [016 vigente](../active/016-nextjs-supabase-code-review.md): evidencia
+bloques del [016 vigente](../completed/016-nextjs-supabase-code-review.md): evidencia
 reutilizable en el bloque1; datos e integración en el2; operación/Cloud y PSP
 según oferta en el3; disposición final en el4. No reabrir015 ni marcar como
 probadas las casillas históricas abiertas.

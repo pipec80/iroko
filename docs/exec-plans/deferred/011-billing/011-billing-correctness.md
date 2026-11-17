@@ -1,5 +1,17 @@
 # Plan 011 — Billing Platform v2: Core → Mercado Pago → Stripe → Paddle → Lemon Squeezy → Reconciliation
 
+## Estado vigente — 2026-11-17
+
+Familia independiente de aceptación PSP, pendiente/diferida hasta ventana visual
+con el propietario. Recibe el residuo015-OPERATIONS/RL-F05 del cierre técnico016
+por enmienda ADR0005. Billing/precios/checkout permanecen habilitados y sin cambios.
+Corev2 conserva su cierre; fases y matrices de proveedor conservan sus resultados
+parciales y [NO VERIFICADO]. El Status: Active original de abajo es histórico,
+no una orden actual de ejecutar todos los proveedores. Ver README de esta familia.
+Configurar credenciales no certifica pago/callback/recuperación ni habilita cobros
+de prueba nuevos. Retorno con propietario+billing, identidad de cuentas/sandbox,
+escenario y autorización explícitos.
+
 - Priority: P0
 - Status: Active — Fase 1 cerrada por PR #152 el 2026-08-27. Mercado Pago es
   la Fase 2 y referencia de la v1 propia Chile, CLP mensual. Coordinación

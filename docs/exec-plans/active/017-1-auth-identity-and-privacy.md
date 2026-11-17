@@ -1,7 +1,7 @@
 # 017.1 — Auth, identidad y privacidad Implementation Plan
 
 **Referencia técnica, no entrada de ejecución — 2026-11-10.**
-La entrada vigente es [016](016-nextjs-supabase-code-review.md), en sus cuatro
+La entrada vigente es [016](../completed/016-nextjs-supabase-code-review.md), en sus cuatro
 bloques de candidato/evidencia, integración, circuito y veredicto. Las tareas,
 IDs y checklists siguientes preservan su contrato y evidencia históricos;
 no ordenan reejecutar017 ni certifican su alcance completo. Resolver únicamente
