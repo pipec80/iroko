@@ -1,5 +1,12 @@
 # Iroko Capability Inventory
 
+Delivery readback2026-11-16,23:57Z: PR258/main8f13892 and CI43949809330 passed;
+automatic Vercel deployment READY at the exact revision. Application/SQL/MP
+protocol unchanged from runtime118fedf. FOLLOW-TTL accepted with the documented
+runner diagnostic; current official authenticated MP ingress remains the sole
+mandatory gap. GitHub alert135 now fixed with no upstream patched version
+reported; local mitigation stays. Earlier checkpoints retain their dates.
+
 **Current candidate, 2026-11-16.** PR 252 reached `main` at `118fedf` and all CI gates passed. Plan 016 remains active with a partial verdict. [Main CI](https://github.com/pipec80/iroko/actions/runs/43932958196) · [Candidate evidence](audits/2026-11-12-nextjs-supabase-code-review.md).
 
 - **Billing.** MP-01 opened the hosted Mercado Pago checkout without a payment. The initial readback found five checkout intents (one new), twenty events and five subscriptions; event975 later raised the total to21 through scheduled reconciliation, not inbound callback. Historical real charges retain bounded reuse for unchanged contracts. Current official authenticated ingress remains **[NO VERIFICADO]**, authorized without payment and pending owner session/OAuth. [MP-01 run](https://github.com/pipec80/iroko/actions/runs/43933678786).

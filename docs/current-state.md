@@ -2,6 +2,32 @@
 
 Read the latest dated entry and the [freeze status](#freeze-work-status) for current ownership. Older dated checkpoints preserve what was known then; their pending/active statements do not reopen subsequently completed work. Local results, CI and provider evidence retain separate boundaries.
 
+## Entrega verificada de PR258 — 2026-11-16,23:57Z
+
+[PR258](https://github.com/pipec80/iroko/pull/258) integrado a23:53:17Z en
+`8f13892fec103371b142a422ea69601725d5e7db`, árbol idéntico al candidatof196191.
+[CI43949809330](https://github.com/pipec80/iroko/actions/runs/43949809330)
+aprobó todos sus gates, incluido build; documentación y CodeQL también PASS.
+Vercel `dpl_8dxkjiiVYsh4ifhNC4jt9x8u6gqG` READY del SHA exacto, por despliegue
+automático Git. Checkout limpio;0subagentes activos y0procesos remanentes de
+los ensayos. Repo/Cloud180migraciones; no nueva migración ni deploy manual.
+
+GitHub cambió alerta135 a `fixed` a23:53:23Z, sin dismiss y con
+`first_patched_version:null`. No demuestra release upstream reparada: parche
+deepmerge4.3.1 y seguimiento se conservan. No hay PR Dependabot pendiente.
+
+**016 permanece activo/parcial sólo por ingreso oficial autenticado MP actual.**
+Reenvío único autorizado sin pago, aún no ejecutado por falta de sesión propietaria;
+MCP history sigue rechazando la conexión sin OAuth. El panel integrado queda en
+login para el propietario. FOLLOW-TTL conserva aceptación observada y exit1
+del harness dispuesto; no se repite por una entrega documental/CI sin cambios
+de aplicación, SQL o protocolo MP. Smoke nocturno reparado mantiene retorno P2
+en la siguiente ejecución programada, sin certificar Sentry/WAF.
+
+El propietario decidió realizar el login y retomar ese gate después. Dueño:
+billing/propietario; retorno al disponer de la sesión para el único reenvío
+oficial ya autorizado. La oferta billing conserva esa obligación y016 activo.
+
 ## Entrega de PR 252 y aceptación parcial de 016 — 2026-11-16
 
 Resultado posterior20:07Z: **FOLLOW-TTL aceptado por evidencia observada**.

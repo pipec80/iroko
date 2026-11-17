@@ -11,6 +11,33 @@ la contención/rotación autorizada del13/11 se detalla abajo.
 
 ## Resultado vigente de la continuación
 
+### Readback de entrega — 2026-11-16,23:57Z
+
+PR258 MERGED a23:53:17Z; main8f13892fec103371b142a422ea69601725d5e7db.
+Árbol idéntico a f196191: b633a926f94aafc4b359a51ff70f159f1b95aee5.
+CI43949809330 todos los gates PASS (unit156archivos1756PASS/1skip,
+cobertura91.25/84.79/96.23/93.73), Docs43949809340 y CodeQL43949809318 PASS.
+Chromium90PASS/2skip y WebKit16PASS/1skip, sin flaky reportado en los resúmenes;
+se conservan las disposiciones previas de los skips Cloud y unitario.
+Vercel production dpl_8dxkjiiVYsh4ifhNC4jt9x8u6gqG READY del SHA exacto;
+ningún deploy manual. Repo/Cloud180migraciones, última20261112173000.
+0subagentes activos y0procesos remanentes propios; checkout entregado limpio.
+
+Al integrar, GitHub marcó automáticamente alerta135 `fixed` a23:53:23Z,
+sin dismiss y con first_patched_version null. No inferir release upstream
+reparada ni retirar el parche local.0PRDependabot pendientes. La aceptación
+runtime118fedf se reutiliza porque los cambios entregados son docs/workflow/test,
+sin diferencias de aplicación, SQL o protocolo MP; no se ejecuta otra hora TTL.
+
+Veredicto sigue parcial: único gate obligatorio pendiente, recepción oficial
+autenticada Mercado Pago actual. Reenvío autorizado sin pago aún no ejecutado;
+la conexión MCP rechaza OAuth y el panel integrado pide login del propietario.
+El smoke nocturno reparado conserva retorno P2 al próximo cron, sin pase runtime
+por CI ni certificación global Sentry/WAF. Los checkpoints previos se conservan.
+Decisión posterior explícita del propietario: login/reenvío se hará después;
+dejar el gate pendiente. Dueño billing/propietario, retorno con sesión lista
+para la única notificación oficial autorizada, sin compra.016 permanece activo.
+
 ### Reparación focal del monitor nocturno — 2026-11-16
 
 Lectura del nightly43848678892 (candidato5f68684): Email Worker Health

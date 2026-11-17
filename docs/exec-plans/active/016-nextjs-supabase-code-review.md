@@ -14,6 +14,11 @@ Supabase/PostgreSQL, Vitest y Playwright instalados; renovar versiones al inicia
 No hace falta otro ADR: se ordena la ejecución de la decisión ya aceptada.
 
 Estado2026-11-12: **ejecución parcial;016 permanece activo**.
+Entrega posterior PR258/main8f13892, CI43949809330 y Vercel READY verificados.
+El propietario decidió hacer después el login/reenvío oficial MP: único gate
+obligatorio pendiente, dueño billing/propietario; retorno con sesión disponible
+para el ensayo ya autorizado sin pago. Mantener016 activo y la obligación de
+billing ofrecido. FOLLOW-TTL ya tiene aceptación observada con sus límites.
 Resultado2026-11-16T20:07Z: FOLLOW-TTL aceptado por observación real (bearer
 original401 expirado tras exp+tolerancia, control fresco200, cap web/cookies,
 cleanup0 y auditoría264/265). Runnerexit1 por diagnóstico P2 de cierre tardío
