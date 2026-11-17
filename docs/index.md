@@ -1,5 +1,12 @@
 # Iroko Engineering Documentation
 
+Readback2026-11-16,23:57Z: PR258 integrado en main8f13892, CI43949809330
+completo PASS y Vercel automático READY del SHA exacto. FOLLOW-TTL aceptado
+con sus límites y exit1 del harness conservado. Sólo queda recepción oficial
+autenticada MP, autorizada sin pago y pendiente del login propietario.
+GitHub marcó alerta135 fixed sin versión upstream reparada indicada: se conserva
+el parche.0subagentes/procesos de ensayos remanentes. [Estado](current-state.md).
+
 **Estado al 16/11/2026,20:07Z.** PR252/main118fedf y CI43932958196 aprobados. MP-01 abrió checkout sin pago. FOLLOW-TTL aceptado por evidencia observada: bearer original401 por expiración tras tolerancia, control fresco200 y cleanup0/auditoría conservada; exit1 del runner por cierre tardío del navegador permanece explícito. Sólo falta corroborar ingreso oficial autenticado MP actual, ya autorizado y pendiente de sesión/OAuth. **016 permanece activo/parcial.** [Estado actual](current-state.md) · [Evidencia](audits/2026-11-12-nextjs-supabase-code-review.md).
 
 Continuación2026-11-13: [016 sigue activo](audits/2026-11-12-nextjs-supabase-code-review.md).

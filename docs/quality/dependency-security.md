@@ -1,5 +1,16 @@
 # Dependency security — integration 2026-11-10
 
+## Readback2026-11-16,23:57Z
+
+After [PR258](https://github.com/pipec80/iroko/pull/258) merged, GitHub marked
+[alert135](https://github.com/pipec80/iroko/security/dependabot/135) `fixed`
+at23:53:23Z. API readback: no dismissal and `first_patched_version:null`.
+This is the observed repository-alert state, not evidence of an upstream
+corrected release. The existing deepmerge4.3.1 local patch and regression stay
+in place; investigate an upstream fix before replacing them. No alert was
+dismissed or manually suppressed. Earlier open-state checkpoints below retain
+their time boundary. No Dependabot PR remains open at this readback.
+
 ## Renewal2026-11-16
 
 [PR252](https://github.com/pipec80/iroko/pull/252) integrated the five
