@@ -4,16 +4,16 @@
 > revisión independiente del cambio completo. Checkboxes registran resultados,
 > no intenciones. Leer este plan y el informe antes de cambiar producto.
 
-**Estado:** núcleo de reparación implementado localmente el17Nov2026;
-publicación/CI y aceptación SQL/E2E/Cloud pendientes. Decisión MFA y rulings en
-[registro de ejecución](../../audits/2026-11-17-access-account-repair.md).
-Revisión independiente: apto para CI. Unit focal193/193 PASS y typecheck PASS;
-no se declara completado el plan por esos resultados.
-
-Código en commit local7448aee, hooks normales PASS. Transporte SSH de lectura
-verificado con permisos adecuados. El checkpoint previo que decía fallo SSH
-se conserva como histórico; no hay fallo de autenticación demostrado. Siguiente
-autorización: publicar rama/PR y ejecutar CI. Sin merge ni cambios Cloud ejecutados.
+**Estado18Nov:** reparación publicada y fusionada por PR261/262 con CI completo
+aprobado; migración aplicada a Cloud y Vercel canónico verificado. A-ACCESS-02
+corrected-cloud. A-ACCESS-01 evidence-pending: recuperación GoTrue/SQL/browser
+CI aprobada, recorrido Cloud bloqueado antes de MFA por Turnstile en Actions.
+El propietario confirmó login humano normal. Ambos fixtures limpiados; siete
+usuarios originales conservados. Revisión independiente apta para los cambios.
+[Entrega y siguiente evidencia](../../audits/2026-11-18-access-account-delivery.md).
+No repetir corrección ni runner bloqueado; falta recorrido MFA en navegador
+humano con fixture propio, revisión registrada y cleanup. El plan conserva
+su pendiente de aceptación, no se declara completado ni se inicia lote3.
 
 **Precisión del propietario,17Nov:** concentrar automatización y comprobaciones
 generales en GitHub Actions; reservar el equipo local para código y diagnóstico

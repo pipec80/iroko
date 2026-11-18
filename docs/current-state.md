@@ -2,18 +2,23 @@
 
 ## Entrega acceso/cuenta y validación Cloud — 2026-11-18
 
-[Entrega y evidencia](audits/2026-11-18-access-account-delivery.md): PR261
-fusionado en `e20e131`, CI completo aprobado tras reintentar WebKit por timeout
-de preparación. Vercel canónico READY con ese SHA; migración20261117180000
-aplicada y leída en Supabase Cloud,181migraciones y siete usuarios preservados.
+[Entrega y evidencia](audits/2026-11-18-access-account-delivery.md): PR261 y262
+fusionados con CI completo aprobado. Vercel canónico READY `a1a0dec` antes del
+recorrido; migración20261117180000 aplicada y leída en Supabase Cloud,
+181migraciones y siete usuarios originales preservados.
+
+Base persistida del PC: migración no ejecutada; arrancar Docker redujo RAM libre
+a214MiB y se detuvo sin SQL ni cambios de volúmenes. Código/migraciones locales
+actualizados y SQL validado en Actions; no confundirlo con aplicación en el PC.
 
 A-ACCESS-02 **corrected-cloud**: ambos307 originales emitieron la renovación y
 el navegador conservó sus cookies. A-ACCESS-01 **evidence-pending**: SQL/E2E
-GoTrue en CI aprobados; recorrido MFA Cloud terminó por timeout y no se acepta.
-Se endurece el runner con esperas acotadas, diagnóstico de CAPTCHA y cleanup
-Auth independiente. Fixture temporal del primer intento requiere limpieza por
-UUID; consultar el informe antes de repetir. No se amplía al lote3 ni se declara
-MVPv1 completo. Los checkpoints siguientes conservan su fecha histórica.
+GoTrue en CI aprobados; segundo recorrido Cloud identificado como bloqueo de
+Turnstile antes de MFA en GitHub. El propietario confirmó login humano normal;
+no se infiere de ello recuperación MFA. Runner acotado y cleanup independiente
+entregados; ambos fixtures ausentes de Auth/cuentas/códigos en readback.
+Pendiente recorrido MFA Cloud con navegador humano y fixture propio. No se
+amplía al lote3 ni se declara MVPv1 completo. Los checkpoints siguientes son históricos.
 
 ## Reparación acceso/cuenta preparada para CI — 2026-11-17
 

@@ -7,9 +7,10 @@ Este índice reúne el recorrido actual; no sustituye el estado vigente ni el
 registro de remediación.
 
 Último checkpoint18Nov: [entrega de acceso/cuenta](2026-11-18-access-account-delivery.md).
-PR261 fusionado con CI completo; SQL y despliegue Cloud verificados. A-ACCESS-02
-comprobado en Cloud; A-ACCESS-01 pendiente de recorrido Cloud tras timeout.
-El informe registra fixture/cleanup y la siguiente ejecución acotada. No ampliar
+PR261/262 fusionados con CI completo; SQL y despliegue Cloud verificados.
+A-ACCESS-02 comprobado en Cloud; A-ACCESS-01 pendiente de recorrido humano Cloud
+por Turnstile en Actions. Ambos fixtures limpiados; login humano confirmado por
+el propietario. El informe registra la siguiente evidencia acotada. No ampliar
 al paso3 hasta disponer de una disposición explícita para este pendiente.
 
 ## Auditoría por capacidades iniciada el 17Nov2026
@@ -93,11 +94,16 @@ Lee AGENTS.md, docs/index.md, docs/current-state.md y docs/audits/README.md.
 Aplica docs/quality/capability-audit-protocol.md y la decisión ADR0005 vigente.
 Verifica git status y la revisión actual antes de reutilizar este checkpoint.
 
-Checkpoint del17Nov2026:
+Checkpoint del18Nov2026:
 1. Sincronización documental realizada sobre los puntos identificados.
-2. Auditoría Auth/cuentas terminada; suficiencia parcial. A-ACCESS-01 (P1,
-   recuperación MFA) y A-ACCESS-02 (P2, cookies en redirects) sin reparar.
-   La siguiente intervención propuesta es su corrección y validación acotada.
+2. Reparación entregada por PR261/262, CI y SQL Cloud aprobados. A-ACCESS-02
+   corrected-cloud; A-ACCESS-01 evidence-pending: GoTrue/SQL/browser CI PASS,
+   MFA Cloud bloqueado antes de recuperación por Turnstile en Actions.
+   Login humano confirmado por propietario; fixtures limpiados y usuarios7.
+   Leer docs/audits/2026-11-18-access-account-delivery.md; siguiente evidencia
+   es MFA con fixture propio y navegador humano, no otra reparación automática.
+   SQL en la base persistida del PC pendiente por RAM: no se aplicó localmente;
+   verificar saas-boilerplate y dry-run/skip-vault cuando existan recursos.
 3. Después: datos/autorización (membresías, roles, RLS, grants, RPC, cuotas).
 4. Luego: Storage, Realtime, correo y trabajo asíncrono.
 5. Luego: instalación/adaptación, reutilizando evidencia válida del015.
