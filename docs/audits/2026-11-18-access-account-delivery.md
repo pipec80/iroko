@@ -4,6 +4,47 @@ Continuación del [registro de reparación](2026-11-17-access-account-repair.md)
 El propietario autorizó publicación, PR, revisión, merge y actualización/validación
 de Supabase Cloud. No se amplía a otro lote de auditoría ni a funciones diferidas.
 
+## Resultado vigente de la entrega
+
+PR261 y [PR262](https://github.com/pipec80/iroko/pull/262) fusionados con sus
+checks completos aprobados, sin bypass. PR262:
+[CI44322186709](https://github.com/pipec80/iroko/actions/runs/44322186709).
+Código desplegado `a1a0decbfb112050f764ee4fc43e120b3e4d6a04`, Vercel READY
+`dpl_6s7bqdi7fmopWkhgzneqQrzoN3aR`, URL canónica verificada antes del dispatch.
+La migración ya está aplicada en Supabase Cloud; los datos de prueba propios
+se limpiaron y los siete usuarios originales conservan el mismo fingerprint.
+
+| Hallazgo | Resultado y límite |
+| --- | --- |
+| A-ACCESS-02, cookies en redirects | **corrected-cloud**. Ambos307 originales y persistencia de cookies aprobados en dos recorridos Cloud. |
+| A-ACCESS-01, recuperación MFA | Implementación entregada; SQL, GoTrue y navegador CI aprobados. **evidence-pending** para el recorrido MFA Cloud con navegador humano. |
+
+Segundo [recorrido Cloud44326726423](https://github.com/pipec80/iroko/actions/runs/44326726423):
+ambos refresh PASS, seguido de `ACCESS_ACCOUNT_CAPTCHA_NOT_READY=1` y
+`access_account_cloud_failed_at_login_mfa_readiness`. El botón no se habilitó
+en15s, antes de probar recuperación. El workflow conserva conclusión **failure**;
+no es un PASS de MFA ni prueba de un defecto del mecanismo de recuperación.
+El propietario confirmó en este chat18Nov que puede iniciar sesión desde su
+navegador habitual: evidencia del propietario, no recorrido MFA observado por el
+agente. No se cambió Turnstile ni se intentó eludir el desafío.
+
+Cleanup segundo intento: `finally` Auth PASS y paso independiente PASS. Cuenta
+personal residual eliminada por MCP sólo tras comprobar Auth ausente, tipo
+personal, UUID y fecha exactos. Primer fixture eliminado por Admin API usando
+la CLI oficial con credencial existente sólo en memoria, y su cuenta personal
+con la misma validación independiente. Readback conjunto:
+Auth7, fingerprint `e1ace6f5db337f88f5308c2feddace3b`, ambos UUIDs ausentes de
+Auth/cuentas/códigos. Se conservaron los registros de auditoría inmutables.
+UUIDs de prueba: `b085444f-630b-4ed9-b374-0720b15e5165` y
+`47d066ab-72f6-4d39-96aa-65f45762c00f`.
+
+**Siguiente evidencia necesaria:** recorrido manual de recuperación con fixture
+propio en navegador humano, nueva autenticación, contenido tras recarga,
+revocación previa y reuso denegado; registrar revisión y cleanup. No repetir
+el mismo runner bloqueado ni abrir lote3 para ocultar el pendiente. La entrega
+de código y SQL queda realizada; no se declara MVPv1 ni aceptación Auth completa.
+Los apartados siguientes conservan la secuencia histórica de esta entrega.
+
 ## Candidato y evidencia inicial
 
 [PR261](https://github.com/pipec80/iroko/pull/261), base91840bad,

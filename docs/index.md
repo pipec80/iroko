@@ -4,9 +4,10 @@
 seguimiento de correcciones y pregunta final de suficiencia para MVPv1.
 
 Última ejecución18Nov: [entrega y aceptación de acceso/cuenta](audits/2026-11-18-access-account-delivery.md).
-PR261 fusionado; CI completo aprobado, SQL Cloud aplicado y Vercel verificado.
-Cookies de ambos redirects comprobadas en Cloud; MFA Cloud sigue pendiente tras
-timeout del runner. El informe registra el fixture y su limpieza independiente.
+PR261/262 fusionados; CI completo aprobado, SQL Cloud aplicado y Vercel verificado.
+Cookies de ambos redirects comprobadas en Cloud; MFA Cloud pendiente por
+Turnstile en el runner antes de recuperación. Login humano confirmado por el
+propietario; dos fixtures limpiados y siete usuarios originales preservados.
 Los informes siguientes conservan el diagnóstico inicial y la reparación local.
 
 ## Auditoría básica de acceso/cuenta — 2026-11-17
