@@ -1,5 +1,15 @@
 # Iroko Capability Inventory
 
+## Access/account delivery — 2026-11-18
+
+[Delivery evidence](audits/2026-11-18-access-account-delivery.md): PR261 merged,
+full CI passed, SQL migration applied to Cloud and canonical Vercel SHA verified.
+A-ACCESS-02 corrected-cloud: both original307 refresh responses and persisted
+browser cookies passed. A-ACCESS-01 remains evidence-pending: real SQL/GoTrue
+CI passed, but Cloud MFA timed out before completion. Runner cleanup and CAPTCHA
+diagnostics are being hardened; no full account or MVP acceptance is inferred.
+Earlier dated sections retain their historical evidence boundaries.
+
 ## Access/account repair candidate — 2026-11-17
 
 [Repair evidence](audits/2026-11-17-access-account-repair.md): refreshed-cookie
