@@ -6,6 +6,12 @@ informes históricos ni se rompen sus enlaces para crear una carpeta nueva.
 Este índice reúne el recorrido actual; no sustituye el estado vigente ni el
 registro de remediación.
 
+Último checkpoint18Nov: [entrega de acceso/cuenta](2026-11-18-access-account-delivery.md).
+PR261 fusionado con CI completo; SQL y despliegue Cloud verificados. A-ACCESS-02
+comprobado en Cloud; A-ACCESS-01 pendiente de recorrido Cloud tras timeout.
+El informe registra fixture/cleanup y la siguiente ejecución acotada. No ampliar
+al paso3 hasta disponer de una disposición explícita para este pendiente.
+
 ## Auditoría por capacidades iniciada el 17Nov2026
 
 Pregunta general: **¿lo que Iroko ofrece está implementado con Supabase como

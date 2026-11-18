@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { createClient, type Session } from '@supabase/supabase-js';
 import { combineChunks, createChunks, stringFromBase64URL, stringToBase64URL } from '@supabase/ssr';
-import { test, type BrowserContext, type Response } from '@playwright/test';
+import { expect, test, type BrowserContext, type Response } from '@playwright/test';
 
 import { generateTotp } from '../totp';
 
@@ -87,6 +88,8 @@ async function redirectSession(response: Response, path: string, oldToken: strin
 }
 
 test('owned Cloud MFA recovery and both refresh redirects', async ({ page, baseURL }) => {
+  page.setDefaultTimeout(20_000);
+  page.setDefaultNavigationTimeout(30_000);
   requireResult(
     baseURL === origin && process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '') === backend,
     'target_mismatch',
@@ -131,6 +134,15 @@ test('owned Cloud MFA recovery and both refresh redirects', async ({ page, baseU
     });
     requireResult(!created.error && created.data.user, stage);
     id = created.data.user.id;
+    requireResult(
+      process.env.ACCESS_ACCOUNT_FIXTURE_FILE && process.env.GITHUB_RUN_ID,
+      'fixture_journal',
+    );
+    writeFileSync(
+      process.env.ACCESS_ACCOUNT_FIXTURE_FILE,
+      JSON.stringify({ id, runId: process.env.GITHUB_RUN_ID }),
+      { mode: 0o600 },
+    );
     // Only the fresh UUID is emitted for independent personal-account cleanup.
     process.stdout.write(`ACCESS_ACCOUNT_FIXTURE_ID=${id}\n`);
     stage = 'enroll';
@@ -212,6 +224,11 @@ test('owned Cloud MFA recovery and both refresh redirects', async ({ page, baseU
     await page.goto('/es/login');
     await page.locator('input[name="email"][type="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
+    stage = 'login_mfa_readiness';
+    await expect(page.getByRole('button', { name: /iniciar sesión/i })).toBeEnabled({
+      timeout: 15_000,
+    });
+    stage = 'login_mfa';
     await page.getByRole('button', { name: /iniciar sesión/i }).click();
     await page.locator('#code').waitFor();
     stage = 'recover';
@@ -226,6 +243,11 @@ test('owned Cloud MFA recovery and both refresh redirects', async ({ page, baseU
     stage = 'reauthenticate';
     await page.locator('input[name="email"][type="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
+    stage = 'reauthenticate_readiness';
+    await expect(page.getByRole('button', { name: /iniciar sesión/i })).toBeEnabled({
+      timeout: 15_000,
+    });
+    stage = 'reauthenticate';
     await page.getByRole('button', { name: /iniciar sesión/i }).click();
     await page.waitForURL('**/es/dashboard/account*');
     await page.reload();
@@ -264,6 +286,12 @@ test('owned Cloud MFA recovery and both refresh redirects', async ({ page, baseU
       'ACCESS_ACCOUNT_MFA_RECOVERY=PASS\nACCESS_ACCOUNT_REPLAY_DENIED=PASS\nACCESS_ACCOUNT_PRIOR_SESSION_REVOKED=PASS\n',
     );
   } catch {
+    if (
+      stage.endsWith('_readiness') &&
+      (await page.locator('input[name="captchaToken"]').count())
+    ) {
+      process.stdout.write('ACCESS_ACCOUNT_CAPTCHA_NOT_READY=1\n');
+    }
     // Never print SDK responses, passwords, tokens, browser logs or request headers.
     throw new Error(`access_account_cloud_failed_at_${stage}`);
   } finally {

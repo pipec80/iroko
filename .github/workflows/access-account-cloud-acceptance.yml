@@ -6,6 +6,16 @@ on:
         description: Exact production SHA independently verified on Vercel before dispatch
         type: string
         required: true
+      cleanup_only:
+        description: Remove an owned orphan from a previous timed-out acceptance without creating users
+        type: boolean
+        default: false
+      previous_fixture_id:
+        description: Exact owned fixture UUID from previous acceptance logs (optional)
+        type: string
+      previous_run_id:
+        description: Originating Actions run ID for that fixture (optional)
+        type: string
 permissions:
   contents: read
 concurrency:
@@ -20,6 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Verify exact candidate revision
+        id: verify_revision
         run: node -e "if (!/^[a-f0-9]{40}$/.test(process.env.EXPECTED_SHA || '') || process.env.EXPECTED_SHA !== process.env.GITHUB_SHA) process.exit(1)"
         env:
           EXPECTED_SHA: ${{ inputs.deployed_sha }}
@@ -30,15 +41,28 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+        if: ${{ !inputs.cleanup_only }}
       - name: Owned Auth and refresh acceptance
+        if: ${{ !inputs.cleanup_only }}
         run: pnpm exec playwright test src/test/e2e/access-account-cloud-acceptance.spec.ts --project=chromium --workers=1 --retries=0 --reporter=line --trace=off
         env:
           PLAYWRIGHT_BASE_URL: https://project-a89lv.vercel.app
           ACCESS_ACCOUNT_CLOUD_ACCEPTANCE: '1'
           ACCESS_ACCOUNT_EXPECTED_SHA: ${{ inputs.deployed_sha }}
+          ACCESS_ACCOUNT_FIXTURE_FILE: ${{ runner.temp }}/access-account-fixture.json
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      - name: Independently clean owned Auth fixtures
+        if: ${{ always() && steps.verify_revision.outcome == 'success' }}
+        run: node scripts/cleanup-access-account-fixture.mjs
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          ACCESS_ACCOUNT_FIXTURE_FILE: ${{ runner.temp }}/access-account-fixture.json
+          ACCESS_ACCOUNT_PREVIOUS_FIXTURE_ID: ${{ inputs.previous_fixture_id }}
+          ACCESS_ACCOUNT_PREVIOUS_RUN_ID: ${{ inputs.previous_run_id }}
+          ACCESS_ACCOUNT_CLEANUP_REQUIRED: ${{ inputs.cleanup_only }}
       # No reports/traces/screenshots upload. The fresh fixture UUID is the only
       # identity emitted; operator verifies and removes its orphan personal account.

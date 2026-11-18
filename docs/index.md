@@ -3,9 +3,11 @@
 [Índice de auditorías y evidencia](audits/README.md): informes fechados,
 seguimiento de correcciones y pregunta final de suficiencia para MVPv1.
 
-Última ejecución17Nov: [reparación de acceso/cuenta](audits/2026-11-17-access-account-repair.md)
-implementada y revisada para CI, unit193/193 PASS; aceptación SQL/E2E/Cloud
-pendiente. El informe original siguiente conserva el diagnóstico inicial.
+Última ejecución18Nov: [entrega y aceptación de acceso/cuenta](audits/2026-11-18-access-account-delivery.md).
+PR261 fusionado; CI completo aprobado, SQL Cloud aplicado y Vercel verificado.
+Cookies de ambos redirects comprobadas en Cloud; MFA Cloud sigue pendiente tras
+timeout del runner. El informe registra el fixture y su limpieza independiente.
+Los informes siguientes conservan el diagnóstico inicial y la reparación local.
 
 ## Auditoría básica de acceso/cuenta — 2026-11-17
 

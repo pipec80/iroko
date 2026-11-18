@@ -51,6 +51,30 @@ Códigos anteriores10→0, usuarios7 conservados. Fingerprint de IDs anterior a
 fixtures: `e1ace6f5db337f88f5308c2feddace3b`. Aún no demuestra GoTrue/browser Cloud.
 La aplicación anterior sigue compatible mientras llega la entrega Git.
 
+## CI del candidato publicado
+
+Candidato `71867d3937934d3210f922cc4d7c1d6adeb1b01f`,
+[CI44229189736](https://github.com/pipec80/iroko/actions/runs/44229189736).
+Security Audit, Quality, Database Tests, Database Types, Edge Functions y Gitleaks
+aprobados. Unit:157archivos,1775PASS/1omitida. CodeQL y Documentation aprobados
+en sus workflows. Chromium y aceptaciones confinadas aprobados. WebKit agotó
+el límite de20min cargando imágenes, tras una instalación de dependencias del
+sistema de unos17min; sus tests no llegaron a ejecutarse. El gate E2E rechazó
+correctamente el resultado cancelado y build quedó omitido. Se relanzó sólo
+WebKit y sus dependientes, conservando el resultado de los otros jobs.
+
+Intento2 aprobado: WebKit16PASS/1omitida en5m52s, gate E2E y build PASS.
+Chromium91PASS/3omitidas (incluye el escenario Cloud opt-in); aceptaciones
+confinadas CSP/consumidores21,017 ocho y016 siete casos aprobados, sin flakies.
+La omisión del escenario Cloud en CI general es intencional; no da aceptación Cloud.
+PR261 fusionado sin bypass el18Nov, revisión sin hilos pendientes:
+`e20e131753994d85e4d90d4865347996adfbe20f`.
+
+Vercel canónico verificado READY en ese SHA, deployment
+`dpl_9xG9TuL4obas7RikMtcLSf46WruU`. Workflow de aceptación
+[44318030945](https://github.com/pipec80/iroko/actions/runs/44318030945)
+despachado desde main sólo después de esa lectura. Resultado aún pendiente.
+
 ## Aceptación Cloud preparada
 
 Workflow manual `access-account-cloud-acceptance.yml`, origen fijo
@@ -72,4 +96,27 @@ exige error de refresh/sesión inválida, no un fallo de red o429/5xx.
 Cleanup Auth por API en finally. La cuenta personal huérfana requiere eliminación
 independiente por UUID exacto y evidencia MCP; no declarar cleanup completo sólo
 por borrar Auth. La versión desplegada, escenarios y limpieza se registran aquí
-al ejecutarlos. Estado actual de aceptación Cloud: **[NO VERIFICADO]**.
+al ejecutarlos.
+
+## Primer recorrido Cloud y endurecimiento del runner
+
+Run44318030945 sobre e20e131: `ACCESS_ACCOUNT_REFRESH_ONBOARDING=PASS` y
+`ACCESS_ACCOUNT_REFRESH_LOGIN=PASS`, inspeccionando el307 original y persistencia.
+A-ACCESS-02 pasa a corrected-cloud. MFA agotó180s sin resultado: no se atribuye
+al producto ni a CAPTCHA sin diagnóstico. El timeout interrumpió finalmente
+la limpieza; Auth y cuenta personal del fixture
+`b085444f-630b-4ed9-b374-0720b15e5165` seguían presentes en readback.
+
+Corrección exclusiva del runner: esperas UI15/20s, journal privado con sólo
+UUID/runID, limpieza AdminAPI como paso independiente incluso tras fallo del
+test y modo de limpieza de un fixture anterior. Requiere SHA validado, origen
+fijo, metadata de propietario/run, correo de fixture y antigüedad menor48h.
+404 sólo es idempotente con `user_not_found`; errores de otros destinos no
+impiden intentar el actual. Revisión independiente y pruebas negativas del
+cleanup incluidas. No se desactiva CAPTCHA ni se modifica configuración Cloud.
+A-ACCESS-01 permanece **evidence-pending** hasta el resultado del nuevo recorrido.
+
+CI de main44317586466: WebKit16PASS en53s, pero el job agotó20min en post-cache
+tras una preparación lenta. Se relanza ese job y se amplía exclusivamente su
+presupuesto de infraestructura a30min para próximas ejecuciones; no cambian
+timeouts de tests ni assertions. No se presenta un job cancelado como PASS.

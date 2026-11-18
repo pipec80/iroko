@@ -1,5 +1,20 @@
 # Current State
 
+## Entrega acceso/cuenta y validación Cloud — 2026-11-18
+
+[Entrega y evidencia](audits/2026-11-18-access-account-delivery.md): PR261
+fusionado en `e20e131`, CI completo aprobado tras reintentar WebKit por timeout
+de preparación. Vercel canónico READY con ese SHA; migración20261117180000
+aplicada y leída en Supabase Cloud,181migraciones y siete usuarios preservados.
+
+A-ACCESS-02 **corrected-cloud**: ambos307 originales emitieron la renovación y
+el navegador conservó sus cookies. A-ACCESS-01 **evidence-pending**: SQL/E2E
+GoTrue en CI aprobados; recorrido MFA Cloud terminó por timeout y no se acepta.
+Se endurece el runner con esperas acotadas, diagnóstico de CAPTCHA y cleanup
+Auth independiente. Fixture temporal del primer intento requiere limpieza por
+UUID; consultar el informe antes de repetir. No se amplía al lote3 ni se declara
+MVPv1 completo. Los checkpoints siguientes conservan su fecha histórica.
+
 ## Reparación acceso/cuenta preparada para CI — 2026-11-17
 
 [Implementación y evidencia](audits/2026-11-17-access-account-repair.md), rama
