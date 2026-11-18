@@ -14,10 +14,10 @@ Código desplegado `a1a0decbfb112050f764ee4fc43e120b3e4d6a04`, Vercel READY
 La migración ya está aplicada en Supabase Cloud; los datos de prueba propios
 se limpiaron y los siete usuarios originales conservan el mismo fingerprint.
 
-| Hallazgo | Resultado y límite |
-| --- | --- |
-| A-ACCESS-02, cookies en redirects | **corrected-cloud**. Ambos307 originales y persistencia de cookies aprobados en dos recorridos Cloud. |
-| A-ACCESS-01, recuperación MFA | Implementación entregada; SQL, GoTrue y navegador CI aprobados. **evidence-pending** para el recorrido MFA Cloud con navegador humano. |
+| Hallazgo                          | Resultado y límite                                                                                                                     |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| A-ACCESS-02, cookies en redirects | **corrected-cloud**. Ambos307 originales y persistencia de cookies aprobados en dos recorridos Cloud.                                  |
+| A-ACCESS-01, recuperación MFA     | Implementación entregada; SQL, GoTrue y navegador CI aprobados. **evidence-pending** para el recorrido MFA Cloud con navegador humano. |
 
 Segundo [recorrido Cloud44326726423](https://github.com/pipec80/iroko/actions/runs/44326726423):
 ambos refresh PASS, seguido de `ACCESS_ACCOUNT_CAPTCHA_NOT_READY=1` y
