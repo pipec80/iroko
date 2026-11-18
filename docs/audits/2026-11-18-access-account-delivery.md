@@ -45,6 +45,22 @@ el mismo runner bloqueado ni abrir lote3 para ocultar el pendiente. La entrega
 de código y SQL queda realizada; no se declara MVPv1 ni aceptación Auth completa.
 Los apartados siguientes conservan la secuencia histórica de esta entrega.
 
+### Base del PC y límite de recursos
+
+El intento final comprobó Docker inicialmente detenido. Se arrancó únicamente
+el motor para inventariar/reutilizar la base oficial, pero la RAM libre cayó a
+214MiB antes de iniciar una operación SQL. Se detuvo Docker Desktop y se dejó
+sin cambios de esquema, volúmenes ni configuración. **Migración en la base del
+PC: [NO VERIFICADO], no aplicada por esta entrega.** Los archivos locales están
+actualizados; el reset SQL,1210assertions y tipos se validaron en el Supabase
+local de Actions. Esto no acredita la base persistida del PC.
+
+Pendiente operativo adicional: con recursos suficientes, verificar el destino
+`saas-boilerplate`, inventariar migraciones, dry-run y aplicar sólo pendientes
+con `--skip-vault`, sin seeds/roles ni reset de volúmenes, y leer el resultado.
+El [PR263](https://github.com/pipec80/iroko/pull/263) conserva este checkpoint
+documental; no modifica la implementación probada en a1a0dec.
+
 ## Candidato y evidencia inicial
 
 [PR261](https://github.com/pipec80/iroko/pull/261), base91840bad,

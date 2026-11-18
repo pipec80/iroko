@@ -102,6 +102,8 @@ Checkpoint del18Nov2026:
    Login humano confirmado por propietario; fixtures limpiados y usuarios7.
    Leer docs/audits/2026-11-18-access-account-delivery.md; siguiente evidencia
    es MFA con fixture propio y navegador humano, no otra reparación automática.
+   SQL en la base persistida del PC pendiente por RAM: no se aplicó localmente;
+   verificar saas-boilerplate y dry-run/skip-vault cuando existan recursos.
 3. Después: datos/autorización (membresías, roles, RLS, grants, RPC, cuotas).
 4. Luego: Storage, Realtime, correo y trabajo asíncrono.
 5. Luego: instalación/adaptación, reutilizando evidencia válida del015.

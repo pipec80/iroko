@@ -7,6 +7,10 @@ fusionados con CI completo aprobado. Vercel canónico READY `a1a0dec` antes del
 recorrido; migración20261117180000 aplicada y leída en Supabase Cloud,
 181migraciones y siete usuarios originales preservados.
 
+Base persistida del PC: migración no ejecutada; arrancar Docker redujo RAM libre
+a214MiB y se detuvo sin SQL ni cambios de volúmenes. Código/migraciones locales
+actualizados y SQL validado en Actions; no confundirlo con aplicación en el PC.
+
 A-ACCESS-02 **corrected-cloud**: ambos307 originales emitieron la renovación y
 el navegador conservó sus cookies. A-ACCESS-01 **evidence-pending**: SQL/E2E
 GoTrue en CI aprobados; segundo recorrido Cloud identificado como bloqueo de
