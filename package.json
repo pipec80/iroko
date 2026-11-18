@@ -3,6 +3,7 @@
   "version": "1.8.0",
   "private": true,
   "scripts": {
+    "audit:production": "node scripts/audit-production-dependencies.mjs",
     "dev": "next dev --turbo",
     "dev:clean": "rimraf .next && next dev --turbo",
     "clean": "rimraf .next",
@@ -37,7 +38,7 @@
     "test:functions": "deno test supabase/functions/tests/",
     "test:design-system-check": "node --test scripts/__tests__/check-design-system.test.mjs",
     "test:docs-check": "node --test scripts/__tests__/check-docs.test.mjs",
-    "test:dependency-security": "node --test scripts/__tests__/dependency-security.test.mjs",
+    "test:dependency-security": "node --test scripts/__tests__/dependency-security.test.mjs scripts/__tests__/audit-production.test.mjs",
     "analyze": "cross-env ANALYZE=true next build",
     "prepare": "husky",
     "--- VERCEL ---": "",

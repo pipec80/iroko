@@ -68,5 +68,6 @@ overrides:
   'fast-copy@4.0.3': 4.1.0
   '@modelcontextprotocol/sdk': 1.32.0
 patchedDependencies:
+  picomatch@4.0.7: patches/picomatch@4.0.7.patch
   deepmerge@4.3.1: patches/deepmerge@4.3.1.patch
   minimatch@3.1.5: patches/minimatch@3.1.5.patch

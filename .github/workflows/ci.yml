@@ -141,12 +141,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # --prod omite devDependencies; --audit-level=high falla solo en high/critical
-      - name: Audit production dependencies
-        run: pnpm audit --prod --audit-level=high
-
       - name: Verify local dependency security patches
         run: pnpm test:dependency-security
+
+      # Check the installed patch, then evaluate the raw audit result. No global
+      # ignore: only the exact patched version is accepted for its known advisory.
+      - name: Audit production dependencies
+        run: pnpm audit:production
 
   # ─────────────────────────────────────────────
   # JOB 2b: Escaneo de secretos (Gitleaks)

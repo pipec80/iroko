@@ -1,0 +1,36 @@
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -284,6 +284,24 @@
+   return depth;
+ };
+ 
++// A top-level wildcard inside an unbounded repeated extglob nests quantifiers.
++const hasTopLevelStar = value => {
++  let escaped = false;
++  let bracket = false;
++  let depth = 0;
++  for (let i = 0; i < value.length; i++) {
++    const ch = value[i];
++    if (escaped) { escaped = false; continue; }
++    if (ch === '\\') { escaped = true; continue; }
++    if (bracket) { if (ch === ']') bracket = false; continue; }
++    if (ch === '[') { bracket = true; continue; }
++    if (ch === '(') { depth++; continue; }
++    if (ch === ')') { depth--; continue; }
++    if (depth === 0 && ch === '*' && value[i + 1] !== '(') return true;
++  }
++  return false;
++};
++
+ const analyzeRepeatedExtglob = (body, options) => {
+   if (options.maxExtglobRecursion === false) {
+     return { risky: false };
+@@ -295,6 +313,8 @@
+       : constants.DEFAULT_MAX_EXTGLOB_RECURSION;
+ 
+   const branches = splitTopLevel(body).map(branch => branch.trim());
++
++  if (branches.length === 1 && hasTopLevelStar(branches[0])) return { risky: true };
+ 
+   if (branches.length > 1) {
+     if (

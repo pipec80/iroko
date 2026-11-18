@@ -1,0 +1,44 @@
+name: Access Account Cloud Acceptance
+on:
+  workflow_dispatch:
+    inputs:
+      deployed_sha:
+        description: Exact production SHA independently verified on Vercel before dispatch
+        type: string
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: access-account-cloud-production
+  cancel-in-progress: false
+jobs:
+  acceptance:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Verify exact candidate revision
+        run: node -e "if (!/^[a-f0-9]{40}$/.test(process.env.EXPECTED_SHA || '') || process.env.EXPECTED_SHA !== process.env.GITHUB_SHA) process.exit(1)"
+        env:
+          EXPECTED_SHA: ${{ inputs.deployed_sha }}
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Owned Auth and refresh acceptance
+        run: pnpm exec playwright test src/test/e2e/access-account-cloud-acceptance.spec.ts --project=chromium --workers=1 --retries=0 --reporter=line --trace=off
+        env:
+          PLAYWRIGHT_BASE_URL: https://project-a89lv.vercel.app
+          ACCESS_ACCOUNT_CLOUD_ACCEPTANCE: '1'
+          ACCESS_ACCOUNT_EXPECTED_SHA: ${{ inputs.deployed_sha }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      # No reports/traces/screenshots upload. The fresh fixture UUID is the only
+      # identity emitted; operator verifies and removes its orphan personal account.
