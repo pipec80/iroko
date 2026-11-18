@@ -23,8 +23,10 @@ documentación está en [docs/index.md](docs/index.md).
 
 Las [recetas de extensión](docs/modules/foundation-recipes.md) y la
 [guía de instalación independiente](docs/runbooks/independent-installation.md)
-preparan el ensayo015-T3. Su ejecución en un derivado todavía está
-**[NO VERIFICADO]**.
+documentan el recorrido de adaptación. El ensayo015-T3 fue aceptado en su
+[alcance local acotado](docs/quality/reusable-foundation-evidence.md): instalación
+derivada, marca, extensión útil, actualización y recuperación. No certifica
+una instalación comercial ni todos los proveedores.
 
 ## Stack
 
@@ -141,13 +143,21 @@ de publicar está en [docs/history/](docs/history/README.md).
 
 ## Estado y alcance
 
-El [roadmap de freeze](ROADMAP.md) contiene el único orden vigente. Plan 011
-tiene el alcance requerido por este freeze satisfecho y conserva sus escenarios
-restantes como trabajo diferido; Plan 013 también queda diferido hasta decidir
-vender. Plan012 cerrado por entregables;014,015,016 y017 siguen activos. Consulta el
+El [roadmap de freeze](ROADMAP.md) contiene el único orden vigente. Al17/11/2026,
+012,014,015 y el padre017 conservan sus cierres acotados;016 cerró el núcleo
+técnico por enmienda deADR0005.011 conserva aceptación de pasarelas pendiente,
+con billing/precios/checkout habilitados;013 sigue diferido hasta decidir vender.
+No queda implementación activa por defecto. Consulta el
 [índice de planes](docs/exec-plans/README.md) para su ciclo de vida y
 [el estado actual](docs/current-state.md) para evidencia verificada.
 
 Una capacidad configurada o presente en código no implica certificación en
 producción. El setup
-local de arriba no sustituye todavía el ensayo independiente de Plan 015.
+local de arriba no certifica una instalación nueva por sí solo. El ensayo015
+conserva su evidencia fechada; la [preparación de auditoría por capacidad](docs/quality/capability-audit-protocol.md)
+define cómo contrastar requisitos, implementación y evidencia sin reabrir cierres
+ni ejecutar otra auditoría automáticamente.
+
+La primera matriz ejecutada de ese método está en el
+[informe de acceso y cuenta](docs/audits/2026-11-17-access-and-account-audit.md),
+con resultados y límites separados de la configuración declarada.

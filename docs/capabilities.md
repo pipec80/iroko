@@ -1,5 +1,28 @@
 # Iroko Capability Inventory
 
+## Access/account repair candidate — 2026-11-17
+
+[Repair evidence](audits/2026-11-17-access-account-repair.md): refreshed-cookie
+responses corrected locally; MFA recovery implemented with caller-bound claims,
+AAL2-only generation and explicit global logout before factor reset. Independent
+review: ready for CI; focused unit193/193 PASS. SQL/type regeneration and real
+GoTrue/browser acceptance remain [NO VERIFICADO], including Cloud. Earlier audit
+findings below retain their diagnostic date; implementation is not full acceptance.
+
+## Access/account audit — 2026-11-17
+
+[Dated selection/use/sufficiency matrix](audits/2026-11-17-access-and-account-audit.md)
+and [reproducible evidence](audits/2026-11-17-access-and-account-evidence.md).
+Supabase-first selection is aligned; access/account sufficiency is partial.
+New A-ACCESS-01 functional P1: offered MFA recovery has no reachable recovery
+route; A-ACCESS-02 P2: redirects discard refreshed cookies. Both are confirmed
+in local composition, with mocked SDK/RPC boundaries; no live GoTrue, database,
+browser or Cloud acceptance. Existing DB-01 remains P2 without a duplicate ID.
+Eight existing unit files199/199 PASS do not cover these compositions; the
+isolated probe has2positive controls PASS/3FAIL for the two causes.
+These current findings qualify the older locally-covered labels below.
+No product repair or reopening of historical016/017 was performed.
+
 ## Acceptance boundary — 2026-11-17
 
 Plan016 completed for the technical core under the owner's dated ADR0005 amendment.
@@ -135,8 +158,8 @@ healthy today.
 
 | Capability              | What exists                                                                                                                                                                                | Principal evidence                                                                                                     | Current boundary                                                                                                                                                                                                                                                                                                |
 | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Authentication          | Email/password signup and login, email confirmation, logout, OAuth callback, password recovery/reset and safe redirects                                                                    | `src/app/[locale]/(auth)/`, `src/app/[locale]/auth/`, `src/test/e2e/auth.spec.ts`                                      | **Implemented, locally covered**; provider, SMTP and redirect configuration are deployment-specific **[NO VERIFICADO]**                                                                                                                                                                                         |
-| Account security        | Change email/password, reset request, list/revoke sessions, sign out other sessions, TOTP MFA and recovery codes                                                                           | `dashboard/account/`, `public.list_my_sessions`, `revoke_my_session`, recovery-code RPCs                               | **Implemented, locally covered**; live Auth configuration must be verified per deployment                                                                                                                                                                                                                       |
+| Authentication          | Email/password signup and login, email confirmation, logout, OAuth callback, password recovery/reset and safe redirects                                                                    | `src/app/[locale]/(auth)/`, `src/app/[locale]/auth/`, `src/test/e2e/auth.spec.ts`                                      | **Implemented, partial sufficiency**: A-ACCESS-02 refresh/redirect defect; existing local coverage is bounded. Provider/SMTP/Google runtime **[NO VERIFICADO]**; see dated access audit above                                                                                                                   |
+| Account security        | Change email/password, reset request, list/revoke sessions, sign out other sessions, TOTP MFA and recovery codes                                                                           | `dashboard/account/`, `public.list_my_sessions`, `revoke_my_session`, recovery-code RPCs                               | **Partial sufficiency**: A-ACCESS-01 functional P1 blocks offered MFA recovery. Other local evidence retains its scenarios/dates; live Auth configuration is deployment-specific                                                                                                                                |
 | CAPTCHA                 | Optional Cloudflare Turnstile on authentication forms, paired with Supabase Auth CAPTCHA configuration                                                                                     | `src/components/auth/captcha-field.tsx`, `src/env.ts`, `supabase/config.toml`                                          | **Optional**; only Turnstile is claimed, not a general Cloudflare platform integration                                                                                                                                                                                                                          |
 | Profiles                | Profile creation on signup, personal details, locale, timezone, phone, avatar and soft deletion                                                                                            | `public.profiles`, private signup triggers, `dashboard/account/actions.ts`                                             | **Implemented, locally covered**                                                                                                                                                                                                                                                                                |
 | Accounts                | Personal accounts and team accounts, active-account selection, account profile, logo and metadata                                                                                          | `public.accounts`, `get_my_accounts`, `create_team`, `switch_account`                                                  | **Implemented, locally covered**                                                                                                                                                                                                                                                                                |

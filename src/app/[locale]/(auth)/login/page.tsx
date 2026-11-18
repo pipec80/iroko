@@ -55,7 +55,8 @@ export default function LoginPage() {
   }
   const [oauthPending, startOAuth] = useTransition();
   const [showRecovery, setShowRecovery] = useState(false);
-  const documentRedirect = signInState.documentRedirect ?? mfaState.documentRedirect;
+  const documentRedirect =
+    signInState.documentRedirect ?? mfaState.documentRedirect ?? recoveryState.documentRedirect;
   useEffect(() => {
     if (documentRedirect) window.location.assign(safeRedirectPath(documentRedirect, locale));
   }, [documentRedirect, locale]);
@@ -192,6 +193,11 @@ export default function LoginPage() {
       </div>
 
       <form action={signInForm} className="space-y-5" noValidate>
+        {searchParams.get('recovered') === '1' && (
+          <p role="status" className="text-muted-foreground text-sm">
+            {t('recovery_completed')}
+          </p>
+        )}
         <input type="hidden" name="next" value={next} readOnly />
         <div className="space-y-1.5">
           <Label className="text-foreground block text-sm font-semibold" htmlFor="email">

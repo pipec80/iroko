@@ -1,5 +1,36 @@
 # Estrategia de producto — base SaaS reutilizable
 
+## Aclaración de propósito y preparación — 2026-11-17
+
+El propietario ratifica los siete principios de comprensión: base Supabase-first,
+capa de aplicación/presentación Next.js, servicios comunes reutilizables,
+adaptación, prueba independiente, aceptación acotada y verticales posteriores.
+El resultado buscado es poder instalar/configurar la base para un trabajo y
+dedicar el desarrollo al negocio; distribuir el kit sigue siendo una opción
+comercial separada. El ensayo015 acredita un recorrido local, no un instalador
+universal ni una entrega comercial lista.
+
+Un dashboard IoT que reciba datos de Arduino/ESP32 es un consumidor futuro;
+no se incorpora ahora al núcleo ni reactiva Robot. Los estudios de templates
+SaaS, incluidos otros lenguajes, aportan referentes y decisiones, no requisitos
+automáticos de paridad. La [preparación de auditoría](../quality/capability-audit-protocol.md)
+ordena el contraste por capacidad antes de ejecutar una nueva revisión de código.
+
+La primera pasada se acota a selección y suficiencia: qué ofrece cada producto
+Supabase, qué se necesita, qué se usa realmente y si basta para el recorrido
+ofrecido. Google es el proveedor externo de Auth mencionado; SSO no se exige
+por estar disponible. Avatar, perfil asociado a Auth y datos persistidos son
+casos a contrastar; Excel conserva su referencia histórica sin reactivar Robot.
+Correo sencillo funcional es suficiente para esta pasada; plantillas y entrega
+se registran por flujo, separando deuda visual de fallo funcional.
+
+El propietario reconfirma servicios gratuitos/free-tier y dominio propio aún
+pendiente. La adquisición/configuración del dominio se identifica como
+dependencia sólo en los escenarios que lo requieran; no autoriza compras ni
+bloquea la revisión local. Frontend gráfico y seguridad web ampliada quedan
+como bloques posteriores, conservando ahora los límites Next necesarios para
+Auth/datos. El protocolo contiene las preguntas y disposiciones de esta acotación.
+
 ## Decisión de cierre técnico — 2026-11-17
 
 El propietario cierra016 por el núcleo revisado y separa aceptación PSP en011,

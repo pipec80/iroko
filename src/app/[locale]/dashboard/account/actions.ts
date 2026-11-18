@@ -327,7 +327,9 @@ export const generateRecoveryCodesAction = withServerAction(
         { userId, action: 'settings.generateRecoveryCodes', code: error.code },
         'Recovery codes generation failed',
       );
-      return { error: error.message ?? 'recovery_generate_failed' };
+      const knownError =
+        error.message === 'mfa_required' || error.message === 'mfa_recovery_in_progress';
+      return { error: knownError ? error.message : 'recovery_generate_failed' };
     }
 
     logger.info({ userId, action: 'recovery_codes_generated' }, 'Recovery codes generated');

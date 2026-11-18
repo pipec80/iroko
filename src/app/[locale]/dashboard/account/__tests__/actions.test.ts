@@ -298,11 +298,15 @@ describe('generateRecoveryCodesAction', () => {
     expect(result.error).toBe('not_authenticated');
   });
 
-  it('should return the RPC error message (not the SQLSTATE code) when it fails', async () => {
+  it.each([
+    ['mfa_required', 'mfa_required'],
+    ['mfa_recovery_in_progress', 'mfa_recovery_in_progress'],
+    ['unexpected database details', 'recovery_generate_failed'],
+  ])('maps generation error %s to a translated safe key', async (message, expected) => {
     mockAuthenticated();
-    mocks.rpc.mockResolvedValue({ error: { code: '42501', message: 'not_authenticated' } });
+    mocks.rpc.mockResolvedValue({ error: { code: '42501', message } });
     const result = await generateRecoveryCodesAction(PREV, new FormData());
-    expect(result.error).toBe('not_authenticated');
+    expect(result.error).toBe(expected);
   });
 
   it('should return codes array and revalidate on success', async () => {

@@ -1,5 +1,31 @@
 # Iroko Engineering Documentation
 
+[Índice de auditorías y evidencia](audits/README.md): informes fechados,
+seguimiento de correcciones y pregunta final de suficiencia para MVPv1.
+
+Última ejecución17Nov: [reparación de acceso/cuenta](audits/2026-11-17-access-account-repair.md)
+implementada y revisada para CI, unit193/193 PASS; aceptación SQL/E2E/Cloud
+pendiente. El informe original siguiente conserva el diagnóstico inicial.
+
+## Auditoría básica de acceso/cuenta — 2026-11-17
+
+[Matriz, hallazgos y continuación](audits/2026-11-17-access-and-account-audit.md)
+· [Evidencia reproducible](audits/2026-11-17-access-and-account-evidence.md).
+Selección alineada; suficiencia parcial por recuperación MFA (P1 funcional)
+y cookies renovadas perdidas en redirects (P2). Unit199/199 PASS y sondeo
+discriminante2PASS/3FAIL; sin reparación de producto ni aceptación Cloud.
+El [registro central](exec-plans/active/freeze-remediation-register.csv)
+conserva los casos anteriores y añade las dos causas con dueño y retorno.
+La preparación siguiente conserva su fecha; fue seguida por este lote ejecutado.
+
+## Preparación documental de auditoría — 2026-11-17
+
+[Protocolo por capacidad y evaluación de skills](quality/capability-audit-protocol.md):
+propósito → decisión aceptada → implementación → evidencia → disposición.
+Se sincronizan referencias vigentes y rutas de propietarios, sin cambiar los
+cierres001–017 ni iniciar una nueva auditoría de código. Auth se propone como
+primer piloto; la selección de modelos/herramientas no sustituye sus criterios.
+
 ## Cierre016 y siguiente trabajo — 2026-11-17
 
 **016 completado por el núcleo técnico, con alcance enmendado por el propietario.**

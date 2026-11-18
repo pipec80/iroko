@@ -9,7 +9,8 @@ from `docs/exec-plans/` (bounded, time-boxed implementation plans) and from
 
 - [Replicable SaaS MVP, ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md)
   — accepted product boundary and bounded final re-audit; Robot/editor deferred,
-  exclusion and reuse proof still pending execution.
+  exclusion and reuse have bounded local evidence; technical016 acceptance
+  closed under the17Nov amendment, with provider acceptance retained in011.
 
 - [System overview](system-overview.md) — context, building blocks, runtime
   boundaries, and a change map.

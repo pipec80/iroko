@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   mfaVerify: vi.fn(),
   getClaims: vi.fn(),
   rpc: vi.fn(),
+  recoverMfa: vi.fn(),
   redirect: vi.fn(),
   captureServer: vi.fn(),
 }));
@@ -36,6 +37,8 @@ vi.mock('@/lib/supabase/server', () => ({
     rpc: mocks.rpc,
   }),
 }));
+
+vi.mock('@/lib/auth/recover-mfa', () => ({ recoverMfa: mocks.recoverMfa }));
 
 vi.mock('next-intl/server', () => ({
   getLocale: vi.fn().mockResolvedValue('es'),
@@ -447,77 +450,54 @@ describe('verifyMfaAction', () => {
 describe('verifyRecoveryAction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRedirectThrows();
   });
 
-  it('returns fieldErrors for malformed recovery code', async () => {
-    const fd = makeFormData({ code: 'not-a-code' });
-    const result = await verifyRecoveryAction(PREV, fd);
+  it('rejects malformed codes without invoking privileged recovery', async () => {
+    const result = await verifyRecoveryAction(PREV, makeFormData({ code: 'not-a-code' }));
     expect(result.fieldErrors?.code).toBeDefined();
-    expect(mocks.rpc).not.toHaveBeenCalled();
+    expect(mocks.recoverMfa).not.toHaveBeenCalled();
   });
-
-  it('normalizes lowercase input before consuming (trim + uppercase)', async () => {
-    mocks.rpc.mockResolvedValue({ data: true, error: null });
-
-    const fd = makeFormData({ code: '  ab12-cd34  ' });
-    await expect(verifyRecoveryAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
-
-    expect(mocks.rpc).toHaveBeenCalledWith('consume_recovery_code', { p_code: 'AB12-CD34' });
+  it('normalizes the code and returns a document reauthentication destination', async () => {
+    mocks.recoverMfa.mockResolvedValue('recovered');
+    const result = await verifyRecoveryAction(PREV, makeFormData({ code: '  ab12-cd34  ' }));
+    expect(mocks.recoverMfa).toHaveBeenCalledWith('AB12-CD34');
+    const url = new URL(result.documentRedirect ?? '/missing-redirect', 'http://localhost');
+    expect(url.pathname).toBe('/es/login');
+    expect(url.searchParams.get('recovered')).toBe('1');
+    expect(url.searchParams.get('next')).toBe('/es/dashboard/account?tab=security');
   });
-
-  it('returns recovery_invalid when the RPC errors — same response as wrong code', async () => {
-    mocks.rpc.mockResolvedValue({ data: null, error: { code: 'P0001' } });
-
-    const fd = makeFormData({ code: 'AB12-CD34' });
-    const result = await verifyRecoveryAction(PREV, fd);
-
-    expect(result.error).toBe('recovery_invalid');
-  });
-
-  it('returns recovery_invalid when the code was not consumed (already used / unknown)', async () => {
-    mocks.rpc.mockResolvedValue({ data: false, error: null });
-
-    const fd = makeFormData({ code: 'AB12-CD34' });
-    const result = await verifyRecoveryAction(PREV, fd);
-
-    expect(result.error).toBe('recovery_invalid');
+  it.each([
+    ['invalid', 'recovery_invalid'],
+    ['retry', 'recovery_retry'],
+  ])('exposes %s without redirecting', async (status, error) => {
+    mocks.recoverMfa.mockResolvedValue(status);
+    expect(await verifyRecoveryAction(PREV, makeFormData({ code: 'AB12-CD34' }))).toEqual({
+      error,
+    });
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
-
-  it('redirects to security tab with reenroll flag on success', async () => {
-    mocks.rpc.mockResolvedValue({ data: true, error: null });
-
-    const fd = makeFormData({ code: 'AB12-CD34' });
-    await expect(verifyRecoveryAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
-
-    expect(mocks.redirect).toHaveBeenCalledWith({
-      href: '/dashboard/account?tab=security&reenroll=1',
-      locale: 'es',
-    });
-  });
-
-  it('keeps a safe invitation next behind recovery re-enrollment', async () => {
-    mocks.rpc.mockResolvedValue({ data: true, error: null });
-    const next = '/es/auth/accept-invitation?token=fixture-token';
-    await expect(
-      verifyRecoveryAction(PREV, makeFormData({ code: 'AB12-CD34', next })),
-    ).rejects.toThrow('NEXT_REDIRECT');
-    expect(mocks.redirect).toHaveBeenCalledWith({
-      href: `/dashboard/account?tab=security&reenroll=1&next=${encodeURIComponent(next)}`,
-      locale: 'es',
-    });
-    mocks.redirect.mockClear();
-    await expect(
-      verifyRecoveryAction(PREV, makeFormData({ code: 'AB12-CD34', next: 'https://evil.example' })),
-    ).rejects.toThrow('NEXT_REDIRECT');
-    expect(mocks.redirect).toHaveBeenCalledWith({
-      href: '/dashboard/account?tab=security&reenroll=1',
-      locale: 'es',
-    });
+  it('preserves a safe invitation through reauthentication but rejects an external return', async () => {
+    mocks.recoverMfa.mockResolvedValue('recovered');
+    const invitation = '/es/auth/accept-invitation?token=fixture-token';
+    const result = await verifyRecoveryAction(
+      PREV,
+      makeFormData({ code: 'AB12-CD34', next: invitation }),
+    );
+    const target = new URL(
+      new URL(result.documentRedirect ?? '/missing-redirect', 'http://localhost').searchParams.get(
+        'next',
+      ) ?? '/missing-next',
+      'http://localhost',
+    );
+    expect(target.pathname).toBe('/es/auth/accept-invitation');
+    expect(target.searchParams.get('token')).toBe('fixture-token');
+    const unsafe = await verifyRecoveryAction(
+      PREV,
+      makeFormData({ code: 'AB12-CD34', next: 'https://evil.example' }),
+    );
+    expect(decodeURIComponent(unsafe.documentRedirect ?? '')).not.toContain('evil.example');
   });
 });
-
 // ─── magicLinkAction ─────────────────────────────────────────────────────────
 
 describe('magicLinkAction', () => {

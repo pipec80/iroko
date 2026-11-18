@@ -48,14 +48,18 @@ and additional hardening is tracked in
 - **Auth**: Supabase Auth with MFA (TOTP; WebAuthn/phone available on Pro). MFA is enforced at the edge — a user with an enrolled factor cannot reach protected routes until the session is elevated to `aal2`.
 - **Sessions**: session timebox and inactivity timeout are `0s` (disabled) in `supabase/config.toml`, consistent with the declared Free baseline. Their provider capability and any future change require separate verification and authorization; [Plan 012](docs/exec-plans/completed/012-security-hardening-and-pricing-truth.md) owns the pricing/security reconciliation.
 - **Leaked password protection**: HaveIBeenPwned checking on signup/password-change requires the Supabase **Pro** plan (Dashboard → Authentication → Sign In / Providers). Disabled on the Free plan — no local config equivalent.
-- **Headers**: local Plan 012.4 code uses a fresh 16-byte nonce per request and propagates it to document rendering, theme and CAPTCHA. Production `script-src` omits `unsafe-inline`/`unsafe-eval`; `style-src 'unsafe-inline'` remains an explicit exception. Nonce-bearing documents use request-time rendering and private/no-store caching. HSTS (2 years + preload), COOP and CORP remain. [ADR 0004](docs/adr/0004-csp-nonce-and-rendering-boundary.md) records the trade-off; isolated local Chromium acceptance passed, while real Turnstile and Cloud acceptance remain **[NO VERIFICADO]**.
+- **Headers**: Plan 012.4 uses a fresh 16-byte nonce per request and propagates it to document rendering, theme and CAPTCHA. Production `script-src` omits `unsafe-inline`/`unsafe-eval`; `style-src 'unsafe-inline'` remains an explicit exception. Nonce-bearing documents use request-time rendering and private/no-store caching. HSTS (2 years + preload), COOP and CORP remain. [ADR 0004](docs/adr/0004-csp-nonce-and-rendering-boundary.md) records the trade-off. The [19 October bounded Cloud closure](docs/audits/2026-10-19-plan-012-4-cloud-closure.md) records owner-completed Turnstile/MFA and provider receipts, with explicit exceptions; it is not a fresh or universal security certification.
 - **Rate limiting**: the Data API hook and application API admission have separate contracts. Plan 012.3 recorded bounded application acceptance; legacy CF/XFF trust in the SQL hook remains **[NO VERIFICADO]**, as recorded in its [follow-up register](docs/audits/2026-10-14-plan-012-3-follow-ups.md).
 - **Input validation**: Zod schemas on all server actions and API boundaries
 - **Secrets**: server secrets are validated in `src/env.ts`. Impersonation return cookies use a dedicated key and strict session-bound v2 envelope. Mock billing uses its own strong secret, canonical signed tokens and disjoint checkout/event schemas; every production mock consumer requires explicit opt-in regardless of the default provider. Sentry build uploads require a trusted context and explicit authorization; token presence alone does not enable them.
 
 Plan 012.4 implementation and dated local checks are recorded in the
-[hardening audit](docs/audits/2026-10-15-plan-012-4-local-hardening.md). These
-changes have not established Cloud parity or deployment acceptance. The
+[hardening audit](docs/audits/2026-10-15-plan-012-4-local-hardening.md); its
+[subsequent Cloud acceptance](docs/audits/2026-10-19-plan-012-4-cloud-closure.md)
+retains scenario-specific limits. Later core016 acceptance and residual provider
+obligations are recorded in [current state](docs/current-state.md), not inferred
+from the earlier local checkpoint. Current Cloud health is not revalidated by
+this documentary synchronization. The
 [impersonation recovery/rotation runbook](docs/modules/impersonation.md#recovery-and-dedicated-key-rotation-runbook)
 requires directed owner closure before invalidating active return cookies.
 Mock checkout tokens remain bearer tokens without TTL/jti or one-time-use
