@@ -571,7 +571,9 @@ jobs:
     name: E2E Smoke (WebKit)
     # WebKit binaries depend on distro-specific ICU; ubuntu-latest moved to26.04.
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    # Cold apt/image preparation consumed ~17min; retain room for smoke and cache cleanup.
+    # Test-level timeouts and every assertion remain unchanged.
+    timeout-minutes: 30
     env:
       SITE_URL: http://localhost:3000
     if: |
