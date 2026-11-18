@@ -101,6 +101,7 @@
     "mfa_login_verify": "Verificar e continuar",
     "mfa_login_back": "Voltar ao login",
     "recovery_login_title": "Código de recuperação",
+    "recovery_completed": "Sua autenticação de dois fatores foi redefinida. Entre e ative-a novamente em Segurança.",
     "recovery_login_desc": "Insira um dos seus códigos de recuperação para acessar sua conta.",
     "recovery_login_label": "Código de recuperação (XXXX-XXXX)",
     "recovery_login_verify": "Verificar e continuar",
@@ -143,6 +144,7 @@
       "confirmation_failed": "O link de confirmação é inválido ou expirou.",
       "mfa_challenge_failed": "Erro ao iniciar o desafio de segurança.",
       "invalid_mfa_code": "O código inserido está incorreto ou expirou.",
+      "recovery_retry": "Não foi possível concluir a recuperação. Entre novamente e, se o MFA ainda for solicitado, tente o mesmo código em até 15 minutos.",
       "recovery_invalid": "Código de recuperação inválido ou já utilizado.",
       "invalid_recovery_code": "Formato inválido. Use XXXX-XXXX.",
       "generic": "Ocorreu um erro. Tente novamente.",
@@ -248,6 +250,8 @@
         "data_exported": "Dados exportados."
       },
       "error": {
+        "mfa_required": "Conclua a verificação MFA antes de gerar códigos.",
+        "mfa_recovery_in_progress": "Há uma recuperação MFA em andamento. Conclua-a antes de gerar novos códigos.",
         "mfa_already_enabled": "O 2FA já está habilitado. Desative primeiro.",
         "mfa_no_qr": "Nenhum código QR recebido, tente novamente.",
         "mfa_enroll_failed": "Falha ao iniciar o registro de 2FA.",

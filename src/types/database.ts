@@ -1116,6 +1116,8 @@ export type Database = {
           code_hash: string
           created_at: string
           id: string
+          recovery_completed_at: string | null
+          recovery_factor_ids: string[] | null
           used_at: string | null
           user_id: string
         }
@@ -1123,6 +1125,8 @@ export type Database = {
           code_hash: string
           created_at?: string
           id?: string
+          recovery_completed_at?: string | null
+          recovery_factor_ids?: string[] | null
           used_at?: string | null
           user_id: string
         }
@@ -1130,6 +1134,8 @@ export type Database = {
           code_hash?: string
           created_at?: string
           id?: string
+          recovery_completed_at?: string | null
+          recovery_factor_ids?: string[] | null
           used_at?: string | null
           user_id?: string
         }
@@ -2011,6 +2017,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      begin_mfa_recovery: {
+        Args: { p_code: string }
+        Returns: {
+          factor_ids: string[]
+          recovery_id: string
+        }[]
+      }
       broadcast_alert_email: {
         Args: { p_body: string; p_subject: string }
         Returns: number
@@ -2091,6 +2104,10 @@ export type Database = {
           anomaly_created: boolean
           status: string
         }[]
+      }
+      complete_mfa_recovery: {
+        Args: { p_recovery_id: string; p_user_id: string }
+        Returns: boolean
       }
       complete_onboarding: { Args: never; Returns: undefined }
       complete_webhook_delivery: {

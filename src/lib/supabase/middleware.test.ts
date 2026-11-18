@@ -1,14 +1,23 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
+type CookieWriter = (
+  cookies: { name: string; value: string; options: { path: string; httpOnly: boolean } }[],
+  headers?: Record<string, string>,
+) => void;
+
 const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
+  writeCookies: undefined as CookieWriter | undefined,
 }));
 
 vi.mock('@supabase/ssr', () => ({
-  createServerClient: vi.fn(() => ({
-    auth: { getClaims: mocks.getClaims },
-  })),
+  createServerClient: vi.fn(
+    (_url: string, _key: string, options: { cookies: { setAll: CookieWriter } }) => {
+      mocks.writeCookies = options.cookies.setAll;
+      return { auth: { getClaims: mocks.getClaims } };
+    },
+  ),
 }));
 
 // El routing real importa next/navigation — para lógica pura basta la forma.
@@ -76,6 +85,38 @@ describe('updateSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     appConfig.features.onboarding = true;
+  });
+
+  describe('refreshed response cookies', () => {
+    it.each([
+      ['/es/dashboard', null],
+      ['/es/dashboard', { sub: 'user', aal: 'aal1', app_metadata: { mfa_enrolled: true } }],
+      ['/es/dashboard', { sub: 'user', app_metadata: { onboarding_completed: false } }],
+      ['/es/dashboard/admin', { sub: 'user', app_metadata: { is_platform_admin: true } }],
+      [
+        '/es/dashboard',
+        { sub: 'user', app_metadata: { impersonation_expires_at: '2000-01-01T00:00:00Z' } },
+      ],
+      ['/es/login', { sub: 'user' }],
+    ])('preserves SDK cookies and cache headers on redirect %s (%j)', async (path, claims) => {
+      mocks.getClaims.mockImplementation(async () => {
+        mocks.writeCookies?.(
+          [{ name: 'audit-session', value: 'refreshed', options: { path: '/', httpOnly: true } }],
+          { 'Cache-Control': 'private, no-store', Expires: '0', Pragma: 'no-cache' },
+        );
+        return { data: claims ? { claims } : null };
+      });
+      const response = await updateSession(makeRequest(path));
+      expect(response.status).toBe(307);
+      expect(response.cookies.get('audit-session')).toMatchObject({
+        value: 'refreshed',
+        path: '/',
+        httpOnly: true,
+      });
+      expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(response.headers.get('expires')).toBe('0');
+      expect(response.headers.get('pragma')).toBe('no-cache');
+    });
   });
 
   describe('unauthenticated requests', () => {

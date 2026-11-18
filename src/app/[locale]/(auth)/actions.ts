@@ -9,6 +9,7 @@ import { captureServer } from '@/lib/analytics/server';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
+import { recoverMfa } from '@/lib/auth/recover-mfa';
 import {
   emailSchema,
   forgotPasswordSchema,
@@ -378,27 +379,16 @@ export async function verifyRecoveryAction(
     };
   }
 
-  const supabase = await createClient();
-  const { data: consumed, error } = await supabase.rpc('consume_recovery_code', {
-    p_code: parsed.data.code,
-  });
-
-  if (error) {
-    logger.warn({ action: 'auth.recovery', code: error.code }, 'Recovery code RPC error');
-    return { error: 'recovery_invalid' };
-  }
-
-  if (!consumed) {
-    return { error: 'recovery_invalid' };
-  }
-
-  logger.info({ action: 'auth.recovery.success' }, 'Recovery code consumed');
+  const result = await recoverMfa(parsed.data.code);
+  if (result === 'invalid') return { error: 'recovery_invalid' };
+  if (result === 'retry') return { error: 'recovery_retry' };
 
   const locale = await getLocale();
   const next = safeRedirectPath(formData.get('next') as string | null, locale);
-  const returnTo = next !== `/${locale}/dashboard` ? `&next=${encodeURIComponent(next)}` : '';
-  redirect({ href: `/dashboard/account?tab=security&reenroll=1${returnTo}`, locale });
-  return {};
+  const target =
+    next !== `/${locale}/dashboard` ? next : `/${locale}/dashboard/account?tab=security`;
+  // A document navigation discards the old MFA challenge state after revocation.
+  return { documentRedirect: `/${locale}/login?recovered=1&next=${encodeURIComponent(target)}` };
 }
 
 export async function oauthAction(provider: 'google' | 'azure'): Promise<void> {

@@ -72,6 +72,17 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   let supabaseResponse = NextResponse.next({ request });
   let sessionCookiesRefreshed = false;
 
+  // Redirects are separate responses: the SDK's writes must reach the browser.
+  function redirectWithSession(url: URL): NextResponse {
+    const response = NextResponse.redirect(url);
+    for (const cookie of supabaseResponse.cookies.getAll()) response.cookies.set(cookie);
+    for (const header of ['cache-control', 'expires', 'pragma']) {
+      const value = supabaseResponse.headers.get(header);
+      if (value !== null) response.headers.set(header, value);
+    }
+    return response;
+  }
+
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -121,7 +132,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.searchParams.set('next', request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    return redirectWithSession(url);
   }
 
   // MFA (AAL2) enforcement. A user with a verified factor who signed in with a
@@ -140,7 +151,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.searchParams.set('mfa', 'required');
-    return NextResponse.redirect(url);
+    return redirectWithSession(url);
   }
 
   // Onboarding gate (F3-C4). The claim is minted by custom_access_token_hook —
@@ -158,7 +169,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   ) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/dashboard/onboarding`;
-    return NextResponse.redirect(url);
+    return redirectWithSession(url);
   }
 
   // Super-admin back-office gate (F3-C1). Runs after the generic MFA gate, so
@@ -185,7 +196,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
       url.pathname = `/${locale}/dashboard/account`;
       url.searchParams.set('tab', 'security');
       url.searchParams.set('mfa', 'required_admin');
-      return NextResponse.redirect(url);
+      return redirectWithSession(url);
     }
   }
 
@@ -206,7 +217,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     url.pathname = '/api/impersonation/expire';
     url.search = '';
     url.searchParams.set('returnTo', request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    return redirectWithSession(url);
   }
 
   // Authenticated users are bounced off the marketing root and auth-only pages —
@@ -223,7 +234,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     const url = request.nextUrl.clone();
     url.pathname = onboardingPending ? `/${locale}/dashboard/onboarding` : `/${locale}/dashboard`;
     url.searchParams.delete('next');
-    return NextResponse.redirect(url);
+    return redirectWithSession(url);
   }
 
   // Prevent CDN caching only when there's actual session state to protect —
