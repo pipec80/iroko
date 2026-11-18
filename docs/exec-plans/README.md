@@ -29,6 +29,9 @@ de una misma familia; un archivo en active/ no equivale a una tarea abierta.
 
 ### Referencias y auxiliares que no crean otra cola
 
+- [Reparación acceso/cuenta,17Nov](active/2026-11-17-access-account-remediation.md):
+  propuesta solicitada tras el piloto de auditoría, sin implementación iniciada.
+  Mantiene A-ACCESS-01/02 en el registro central; no crea familia018 ni reabre017.
 - 016-T1: revisión estática histórica cerrada08/10; no se reabre.
 - 017.1–017.5: referencias técnicas en active/, con evidencia, transferencias y
   diferidos. No se marcan sus alcances enteros como completados. Editor avanzado

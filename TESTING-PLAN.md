@@ -134,6 +134,15 @@ Regla de trinquete: **nunca bajarlos**; subirlos cuando una fase agregue cobertu
 
 ## 7. Trabajo actual
 
+El [protocolo por capacidad](docs/quality/capability-audit-protocol.md) se aplicó
+al [piloto de acceso/cuenta](docs/audits/2026-11-17-access-and-account-audit.md)
+el17Nov: ocho archivos unit199/199 PASS y sondeo aislado2PASS/3FAIL de dos causas.
+El [anexo](docs/audits/2026-11-17-access-and-account-evidence.md) preserva comandos,
+fixture y límites: no SQL/browser/Cloud ni reparación. No se añadieron tests al
+conjunto estable ni se reabrieron cierres históricos.
+El [índice de planes](docs/exec-plans/README.md) posee sus estados vigentes;
+las referencias siguientes conservan contratos de regresión y aceptación.
+
 - Plan 010 define los tests de regresión P0 para aislamiento tenant, Storage,
   checkout e invitaciones.
 - Plan 011 define la matriz y certificación de Billing Platform v2.

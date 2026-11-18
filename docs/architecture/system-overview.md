@@ -5,12 +5,14 @@ The reusable SaaS core precedes any Robot/client vertical. Existing runtime
 boundaries remain; no new architecture, provider or generic plugin engine is
 introduced. Editor/Robot exclusion has configuration/authorization guards and
 unit evidence under015-T1 (2026-10-29); bounded local browser exclusion passed2/2
-later that day. Independent composition/reuse and final016 remain pending.
+later that day. Independent composition/reuse was accepted locally in015 on
+2026-11-10;016 technical acceptance closed under the2026-11-17 ADR0005 amendment.
+Provider acceptance remains separately in011, with billing enabled.
 This map does not establish acceptance of the deferred modules themselves.
 
 Status: current architectural map with explicitly marked planned areas
-Last reviewed: 2026-09-24 (product/reuse boundary and billing worker map;
-not an exhaustive implementation or runtime audit)
+Architectural baseline reviewed:2026-09-24. Acceptance pointers synchronized:
+2026-11-17; no new implementation or runtime audit.
 
 ## Purpose and boundary
 
@@ -26,8 +28,9 @@ every application worker to execute in an Edge Function.
 
 The [foundation recipes](../modules/foundation-recipes.md) map extension points
 to the current modules. The [independent installation guide](../runbooks/independent-installation.md)
-defines the derived setup and upgrade contract; its T3 runtime remains
-**[NO VERIFICADO]**.
+defines the derived setup and upgrade contract. Its T3 local drill has
+[bounded acceptance evidence](../quality/reusable-foundation-evidence.md);
+that result does not certify commercial installation or all provider operations.
 
 This overview describes stable boundaries. The
 [execution-plan index](../exec-plans/README.md) explains active, deferred and
@@ -108,14 +111,14 @@ that every tenant boundary outside that explicit scope is remediated.
 
 ## Change map
 
-| If changing                                               | Read first                                                                                                                                                                                   |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tenant membership, authorization, or RLS                  | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                                                                     |
-| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [deferred Plan 011 evidence](../exec-plans/deferred/011-billing/README.md)                                                   |
-| Security or pricing truth                                 | [Plan 012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md)                                                                                                              |
-| Commercial readiness                                      | [Deferred Plan 013](../exec-plans/deferred/013-launch-readiness-roadmap.md)                                                                                                                  |
-| Completion claims                                         | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                                                                                    |
-| Adaptation, module availability, installation or upgrades | [Product strategy](product-strategy.md), [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) and active [Plan 015](../exec-plans/completed/015-reusable-foundation-acceptance.md) |
+| If changing                                               | Read first                                                                                                                                                                                            |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenant membership, authorization, or RLS                  | [Completed Plan 010](../exec-plans/completed/010-tenant-isolation-and-regression-tests.md) and relevant migrations/tests                                                                              |
+| Billing contracts or providers                            | [Billing Platform v2 design](billing-platform-v2-design.md) and [deferred Plan 011 evidence](../exec-plans/deferred/011-billing/README.md)                                                            |
+| Security or pricing truth                                 | [Plan 012](../exec-plans/completed/012-security-hardening-and-pricing-truth.md)                                                                                                                       |
+| Commercial readiness                                      | [Deferred Plan 013](../exec-plans/deferred/013-launch-readiness-roadmap.md)                                                                                                                           |
+| Completion claims                                         | [Definition of Done](../quality/definition-of-done.md) and the plan's acceptance evidence                                                                                                             |
+| Adaptation, module availability, installation or upgrades | [Product strategy](product-strategy.md), [reuse audit](../audits/2026-09-24-reusable-saas-readiness.md) and completed local [Plan 015](../exec-plans/completed/015-reusable-foundation-acceptance.md) |
 
 ## Deliberate non-claims
 

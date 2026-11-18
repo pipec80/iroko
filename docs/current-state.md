@@ -1,5 +1,64 @@
 # Current State
 
+## Reparación acceso/cuenta preparada para CI — 2026-11-17
+
+[Implementación y evidencia](audits/2026-11-17-access-account-repair.md), rama
+`codex/fix-access-account`. A-ACCESS-02: cookies corregidas en respuesta local.
+Código guardado en commit local7448aee; lectura SSH remota verificada.
+A-ACCESS-01: mecanismo implementado con claim reintentable, generación AAL2,
+revocación global explícita y nueva autenticación. Revisión independiente apta
+para CI. Unit focal193/193 PASS y typecheck PASS; SQL, tipos regenerados y E2E
+GoTrue aún [NO VERIFICADO]. No se declara aceptación funcional MFA ni Cloud.
+
+La migración preparada invalida los códigos anteriores; no se aplicó en Cloud.
+El siguiente paso es publicar rama/PR y ejecutar CI bajo autorización de entrega;
+después evaluar migración/despliegue y aceptación Cloud con alcance concreto.
+No se amplía todavía al lote3 ni se repiten016/017.
+
+## Propuesta de reparación de acceso/cuenta — 2026-11-17
+
+[Plan acotado](exec-plans/active/2026-11-17-access-account-remediation.md):
+decisión de mecanismo MFA, corrección de cookies, validación focal, CI y recorrido
+Cloud diferenciado. Un implementador y revisión final independiente; RAM acotada.
+Sin cambio de producto en esta planificación. GitHub main leído por conector
+coincide con HEAD91840bad; docs pendientes siguen locales. Transporte SSH falló,
+sin demostrar por ello ausencia de acceso a GitHub. Push/merge/Cloud no ejecutados.
+
+## Auditoría básica de acceso/cuenta — 2026-11-17
+
+[Informe y matriz](audits/2026-11-17-access-and-account-audit.md): selección
+Supabase-first alineada, consumidores reales, **suficiencia parcial**.
+A-ACCESS-01 P1 funcional: recuperación MFA sin recorrido alcanzable;
+A-ACCESS-02 P2: redirects pierden cookies renovadas. Confirmados en composición
+local; no se ejecutaron GoTrue, SQL, navegador ni Cloud en este lote.
+Ocho archivos unit199/199 PASS; probe aislado2controles PASS/3FAIL de dos causas.
+Segunda lectura Astra corroboró causas y límites. Sin reparación de producto.
+
+El registro central conserva125casos anteriores y añade estas dos causas con
+dueño Auth/seguridad y Auth/Next; DB-01 sigue siendo el P2 existente.
+Google/SMTP Cloud y otros recorridos sin evidencia específica permanecen
+[NO VERIFICADO]. Los tres circuitos de correo no se certifican entre sí.
+Este resultado actual no reescribe los cierres históricos016/017 ni acepta
+todo el repositorio; el siguiente trabajo acotado es corregir y demostrar
+recuperación MFA y persistencia de refresh, según el informe.
+
+## Preparación documental de auditoría — 2026-11-17
+
+El propietario ratificó la dirección Supabase-first/Next.js, reutilización antes
+de verticales y distribución comercial posterior. Se sincronizan README,
+seguridad y arquitectura con los cierres ya registrados y se reparan nueve rutas
+owner_plan de014/015 en el registro, sin alterar IDs, resultados ni aceptación.
+El [protocolo de auditoría por capacidad](quality/capability-audit-protocol.md)
+documenta cobertura/limitaciones de skills, actualización de fuentes y el piloto
+Auth propuesto. No se ejecuta la auditoría ni se reabren016/017 por esta preparación;
+no hay evidencia runtime/Cloud nueva ni instalaciones de herramientas.
+
+Precisado con el propietario: primera matriz básica de selección/uso/suficiencia
+de Supabase, sin exigir todo su catálogo. Se registran Free/free-tier declarado,
+dominio pendiente y correo funcional sencillo; diseño frontend y seguridad web
+ampliada se consideran después. Los límites Next de Auth/datos siguen dentro
+del recorrido actual. Son criterios de revisión, no resultados de pruebas.
+
 ## Cierre016 y siguiente trabajo — 2026-11-17
 
 **016 completado por el núcleo técnico, con alcance enmendado por el propietario.**
