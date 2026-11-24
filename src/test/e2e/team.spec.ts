@@ -1,5 +1,6 @@
 import { type Page, test as base, expect } from '@playwright/test';
 
+import { isCloudBrowserTarget } from '../cloud-protection';
 import { requireUserUuid, withAuthCleanup } from '../local-auth-cleanup';
 import { test as authTest } from './fixtures/auth';
 import {
@@ -31,7 +32,8 @@ type TeamMgmtFixtures = {
 };
 
 const teamMgmtTest = base.extend<TeamMgmtFixtures>({
-  teamPage: async ({ page, request }, provide, testInfo) => {
+  teamPage: async ({ page, request, baseURL }, provide, testInfo) => {
+    testInfo.skip(isCloudBrowserTarget(baseURL), 'requires an owned local Supabase fixture');
     const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
     const ownerEmail = uniqueEmail('e2e+team-owner');
     const memberEmail = uniqueEmail('e2e+team-member');

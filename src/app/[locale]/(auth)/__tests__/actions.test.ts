@@ -643,12 +643,26 @@ describe('updatePasswordAction', () => {
 
   it('redirects to /dashboard on success — session is already established', async () => {
     mocks.updateUser.mockResolvedValue({ error: null });
+    mocks.getClaims.mockResolvedValue({ data: null });
 
     const fd = makeFormData({ password: 'StrongPass1!', confirm_password: 'StrongPass1!' });
     await expect(updatePasswordAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
 
     expect(mocks.updateUser).toHaveBeenCalledWith({ password: 'StrongPass1!' });
     expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+  });
+
+  it('uses document navigation for a recovery session that still needs its first organization', async () => {
+    mocks.updateUser.mockResolvedValue({ error: null });
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { app_metadata: { organization_entry_state: 'pending' } } },
+    });
+
+    const fd = makeFormData({ password: 'StrongPass1!', confirm_password: 'StrongPass1!' });
+    await expect(updatePasswordAction(PREV, fd)).resolves.toEqual({
+      documentRedirect: '/es/dashboard',
+    });
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
 });
 

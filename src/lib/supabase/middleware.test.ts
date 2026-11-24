@@ -120,6 +120,7 @@ describe('updateSession', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('location')).toBeNull();
     expect(response.cookies.get('test-session')?.value).toBe('ready');
+    expect(response.headers.get('x-middleware-request-cookie')).toContain('test-session=ready');
     expect(response.headers.get('Cache-Control')).toBe('private, no-store');
   });
 

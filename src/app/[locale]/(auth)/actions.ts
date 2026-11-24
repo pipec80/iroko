@@ -358,6 +358,10 @@ export async function updatePasswordAction(
   }
 
   const locale = await getLocale();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  if (claimsData?.claims.app_metadata?.organization_entry_state === 'pending') {
+    return { documentRedirect: `/${locale}/dashboard` };
+  }
   redirect({ href: '/dashboard', locale });
   return {};
 }
