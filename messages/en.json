@@ -1003,6 +1003,7 @@
     "api_keys_status_expired": "Expired",
     "api_keys_never": "Never",
     "api_keys_revoke_btn": "Revoke",
+    "api_keys_revoke_cancel": "Cancel",
     "api_keys_revoke_confirm": "Revoke this key? Integrations using it will stop working.",
     "api_keys_empty": "No API keys yet.",
     "api_keys_not_authorized": "Only owners and admins can manage API keys.",

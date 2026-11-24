@@ -1005,6 +1005,7 @@
     "api_keys_status_expired": "Expirada",
     "api_keys_never": "Nunca",
     "api_keys_revoke_btn": "Revocar",
+    "api_keys_revoke_cancel": "Cancelar",
     "api_keys_revoke_confirm": "¿Revocar esta clave? Las integraciones que la usen dejarán de funcionar.",
     "api_keys_empty": "Todavía no hay claves de API.",
     "api_keys_not_authorized": "Solo owners y admins pueden administrar las claves de API.",

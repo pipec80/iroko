@@ -11,6 +11,15 @@ import {
   type ApiKey,
 } from '@/app/[locale]/dashboard/org/settings/actions-api-keys';
 import { useIdentityQueryKey } from '@/components/providers/query-provider';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useOrgEntitlements } from '@/hooks/use-org-entitlements';
 import { Link } from '@/i18n/routing';
 import { LIMIT_KEYS } from '@/lib/billing/entitlement-keys';
@@ -24,6 +33,7 @@ export function ApiKeysTab() {
   const [name, setName] = useState('');
   const [expiresAt, setExpiresAt] = useState('');
   const [createdKey, setCreatedKey] = useState<string | null>(null);
+  const [keyToRevoke, setKeyToRevoke] = useState<string | null>(null);
 
   const { data: entitlements } = useOrgEntitlements();
 
@@ -64,7 +74,10 @@ export function ApiKeysTab() {
       const result = await revokeApiKey({ id });
       if (result.error) throw new Error(result.error);
     },
-    onSuccess: () => void queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      setKeyToRevoke(null);
+    },
   });
 
   if (!scope) return null;
@@ -142,12 +155,6 @@ export function ApiKeysTab() {
             {t('api_keys_create_error')}
           </p>
         )}
-        {revoke.error && (
-          <p role="alert" className="text-[12px]" style={{ color: 'var(--color-poppy)' }}>
-            {t('api_keys_revoke_error')}
-          </p>
-        )}
-
         {atLimit && (
           <p className="text-muted-foreground text-[12px]">
             {t('api_keys_limit_hint')}{' '}
@@ -168,11 +175,47 @@ export function ApiKeysTab() {
         : <ApiKeysTable
             keys={data ?? []}
             onRevoke={(id) => {
-              if (window.confirm(t('api_keys_revoke_confirm'))) revoke.mutate(id);
+              revoke.reset();
+              setKeyToRevoke(id);
             }}
           />
         }
       </div>
+      <Dialog
+        open={keyToRevoke !== null}
+        onOpenChange={(open) => {
+          if (!open && !revoke.isPending) setKeyToRevoke(null);
+        }}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>{t('api_keys_revoke_btn')}</DialogTitle>
+            <DialogDescription>{t('api_keys_revoke_confirm')}</DialogDescription>
+          </DialogHeader>
+          {revoke.error && (
+            <p role="alert" className="text-destructive text-[12px]">
+              {t('api_keys_revoke_error')}
+            </p>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={revoke.isPending}
+              onClick={() => setKeyToRevoke(null)}>
+              {t('api_keys_revoke_cancel')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={revoke.isPending}
+              onClick={() => {
+                if (keyToRevoke) revoke.mutate(keyToRevoke);
+              }}>
+              {t('api_keys_revoke_btn')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
