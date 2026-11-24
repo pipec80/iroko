@@ -2113,7 +2113,6 @@ export type Database = {
         Returns: boolean
       }
       complete_onboarding: { Args: never; Returns: undefined }
-      ensure_initial_organization: { Args: never; Returns: string }
       complete_webhook_delivery: {
         Args: {
           p_delivery_id: string
@@ -2187,6 +2186,7 @@ export type Database = {
         }
         Returns: string
       }
+      ensure_initial_organization: { Args: never; Returns: string }
       export_my_data: { Args: never; Returns: Json }
       generate_recovery_codes: { Args: never; Returns: string[] }
       get_account_audit_logs: {
@@ -2640,6 +2640,7 @@ export type Database = {
           locale: string | null
           metadata: Json | null
           onboarding_completed: boolean | null
+          organization_entry_state: string
           pending_deletion: boolean
           phone_number: string | null
           timezone: string | null

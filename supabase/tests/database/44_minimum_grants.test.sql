@@ -10,7 +10,7 @@
 -- These probe tables and their identity sequences are removed by ROLLBACK.
 BEGIN;
 SET LOCAL ROLE postgres;
-SELECT plan(72);
+SELECT plan(73);
 
 CREATE TEMP TABLE __plan012_grants_scope ON COMMIT DROP AS
 SELECT unnest(ARRAY[
@@ -114,7 +114,27 @@ SELECT is((SELECT coalesce(array_agg(format('%I.%I', n.nspname, c.relname) ORDER
 
 SELECT ok(has_table_privilege('authenticated', 'public.profiles', 'SELECT'), 'authenticated retains SELECT on public.profiles');
 
-SELECT ok(has_table_privilege('authenticated', 'public.profiles', 'UPDATE'), 'authenticated retains UPDATE on public.profiles');
+-- The initial organization migration preserves UPDATE on existing profile columns.
+SELECT is(
+  (SELECT ARRAY(
+    SELECT attname::text
+    FROM pg_catalog.pg_attribute
+    WHERE attrelid = 'public.profiles'::regclass
+      AND attnum > 0
+      AND NOT attisdropped
+      AND attname <> 'organization_entry_state'
+      AND NOT has_column_privilege('authenticated', attrelid, attnum, 'UPDATE')
+    ORDER BY attnum
+  )),
+  ARRAY[]::text[],
+  'authenticated retains UPDATE on existing profile columns'
+);
+
+-- This also fails if a table-level grant restores access to the protected column.
+SELECT ok(
+  NOT has_column_privilege('authenticated', 'public.profiles', 'organization_entry_state', 'UPDATE'),
+  'authenticated cannot update the server-controlled organization entry state'
+);
 
 SELECT ok(has_table_privilege('authenticated', 'public.projects', 'SELECT'), 'authenticated retains SELECT on public.projects');
 

@@ -1,76 +1,55 @@
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-import { createConfirmedUser, deleteUserById, uniqueEmail } from './helpers';
+import { isCloudBrowserTarget } from '../cloud-protection';
+import { requireUserUuid, withAuthCleanup } from '../local-auth-cleanup';
+import {
+  createConfirmedUser,
+  execSqlAsPostgres,
+  loginViaUi,
+  SUPABASE_URL,
+  uniqueEmail,
+} from './helpers';
 
-/**
- * Onboarding wizard E2E (F3-C4).
- *
- * Pre-reqs: `supabase start` on :54321 + Next dev server on :3000.
- * Users are created fresh (onboarding_completed=false by default) — do NOT
- * reuse the `authenticatedPage` fixture, which marks users as onboarded.
- */
-test.describe('Onboarding wizard', () => {
-  test.skip(Boolean(process.env.PLAYWRIGHT_BASE_URL), 'requires local Supabase (127.0.0.1:54321)');
+test('first sign-in provisions one organization and the old onboarding URL returns to the dashboard', async ({
+  page,
+  request,
+  baseURL,
+}) => {
+  test.skip(isCloudBrowserTarget(baseURL), 'requires an owned local Supabase fixture');
 
+  const email = uniqueEmail('e2e+onboarding');
   const password = 'TestPass123!';
+  const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
+  const userId = requireUserUuid(await createConfirmedUser(request, email, password, serviceKey));
 
-  test('signup redirects to onboarding, completing all steps lands on /dashboard, refresh does not bounce back', async ({
-    page,
-    request,
-  }) => {
-    const email = uniqueEmail('e2e+onboarding');
-    const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
-    const userId = await createConfirmedUser(request, email, password, serviceKey);
+  await withAuthCleanup(
+    async () => {
+      await loginViaUi(page, email, password);
+      const selector = page.getByRole('button', { name: /cambiar de organización/i });
+      await expect(selector).toContainText('Mi organización');
 
-    await page.goto('/es/login');
-    await page.locator('input[name="email"][type="email"]').fill(email);
-    await page.locator('input[name="password"]').fill(password);
-    await page.getByRole('button', { name: /iniciar sesión/i }).click();
+      await page.goto('/es/dashboard/onboarding');
+      await expect(page).toHaveURL(/\/es\/dashboard$/);
+      await page.reload();
+      await expect(selector).toContainText('Mi organización');
 
-    await page.waitForURL(/\/es\/dashboard\/onboarding/, { timeout: 20_000 });
-
-    await page.getByLabel('Nombre de la organización').fill('Mi Empresa E2E');
-    await page.getByRole('button', { name: 'Siguiente' }).click();
-
-    await page.getByRole('button', { name: 'Invitar después' }).click();
-
-    const planNext = page.getByRole('button', { name: 'Siguiente' });
-    if (await planNext.isVisible().catch(() => false)) {
-      await planNext.click();
-    }
-
-    await page.getByRole('button', { name: 'Finalizar' }).click();
-
-    await page.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
-
-    await page.reload();
-    await expect(page).toHaveURL(/\/es\/dashboard$/);
-
-    await deleteUserById(request, userId, serviceKey);
-  });
-
-  test('"Omitir configuración" from step 1 also lands on /dashboard, refresh does not bounce back', async ({
-    page,
-    request,
-  }) => {
-    const email = uniqueEmail('e2e+onboarding-skip');
-    const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
-    const userId = await createConfirmedUser(request, email, password, serviceKey);
-
-    await page.goto('/es/login');
-    await page.locator('input[name="email"][type="email"]').fill(email);
-    await page.locator('input[name="password"]').fill(password);
-    await page.getByRole('button', { name: /iniciar sesión/i }).click();
-
-    await page.waitForURL(/\/es\/dashboard\/onboarding/, { timeout: 20_000 });
-
-    await page.getByRole('button', { name: 'Omitir configuración' }).click();
-
-    await page.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
-
-    await page.reload();
-    await expect(page).toHaveURL(/\/es\/dashboard$/);
-
-    await deleteUserById(request, userId, serviceKey);
-  });
+      await selector.click();
+      const accounts = page.getByRole('listbox');
+      await expect(accounts.getByRole('option')).toHaveCount(1);
+      await expect(accounts.getByRole('option')).toContainText('Mi organización');
+    },
+    () =>
+      execSqlAsPostgres(
+        `DELETE FROM public.accounts WHERE id = '${userId}' OR (created_by = '${userId}' AND type = 'team')`,
+      ),
+    async () => {
+      const response = await request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+        headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+      });
+      if (!response.ok())
+        throw new Error(`Owned signup fixture cleanup failed (${response.status()})`);
+    },
+    (error) =>
+      test.info().annotations.push({ type: 'fixture cleanup', description: error.message }),
+  );
 });

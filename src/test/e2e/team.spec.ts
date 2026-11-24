@@ -1,7 +1,16 @@
 import { type Page, test as base, expect } from '@playwright/test';
 
+import { requireUserUuid, withAuthCleanup } from '../local-auth-cleanup';
 import { test as authTest } from './fixtures/auth';
-import { createTeamViaUi, execSqlAsPostgres, SUPABASE_URL } from './helpers';
+import {
+  createConfirmedUser,
+  createTeamViaUi,
+  execSqlAsPostgres,
+  loginViaUi,
+  querySqlAsPostgres,
+  SUPABASE_URL,
+  uniqueEmail,
+} from './helpers';
 
 /**
  * Team management E2E tests.
@@ -22,104 +31,62 @@ type TeamMgmtFixtures = {
 };
 
 const teamMgmtTest = base.extend<TeamMgmtFixtures>({
-  teamPage: async ({ page, request }, provide) => {
+  teamPage: async ({ page, request }, provide, testInfo) => {
     const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
-    const now = Date.now();
-    const ownerEmail = `e2e+team-owner+${now}@saasboilerplate.local`;
-    const memberEmail = `e2e+team-member+${now}@saasboilerplate.local`;
+    const ownerEmail = uniqueEmail('e2e+team-owner');
+    const memberEmail = uniqueEmail('e2e+team-member');
     const password = 'TestPass123!';
-
-    const adminHeaders = {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      'Content-Type': 'application/json',
-    };
-    const readHeaders = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
-
-    // 1. Create owner user (triggers handle_new_user → profile + personal account)
-    const ownerRes = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      headers: adminHeaders,
-      data: { email: ownerEmail, password, email_confirm: true },
-    });
-    const ownerBody: { id?: string } = await ownerRes.json();
-    if (!ownerBody.id) throw new Error(`create owner failed: ${JSON.stringify(ownerBody)}`);
-    const ownerId = ownerBody.id;
-
-    // F3-C4: sin esto, el edge gate redirige el login del owner a
-    // /dashboard/onboarding en vez de /dashboard/members. service_role no tiene
-    // UPDATE sobre profiles (grants hardening) — vía psql como postgres.
-    execSqlAsPostgres(
-      `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${ownerId}'`,
+    const ownerId = requireUserUuid(
+      await createConfirmedUser(request, ownerEmail, password, serviceKey),
     );
+    const userIds = [ownerId];
 
-    // 2. Create member user (also gets their own profile + account via trigger)
-    const memberRes = await request.post(`${SUPABASE_URL}/auth/v1/admin/users`, {
-      headers: adminHeaders,
-      data: { email: memberEmail, password, email_confirm: true },
-    });
-    const memberBody: { id?: string } = await memberRes.json();
-    if (!memberBody.id) throw new Error(`create member failed: ${JSON.stringify(memberBody)}`);
-    const memberId = memberBody.id;
+    await withAuthCleanup(
+      async () => {
+        await loginViaUi(page, ownerEmail, password);
+        await expect(page.getByRole('button', { name: /cambiar de organización/i })).toContainText(
+          'Mi organización',
+        );
+        const accountId = requireUserUuid(
+          querySqlAsPostgres(
+            `SELECT a.id FROM public.profiles p JOIN public.accounts a ON a.id = p.active_account_id WHERE p.id = '${ownerId}' AND a.created_by = '${ownerId}' AND a.type = 'team'`,
+          ),
+        );
+        const memberId = requireUserUuid(
+          await createConfirmedUser(request, memberEmail, password, serviceKey),
+        );
+        userIds.push(memberId);
 
-    // 3. Resolve the owner's account_id through the app's own path:
-    //    password-grant login + get_my_account_id() RPC (SECURITY DEFINER,
-    //    granted to authenticated). Direct REST reads of accounts_memberships
-    //    return an error object (grants hardening) that silently parses as
-    //    "no rows" — never query that table directly here.
-    const tokenRes = await request.post(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-      headers: { apikey: serviceKey, 'Content-Type': 'application/json' },
-      data: { email: ownerEmail, password },
-    });
-    const tokenBody: { access_token?: string } = await tokenRes.json();
-    if (!tokenBody.access_token) {
-      throw new Error(`owner password login failed: ${JSON.stringify(tokenBody)}`);
-    }
+        execSqlAsPostgres(
+          `INSERT INTO public.accounts_memberships (account_id, user_id, role) VALUES ('${accountId}', '${memberId}', 'member')`,
+        );
 
-    const rpcRes = await request.post(`${SUPABASE_URL}/rest/v1/rpc/get_my_account_id`, {
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${tokenBody.access_token}`,
-        'Content-Type': 'application/json',
+        await provide(page);
       },
-      data: {},
-    });
-    const rpcText = await rpcRes.text();
-    if (!rpcRes.ok()) {
-      throw new Error(`get_my_account_id failed (${rpcRes.status()}): ${rpcText}`);
-    }
-    const accountId = JSON.parse(rpcText) as string | null;
-    if (!accountId) {
-      throw new Error(`owner ${ownerId} has no account — handle_new_profile trigger missing?`);
-    }
-
-    // 4. Insert member into owner's account as active non-owner member.
-    //    Via psql/postgres: service_role no tiene grants sobre esta tabla
-    //    (REST devuelve 42501) y no existe RPC para añadir miembros directos.
-    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRe.test(accountId) || !uuidRe.test(memberId)) {
-      throw new Error(`unexpected non-UUID ids: account=${accountId} member=${memberId}`);
-    }
-    execSqlAsPostgres(
-      `INSERT INTO public.accounts_memberships (account_id, user_id, role) ` +
-        `VALUES ('${accountId}', '${memberId}', 'member')`,
+      () =>
+        execSqlAsPostgres(
+          `DELETE FROM public.accounts WHERE id IN ('${userIds.join("','")}') OR (created_by = '${ownerId}' AND type = 'team')`,
+        ),
+      async () => {
+        const results = await Promise.allSettled(
+          userIds.map(async (id) => {
+            const response = await request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, {
+              headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+            });
+            if (!response.ok())
+              throw new Error(`Owned team fixture cleanup failed (${response.status()})`);
+          }),
+        );
+        const failures = results.filter((result) => result.status === 'rejected');
+        if (failures.length) {
+          throw new AggregateError(
+            failures.map((result) => result.reason),
+            'Owned team fixture Auth cleanup failed',
+          );
+        }
+      },
+      (error) => testInfo.annotations.push({ type: 'fixture cleanup', description: error.message }),
     );
-
-    // 5. Login as owner via UI
-    await page.goto('/es/login');
-    await page.locator('input[name="email"][type="email"]').fill(ownerEmail);
-    await page.locator('input[name="password"]').fill(password);
-    await page.getByRole('button', { name: /iniciar sesión/i }).click();
-    await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
-
-    await provide(page);
-
-    // Cleanup — ON DELETE CASCADE on profiles removes memberships too
-    await request
-      .delete(`${SUPABASE_URL}/auth/v1/admin/users/${memberId}`, { headers: readHeaders })
-      .catch(() => {});
-    await request
-      .delete(`${SUPABASE_URL}/auth/v1/admin/users/${ownerId}`, { headers: readHeaders })
-      .catch(() => {});
   },
 });
 

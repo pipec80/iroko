@@ -231,23 +231,21 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     (pathWithoutLocale === '/dashboard' || pathWithoutLocale.startsWith('/dashboard/'))
   ) {
     const { error } = await supabase.rpc('ensure_initial_organization');
-    if (!error) {
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      const { data: refreshed } = refreshError ? { data: null } : await supabase.auth.getClaims();
-      if (refreshed?.claims.app_metadata?.organization_entry_state === 'ready') {
-        return redirectWithSession(request.nextUrl.clone());
-      }
+    const refreshError = error ?? (await supabase.auth.refreshSession()).error;
+    const { data: refreshed } = refreshError ? { data: null } : await supabase.auth.getClaims();
+    if (refreshed?.claims.app_metadata?.organization_entry_state !== 'ready') {
+      const unavailable = new NextResponse(
+        'Organization setup is temporarily unavailable. Reload to retry.',
+        {
+          status: 503,
+          headers: { 'Cache-Control': 'private, no-store', 'Retry-After': '5' },
+        },
+      );
+      for (const cookie of supabaseResponse.cookies.getAll()) unavailable.cookies.set(cookie);
+      return unavailable;
     }
-
-    const unavailable = new NextResponse(
-      'Organization setup is temporarily unavailable. Reload to retry.',
-      {
-        status: 503,
-        headers: { 'Cache-Control': 'private, no-store', 'Retry-After': '5' },
-      },
-    );
-    for (const cookie of supabaseResponse.cookies.getAll()) unavailable.cookies.set(cookie);
-    return unavailable;
+    // The SDK already forwarded the refreshed cookies to this request.
+    // Server Action fetches do not apply cookies while following a redirect.
   }
 
   // Authenticated users are bounced off the marketing root and auth-only pages —

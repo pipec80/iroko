@@ -47,7 +47,7 @@ authTest.describe('Billing — Mercado Pago return confirmation', () => {
     const externalId = `e2e-preapproval-${suffix}-${Date.now()}`;
 
     execSqlAsPostgres(
-      `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${userId}'`,
+      `UPDATE public.profiles SET onboarding_completed = true, organization_entry_state = 'legacy' WHERE id = '${userId}'`,
     );
     execSqlAsPostgres(
       `WITH customer AS (INSERT INTO billing.customers (account_id, provider) VALUES ('${userId}', 'mercadopago') RETURNING id) INSERT INTO billing.subscriptions (customer_id, plan_id, status, provider, external_subscription_id) SELECT customer.id, (SELECT id FROM billing.plans WHERE slug = 'pro' LIMIT 1), 'incomplete', 'mercadopago', '${externalId}' FROM customer`,

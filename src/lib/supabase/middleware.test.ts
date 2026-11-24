@@ -105,13 +105,22 @@ describe('updateSession', () => {
         },
       });
     mocks.rpc.mockResolvedValue({ data: 'team-id', error: null });
-    mocks.refreshSession.mockResolvedValue({ error: null });
+    mocks.refreshSession.mockImplementation(async () => {
+      mocks.writeCookies?.(
+        [{ name: 'test-session', value: 'ready', options: { path: '/', httpOnly: true } }],
+        {},
+      );
+      return { error: null };
+    });
 
     const response = await updateSession(makeRequest('/es/dashboard'));
 
     expect(mocks.rpc).toHaveBeenCalledWith('ensure_initial_organization');
     expect(mocks.refreshSession).toHaveBeenCalledOnce();
-    expect(response.headers.get('location')).toBe('http://localhost:3000/es/dashboard');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.cookies.get('test-session')?.value).toBe('ready');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
   });
 
   describe('refreshed response cookies', () => {
