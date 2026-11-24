@@ -132,6 +132,8 @@
     "click_btn_magiclink": "Se connecter",
     "click_btn_recovery": "Réinitialiser le mot de passe",
     "click_btn_email_change": "Confirmer le changement d'e-mail",
+    "invitation_retry": "L’invitation n’a pas pu être acceptée. Si vous utilisez une autre adresse, déconnectez-vous et revenez avec l’adresse invitée. Si le lien a expiré, demandez une nouvelle invitation.",
+    "invitation_dashboard": "Retour au tableau de bord",
     "click_btn_invite": "Accepter l'invitation",
     "errors": {
       "invalid_credentials": "Identifiants incorrects.",
@@ -1169,7 +1171,7 @@
     "trial": "{days} jours d’essai",
     "limit": "{label} : {value}",
     "seats_max": "Membres",
-    "teams_max": "Équipes",
+    "teams_max": "Organisations détenues",
     "api_keys_max": "Clés API",
     "webhook_endpoints_max": "Endpoints webhook",
     "webhooks_enabled": "Webhooks",

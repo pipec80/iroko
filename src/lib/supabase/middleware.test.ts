@@ -8,6 +8,8 @@ type CookieWriter = (
 
 const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
+  rpc: vi.fn(),
+  refreshSession: vi.fn(),
   writeCookies: undefined as CookieWriter | undefined,
 }));
 
@@ -15,7 +17,10 @@ vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(
     (_url: string, _key: string, options: { cookies: { setAll: CookieWriter } }) => {
       mocks.writeCookies = options.cookies.setAll;
-      return { auth: { getClaims: mocks.getClaims } };
+      return {
+        rpc: mocks.rpc,
+        auth: { getClaims: mocks.getClaims, refreshSession: mocks.refreshSession },
+      };
     },
   ),
 }));
@@ -85,6 +90,28 @@ describe('updateSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     appConfig.features.onboarding = true;
+  });
+
+  it('provisions a pending organization before opening the dashboard', async () => {
+    mocks.getClaims
+      .mockResolvedValueOnce({
+        data: {
+          claims: { sub: 'user-uuid-1', app_metadata: { organization_entry_state: 'pending' } },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          claims: { sub: 'user-uuid-1', app_metadata: { organization_entry_state: 'ready' } },
+        },
+      });
+    mocks.rpc.mockResolvedValue({ data: 'team-id', error: null });
+    mocks.refreshSession.mockResolvedValue({ error: null });
+
+    const response = await updateSession(makeRequest('/es/dashboard'));
+
+    expect(mocks.rpc).toHaveBeenCalledWith('ensure_initial_organization');
+    expect(mocks.refreshSession).toHaveBeenCalledOnce();
+    expect(response.headers.get('location')).toBe('http://localhost:3000/es/dashboard');
   });
 
   describe('refreshed response cookies', () => {

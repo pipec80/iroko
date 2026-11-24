@@ -501,6 +501,19 @@ describe('verifyRecoveryAction', () => {
 // ─── magicLinkAction ─────────────────────────────────────────────────────────
 
 describe('magicLinkAction', () => {
+  it('keeps the validated invitation in the login email callback', async () => {
+    const invite = `/es/auth/accept-invitation?token=${'a'.repeat(64)}`;
+    mocks.signInWithOtp.mockResolvedValue({ error: null });
+    await magicLinkAction(PREV, makeFormData({ email: 'ana@example.com', next: invite }));
+
+    expect(mocks.signInWithOtp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({
+          emailRedirectTo: expect.stringContaining(`?next=${encodeURIComponent(invite)}`),
+        }),
+      }),
+    );
+  });
   beforeEach(() => vi.clearAllMocks());
 
   it('returns fieldErrors for invalid email', async () => {

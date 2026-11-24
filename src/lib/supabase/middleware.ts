@@ -16,6 +16,7 @@ type JwtClaims = {
     impersonated_by?: string;
     impersonation_expires_at?: string;
     onboarding_completed?: boolean;
+    organization_entry_state?: 'legacy' | 'pending' | 'ready';
   } & Record<string, unknown>;
 };
 
@@ -160,6 +161,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   const onboardingPending =
     claims != null &&
     appConfig.features.onboarding &&
+    (claims.app_metadata?.organization_entry_state ?? 'legacy') === 'legacy' &&
     claims.app_metadata?.onboarding_completed === false;
 
   if (
@@ -218,6 +220,34 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     url.search = '';
     url.searchParams.set('returnTo', request.nextUrl.pathname);
     return redirectWithSession(url);
+  }
+
+  if (
+    request.method === 'GET' &&
+    !request.headers.has('next-router-prefetch') &&
+    request.headers.get('purpose') !== 'prefetch' &&
+    !claims?.app_metadata?.impersonated_by &&
+    claims?.app_metadata?.organization_entry_state === 'pending' &&
+    (pathWithoutLocale === '/dashboard' || pathWithoutLocale.startsWith('/dashboard/'))
+  ) {
+    const { error } = await supabase.rpc('ensure_initial_organization');
+    if (!error) {
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      const { data: refreshed } = refreshError ? { data: null } : await supabase.auth.getClaims();
+      if (refreshed?.claims.app_metadata?.organization_entry_state === 'ready') {
+        return redirectWithSession(request.nextUrl.clone());
+      }
+    }
+
+    const unavailable = new NextResponse(
+      'Organization setup is temporarily unavailable. Reload to retry.',
+      {
+        status: 503,
+        headers: { 'Cache-Control': 'private, no-store', 'Retry-After': '5' },
+      },
+    );
+    for (const cookie of supabaseResponse.cookies.getAll()) unavailable.cookies.set(cookie);
+    return unavailable;
   }
 
   // Authenticated users are bounced off the marketing root and auth-only pages —

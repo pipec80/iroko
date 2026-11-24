@@ -132,6 +132,8 @@
     "click_btn_magiclink": "Iniciar sesión",
     "click_btn_recovery": "Restablecer contraseña",
     "click_btn_email_change": "Confirmar cambio de correo",
+    "invitation_retry": "No pudimos aceptar la invitación. Si estás usando otro correo, cierra sesión y vuelve con el correo invitado. Si el enlace venció, pide una nueva invitación.",
+    "invitation_dashboard": "Volver al inicio",
     "click_btn_invite": "Aceptar invitación",
     "errors": {
       "invalid_credentials": "Credenciales incorrectas.",
@@ -1167,7 +1169,7 @@
     "trial": "{days} días de prueba",
     "limit": "{label}: {value}",
     "seats_max": "Miembros",
-    "teams_max": "Equipos",
+    "teams_max": "Organizaciones propias",
     "api_keys_max": "API keys",
     "webhook_endpoints_max": "Endpoints webhook",
     "webhooks_enabled": "Webhooks",

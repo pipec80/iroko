@@ -132,6 +132,8 @@
     "click_btn_magiclink": "Entrar",
     "click_btn_recovery": "Redefinir senha",
     "click_btn_email_change": "Confirmar alteração de e-mail",
+    "invitation_retry": "Não foi possível aceitar o convite. Se estiver usando outro e-mail, saia e entre com o e-mail convidado. Se o link expirou, solicite outro convite.",
+    "invitation_dashboard": "Voltar ao painel",
     "click_btn_invite": "Aceitar convite",
     "errors": {
       "invalid_credentials": "Credenciais inválidas.",
@@ -1167,7 +1169,7 @@
     "trial": "{days} dias de teste",
     "limit": "{label}: {value}",
     "seats_max": "Membros",
-    "teams_max": "Equipes",
+    "teams_max": "Organizações próprias",
     "api_keys_max": "API keys",
     "webhook_endpoints_max": "Endpoints webhook",
     "webhooks_enabled": "Webhooks",

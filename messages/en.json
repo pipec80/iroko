@@ -132,6 +132,8 @@
     "click_btn_magiclink": "Sign in",
     "click_btn_recovery": "Reset password",
     "click_btn_email_change": "Confirm email change",
+    "invitation_retry": "We couldn't accept this invitation. If you're using another email, sign out and return with the invited email. If the link has expired, request a new invitation.",
+    "invitation_dashboard": "Back to dashboard",
     "click_btn_invite": "Accept invitation",
     "errors": {
       "invalid_credentials": "Invalid credentials.",
@@ -1165,7 +1167,7 @@
     "trial": "{days}-day trial",
     "limit": "{label}: {value}",
     "seats_max": "Members",
-    "teams_max": "Teams",
+    "teams_max": "Owned organizations",
     "api_keys_max": "API keys",
     "webhook_endpoints_max": "Webhook endpoints",
     "webhooks_enabled": "Webhooks",

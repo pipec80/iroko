@@ -6,6 +6,7 @@ import { appConfig } from '@/config/app.config';
 import { env } from '@/env';
 import { redirect } from '@/i18n/routing';
 import { captureServer } from '@/lib/analytics/server';
+import { invitationReturn } from '@/lib/auth/invitation-return';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
@@ -36,6 +37,7 @@ function resolvePostAuthDestination(
   const needsOnboarding =
     appConfig.features.onboarding &&
     onboardingCompleted === false &&
+    !hrefWithoutLocale.startsWith('/auth/accept-invitation?') &&
     !hrefWithoutLocale.startsWith('/dashboard/onboarding');
   return needsOnboarding ? '/dashboard/onboarding' : hrefWithoutLocale;
 }
@@ -121,8 +123,16 @@ export async function signInAction(
   const { data: claimsData } = await supabase.auth.getClaims();
   const href = resolvePostAuthDestination(
     hrefWithoutLocale,
-    claimsData?.claims.app_metadata?.onboarding_completed,
+    (claimsData?.claims.app_metadata?.organization_entry_state ?? 'legacy') === 'legacy' ?
+      claimsData?.claims.app_metadata?.onboarding_completed
+    : undefined,
   );
+  if (
+    claimsData?.claims.app_metadata?.organization_entry_state === 'pending' &&
+    href.startsWith('/dashboard')
+  ) {
+    return { documentRedirect: `/${locale}${href}` };
+  }
   return finishAuthRedirect(href, locale);
 }
 
@@ -181,8 +191,16 @@ export async function verifyMfaAction(
   const hrefWithoutLocale = next.replace(new RegExp(`^/${locale}`), '') || '/dashboard';
   const href = resolvePostAuthDestination(
     hrefWithoutLocale,
-    claimsData?.claims.app_metadata?.onboarding_completed,
+    (claimsData?.claims.app_metadata?.organization_entry_state ?? 'legacy') === 'legacy' ?
+      claimsData?.claims.app_metadata?.onboarding_completed
+    : undefined,
   );
+  if (
+    claimsData?.claims.app_metadata?.organization_entry_state === 'pending' &&
+    href.startsWith('/dashboard')
+  ) {
+    return { documentRedirect: `/${locale}${href}` };
+  }
   return finishAuthRedirect(href, locale);
 }
 
@@ -205,6 +223,8 @@ export async function signUpAction(
   const captchaToken = formData.get('captchaToken') as string | undefined;
   const supabase = await createClient();
   const locale = await getLocale();
+  const invite = invitationReturn(formData.get('next'), locale);
+  const next = invite ? encodeURIComponent(invite) : `/${locale}/dashboard`;
 
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -212,7 +232,7 @@ export async function signUpAction(
     options: {
       // Keys must match what private.handle_new_profile() reads from raw_user_meta_data.
       data: { given_name: first_name, family_name: last_name },
-      emailRedirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/dashboard`,
+      emailRedirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=${next}`,
       ...(captchaToken ? { captchaToken } : {}),
     },
   });
@@ -226,7 +246,7 @@ export async function signUpAction(
         'signup_attempt_existing_email — returning generic confirmation',
       );
       redirect({
-        href: `/signup/confirmation?email=${encodeURIComponent(email)}`,
+        href: `/signup/confirmation?email=${encodeURIComponent(email)}${invite ? `&next=${encodeURIComponent(invite)}` : ''}`,
         locale,
       });
     }
@@ -250,7 +270,7 @@ export async function signUpAction(
   }
 
   redirect({
-    href: `/signup/confirmation?email=${encodeURIComponent(email)}`,
+    href: `/signup/confirmation?email=${encodeURIComponent(email)}${invite ? `&next=${encodeURIComponent(invite)}` : ''}`,
     locale,
   });
   return {};
@@ -269,12 +289,14 @@ export async function magicLinkAction(
   const captchaToken = formData.get('captchaToken') as string | undefined;
   const supabase = await createClient();
   const locale = await getLocale();
+  const invite = invitationReturn(formData.get('next'), locale);
+  const next = invite ? encodeURIComponent(invite) : `/${locale}/dashboard`;
 
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/dashboard`,
+      emailRedirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=${next}`,
       ...(captchaToken ? { captchaToken } : {}),
     },
   });
@@ -350,12 +372,14 @@ export async function resendConfirmationAction(
 
   const supabase = await createClient();
   const locale = await getLocale();
+  const invite = invitationReturn(formData.get('next'), locale);
+  const next = invite ? encodeURIComponent(invite) : `/${locale}/dashboard`;
 
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email,
     options: {
-      emailRedirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=/${locale}/dashboard`,
+      emailRedirectTo: `${env.SITE_URL}/${locale}/auth/confirm?next=${next}`,
     },
   });
 
@@ -391,14 +415,16 @@ export async function verifyRecoveryAction(
   return { documentRedirect: `/${locale}/login?recovered=1&next=${encodeURIComponent(target)}` };
 }
 
-export async function oauthAction(provider: 'google' | 'azure'): Promise<void> {
+export async function oauthAction(provider: 'google' | 'azure', returnTo?: string): Promise<void> {
   const supabase = await createClient();
   const locale = await getLocale();
+  const invite = invitationReturn(returnTo, locale);
+  const next = invite ? encodeURIComponent(invite) : `/${locale}/dashboard`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `${env.SITE_URL}/${locale}/auth/callback?next=/${locale}/dashboard`,
+      redirectTo: `${env.SITE_URL}/${locale}/auth/callback?next=${next}`,
     },
   });
 

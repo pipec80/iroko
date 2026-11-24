@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 import { logger } from '@/lib/logger';
 import { createClient } from '@/lib/supabase/server';
+import { invitationReturn } from '@/lib/auth/invitation-return';
 
 export async function POST(
   request: NextRequest,
@@ -23,5 +24,8 @@ export async function POST(
     logger.error({ action: 'auth.signOut', code: error.code }, 'Sign-out failed');
   }
 
-  return NextResponse.redirect(`${origin}/${locale}/login`, { status: 303 });
+  const next = invitationReturn(request.nextUrl.searchParams.get('next'), locale);
+  const destination = new URL(`/${locale}/login`, origin);
+  if (next) destination.searchParams.set('next', next);
+  return NextResponse.redirect(destination, { status: 303 });
 }

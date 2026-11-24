@@ -12,7 +12,7 @@ import { resendConfirmationAction } from '../../actions';
 
 const initialState: AuthActionState = {};
 
-export function ConfirmationClient({ email }: { email: string }) {
+export function ConfirmationClient({ email, next }: { email: string; next?: string | null }) {
   const t = useTranslations('Auth');
   const [state, formAction, pending] = useActionState(resendConfirmationAction, initialState);
 
@@ -54,6 +54,7 @@ export function ConfirmationClient({ email }: { email: string }) {
         <div className="border-border bg-surface-2 rounded-lg border p-6">
           <form action={formAction}>
             <input type="hidden" name="email" value={email} readOnly />
+            {next && <input type="hidden" name="next" value={next} />}
             <Button type="submit" disabled={pending} className="h-11 w-full">
               {t('resend_email')}
             </Button>
@@ -70,7 +71,9 @@ export function ConfirmationClient({ email }: { email: string }) {
           asChild
           variant="ghost"
           className="text-muted-foreground hover:text-primary text-sm font-medium transition-colors">
-          <Link href="/login">{t('back_to_login')}</Link>
+          <Link href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}>
+            {t('back_to_login')}
+          </Link>
         </Button>
       </div>
     </div>

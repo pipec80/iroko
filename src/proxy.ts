@@ -276,8 +276,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const session = await updateSession(request);
-  const response =
-    session.status >= 300 && session.status < 400 ? session : intlMiddleware(request);
+  const response = session.status >= 300 ? session : intlMiddleware(request);
   if (response !== session) {
     for (const cookie of session.cookies.getAll())
       response.cookies.set(cookie.name, cookie.value, cookie);
