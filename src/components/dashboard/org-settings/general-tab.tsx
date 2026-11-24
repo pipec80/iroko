@@ -83,11 +83,26 @@ export function GeneralTab() {
     !hasUnsavedFile;
   const displayedLogoPreview = showConfirmedLogo ? submittedLogoPreview : logoPreview;
 
+  const [orgInfo, setOrgInfo] = useState<(OrgInfo & { accountId: string }) | null>(null);
   const [infoState, infoAction, infoPending] = useActionState<OrgInfoActionState, FormData>(
-    updateOrgInfo,
+    async (previous, formData) => {
+      const result = await updateOrgInfo(previous, formData);
+      const confirmed = result.data;
+      if (confirmed) {
+        setOrgInfo((current) =>
+          current && current.accountId === formData.get('accountId') ?
+            { ...current, ...confirmed }
+          : current,
+        );
+      }
+      return result;
+    },
     {},
   );
-  const [orgInfo, setOrgInfo] = useState<OrgInfo | null>(null);
+
+  function updateField(name: keyof OrgInfo, value: string) {
+    setOrgInfo((current) => (current ? { ...current, [name]: value } : current));
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -237,33 +252,38 @@ export function GeneralTab() {
         <h2 className="text-foreground text-[14px] font-semibold">{t('general_section_title')}</h2>
         {orgInfo && (
           <form action={infoAction} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <input type="hidden" name="accountId" value={orgInfo.accountId} />
+            <fieldset disabled={infoPending} className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <Field
                 name="name"
                 label={t('general_field_name')}
                 placeholder={t('general_field_name_placeholder')}
-                defaultValue={orgInfo.name}
+                value={orgInfo.name}
+                onChange={updateField}
               />
               <Field
                 name="slug"
                 label={t('general_field_slug')}
                 placeholder={t('general_field_slug_placeholder')}
                 hint={t('general_field_slug_hint')}
-                defaultValue={orgInfo.slug}
+                value={orgInfo.slug}
+                onChange={updateField}
               />
               <Field
                 name="website"
                 label={t('general_field_website')}
                 placeholder={t('general_field_website_placeholder')}
-                defaultValue={orgInfo.website}
+                value={orgInfo.website}
+                onChange={updateField}
               />
               <Field
                 name="country"
                 label={t('general_field_country')}
                 placeholder={t('general_field_country_placeholder')}
-                defaultValue={orgInfo.country}
+                value={orgInfo.country}
+                onChange={updateField}
               />
-            </div>
+            </fieldset>
 
             {infoState.success === 'info_updated' && (
               <div
@@ -300,13 +320,15 @@ function Field({
   name,
   label,
   placeholder,
-  defaultValue,
+  value,
+  onChange,
   hint,
 }: {
-  name: string;
+  name: keyof OrgInfo;
   label: string;
   placeholder: string;
-  defaultValue: string;
+  value: string;
+  onChange: (name: keyof OrgInfo, value: string) => void;
   hint?: string;
 }) {
   return (
@@ -321,7 +343,8 @@ function Field({
         name={name}
         type="text"
         placeholder={placeholder}
-        defaultValue={defaultValue}
+        value={value}
+        onChange={(event) => onChange(name, event.target.value)}
         className="border-border bg-background text-foreground placeholder:text-muted-foreground rounded-lg border px-3 py-2 text-[13px] outline-none focus:ring-1"
         style={{ '--tw-ring-color': 'var(--color-cobalt)' } as React.CSSProperties}
       />
