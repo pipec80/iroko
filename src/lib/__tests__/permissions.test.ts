@@ -5,6 +5,7 @@ import {
   canDeleteContent,
   canManageMembers,
   canManageBilling,
+  canReadBilling,
   canManageOrgSettings,
   type MembershipRole,
 } from '../permissions';
@@ -41,7 +42,7 @@ describe('canDeleteContent', () => {
 
 describe.each([
   ['canManageMembers', canManageMembers],
-  ['canManageBilling', canManageBilling],
+  ['canReadBilling', canReadBilling],
   ['canManageOrgSettings', canManageOrgSettings],
 ] as const)('%s', (_name, fn) => {
   it('should allow owner and admin', () => {
@@ -53,6 +54,16 @@ describe.each([
     expect(fn('member')).toBe(false);
     expect(fn('viewer')).toBe(false);
     expect(fn(null)).toBe(false);
+  });
+});
+
+describe('canManageBilling', () => {
+  it('only permits the owner to change billing', () => {
+    expect(canManageBilling('owner')).toBe(true);
+    expect(canManageBilling('admin')).toBe(false);
+    expect(canManageBilling('member')).toBe(false);
+    expect(canManageBilling('viewer')).toBe(false);
+    expect(canManageBilling(null)).toBe(false);
   });
 });
 

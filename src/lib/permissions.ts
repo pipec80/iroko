@@ -14,6 +14,7 @@ export type MembershipRole = Database['public']['Enums']['membership_role'];
  */
 const EDITOR_ROLES: readonly MembershipRole[] = ['owner', 'admin', 'member'];
 export const ADMIN_ROLES: readonly MembershipRole[] = ['owner', 'admin'];
+export const BILLING_MUTATION_ROLES: readonly MembershipRole[] = ['owner'];
 
 /** owner/admin/member — crea y edita projects/documents, sube a Storage documents. */
 export function canEditContent(role: MembershipRole | null): boolean {
@@ -30,8 +31,13 @@ export function canManageMembers(role: MembershipRole | null): boolean {
   return role != null && ADMIN_ROLES.includes(role);
 }
 
-/** owner/admin — checkout, portal de facturación, ver facturas. */
+/** Owner only — checkout and subscription changes. */
 export function canManageBilling(role: MembershipRole | null): boolean {
+  return role != null && BILLING_MUTATION_ROLES.includes(role);
+}
+
+/** Owner and admin can read billing history. */
+export function canReadBilling(role: MembershipRole | null): boolean {
   return role != null && ADMIN_ROLES.includes(role);
 }
 

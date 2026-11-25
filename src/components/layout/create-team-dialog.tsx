@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 
 import {
@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { createTeam } from '@/app/[locale]/dashboard/actions';
+import { createTeam, getOrganizationQuota } from '@/app/[locale]/dashboard/actions';
 import { useDocumentDraftTransition } from '@/components/providers/document-draft-provider';
 
 const ERROR_KEYS: Record<string, string> = {
@@ -41,8 +41,25 @@ export function CreateTeamDialog({
   const isControlled = openProp !== undefined;
   const open = isControlled ? openProp : openState;
   const formRef = useRef<HTMLFormElement>(null);
+  const [quota, setQuota] = useState<Awaited<ReturnType<typeof getOrganizationQuota>>>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let active = true;
+    void getOrganizationQuota()
+      .then((result) => {
+        if (active) setQuota(result);
+      })
+      .catch(() => {
+        if (active) setQuota(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [open]);
 
   function handleOpenChange(next: boolean) {
+    if (!next) setQuota(null);
     if (!isControlled) setOpenState(next);
     onOpenChange?.(next);
   }
@@ -91,6 +108,17 @@ export function CreateTeamDialog({
         <DialogHeader>
           <DialogTitle>{t('create_team_title')}</DialogTitle>
           <DialogDescription>{t('create_team_description')}</DialogDescription>
+          {quota && (
+            <p role="status" className="text-muted-foreground text-sm">
+              {quota.organization_limit === -1 ?
+                t('create_team_quota_unlimited', { owned: quota.owned_count })
+              : t('create_team_quota', {
+                  owned: quota.owned_count,
+                  limit: quota.organization_limit,
+                })
+              }
+            </p>
+          )}
         </DialogHeader>
 
         <form ref={formRef} action={action} className="space-y-4">

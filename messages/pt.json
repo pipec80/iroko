@@ -53,6 +53,8 @@
     "org_switcher_label": "Trocar de organização",
     "create_team_title": "Nova organização",
     "create_team_description": "Crie um novo espaço de trabalho para sua equipe.",
+    "create_team_quota": "Organizações próprias: {owned} de {limit}.",
+    "create_team_quota_unlimited": "Organizações próprias: {owned}. Limite ilimitado.",
     "create_team_name_label": "Nome",
     "create_team_cancel": "Cancelar",
     "create_team_submit": "Criar",
@@ -132,6 +134,9 @@
     "click_btn_magiclink": "Entrar",
     "click_btn_recovery": "Redefinir senha",
     "click_btn_email_change": "Confirmar alteração de e-mail",
+    "invitation_retry": "Não foi possível aceitar o convite. Se estiver usando outro e-mail, saia e entre com o e-mail convidado. Se o link expirou ou foi revogado, solicite outro convite.",
+    "invitation_capacity": "A equipe atingiu o limite de membros. Peça a quem convidou você para liberar uma vaga.",
+    "invitation_dashboard": "Voltar ao painel",
     "click_btn_invite": "Aceitar convite",
     "errors": {
       "invalid_credentials": "Credenciais inválidas.",
@@ -192,6 +197,8 @@
       "success": {
         "profile_updated": "Perfil atualizado.",
         "email_change_requested": "Enviamos e-mails de confirmação para ambos os endereços.",
+        "email_change_pending": "Um link foi confirmado. Abra o link enviado ao outro endereço para concluir.",
+        "email_change_complete": "Seu endereço de e-mail foi atualizado.",
         "avatar_updated": "Foto atualizada."
       }
     },
@@ -355,6 +362,9 @@
     "error_generic": "Ocorreu um erro. Tente novamente.",
     "error_already_invited": "Essas pessoas já têm um convite pendente. Nenhum convite novo foi enviado.",
     "warning_delivery_failed": "{count, plural, one {Não foi possível entregar # convite} other {Não foi possível entregar # convites}}. O convite foi criado, mas o e-mail não saiu — verifique a configuração de e-mail.",
+    "error_no_new_invitation": "Nenhum novo convite foi enviado.",
+    "error_admin_invitation_requires_owner": "Somente o proprietário pode convidar alguém como administrador.",
+    "warning_existing_members": "{count, plural, one {# endereço já faz parte da equipe} other {# endereços já fazem parte da equipe}}.",
     "warning_duplicates": "{count, plural, one {# endereço já tinha convite pendente e foi ignorado} other {# endereços já tinham convite pendente e foram ignorados}}.",
     "manage_member": "Gerenciar membro",
     "change_role_action": "Alterar função",
@@ -927,7 +937,7 @@
     "invoice_status_void": "Anulada",
     "invoice_status_uncollectible": "Incobrável",
     "checkout_error": "Não foi possível iniciar o pagamento. Tente novamente.",
-    "readonly_notice": "Somente o proprietário ou um administrador pode gerenciar o plano e a cobrança."
+    "readonly_notice": "Somente o proprietário pode alterar o plano ou cancelar a assinatura."
   },
   "Projects": {
     "page_eyebrow": "Floresta",
@@ -1167,7 +1177,7 @@
     "trial": "{days} dias de teste",
     "limit": "{label}: {value}",
     "seats_max": "Membros",
-    "teams_max": "Equipes",
+    "teams_max": "Organizações próprias",
     "api_keys_max": "API keys",
     "webhook_endpoints_max": "Endpoints webhook",
     "webhooks_enabled": "Webhooks",

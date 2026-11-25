@@ -1,19 +1,10 @@
 import { setRequestLocale } from 'next-intl/server';
 
-import { getOnboardingOrg } from '@/app/[locale]/dashboard/onboarding/actions';
-import { OnboardingWizard } from '@/components/dashboard/onboarding/onboarding-wizard';
+import { redirect } from '@/i18n/routing';
 
 export default async function OnboardingPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const { name, accountId } = await getOnboardingOrg();
-
-  return (
-    <OnboardingWizard
-      key={accountId ?? 'personal'}
-      initialOrgName={name}
-      initialAccountId={accountId ?? null}
-    />
-  );
+  redirect({ href: '/dashboard', locale });
 }

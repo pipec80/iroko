@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import { runAxeCheck } from './axe';
-import { deleteUserByEmail, fetchLatestMessageTo, uniqueEmail } from './helpers';
+import { deleteUserByEmail, execSqlAsPostgres, fetchLatestMessageTo, uniqueEmail } from './helpers';
 
 /**
  * End-to-end auth flow against a running local Supabase stack.
@@ -96,9 +96,15 @@ test.describe('Auth flow', () => {
     await page.goto(confirmUrl as string);
     await expect(page.getByRole('button', { name: /confirmar cuenta/i })).toBeVisible();
     await page.getByRole('button', { name: /confirmar cuenta/i }).click();
-    await page.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+    await page.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
+    await expect(page.getByRole('button', { name: /cambiar de organización/i })).toContainText(
+      'Mi organización',
+    );
 
-    // Cleanup: find user by email → delete by UUID.
+    // Remove the organization provisioned for this synthetic signup before the identity.
+    execSqlAsPostgres(
+      `DELETE FROM public.accounts WHERE type = 'team' AND created_by = (SELECT id FROM auth.users WHERE email = '${email}')`,
+    );
     await deleteUserByEmail(request, email, serviceKey);
   });
 

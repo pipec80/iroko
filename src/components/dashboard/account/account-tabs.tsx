@@ -41,9 +41,11 @@ export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = React.useTransition();
   const t = useTranslations('Settings.tabs');
+  const profileText = useTranslations('Settings.profile.success');
 
   const activeTab = searchParams.get('tab') || 'profile';
   const currentTab = (VALID_TABS as readonly string[]).includes(activeTab) ? activeTab : 'profile';
+  const emailChange = searchParams.get('emailChange');
 
   function handleTabChange(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -89,6 +91,15 @@ export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
         <TabsContent
           value="profile"
           className="animate-in fade-in slide-in-from-right-2 mt-0 duration-300 focus-visible:outline-none">
+          {(emailChange === 'pending' || emailChange === 'complete') && (
+            <p
+              role="status"
+              className="bg-surface-2 text-foreground mb-4 rounded-md px-4 py-3 text-sm">
+              {profileText(
+                emailChange === 'pending' ? 'email_change_pending' : 'email_change_complete',
+              )}
+            </p>
+          )}
           <ProfileTab profile={profile} email={email} role={role} />
         </TabsContent>
 

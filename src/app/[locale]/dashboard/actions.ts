@@ -37,6 +37,12 @@ const createTeamSchema = z.object({
   name: z.string().trim().min(1, 'name_required').max(100, 'name_too_long'),
 });
 
+export const getOrganizationQuota = withServerAction(async function getOrganizationQuota() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('get_my_organization_quota').maybeSingle();
+  return error ? null : data;
+});
+
 export const createTeam = withServerAction(async function createTeam(
   formData: FormData,
 ): Promise<{ error?: string }> {

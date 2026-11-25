@@ -148,6 +148,16 @@ describe('billing actions', () => {
     expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 
+  it('rejects a new checkout on the Personal account without calling the provider', async () => {
+    mocks.getActiveAccountId.mockResolvedValue('user-1');
+
+    expect(await startCheckout({ planSlug: 'pro', interval: 'month' })).toEqual({
+      data: null,
+      error: 'not_authorized',
+    });
+    expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
   it('startCheckout returns the buyer to the locale they started in', async () => {
     mocks.getLocale.mockResolvedValue('pt');
     mocks.createCheckout.mockResolvedValue({
@@ -218,7 +228,7 @@ describe('billing actions', () => {
     expect(mocks.createCheckout).not.toHaveBeenCalled();
   });
 
-  it('startCheckout succeeds when the caller is admin', async () => {
+  it('startCheckout succeeds when the checkout service authorizes the owner', async () => {
     mocks.createCheckout.mockResolvedValue({
       kind: 'redirect',
       url: 'http://localhost:3000/es/billing/mock-checkout?data=x',
@@ -284,6 +294,39 @@ describe('billing actions', () => {
     mocks.verify.mockResolvedValue(null);
     const res = await confirmMockCheckout({ data: 'bad' });
     expect(res.error).toBe('invalid_token');
+    expect(mocks.handle).not.toHaveBeenCalled();
+  });
+
+  it.each(['different_account', 'revoked_owner', 'personal'] as const)(
+    'confirmMockCheckout rejects %s before handling the signed event',
+    async (scenario) => {
+      const accountId = scenario === 'personal' ? 'user-1' : 'a1';
+      mocks.getActiveAccountId.mockResolvedValue(
+        scenario === 'different_account' ? 'a2' : accountId,
+      );
+      if (scenario === 'revoked_owner')
+        mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
+      mocks.verify.mockResolvedValue({
+        accountId,
+        planSlug: 'pro',
+        interval: 'month',
+        successUrl: 'http://localhost:3000/ok',
+        cancelUrl: 'http://localhost:3000/no',
+      });
+
+      expect(await confirmMockCheckout({ data: 'token' })).toEqual({
+        data: null,
+        error: 'not_authorized',
+      });
+      expect(mocks.handle).not.toHaveBeenCalled();
+    },
+  );
+
+  it('requires current ownership before reading a subscription for cancellation', async () => {
+    mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
+    expect(await cancelSubscription()).toEqual({ data: null, error: 'not_authorized' });
+    expect(mocks.requireAccountRole).toHaveBeenCalledWith('a1', ['owner']);
+    expect(mocks.rpc).not.toHaveBeenCalled();
     expect(mocks.handle).not.toHaveBeenCalled();
   });
 
