@@ -76,7 +76,9 @@ test.describe('Invitación — ciclo completo', () => {
         // The owner's current session must not consume an invite for a different email.
         await page.goto(invitationLink);
         await expect(page).toHaveURL(/\/es\/auth\/invitation/);
-        await expect(page.getByRole('alert')).toContainText('vuelve con el correo invitado');
+        await expect(page.getByRole('main').getByRole('alert')).toContainText(
+          'vuelve con el correo invitado',
+        );
         await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
       }
 

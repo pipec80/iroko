@@ -177,9 +177,13 @@ test.describe('QA — notifications realtime', () => {
       await inviteePage.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
 
       await bell.click();
-      await expect(page.getByText(`${inviteeEmail} aceptó tu invitación`)).toBeVisible({
+      const notification = page.getByRole('link', { name: `${inviteeEmail} aceptó tu invitación` });
+      await expect(notification).toBeVisible({
         timeout: 15_000,
       });
+      await page.reload();
+      await bell.click();
+      await expect(notification).toBeVisible();
     } finally {
       await inviteeContext.close();
       execSqlAsPostgres(`DELETE FROM public.accounts WHERE id='${inviteeId}'`);
