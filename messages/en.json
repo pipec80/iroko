@@ -53,6 +53,8 @@
     "org_switcher_label": "Switch organization",
     "create_team_title": "New organization",
     "create_team_description": "Create a new workspace for your team.",
+    "create_team_quota": "Owned organizations: {owned} of {limit}.",
+    "create_team_quota_unlimited": "Owned organizations: {owned}. Unlimited quota.",
     "create_team_name_label": "Name",
     "create_team_cancel": "Cancel",
     "create_team_submit": "Create",
@@ -132,7 +134,8 @@
     "click_btn_magiclink": "Sign in",
     "click_btn_recovery": "Reset password",
     "click_btn_email_change": "Confirm email change",
-    "invitation_retry": "We couldn't accept this invitation. If you're using another email, sign out and return with the invited email. If the link has expired, request a new invitation.",
+    "invitation_retry": "We couldn't accept this invitation. If you're using another email, sign out and return with the invited email. If the link expired or was revoked, request a new invitation.",
+    "invitation_capacity": "The team has reached its member limit. Ask the inviter to free a seat.",
     "invitation_dashboard": "Back to dashboard",
     "click_btn_invite": "Accept invitation",
     "errors": {
@@ -194,6 +197,8 @@
       "success": {
         "profile_updated": "Profile updated.",
         "email_change_requested": "We sent confirmation emails to both addresses.",
+        "email_change_pending": "One link is confirmed. Open the link sent to the other address to finish.",
+        "email_change_complete": "Your email address has been updated.",
         "avatar_updated": "Picture updated."
       }
     },
@@ -357,6 +362,9 @@
     "error_generic": "Something went wrong. Please try again.",
     "error_already_invited": "Those people already have a pending invitation. Nothing new was sent.",
     "warning_delivery_failed": "{count, plural, one {# invitation could not be delivered} other {# invitations could not be delivered}}. The invitation was created, but the email never went out — check your email configuration.",
+    "error_no_new_invitation": "No new invitations were sent.",
+    "error_admin_invitation_requires_owner": "Only the owner can invite someone as an administrator.",
+    "warning_existing_members": "{count, plural, one {# address is already on the team} other {# addresses are already on the team}}.",
     "warning_duplicates": "{count, plural, one {# address already had a pending invitation and was skipped} other {# addresses already had a pending invitation and were skipped}}.",
     "manage_member": "Manage member",
     "change_role_action": "Change role",
@@ -927,7 +935,7 @@
     "invoice_status_void": "Void",
     "invoice_status_uncollectible": "Uncollectible",
     "checkout_error": "Could not start checkout. Please try again.",
-    "readonly_notice": "Only the owner or an admin can manage the plan and billing."
+    "readonly_notice": "Only the owner can change the plan or cancel the subscription."
   },
   "Projects": {
     "page_eyebrow": "Forest",

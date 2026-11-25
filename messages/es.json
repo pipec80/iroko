@@ -53,6 +53,8 @@
     "org_switcher_label": "Cambiar de organización",
     "create_team_title": "Nueva organización",
     "create_team_description": "Crea un espacio de trabajo nuevo para tu equipo.",
+    "create_team_quota": "Organizaciones propias: {owned} de {limit}.",
+    "create_team_quota_unlimited": "Organizaciones propias: {owned}. Cupo ilimitado.",
     "create_team_name_label": "Nombre",
     "create_team_cancel": "Cancelar",
     "create_team_submit": "Crear",
@@ -132,7 +134,8 @@
     "click_btn_magiclink": "Iniciar sesión",
     "click_btn_recovery": "Restablecer contraseña",
     "click_btn_email_change": "Confirmar cambio de correo",
-    "invitation_retry": "No pudimos aceptar la invitación. Si estás usando otro correo, cierra sesión y vuelve con el correo invitado. Si el enlace venció, pide una nueva invitación.",
+    "invitation_retry": "No pudimos aceptar la invitación. Si estás usando otro correo, cierra sesión y vuelve con el correo invitado. Si el enlace venció o se revocó, pide una nueva invitación.",
+    "invitation_capacity": "Tu equipo alcanzó el límite de miembros. Pide a quien te invitó que libere un cupo.",
     "invitation_dashboard": "Volver al inicio",
     "click_btn_invite": "Aceptar invitación",
     "errors": {
@@ -194,6 +197,8 @@
       "success": {
         "profile_updated": "Perfil actualizado.",
         "email_change_requested": "Te enviamos un correo de confirmación al viejo y al nuevo email.",
+        "email_change_pending": "Confirmaste un enlace. Abre el enlace enviado a la otra dirección para terminar.",
+        "email_change_complete": "Se actualizó tu correo electrónico.",
         "avatar_updated": "Foto actualizada."
       }
     },
@@ -357,6 +362,9 @@
     "error_generic": "Ocurrió un error. Intentá de nuevo.",
     "error_already_invited": "Esas personas ya tienen una invitación pendiente. No se envió ninguna nueva.",
     "warning_delivery_failed": "{count, plural, one {No se pudo entregar # invitación} other {No se pudieron entregar # invitaciones}}. La invitación quedó creada, pero el correo no salió: revisá la configuración de email.",
+    "error_no_new_invitation": "No se enviaron invitaciones nuevas.",
+    "error_admin_invitation_requires_owner": "Solo el propietario puede invitar a una persona como administradora.",
+    "warning_existing_members": "{count, plural, one {# dirección ya pertenece al equipo} other {# direcciones ya pertenecen al equipo}}.",
     "warning_duplicates": "{count, plural, one {# dirección ya tenía invitación pendiente y se omitió} other {# direcciones ya tenían invitación pendiente y se omitieron}}.",
     "manage_member": "Gestionar miembro",
     "change_role_action": "Cambiar rol",
@@ -929,7 +937,7 @@
     "invoice_status_void": "Anulada",
     "invoice_status_uncollectible": "Incobrable",
     "checkout_error": "No se pudo iniciar el pago. Intentá de nuevo.",
-    "readonly_notice": "Solo el owner o un admin puede gestionar el plan y la facturación."
+    "readonly_notice": "Solo el propietario puede cambiar el plan o cancelar la suscripción."
   },
   "Projects": {
     "page_eyebrow": "Bosque",

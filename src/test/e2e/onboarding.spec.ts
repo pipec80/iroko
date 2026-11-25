@@ -37,6 +37,10 @@ test('first sign-in provisions one organization and the old onboarding URL retur
       const accounts = page.getByRole('listbox');
       await expect(accounts.getByRole('option')).toHaveCount(1);
       await expect(accounts.getByRole('option')).toContainText('Mi organización');
+      await page.getByRole('button', { name: /nueva organización/i }).click();
+      await expect(
+        page.getByRole('dialog').getByText('Organizaciones propias: 1 de 1.'),
+      ).toBeVisible();
     },
     () =>
       execSqlAsPostgres(

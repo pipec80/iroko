@@ -54,11 +54,22 @@ describe('BillingService', () => {
     });
   });
 
-  it('rejects checkout when the caller is not an account admin', async () => {
+  it('checks current ownership before starting checkout', async () => {
     mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
 
     await expect(startBillingCheckout(input)).rejects.toThrow('not_authorized');
+    expect(mocks.requireAccountRole).toHaveBeenCalledWith('account-1', ['owner']);
     expect(mocks.createCheckout).not.toHaveBeenCalled();
+  });
+
+  it('checks current ownership before cancelling at the provider', async () => {
+    mocks.requireAccountRole.mockRejectedValue(new Error('not_authorized'));
+
+    await expect(
+      cancelBillingSubscription({ accountId: 'account-1', timing: 'period_end' }),
+    ).rejects.toThrow('not_authorized');
+    expect(mocks.requireAccountRole).toHaveBeenCalledWith('account-1', ['owner']);
+    expect(mocks.cancelSubscription).not.toHaveBeenCalled();
   });
 
   it.each(['trialing', 'active', 'past_due'] as const)(

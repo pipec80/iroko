@@ -2,7 +2,9 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { appConfig } from '@/config/app.config';
 import { BillingTab } from '@/components/dashboard/org/billing-tab';
-import { getActiveAccountId, getActiveAccountRole } from '@/lib/active-account';
+import { getActiveAccountId } from '@/lib/active-account';
+import { canReadBilling } from '@/lib/permissions';
+import { createClient } from '@/lib/supabase/server';
 
 import type { Metadata } from 'next';
 
@@ -21,11 +23,14 @@ export default async function BillingPage({ params }: { params: Promise<{ locale
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, role, accountId] = await Promise.all([
-    getTranslations('Billing'),
-    getActiveAccountRole(),
-    getActiveAccountId(),
-  ]);
+  const accountId = await getActiveAccountId();
+  if (!accountId) notFound();
+  const supabase = await createClient();
+  const { data: role, error } = await supabase.rpc('get_my_account_role', {
+    p_account_id: accountId,
+  });
+  if (error || !canReadBilling(role)) notFound();
+  const t = await getTranslations('Billing');
 
   return (
     <div className="animate-in fade-in space-y-6 duration-700">
@@ -35,7 +40,7 @@ export default async function BillingPage({ params }: { params: Promise<{ locale
         <p className="text-muted-foreground mt-1 text-[15px]">{t('page_description')}</p>
       </header>
 
-      {accountId && <BillingTab currentUserRole={role} accountId={accountId} />}
+      <BillingTab currentUserRole={role} accountId={accountId} />
     </div>
   );
 }

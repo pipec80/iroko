@@ -104,6 +104,31 @@ describe('GET /[locale]/auth/accept-invitation', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
+  it('reports a full organization without refreshing the session or notifying its inviter', async () => {
+    getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    single.mockResolvedValue({ data: null, error: { message: 'seat_limit_reached' } });
+
+    const result = await GET(makeRequest('f'.repeat(64)), { params });
+    const location = new URL(result.headers.get('location') ?? '');
+
+    expect(location.pathname).toBe('/es/auth/invitation');
+    expect(location.searchParams.get('reason')).toBe('capacity');
+    expect(result.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(refreshSession).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('notifies the inviter even if acceptance analytics rejects', async () => {
+    arrangeAcceptedInvitation();
+    captureServer.mockRejectedValueOnce(new Error('Telemetry unavailable'));
+
+    const result = await GET(makeRequest('a'.repeat(64)), { params });
+
+    expect(new URL(result.headers.get('location') ?? '').pathname).toBe('/es/dashboard');
+    expect(result.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(notify).toHaveBeenCalledOnce();
+  });
+
   it('should capture invitation_accepted and notify the inviter, then redirect to dashboard', async () => {
     arrangeAcceptedInvitation();
 

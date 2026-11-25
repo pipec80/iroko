@@ -9,7 +9,7 @@ export default async function InvitationPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ entry?: string; next?: string }>;
+  searchParams: Promise<{ entry?: string; next?: string; reason?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -40,8 +40,10 @@ export default async function InvitationPage({
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-4 px-4">
       <h1 className="text-xl font-semibold">{auth('click_btn_invite')}</h1>
-      <p role="alert">{auth('invitation_retry')}</p>
-      {next && (
+      <p role="alert">
+        {auth(query.reason === 'capacity' ? 'invitation_capacity' : 'invitation_retry')}
+      </p>
+      {next && query.reason !== 'capacity' && (
         <form method="post" action={`/${locale}/auth/logout?next=${encodeURIComponent(next)}`}>
           <Button type="submit">{menu('logout')}</Button>
         </form>

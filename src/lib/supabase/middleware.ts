@@ -63,6 +63,18 @@ function isPublicAuth(pathWithoutLocale: string): boolean {
   return PUBLIC_PATH_PREFIXES.some((prefix) => pathWithoutLocale.startsWith(prefix));
 }
 
+function isStaleSessionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  if ('name' in error && error.name === 'AuthSessionMissingError') return true;
+  return (
+    'code' in error &&
+    (error.code === 'refresh_token_not_found' ||
+      error.code === 'refresh_token_already_used' ||
+      error.code === 'session_not_found' ||
+      error.code === 'user_not_found')
+  );
+}
+
 /**
  * Refreshes Supabase auth tokens and guards protected routes.
  * Must run before any other edge logic in src/proxy.ts.
@@ -119,20 +131,34 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     const { data } = await supabase.auth.getClaims();
     claims = (data?.claims as JwtClaims | undefined) ?? null;
   } catch (err) {
-    const isStaleToken =
-      err != null &&
-      typeof err === 'object' &&
-      'code' in err &&
-      (err as { code: string }).code === 'refresh_token_not_found';
-    if (!isStaleToken) throw err;
+    if (!isStaleSessionError(err)) throw err;
   }
 
   const { locale, pathWithoutLocale } = extractLocaleAndPath(request.nextUrl.pathname);
+  const protectedRoute = isProtected(pathWithoutLocale) && !isPublicAuth(pathWithoutLocale);
 
-  if (!claims && isProtected(pathWithoutLocale) && !isPublicAuth(pathWithoutLocale)) {
+  // A still-valid JWT can outlive its account or session after a database
+  // reset. Check Auth on full dashboard navigations before displaying it.
+  if (
+    claims &&
+    protectedRoute &&
+    request.method === 'GET' &&
+    request.headers.get('sec-fetch-mode') === 'navigate'
+  ) {
+    const { error } = await supabase.auth.getUser();
+    if (isStaleSessionError(error)) {
+      if (error?.code === 'user_not_found') await supabase.auth.signOut({ scope: 'local' });
+      claims = null;
+    } else if (error) {
+      throw error;
+    }
+  }
+
+  if (!claims && protectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
-    url.searchParams.set('next', request.nextUrl.pathname);
+    url.search = '';
+    url.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return redirectWithSession(url);
   }
 
@@ -151,7 +177,9 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   if (mfaPending && pathWithoutLocale.startsWith('/dashboard')) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
+    url.search = '';
     url.searchParams.set('mfa', 'required');
+    url.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return redirectWithSession(url);
   }
 

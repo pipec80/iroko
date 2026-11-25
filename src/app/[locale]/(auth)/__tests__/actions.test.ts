@@ -698,4 +698,17 @@ describe('resendConfirmationAction', () => {
       expect.objectContaining({ type: 'signup', email: 'ana@example.com' }),
     );
   });
+
+  it('preserves the invitation URL when resending signup confirmation', async () => {
+    mocks.resend.mockResolvedValue({ error: null });
+    const next = `/es/auth/accept-invitation?token=${'a'.repeat(64)}`;
+
+    await resendConfirmationAction(PREV, makeFormData({ email: 'ana@example.com', next }));
+
+    expect(mocks.resend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: { emailRedirectTo: expect.stringContaining(`?next=${encodeURIComponent(next)}`) },
+      }),
+    );
+  });
 });

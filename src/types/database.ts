@@ -2339,6 +2339,13 @@ export type Database = {
           website: string
         }[]
       }
+      get_my_organization_quota: {
+        Args: never
+        Returns: {
+          organization_limit: number
+          owned_count: number
+        }[]
+      }
       get_plan_provider_id: {
         Args: {
           p_interval: Database["billing"]["Enums"]["plan_interval"]

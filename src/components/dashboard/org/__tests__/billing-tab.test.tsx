@@ -134,10 +134,27 @@ describe('BillingTab — role-awareness', () => {
     expect(screen.getByText(es.Billing.readonly_notice)).toBeDefined();
   });
 
-  it('should not show the read-only notice for an admin', async () => {
+  it('should show billing history to an admin without mutation controls', async () => {
+    mocks.getBillingData.mockResolvedValue({
+      data: {
+        plans: [PLAN_FREE, PLAN_PRO],
+        overview: {
+          ...ACTIVE_PRO_OVERVIEW,
+          capabilities: {
+            ...NO_CAPABILITIES,
+            cancelImmediately: true,
+            cancelAtPeriodEnd: true,
+          },
+        },
+      },
+    });
+    mocks.listInvoices.mockResolvedValue({ data: { entries: [], nextCursor: null } });
     renderBillingTab('admin');
-    await waitFor(() => expect(screen.getByTestId('subscribe-pro')).toBeDefined());
-    expect(screen.queryByText(es.Billing.readonly_notice)).toBeNull();
+    expect(await screen.findByTestId('current-plan')).toBeDefined();
+    expect(screen.getByText(es.Billing.readonly_notice)).toBeDefined();
+    expect(await screen.findByText(es.Billing.history_empty)).toBeDefined();
+    expect(screen.queryByTestId('cancel-period-end')).toBeNull();
+    expect(screen.queryByTestId('cancel-immediately')).toBeNull();
   });
 
   it('should disable the subscribe button for a viewer', async () => {

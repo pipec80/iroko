@@ -1,5 +1,5 @@
 BEGIN;
-SELECT plan(15);
+SELECT plan(22);
 
 INSERT INTO auth.users (id, email, raw_user_meta_data, email_confirmed_at)
 VALUES
@@ -15,6 +15,8 @@ SELECT ok(NOT has_function_privilege('anon', 'public.ensure_initial_organization
   'anonymous users cannot provision a team');
 SELECT ok(NOT has_column_privilege('authenticated', 'public.profiles', 'organization_entry_state', 'UPDATE'),
   'organization entry state is controlled by the server');
+SELECT ok(NOT has_function_privilege('anon', 'public.get_my_organization_quota()', 'EXECUTE'),
+  'the effective quota requires an authenticated identity');
 
 SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000005903","role":"authenticated"}', true);
 SET LOCAL ROLE authenticated;
@@ -74,6 +76,8 @@ SELECT throws_like($$SELECT public.create_team('Fourth team')$$, '%team_limit_re
   'the fourth organization is rejected');
 SELECT is((SELECT plan_slug FROM public.get_account_entitlements(current_setting('test.second_team_59')::uuid)),
   'free', 'the second organization has an independent Free plan');
+SELECT results_eq('SELECT owned_count, organization_limit FROM public.get_my_organization_quota()',
+  'VALUES (3, 3)', 'the quota shown to the owner reflects all owned teams and their effective plans');
 RESET ROLE;
 
 UPDATE billing.plans SET limits = jsonb_set(limits, '{teams_max}', '-1')
@@ -81,6 +85,24 @@ WHERE slug = 'pro' AND "interval" = 'month';
 SET LOCAL ROLE authenticated;
 SELECT lives_ok($$SELECT public.create_team('Fourth team')$$,
   'an explicit unlimited entitlement remains unlimited');
+SELECT results_eq('SELECT owned_count, organization_limit FROM public.get_my_organization_quota()',
+  'VALUES (4, -1)', 'the limit shown to the UI preserves an unlimited entitlement');
+RESET ROLE;
+
+UPDATE billing.subscriptions SET status = 'canceled', current_period_end = NULL
+WHERE external_subscription_id = 'initial-organization-59';
+SET LOCAL ROLE authenticated;
+SELECT results_eq('SELECT owned_count, organization_limit FROM public.get_my_organization_quota()',
+  'VALUES (4, 1)', 'downgrade preserves owned teams but lowers capacity');
+SELECT throws_like($$SELECT public.create_team('After downgrade')$$, '%team_limit_reached%',
+  'downgrade prevents further creation when already above capacity');
+SELECT public.transfer_ownership(current_setting('test.initial_team_59')::uuid,
+  '00000000-0000-0000-0000-000000005902');
+SELECT results_eq('SELECT owned_count, organization_limit FROM public.get_my_organization_quota()',
+  'VALUES (3, 1)', 'the former owner no longer counts a transferred team');
+SELECT set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000005902","role":"authenticated"}', true);
+SELECT results_eq('SELECT owned_count, organization_limit FROM public.get_my_organization_quota()',
+  'VALUES (1, 1)', 'the new owner counts the transferred team');
 RESET ROLE;
 
 SELECT * FROM finish();

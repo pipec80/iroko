@@ -72,6 +72,14 @@ test.describe('Invitación — ciclo completo', () => {
       const invitationLink = await fetchInvitationLinkTo(request, inviteeEmail);
       expect(invitationLink).toContain('/auth/accept-invitation?token=');
 
+      if (hasAccount) {
+        // The owner's current session must not consume an invite for a different email.
+        await page.goto(invitationLink);
+        await expect(page).toHaveURL(/\/es\/auth\/invitation/);
+        await expect(page.getByRole('alert')).toContainText('vuelve con el correo invitado');
+        await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+      }
+
       // ── Act 3: el invitado acepta desde su propia sesión ───────────────────
       const inviteeId =
         hasAccount ? await createConfirmedUser(request, inviteeEmail, password, serviceKey) : null;
