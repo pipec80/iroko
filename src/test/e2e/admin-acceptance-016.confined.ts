@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 
 import { test, expect } from './fixtures/platform-admin';
 import { execSqlAsPostgres, querySqlAsPostgres } from './helpers';
@@ -8,7 +8,7 @@ test('preserves an invitation destination through password and real MFA', async 
 }) => {
   const { page, adminId, targetId, loginAdmin } = platformAdmin;
   const teamId = randomUUID();
-  const token = randomUUID();
+  const token = randomBytes(32).toString('hex');
   const teamName = `Plan016 invitation ${teamId}`;
   const invitationPath = `/es/auth/accept-invitation?token=${token}`;
   execSqlAsPostgres(`
@@ -26,6 +26,9 @@ test('preserves an invitation destination through password and real MFA', async 
 
   await page.context().clearCookies();
   await page.goto(invitationPath);
+  expect(new URL(page.url()).pathname).toBe('/es/auth/invitation');
+  await page.getByRole('link', { name: 'Iniciar sesión' }).click();
+  await page.waitForURL('**/es/login?next=*');
   const loginUrl = new URL(page.url());
   expect(loginUrl.pathname).toBe('/es/login');
   expect(loginUrl.searchParams.get('next') === invitationPath).toBe(true);

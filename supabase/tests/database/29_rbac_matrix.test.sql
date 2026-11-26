@@ -21,7 +21,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(18);
+SELECT plan(20);
 
 -- ── Seed: un team con los cuatro roles + un outsider ───────────────────────
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at,
@@ -230,6 +230,14 @@ RESET role;
 
 -- ═══ INVITACIONES ══════════════════════════════════════════════════════════
 
+SELECT pg_temp.act_as('00000000-0000-0000-0000-000000003002', 'admin');
+SET LOCAL role authenticated;
+SELECT throws_like(
+  $$SELECT public.invite_members('00000000-0000-0000-0000-000000003100',
+      ARRAY['peer-admin@example.com'], 'admin'::public.membership_role)$$,
+  '%admin_invitation_requires_owner%', 'admin cannot invite another admin');
+RESET role;
+
 -- 15-17. Solo owner/admin invitan, y solo en cuentas de equipo.
 SELECT pg_temp.act_as('00000000-0000-0000-0000-000000003003', 'member');
 SET LOCAL role authenticated;
@@ -246,6 +254,15 @@ SELECT lives_ok(
   $$SELECT public.invite_members('00000000-0000-0000-0000-000000003101',
       ARRAY['nuevo@example.com'], 'member'::public.membership_role)$$,
   'owner invita en una cuenta de equipo');
+RESET role;
+DELETE FROM public.invitations
+WHERE account_id = '00000000-0000-0000-0000-000000003101' AND email = 'nuevo@example.com';
+SET LOCAL role authenticated;
+SELECT is(
+  (SELECT count(*)::int FROM public.invite_members('00000000-0000-0000-0000-000000003101',
+    ARRAY['new-admin@example.com'], 'admin'::public.membership_role)),
+  1,
+  'owner can invite an admin');
 RESET role;
 
 -- La cuenta personal del owner (id = user id) no admite colaboradores.

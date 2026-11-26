@@ -50,7 +50,7 @@ export async function GET(
     },
   );
 
-  const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+  const { data, error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
 
   if (error) {
     logger.warn(
@@ -58,6 +58,16 @@ export async function GET(
       'OTP verify failed',
     );
     return NextResponse.redirect(`${env.SITE_URL}/${locale}/login?error=confirmation_failed`);
+  }
+
+  if (type === 'email_change') {
+    // The first secure-email-change confirmation succeeds without a new session.
+    const profile = new URL(`/${locale}/dashboard/account`, env.SITE_URL);
+    profile.searchParams.set('tab', 'profile');
+    profile.searchParams.set('emailChange', data.session ? 'complete' : 'pending');
+    response.headers.set('Location', profile.toString());
+    response.headers.set('Cache-Control', 'private, no-store');
+    return response;
   }
 
   // Enviar email de bienvenida al completar el registro — después de responder.

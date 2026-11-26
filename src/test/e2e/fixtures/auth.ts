@@ -65,13 +65,10 @@ export const test = base.extend<AuthFixtures>({
 
     await withAuthCleanup(
       async () => {
-        // F3-C4: handle_new_user crea el profile con onboarding_completed=false por
-        // default — sin esto, el edge gate de proxy.ts redirigiría todo login
-        // fresco a /dashboard/onboarding, rompiendo cualquier spec que dependa de
-        // llegar a una sección real del dashboard tras autenticarse. service_role
-        // no tiene UPDATE sobre profiles (grants hardening) — vía psql como postgres.
+        // The fixture starts in the legacy Personal context. Public signup coverage
+        // exercises provisioning separately with a fresh pending profile.
         execSqlAsPostgres(
-          `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${userId}'`,
+          `UPDATE public.profiles SET onboarding_completed = true, organization_entry_state = 'legacy' WHERE id = '${userId}'`,
         );
 
         // Login vía UI para establecer las cookies de sesión en el browser context.

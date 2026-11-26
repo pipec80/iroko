@@ -56,7 +56,9 @@ export default async function MembersPage({ params }: { params: Promise<{ locale
         </div>
         <div className="flex items-center gap-2">
           {isTeamAccount && <LeaveTeamButton />}
-          {canManageMembers(role) && <InviteDialog />}
+          {isTeamAccount && canManageMembers(role) && (
+            <InviteDialog allowAdmin={role === 'owner'} />
+          )}
         </div>
       </header>
 

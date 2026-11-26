@@ -126,7 +126,8 @@ BEGIN
   -- flujo. Antes dependía del fallback del hook JWT, así que ocurría o no
   -- según si el usuario había hecho switch_account() alguna vez.
   UPDATE public.profiles
-  SET active_account_id = v_invitation.account_id
+  SET active_account_id = v_invitation.account_id,
+      organization_entry_state = CASE organization_entry_state WHEN 'pending' THEN 'ready' ELSE organization_entry_state END
   WHERE id = v_user_id;
 
   RETURN QUERY SELECT v_invitation.account_id, v_invitation.invited_by;
@@ -310,6 +311,7 @@ DECLARE
   v_role       text;
   v_has_mfa    boolean;
   v_onboarding_completed boolean;
+  v_entry_state text;
   v_imp_admin  uuid;
   v_imp_exp    timestamptz;
   v_claims     jsonb := event -> 'claims';
@@ -354,11 +356,12 @@ BEGIN
 
   -- F3-C4: onboarding gate — el edge guard fuerza el wizard mientras esté en false.
   -- COALESCE fail-open: si no hay fila de profile, nunca trabar a nadie fuera de /dashboard.
-  SELECT p.onboarding_completed INTO v_onboarding_completed
+  SELECT p.onboarding_completed, p.organization_entry_state INTO v_onboarding_completed, v_entry_state
   FROM public.profiles p WHERE p.id = v_user_id;
 
   v_app_meta := v_app_meta || jsonb_build_object(
-    'onboarding_completed', COALESCE(v_onboarding_completed, true)
+    'onboarding_completed', COALESCE(v_onboarding_completed, true),
+    'organization_entry_state', COALESCE(v_entry_state, 'legacy')
   );
 
   -- F3-C1: mirror platform_admins membership into the JWT so the edge proxy
@@ -1112,6 +1115,10 @@ BEGIN
     RAISE EXCEPTION 'Cannot invite as owner';
   END IF;
 
+  IF p_role = 'admin' AND v_caller_role <> 'owner' THEN
+    RAISE EXCEPTION 'admin_invitation_requires_owner' USING ERRCODE = '42501';
+  END IF;
+
   IF array_length(p_emails, 1) > 20 THEN
     RAISE EXCEPTION 'Maximum 20 emails per batch';
   END IF;
@@ -1377,10 +1384,7 @@ BEGIN
     RAISE EXCEPTION 'invalid_name';
   END IF;
 
-  -- La Personal account tiene id = user id (invariante de handle_new_profile);
-  -- el límite de Teams se mide contra el plan de esa cuenta.
-  -- Serializar la admisión antes del conteo; el UPDATE de profile al final
-  -- llega demasiado tarde para impedir dos creaciones sobre el último cupo.
+  -- Serialize admission on the caller's Personal account.
   PERFORM 1 FROM public.accounts WHERE id = v_uid FOR UPDATE;
 
   SELECT count(*) INTO v_team_count
@@ -1388,7 +1392,7 @@ BEGIN
   JOIN public.accounts a ON a.id = m.account_id
   WHERE m.user_id = v_uid AND m.role = 'owner' AND a.type = 'team' AND a.deleted_at IS NULL;
 
-  IF NOT private.within_plan_limit(v_uid, 'teams_max', v_team_count, 1) THEN
+  IF v_team_count >= NULLIF(private.organization_limit(v_uid), -1) THEN
     RAISE EXCEPTION 'team_limit_reached';
   END IF;
 
@@ -1413,10 +1417,7 @@ ALTER FUNCTION "public"."create_team"("p_name" "text") OWNER TO "postgres";
 GRANT EXECUTE ON FUNCTION public.create_team(text) TO authenticated;
 REVOKE EXECUTE ON FUNCTION public.create_team(text) FROM PUBLIC, anon;
 
-COMMENT ON FUNCTION public.create_team(text) IS
-  'Creates a Team account (caller = owner), gated by the teams_max entitlement '
-  'evaluated against the caller''s Personal account plan. Sets the new team as '
-  'active — callers must call supabase.auth.refreshSession() afterward (Bloque 1).';
+COMMENT ON FUNCTION public.create_team(text) IS 'Creates and activates a team within the caller''s organization ownership quota.';
 
 
 CREATE OR REPLACE FUNCTION "public"."replace_robot_config"("p_account_id" "uuid", "p_routines" "jsonb", "p_contacts" "jsonb", "p_memories" "jsonb") RETURNS "void"
@@ -1556,6 +1557,7 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "timezone" "text" DEFAULT 'America/Santiago'::"text",
     "phone_number" "text",
     "onboarding_completed" boolean DEFAULT false,
+    organization_entry_state text NOT NULL DEFAULT 'pending' CHECK (organization_entry_state IN ('legacy', 'pending', 'ready')),
     "metadata" "jsonb" DEFAULT '{}'::"jsonb",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
@@ -4555,3 +4557,88 @@ REVOKE ALL ON FUNCTION public.complete_mfa_recovery(uuid, uuid) FROM PUBLIC, ano
 GRANT EXECUTE ON FUNCTION public.complete_mfa_recovery(uuid, uuid) TO service_role;
 
 REVOKE ALL ON TABLE public.auth_recovery_codes FROM anon, authenticated;
+
+CREATE OR REPLACE FUNCTION private.organization_limit(p_user_id uuid) RETURNS integer
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
+  WITH tier_limits (capacity) AS (
+    SELECT (p.limits ->> 'teams_max')::integer FROM billing.plans p WHERE p.slug = 'free'
+    UNION ALL
+    SELECT (limits ->> 'teams_max')::integer FROM private.get_account_plan_row(p_user_id)
+    UNION ALL
+    SELECT (plan.limits ->> 'teams_max')::integer
+    FROM public.accounts_memberships m
+    JOIN public.accounts a ON a.id = m.account_id
+    CROSS JOIN LATERAL private.get_account_plan_row(a.id) plan
+    WHERE m.user_id = p_user_id AND m.role = 'owner' AND a.type = 'team'
+      AND a.deleted_at IS NULL
+  )
+  SELECT CASE WHEN bool_or(capacity = -1) THEN -1 ELSE GREATEST(MAX(capacity), 0) END
+  FROM tier_limits;
+$$;
+ALTER FUNCTION private.organization_limit(uuid) OWNER TO postgres;
+REVOKE ALL ON FUNCTION private.organization_limit(uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.ensure_initial_organization() RETURNS uuid
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE
+  v_uid uuid := (SELECT auth.uid());
+  v_state text;
+  v_active uuid;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM auth.users WHERE id = v_uid AND email_confirmed_at IS NOT NULL) THEN
+    RAISE EXCEPTION 'email_not_confirmed';
+  END IF;
+
+  -- Match create_team's lock order. Invitation acceptance also serializes on the profile.
+  PERFORM 1 FROM public.accounts WHERE id = v_uid AND type = 'personal' AND deleted_at IS NULL FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'personal_account_missing'; END IF;
+
+  SELECT organization_entry_state, active_account_id INTO STRICT v_state, v_active
+  FROM public.profiles WHERE id = v_uid AND deleted_at IS NULL FOR UPDATE;
+  IF v_state <> 'pending' THEN RETURN v_active; END IF;
+
+  SELECT a.id INTO v_active
+  FROM public.accounts_memberships m JOIN public.accounts a ON a.id = m.account_id
+  WHERE m.user_id = v_uid AND a.type = 'team' AND a.deleted_at IS NULL
+  ORDER BY (a.id = v_active) DESC NULLS LAST, m.created_at DESC, a.id DESC LIMIT 1;
+
+  IF v_active IS NULL THEN v_active := public.create_team('Mi organización'); END IF;
+  UPDATE public.profiles SET active_account_id = v_active, organization_entry_state = 'ready'
+  WHERE id = v_uid;
+  RETURN v_active;
+END;
+$$;
+ALTER FUNCTION public.ensure_initial_organization() OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.ensure_initial_organization() FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.ensure_initial_organization() TO authenticated;
+
+-- Preserve existing column grants while restricting the added server state.
+DO $$
+DECLARE v_columns text;
+BEGIN
+  SELECT string_agg(quote_ident(attname), ', ' ORDER BY attnum) INTO v_columns
+  FROM pg_catalog.pg_attribute
+  WHERE attrelid = 'public.profiles'::regclass AND attnum > 0 AND NOT attisdropped
+    AND attname <> 'organization_entry_state';
+  REVOKE UPDATE ON public.profiles FROM authenticated;
+  EXECUTE format('GRANT UPDATE (%s) ON public.profiles TO authenticated', v_columns);
+END;
+$$;
+
+CREATE FUNCTION public.get_my_organization_quota()
+RETURNS TABLE (owned_count integer, organization_limit integer)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT (
+    SELECT count(*)::integer
+    FROM public.accounts_memberships AS m
+    JOIN public.accounts AS a ON a.id = m.account_id
+    WHERE m.user_id = actor.id AND m.role = 'owner' AND a.type = 'team'
+      AND a.deleted_at IS NULL
+  ), private.organization_limit(actor.id)
+  FROM (SELECT (SELECT auth.uid()) AS id) AS actor
+  WHERE actor.id IS NOT NULL;
+$$;
+
+REVOKE ALL ON FUNCTION public.get_my_organization_quota() FROM PUBLIC, anon, service_role;
+GRANT EXECUTE ON FUNCTION public.get_my_organization_quota() TO authenticated;

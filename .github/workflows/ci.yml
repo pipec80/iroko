@@ -249,6 +249,13 @@ jobs:
 
       - name: Verify database types are in sync
         run: |
+          # The CLI may select ECR for generation even when the cache was filled from GHCR.
+          meta=ghcr.io/supabase/postgres-meta:v0.96.6
+          meta_ecr=public.ecr.aws/supabase/postgres-meta:v0.96.6
+          if docker image inspect "$meta" >/dev/null 2>&1 &&
+            ! docker image inspect "$meta_ecr" >/dev/null 2>&1; then
+            docker tag "$meta" "$meta_ecr"
+          fi
           supabase gen types --local --lang typescript --schema public,billing,audit > src/types/database.ts
           if ! git diff --ignore-space-at-eol --exit-code --quiet src/types/database.ts; then
             echo "::error::src/types/database.ts is out of sync with the schema."

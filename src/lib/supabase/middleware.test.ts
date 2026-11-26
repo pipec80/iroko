@@ -8,6 +8,10 @@ type CookieWriter = (
 
 const mocks = vi.hoisted(() => ({
   getClaims: vi.fn(),
+  getUser: vi.fn(),
+  signOut: vi.fn(),
+  rpc: vi.fn(),
+  refreshSession: vi.fn(),
   writeCookies: undefined as CookieWriter | undefined,
 }));
 
@@ -15,7 +19,15 @@ vi.mock('@supabase/ssr', () => ({
   createServerClient: vi.fn(
     (_url: string, _key: string, options: { cookies: { setAll: CookieWriter } }) => {
       mocks.writeCookies = options.cookies.setAll;
-      return { auth: { getClaims: mocks.getClaims } };
+      return {
+        rpc: mocks.rpc,
+        auth: {
+          getClaims: mocks.getClaims,
+          getUser: mocks.getUser,
+          signOut: mocks.signOut,
+          refreshSession: mocks.refreshSession,
+        },
+      };
     },
   ),
 }));
@@ -87,6 +99,38 @@ describe('updateSession', () => {
     appConfig.features.onboarding = true;
   });
 
+  it('provisions a pending organization before opening the dashboard', async () => {
+    mocks.getClaims
+      .mockResolvedValueOnce({
+        data: {
+          claims: { sub: 'user-uuid-1', app_metadata: { organization_entry_state: 'pending' } },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          claims: { sub: 'user-uuid-1', app_metadata: { organization_entry_state: 'ready' } },
+        },
+      });
+    mocks.rpc.mockResolvedValue({ data: 'team-id', error: null });
+    mocks.refreshSession.mockImplementation(async () => {
+      mocks.writeCookies?.(
+        [{ name: 'test-session', value: 'ready', options: { path: '/', httpOnly: true } }],
+        {},
+      );
+      return { error: null };
+    });
+
+    const response = await updateSession(makeRequest('/es/dashboard'));
+
+    expect(mocks.rpc).toHaveBeenCalledWith('ensure_initial_organization');
+    expect(mocks.refreshSession).toHaveBeenCalledOnce();
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.cookies.get('test-session')?.value).toBe('ready');
+    expect(response.headers.get('x-middleware-request-cookie')).toContain('test-session=ready');
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store');
+  });
+
   describe('refreshed response cookies', () => {
     it.each([
       ['/es/dashboard', null],
@@ -136,7 +180,8 @@ describe('updateSession', () => {
 
       const location = new URL(response.headers.get('location') ?? '');
       expect(location.pathname).toBe('/es/login');
-      expect(location.searchParams.get('next')).toBe('/es/dashboard/account');
+      expect(location.searchParams.get('next')).toBe('/es/dashboard/account?tab=security');
+      expect(location.searchParams.has('tab')).toBe(false);
     });
 
     it('protects /reset-password — requires a recovery session', async () => {
@@ -299,13 +344,56 @@ describe('updateSession', () => {
   });
 
   describe('stale token handling', () => {
-    it('treats refresh_token_not_found as unauthenticated instead of crashing the edge', async () => {
-      mocks.getClaims.mockRejectedValue(
-        Object.assign(new Error('Refresh token not found'), { code: 'refresh_token_not_found' }),
-      );
-      const response = await updateSession(makeRequest('/es/dashboard'));
-      expect(response.headers.get('location')).toContain('/es/login');
+    it('rejects valid JWT claims when the browser opens a dashboard after the Auth session was removed', async () => {
+      mockSession();
+      mocks.getUser.mockImplementation(async () => {
+        mocks.writeCookies?.([
+          { name: 'test-session', value: '', options: { path: '/', httpOnly: true } },
+        ]);
+        return {
+          error: Object.assign(new Error('Session missing'), { name: 'AuthSessionMissingError' }),
+        };
+      });
+      const request = new NextRequest('http://localhost:3000/es/dashboard', {
+        headers: { 'sec-fetch-mode': 'navigate' },
+      });
+
+      const response = await updateSession(request);
+
+      expect(new URL(response.headers.get('location') ?? '').pathname).toBe('/es/login');
+      expect(response.cookies.get('test-session')?.value).toBe('');
     });
+
+    it('keeps a valid Auth session and allows normal browser navigation', async () => {
+      mockSession();
+      mocks.getUser.mockResolvedValue({ error: null });
+      const request = new NextRequest('http://localhost:3000/es/dashboard', {
+        headers: { 'sec-fetch-mode': 'navigate' },
+      });
+
+      const response = await updateSession(request);
+
+      expect(response.status).toBe(200);
+      expect(mocks.getUser).toHaveBeenCalledOnce();
+      expect(mocks.signOut).not.toHaveBeenCalled();
+    });
+
+    it.each(['refresh_token_not_found', 'refresh_token_already_used', 'session_not_found'])(
+      'redirects to login and forwards SDK cookie deletions for %s',
+      async (code) => {
+        mocks.getClaims.mockImplementation(async () => {
+          mocks.writeCookies?.([
+            { name: 'test-session', value: '', options: { path: '/', httpOnly: true } },
+          ]);
+          throw Object.assign(new Error('Stale session'), { code });
+        });
+        const response = await updateSession(makeRequest('/es/dashboard/account?tab=profile'));
+        const target = new URL(response.headers.get('location') ?? '');
+        expect(target.pathname).toBe('/es/login');
+        expect(target.searchParams.get('next')).toBe('/es/dashboard/account?tab=profile');
+        expect(response.cookies.get('test-session')?.value).toBe('');
+      },
+    );
 
     it('re-throws unexpected auth errors — they must reach Sentry, not be swallowed', async () => {
       mocks.getClaims.mockRejectedValue(new Error('network unreachable'));

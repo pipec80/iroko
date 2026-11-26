@@ -75,7 +75,7 @@ export const appConfig: AppConfig = {
     activityLog: true,
     cookieConsent: true,
     analytics: true,
-    onboarding: true,
+    onboarding: false,
     verticals: {
       // Disabled in V1. This application flag does not revoke direct SQL access;
       // live membership roles and tenant policies remain the database boundary.

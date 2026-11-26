@@ -1,5 +1,5 @@
 import { requireAccountRole } from '@/lib/active-account';
-import { ADMIN_ROLES } from '@/lib/permissions';
+import { BILLING_MUTATION_ROLES } from '@/lib/permissions';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 
@@ -57,7 +57,7 @@ async function markCheckoutFailure(input: {
 export async function startBillingCheckout(
   input: StartBillingCheckoutInput,
 ): Promise<CheckoutStartResult> {
-  await requireAccountRole(input.accountId, ADMIN_ROLES);
+  await requireAccountRole(input.accountId, BILLING_MUTATION_ROLES);
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('get_billing_overview', {
@@ -157,7 +157,7 @@ export async function startBillingCheckout(
 export async function cancelBillingSubscription(
   input: CancelBillingSubscriptionInput,
 ): Promise<void> {
-  await requireAccountRole(input.accountId, ADMIN_ROLES);
+  await requireAccountRole(input.accountId, BILLING_MUTATION_ROLES);
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('get_billing_overview', {
