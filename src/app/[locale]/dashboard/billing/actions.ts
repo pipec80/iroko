@@ -4,7 +4,7 @@ import { getLocale } from 'next-intl/server';
 import { z } from 'zod';
 import { appConfig } from '@/config/app.config';
 
-import { getActiveAccountId } from '@/lib/active-account';
+import { getActiveAccountId, requireAccountRole } from '@/lib/active-account';
 import { captureServer } from '@/lib/analytics/server';
 import { readBillingCatalog } from '@/lib/billing/public-catalog';
 import { getPaymentProvider } from '@/lib/billing/registry';
@@ -17,6 +17,7 @@ import type { NormalizedBillingEvent } from '@/lib/billing/events';
 import type { CheckoutStartResult, SubscriptionStatus } from '@/lib/billing/types';
 import { handleProviderWebhook } from '@/lib/billing/webhook-handler';
 import { logger } from '@/lib/logger';
+import { BILLING_MUTATION_ROLES } from '@/lib/permissions';
 import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { env } from '@/env';
@@ -124,6 +125,8 @@ export const startCheckout = withServerAction(async function startCheckout(input
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const userId = claimsData?.claims.sub;
+  // Personal accounts are provisioned with the same ID as the Auth user.
+  if (accountId === userId) return { data: null, error: 'not_authorized' };
   const customerEmail = claimsData?.claims.email;
   if (typeof customerEmail !== 'string' || customerEmail.length === 0) {
     return { data: null, error: 'not_authenticated' };
@@ -172,6 +175,20 @@ export const confirmMockCheckout = withServerAction(async function confirmMockCh
   if (!parsed.success) return { data: null, error: 'invalid_token' };
   const token = parsed.data;
 
+  const accountId = await getActiveAccountId();
+  if (accountId !== token.accountId) return { data: null, error: 'not_authorized' };
+
+  const supabase = await createClient();
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const userId = claimsData?.claims.sub;
+  if (!userId || userId === accountId) return { data: null, error: 'not_authorized' };
+
+  try {
+    await requireAccountRole(accountId, BILLING_MUTATION_ROLES);
+  } catch {
+    return { data: null, error: 'not_authorized' };
+  }
+
   const now = new Date();
   const periodEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   const event: NormalizedBillingEvent = {
@@ -204,6 +221,12 @@ export const cancelSubscription = withServerAction(async function cancelSubscrip
   const timing = input.timing ?? 'period_end';
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
+
+  try {
+    await requireAccountRole(accountId, BILLING_MUTATION_ROLES);
+  } catch {
+    return { data: null, error: 'not_authorized' };
+  }
 
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
@@ -292,10 +315,11 @@ export const getBillingData = withServerAction(async function getBillingData(): 
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_account' };
   const supabase = await createClient();
-  const [catalog, overviewResult, paymentHealthResult] = await Promise.all([
+  const [catalog, overviewResult, paymentHealthResult, { data: session }] = await Promise.all([
     readBillingCatalog(),
     supabase.rpc('get_billing_overview', { p_account_id: accountId }),
     supabase.rpc('get_billing_payment_health', { p_account_id: accountId }),
+    supabase.auth.getClaims(),
   ]);
   if (catalog.error) return { data: null, error: 'fetch_failed' };
 
@@ -340,7 +364,7 @@ export const getBillingData = withServerAction(async function getBillingData(): 
       paymentHealth: mapBillingPaymentHealth(
         paymentHealthNotAuthorized ? null : paymentHealthResult.data?.[0],
       ),
-      checkoutAvailable: catalog.checkoutAvailable,
+      checkoutAvailable: catalog.checkoutAvailable && accountId !== session?.claims.sub,
     },
   };
 });

@@ -43,6 +43,8 @@ type ActionResult = {
   count?: number;
   /** Emails que ya tenían una invitación pendiente: no se reenvió nada. */
   duplicates?: number;
+  /** Direcciones que ya pertenecían al equipo. */
+  existingMembers?: number;
   /** Invitaciones creadas cuyo email no se pudo entregar. */
   failed?: number;
 };
@@ -111,9 +113,10 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     data: { user: caller },
   } = await supabase.auth.getUser();
 
+  const emails = [...new Set(parsed.data.emails)];
   const { data: invitations, error } = await supabase.rpc('invite_members', {
     p_account_id: accountId,
-    p_emails: parsed.data.emails,
+    p_emails: emails,
     p_role: parsed.data.role,
   });
 
@@ -123,7 +126,9 @@ export const inviteMembers = withServerAction(async function inviteMembers(
       'invite_members failed',
     );
     const knownError =
-      error.message?.includes('seat_limit_reached') ? 'seat_limit_reached' : 'invite_failed';
+      error.message === 'admin_invitation_requires_owner' ? 'admin_invitation_requires_owner'
+      : error.message?.includes('seat_limit_reached') ? 'seat_limit_reached'
+      : 'invite_failed';
     if (knownError === 'seat_limit_reached' && caller) {
       await captureServer({
         event: 'feature_limit_reached',
@@ -147,20 +152,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   }
 
   const count = (invitations ?? []).length;
-  // invite_members se traga el unique_violation cuando ya existe una invitación
-  // pendiente para ese email, así que devuelve menos filas de las pedidas.
-  const duplicates = parsed.data.emails.length - count;
-
-  // Nada nuevo que enviar: sin esto la UI cerraba el diálogo con un mensaje de
-  // éxito idéntico al de un envío real.
-  if (count === 0) {
-    logger.info({ action: 'team.invite.duplicates', duplicates }, 'No new invitations created');
-    return { error: 'already_invited' };
-  }
-
-  logger.info({ action: 'team.invite.success', count, role: parsed.data.role }, 'Members invited');
-
-  revalidatePath('/[locale]/dashboard/members', 'page');
+  if (count > 0) revalidatePath('/[locale]/dashboard/members', 'page');
 
   const inviterEmail = caller?.email ?? 'un miembro del equipo';
   const locale = await getLocale();
@@ -198,7 +190,7 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     }
   }
 
-  if (caller) {
+  if (caller && count > 0) {
     // captureServer resuelve el consentimiento con una query a profiles que NO
     // está dentro de su try/catch (analytics/server.ts): si falla, la excepción
     // sube hasta withServerAction. Nunca debe poder tumbar un envío ya hecho.
@@ -217,7 +209,27 @@ export const inviteMembers = withServerAction(async function inviteMembers(
     }
   }
 
-  return { success: true, count, duplicates, failed };
+  const omitted = emails.length - count;
+  let existingMembers = 0;
+  if (omitted > 0) {
+    const sent = new Set(invitations?.map(({ email }) => email));
+    const { data: members } = await supabase.rpc('list_team_members', { p_account_id: accountId });
+    const active = new Set(
+      members
+        ?.filter(({ status }) => status === 'active')
+        .map(({ email }) => email.trim().toLowerCase()),
+    );
+    existingMembers = emails.filter((email) => !sent.has(email) && active.has(email)).length;
+  }
+  const duplicates = omitted - existingMembers;
+  if (count === 0) {
+    return {
+      error: existingMembers > 0 ? 'no_new_invitation' : 'already_invited',
+      duplicates,
+      existingMembers,
+    };
+  }
+  return { success: true, count, duplicates, failed, existingMembers };
 });
 
 /**

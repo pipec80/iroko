@@ -90,7 +90,10 @@ test('MFA recovery resets the lost factor, requires reauthentication and survive
       expect(factors.error).toBeNull();
       expect(factors.data?.totp.map((factor) => factor.id)).toEqual([replacement.data.id]);
     },
-    () => execSqlAsPostgres(`DELETE FROM public.accounts WHERE id='${id}' AND type='personal'`),
+    () =>
+      execSqlAsPostgres(
+        `DELETE FROM public.accounts WHERE (id='${id}' AND type='personal') OR (created_by='${id}' AND type='team')`,
+      ),
     async () => {
       const deleted = await request.delete(`${SUPABASE_URL}/auth/v1/admin/users/${id}`, {
         headers: { apikey: key, Authorization: `Bearer ${key}` },

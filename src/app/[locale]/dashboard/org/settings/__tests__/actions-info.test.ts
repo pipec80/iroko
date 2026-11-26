@@ -36,6 +36,7 @@ describe('getOrgInfo', () => {
     });
     const res = await getOrgInfo();
     expect(res.data).toEqual({
+      accountId: 'acc-1',
       name: 'Acme',
       slug: 'acme',
       website: 'https://acme.com',
@@ -67,6 +68,7 @@ describe('updateOrgInfo', () => {
 
   function formData(fields: Record<string, string>): FormData {
     const fd = new FormData();
+    fd.set('accountId', 'acc-1');
     for (const [k, v] of Object.entries(fields)) fd.set(k, v);
     return fd;
   }
@@ -97,7 +99,17 @@ describe('updateOrgInfo', () => {
     mocks.rpc.mockResolvedValue({ error: null });
     const fd = formData({ name: 'Acme', slug: 'acme', website: '', country: '' });
     const res = await updateOrgInfo({}, fd);
-    expect(res.success).toBe('info_updated');
+    expect(res).toEqual({
+      success: 'info_updated',
+      data: { name: 'Acme', slug: 'acme', website: '', country: '' },
+    });
+  });
+
+  it('rejects a form opened for an organization that is no longer active', async () => {
+    mocks.getActiveAccountId.mockResolvedValue('acc-2');
+    const fd = formData({ name: 'Acme', slug: 'acme', website: '', country: '' });
+    expect(await updateOrgInfo({}, fd)).toEqual({ error: 'update_failed' });
+    expect(mocks.rpc).not.toHaveBeenCalled();
   });
 
   it('should call update_account_info with the parsed fields', async () => {

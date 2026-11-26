@@ -5,6 +5,7 @@ import { env } from '@/env';
 import { captureServer } from '@/lib/analytics/server';
 import { logger } from '@/lib/logger';
 import { notify } from '@/lib/notifications';
+import { invitationReturn } from '@/lib/auth/invitation-return';
 import type { Database } from '@/types/database';
 
 /**
@@ -21,6 +22,7 @@ import type { Database } from '@/types/database';
  */
 function redirectPreservingSession(carrier: NextResponse, url: string): NextResponse {
   const redirect = NextResponse.redirect(url);
+  redirect.headers.set('Cache-Control', 'private, no-store');
   for (const cookie of carrier.cookies.getAll()) {
     redirect.cookies.set(cookie);
   }
@@ -44,6 +46,7 @@ export async function GET(
   // auth/confirm/route.ts. Con el cliente de @/lib/supabase/server las cookies
   // se escriben vía next/headers y no viajarían en este redirect.
   const response = NextResponse.redirect(`${env.SITE_URL}/${locale}/dashboard`);
+  response.headers.set('Cache-Control', 'private, no-store');
 
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
@@ -64,16 +67,37 @@ export async function GET(
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Si no está autenticado, redirigir al login preservando la URL de aceptación.
+  // Offer both entry paths without looking up the recipient's identity.
   if (!user) {
-    const next = encodeURIComponent(`/${locale}/auth/accept-invitation?token=${token}`);
-    return redirectPreservingSession(response, `${env.SITE_URL}/${locale}/login?next=${next}`);
+    const next = invitationReturn(`/${locale}/auth/accept-invitation?token=${token}`, locale);
+    if (!next) {
+      return redirectPreservingSession(
+        response,
+        `${env.SITE_URL}/${locale}/login?error=invalid_invitation`,
+      );
+    }
+    const destination = new URL(`/${locale}/auth/invitation`, env.SITE_URL);
+    destination.searchParams.set('entry', '1');
+    destination.searchParams.set('next', next);
+    return redirectPreservingSession(response, destination.toString());
   }
 
   const { data, error } = await supabase.rpc('accept_invitation', { p_token: token }).single();
 
   if (error) {
-    logger.warn({ userId: user.id, action: 'accept_invitation', code: error.code }, error.message);
+    logger.warn(
+      { userId: user.id, action: 'accept_invitation', code: error.code },
+      'Invitation refused',
+    );
+    const retry = invitationReturn(`/${locale}/auth/accept-invitation?token=${token}`, locale);
+    if (retry) {
+      const destination = new URL(`/${locale}/auth/invitation`, env.SITE_URL);
+      if (error.message === 'seat_limit_reached') {
+        destination.searchParams.set('reason', 'capacity');
+      }
+      destination.searchParams.set('next', retry);
+      return redirectPreservingSession(response, destination.toString());
+    }
     return redirectPreservingSession(
       response,
       `${env.SITE_URL}/${locale}/login?error=invitation_invalid`,
@@ -94,7 +118,14 @@ export async function GET(
   }
 
   logger.info({ userId: user.id, action: 'accept_invitation' }, 'Invitation accepted');
-  await captureServer({ event: 'invitation_accepted', properties: {}, distinctId: user.id });
+  try {
+    await captureServer({ event: 'invitation_accepted', properties: {}, distinctId: user.id });
+  } catch {
+    logger.warn(
+      { userId: user.id, action: 'accept_invitation.analytics' },
+      'Invitation analytics failed',
+    );
+  }
 
   if (data.invited_by) {
     await notify(data.invited_by, {

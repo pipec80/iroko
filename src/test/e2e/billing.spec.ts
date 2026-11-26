@@ -2,6 +2,7 @@ import { runAxeCheck } from './axe';
 import { test as authTest, expect } from './fixtures/auth';
 import {
   createConfirmedUser,
+  createTeamViaUi,
   deleteUserById,
   execSqlAsPostgres,
   loginViaUi,
@@ -16,21 +17,30 @@ import {
 authTest.describe('Billing — mock checkout', () => {
   authTest.setTimeout(60_000);
 
-  authTest('subscribing to Plus activates the plan', async ({ authenticatedPage: page }) => {
-    await page.goto('/es/dashboard/billing');
-    await page.waitForURL(/\/es\/dashboard\/billing/);
-    await runAxeCheck(page);
+  authTest(
+    'subscribing to Plus activates only the selected organization',
+    async ({ authenticatedPage: page }) => {
+      await createTeamViaUi(page, `E2E Billing ${Date.now()}`);
+      await page.goto('/es/dashboard/billing');
+      await page.waitForURL(/\/es\/dashboard\/billing/);
+      await runAxeCheck(page);
 
-    // Elegir Plus → redirige a la hosted-page mock
-    await page.getByTestId('subscribe-pro').click();
-    await page.waitForURL(/\/billing\/mock-checkout/);
+      // Elegir Plus → redirige a la hosted-page mock
+      await page.getByTestId('subscribe-pro').click();
+      await page.waitForURL(/\/billing\/mock-checkout/);
 
-    // Pagar → vuelve a billing con la suscripción activa
-    await page.getByTestId('mock-pay').click();
-    await page.waitForURL(/\/dashboard\/billing/);
+      // Pagar → vuelve a billing con la suscripción activa
+      await page.getByTestId('mock-pay').click();
+      await page.waitForURL(/\/dashboard\/billing/);
 
-    await expect(page.getByTestId('current-plan')).toContainText(/plus/i);
-  });
+      await expect(page.getByTestId('current-plan')).toContainText(/plus/i);
+
+      await createTeamViaUi(page, `E2E Free ${Date.now()}`);
+      await page.goto('/es/dashboard/billing');
+      await expect(page.getByTestId('plan-badge-free')).toBeVisible();
+      await expect(page.getByTestId('plan-badge-pro')).toHaveCount(0);
+    },
+  );
 });
 
 authTest.describe('Billing — Mercado Pago return confirmation', () => {
@@ -47,7 +57,7 @@ authTest.describe('Billing — Mercado Pago return confirmation', () => {
     const externalId = `e2e-preapproval-${suffix}-${Date.now()}`;
 
     execSqlAsPostgres(
-      `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${userId}'`,
+      `UPDATE public.profiles SET onboarding_completed = true, organization_entry_state = 'legacy' WHERE id = '${userId}'`,
     );
     execSqlAsPostgres(
       `WITH customer AS (INSERT INTO billing.customers (account_id, provider) VALUES ('${userId}', 'mercadopago') RETURNING id) INSERT INTO billing.subscriptions (customer_id, plan_id, status, provider, external_subscription_id) SELECT customer.id, (SELECT id FROM billing.plans WHERE slug = 'pro' LIMIT 1), 'incomplete', 'mercadopago', '${externalId}' FROM customer`,

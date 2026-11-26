@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { setRequestLocale } from 'next-intl/server';
+import { invitationReturn } from '@/lib/auth/invitation-return';
 
 import { ConfirmationClient } from './confirmation-client';
 
@@ -8,7 +9,7 @@ export default async function SignupConfirmationPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ email?: string; emailValue?: string }>;
+  searchParams: Promise<{ email?: string; emailValue?: string; next?: string }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
@@ -17,7 +18,7 @@ export default async function SignupConfirmationPage({
 
   return (
     <Suspense>
-      <ConfirmationClient email={email} />
+      <ConfirmationClient email={email} next={invitationReturn(sp.next, locale)} />
     </Suspense>
   );
 }

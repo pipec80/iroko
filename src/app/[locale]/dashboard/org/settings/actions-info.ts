@@ -8,7 +8,7 @@ import { withServerAction } from '@/lib/server-action';
 import { createClient } from '@/lib/supabase/server';
 import { updateOrgInfoSchema } from '@/lib/validation/org';
 
-export type OrgInfoActionState = { error?: string; success?: string };
+export type OrgInfoActionState = { error?: string; success?: string; data?: OrgInfo };
 type ActionResult<T> = { data: T | null; error?: string };
 
 export interface OrgInfo {
@@ -20,7 +20,7 @@ export interface OrgInfo {
 
 /** Info actual de la cuenta activa, para precargar el form en org/settings. */
 export const getOrgInfo = withServerAction(async function getOrgInfo(): Promise<
-  ActionResult<OrgInfo>
+  ActionResult<OrgInfo & { accountId: string }>
 > {
   const accountId = await getActiveAccountId();
   if (!accountId) return { data: null, error: 'no_active_account' };
@@ -34,6 +34,7 @@ export const getOrgInfo = withServerAction(async function getOrgInfo(): Promise<
 
   return {
     data: {
+      accountId,
       name: account.name,
       slug: account.slug,
       website: account.website ?? '',
@@ -65,6 +66,7 @@ export const updateOrgInfo = withServerAction(async function updateOrgInfo(
 
   const accountId = await getActiveAccountId();
   if (!accountId) return { error: 'no_active_account' };
+  if (formData.get('accountId') !== accountId) return { error: 'update_failed' };
 
   const supabase = await createClient();
   const { error } = await supabase.rpc('update_account_info', {
@@ -81,6 +83,6 @@ export const updateOrgInfo = withServerAction(async function updateOrgInfo(
     return { error: knownError ? ERROR_MAP[knownError] : 'update_failed' };
   }
 
-  revalidatePath('/[locale]/dashboard/org/settings', 'page');
-  return { success: 'info_updated' };
+  revalidatePath('/[locale]/dashboard', 'layout');
+  return { success: 'info_updated', data: parsed.data };
 });

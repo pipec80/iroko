@@ -331,6 +331,34 @@ describe('removeMember', () => {
       expect(mockSendInvitationEmail).not.toHaveBeenCalled();
     });
 
+    it('distinguishes existing team members from pending invitations', async () => {
+      mockAuthenticatedWithAccount();
+      mocks.rpc.mockResolvedValueOnce({ data: [], error: null }).mockResolvedValueOnce({
+        data: [{ email: 'ALICE@example.com', status: 'active' }],
+        error: null,
+      });
+
+      const result = await inviteMembers(
+        makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' }),
+      );
+
+      expect(result).toEqual({ error: 'no_new_invitation', duplicates: 1, existingMembers: 1 });
+      expect(mockSendInvitationEmail).not.toHaveBeenCalled();
+    });
+
+    it('reports when an invitation as admin requires the owner', async () => {
+      mockAuthenticatedWithAccount();
+      mocks.rpc.mockResolvedValue({
+        data: null,
+        error: { message: 'admin_invitation_requires_owner' },
+      });
+      const result = await inviteMembers(
+        makeFormData({ emails: 'alice@example.com', role: 'admin' }),
+      );
+      expect(result.error).toBe('admin_invitation_requires_owner');
+      expect(mockSendInvitationEmail).not.toHaveBeenCalled();
+    });
+
     it('should report how many emails failed to be delivered', async () => {
       // Arrange
       mockAuthenticatedWithAccount();
