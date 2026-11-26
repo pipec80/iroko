@@ -16,6 +16,7 @@ type JwtClaims = {
     impersonated_by?: string;
     impersonation_expires_at?: string;
     onboarding_completed?: boolean;
+    organization_entry_state?: 'legacy' | 'pending' | 'ready';
   } & Record<string, unknown>;
 };
 
@@ -60,6 +61,18 @@ function isProtected(pathWithoutLocale: string): boolean {
 
 function isPublicAuth(pathWithoutLocale: string): boolean {
   return PUBLIC_PATH_PREFIXES.some((prefix) => pathWithoutLocale.startsWith(prefix));
+}
+
+function isStaleSessionError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  if ('name' in error && error.name === 'AuthSessionMissingError') return true;
+  return (
+    'code' in error &&
+    (error.code === 'refresh_token_not_found' ||
+      error.code === 'refresh_token_already_used' ||
+      error.code === 'session_not_found' ||
+      error.code === 'user_not_found')
+  );
 }
 
 /**
@@ -118,20 +131,34 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     const { data } = await supabase.auth.getClaims();
     claims = (data?.claims as JwtClaims | undefined) ?? null;
   } catch (err) {
-    const isStaleToken =
-      err != null &&
-      typeof err === 'object' &&
-      'code' in err &&
-      (err as { code: string }).code === 'refresh_token_not_found';
-    if (!isStaleToken) throw err;
+    if (!isStaleSessionError(err)) throw err;
   }
 
   const { locale, pathWithoutLocale } = extractLocaleAndPath(request.nextUrl.pathname);
+  const protectedRoute = isProtected(pathWithoutLocale) && !isPublicAuth(pathWithoutLocale);
 
-  if (!claims && isProtected(pathWithoutLocale) && !isPublicAuth(pathWithoutLocale)) {
+  // A still-valid JWT can outlive its account or session after a database
+  // reset. Check Auth on full dashboard navigations before displaying it.
+  if (
+    claims &&
+    protectedRoute &&
+    request.method === 'GET' &&
+    request.headers.get('sec-fetch-mode') === 'navigate'
+  ) {
+    const { error } = await supabase.auth.getUser();
+    if (isStaleSessionError(error)) {
+      if (error?.code === 'user_not_found') await supabase.auth.signOut({ scope: 'local' });
+      claims = null;
+    } else if (error) {
+      throw error;
+    }
+  }
+
+  if (!claims && protectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
-    url.searchParams.set('next', request.nextUrl.pathname);
+    url.search = '';
+    url.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return redirectWithSession(url);
   }
 
@@ -150,7 +177,9 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   if (mfaPending && pathWithoutLocale.startsWith('/dashboard')) {
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
+    url.search = '';
     url.searchParams.set('mfa', 'required');
+    url.searchParams.set('next', `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return redirectWithSession(url);
   }
 
@@ -160,6 +189,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   const onboardingPending =
     claims != null &&
     appConfig.features.onboarding &&
+    (claims.app_metadata?.organization_entry_state ?? 'legacy') === 'legacy' &&
     claims.app_metadata?.onboarding_completed === false;
 
   if (
@@ -218,6 +248,32 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     url.search = '';
     url.searchParams.set('returnTo', request.nextUrl.pathname);
     return redirectWithSession(url);
+  }
+
+  if (
+    request.method === 'GET' &&
+    !request.headers.has('next-router-prefetch') &&
+    request.headers.get('purpose') !== 'prefetch' &&
+    !claims?.app_metadata?.impersonated_by &&
+    claims?.app_metadata?.organization_entry_state === 'pending' &&
+    (pathWithoutLocale === '/dashboard' || pathWithoutLocale.startsWith('/dashboard/'))
+  ) {
+    const { error } = await supabase.rpc('ensure_initial_organization');
+    const refreshError = error ?? (await supabase.auth.refreshSession()).error;
+    const { data: refreshed } = refreshError ? { data: null } : await supabase.auth.getClaims();
+    if (refreshed?.claims.app_metadata?.organization_entry_state !== 'ready') {
+      const unavailable = new NextResponse(
+        'Organization setup is temporarily unavailable. Reload to retry.',
+        {
+          status: 503,
+          headers: { 'Cache-Control': 'private, no-store', 'Retry-After': '5' },
+        },
+      );
+      for (const cookie of supabaseResponse.cookies.getAll()) unavailable.cookies.set(cookie);
+      return unavailable;
+    }
+    // The SDK already forwarded the refreshed cookies to this request.
+    // Server Action fetches do not apply cookies while following a redirect.
   }
 
   // Authenticated users are bounced off the marketing root and auth-only pages —

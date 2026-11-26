@@ -25,12 +25,16 @@ const ERROR_KEYS: Record<string, string> = {
   no_account: 'error_generic',
   invite_failed: 'error_generic',
   already_invited: 'error_already_invited',
+  no_new_invitation: 'error_no_new_invitation',
+  admin_invitation_requires_owner: 'error_admin_invitation_requires_owner',
 };
 
 export function InviteForm({
+  allowAdmin = false,
   onSuccess,
   secondaryButton,
 }: {
+  allowAdmin?: boolean;
   onSuccess?: () => void;
   secondaryButton?: React.ReactNode;
 }) {
@@ -47,6 +51,7 @@ export function InviteForm({
         success?: boolean;
         count?: number;
         duplicates?: number;
+        existingMembers?: number;
         failed?: number;
       },
       formData: FormData,
@@ -55,7 +60,7 @@ export function InviteForm({
       // Con entregas fallidas el diálogo queda abierto: cerrarlo mostraría el
       // mismo resultado que un envío correcto y el usuario nunca se enteraría
       // de que el invitado no recibió nada.
-      if (result.success && !result.failed) {
+      if (result.success && !result.failed && !result.duplicates && !result.existingMembers) {
         formRef.current?.reset();
         setRole('member');
         onSuccess?.();
@@ -84,7 +89,7 @@ export function InviteForm({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width)">
-            {INVITABLE_ROLES.map((r) => (
+            {INVITABLE_ROLES.filter((r) => allowAdmin || r !== 'admin').map((r) => (
               <DropdownMenuItem
                 key={r}
                 onSelect={() => setRole(r)}
@@ -137,9 +142,16 @@ export function InviteForm({
 
       {/* Informativo: hubo envíos correctos, pero algunas direcciones ya
           tenían invitación pendiente y se omitieron. */}
-      {state.success && (state.duplicates ?? 0) > 0 && (
+      {state.error !== 'already_invited' && (state.duplicates ?? 0) > 0 && (
         <p className="bg-surface-container text-on-surface-variant rounded-lg px-3 py-2 text-xs">
           {t('warning_duplicates', { count: state.duplicates ?? 0 })}
+        </p>
+      )}
+      {(state.existingMembers ?? 0) > 0 && (
+        <p
+          role="status"
+          className="bg-surface-container text-on-surface-variant rounded-lg px-3 py-2 text-xs">
+          {t('warning_existing_members', { count: state.existingMembers ?? 0 })}
         </p>
       )}
 

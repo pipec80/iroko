@@ -41,7 +41,7 @@ test('warm account caches and notifications follow account switch and logout/log
       );
     const [a, b] = identities;
     execSqlAsPostgres(
-      `UPDATE public.profiles SET onboarding_completed=true WHERE id IN ('${a}','${b}'); INSERT INTO public.notifications(user_id,type,title) VALUES ('${a}','info','NOTICE_A_${suffix}'),('${b}','info','NOTICE_B_${suffix}'); INSERT INTO public.api_keys(account_id,name,key_prefix,key_hash,created_by) VALUES ('${a}','CACHE_A_${suffix}','test','hash-a-${suffix}','${a}');`,
+      `UPDATE public.profiles SET onboarding_completed=true, organization_entry_state='legacy' WHERE id IN ('${a}','${b}'); INSERT INTO public.notifications(user_id,type,title) VALUES ('${a}','info','NOTICE_A_${suffix}'),('${b}','info','NOTICE_B_${suffix}'); INSERT INTO public.api_keys(account_id,name,key_prefix,key_hash,created_by) VALUES ('${a}','CACHE_A_${suffix}','test','hash-a-${suffix}','${a}');`,
     );
     await loginViaUi(page, emails[0]!, password);
     await page.evaluate(() => {

@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getOrgLogo: vi.fn(),
   getOrgInfo: vi.fn(),
+  updateOrgInfo: vi.fn(),
   updateOrgLogo: vi.fn(),
   removeOrgLogo: vi.fn(),
 }));
@@ -17,7 +18,7 @@ vi.mock('@/app/[locale]/dashboard/org/settings/actions-logo', () => ({
 
 vi.mock('@/app/[locale]/dashboard/org/settings/actions-info', () => ({
   getOrgInfo: mocks.getOrgInfo,
-  updateOrgInfo: vi.fn(),
+  updateOrgInfo: mocks.updateOrgInfo,
 }));
 
 import { GeneralTab } from '../general-tab';
@@ -204,11 +205,42 @@ describe('GeneralTab info section', () => {
 
   it('should render the info form pre-filled once loaded', async () => {
     mocks.getOrgInfo.mockResolvedValue({
-      data: { name: 'Acme', slug: 'acme', website: 'https://acme.com', country: 'Chile' },
+      data: {
+        accountId: 'acc-1',
+        name: 'Acme',
+        slug: 'acme',
+        website: 'https://acme.com',
+        country: 'Chile',
+      },
     });
     renderWithIntl(<GeneralTab />);
     const nameInput = await screen.findByLabelText('Nombre');
     expect((nameInput as HTMLInputElement).value).toBe('Acme');
     expect((screen.getByLabelText('Slug') as HTMLInputElement).value).toBe('acme');
+  });
+
+  it('shows the confirmed organization fields immediately after saving', async () => {
+    mocks.getOrgInfo.mockResolvedValue({
+      data: {
+        accountId: 'acc-1',
+        name: 'Acme',
+        slug: 'acme',
+        website: 'https://acme.com',
+        country: 'Chile',
+      },
+    });
+    const saved = { name: 'Nuevo nombre', slug: 'nuevo', website: '', country: 'Perú' };
+    mocks.updateOrgInfo.mockResolvedValue({ success: 'info_updated', data: saved });
+    renderWithIntl(<GeneralTab />);
+    const name = (await screen.findByLabelText('Nombre')) as HTMLInputElement;
+    fireEvent.change(name, { target: { value: ' Nuevo nombre ' } });
+    const form = name.form;
+    if (!form) throw new Error('Organization form missing');
+    fireEvent.submit(form);
+
+    await waitFor(() => expect(name.value).toBe(saved.name));
+    for (const field of ['slug', 'website', 'country'] as const) {
+      expect((form.elements.namedItem(field) as HTMLInputElement).value).toBe(saved[field]);
+    }
   });
 });

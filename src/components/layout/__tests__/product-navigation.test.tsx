@@ -127,6 +127,16 @@ describe('product navigation consumers', () => {
     expect(within(screen.getByRole('banner')).getByText(es.Navigation.nav_activity)).toBeDefined();
   });
 
+  it('keeps the roster visible to Viewer and limits billing and organization settings to managers', () => {
+    const { rerender } = render(navigation(viewer.account_id));
+    expect(screen.getByRole('link', { name: es.Navigation.nav_members })).toBeDefined();
+    expect(screen.queryByRole('link', { name: es.Navigation.nav_billing })).toBeNull();
+    expect(screen.queryByRole('link', { name: es.Navigation.nav_settings })).toBeNull();
+    rerender(navigation(admin.account_id));
+    expect(screen.getByRole('link', { name: es.Navigation.nav_billing })).toBeDefined();
+    expect(screen.getByRole('link', { name: es.Navigation.nav_settings })).toBeDefined();
+  });
+
   it('does not mistake a route prefix for a child route', () => {
     mocks.pathname = '/dashboard/memberships';
     render(navigation());

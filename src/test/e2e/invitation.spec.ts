@@ -3,8 +3,10 @@ import {
   createConfirmedUser,
   createTeamViaUi,
   deleteUserById,
+  deleteUserByEmail,
   execSqlAsPostgres,
   fetchInvitationLinkTo,
+  fetchLatestMessageTo,
 } from './helpers';
 
 /**
@@ -33,70 +35,100 @@ import {
 test.describe('Invitación — ciclo completo', () => {
   test.setTimeout(120_000);
 
-  test('should land the invitee inside the team after accepting the emailed link', async ({
-    authenticatedPage: page,
-    request,
-    browser,
-  }) => {
-    const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
-    const stamp = Date.now();
-    const teamName = `Equipo Invitación ${stamp}`;
-    const inviteeEmail = `e2e+invitee+${stamp}@saasboilerplate.local`;
-    const password = 'TestPass123!';
-    const switcherName = /cambiar de organización/i;
+  for (const hasAccount of [true, false]) {
+    test(`opens the team after an invitation with ${hasAccount ? 'an existing' : 'a new'} account`, async ({
+      authenticatedPage: page,
+      request,
+      browser,
+    }) => {
+      const serviceKey = process.env.SUPABASE_SECRET_KEY ?? '';
+      const stamp = Date.now();
+      const teamName = `Equipo Invitación ${stamp}`;
+      const inviteeEmail = `e2e+invitee+${stamp}@saasboilerplate.local`;
+      const password = 'TestPass123!';
+      const switcherName = /cambiar de organización/i;
 
-    // ── Arrange: el owner crea un Team y queda parado dentro de él ──────────
-    await createTeamViaUi(page, teamName);
+      // ── Arrange: el owner crea un Team y queda parado dentro de él ──────────
+      await createTeamViaUi(page, teamName);
 
-    // ── Act 1: invitar ─────────────────────────────────────────────────────
-    await page.goto('/es/dashboard/members');
-    await page.waitForURL(/\/es\/dashboard\/members/);
-    await page.getByRole('button', { name: /invitar miembro/i }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await page.locator('textarea[name="emails"]').fill(inviteeEmail);
-    await page.getByRole('button', { name: /enviar invitación/i }).click();
+      // ── Act 1: invitar ─────────────────────────────────────────────────────
+      await page.goto('/es/dashboard/members');
+      await page.waitForURL(/\/es\/dashboard\/members/);
+      const dialog = page.getByRole('dialog');
+      await expect(async () => {
+        if (!(await dialog.isVisible())) {
+          await page.getByRole('button', { name: /invitar miembro/i }).click();
+        }
+        await expect(dialog).toBeVisible({ timeout: 1_500 });
+      }).toPass({ timeout: 15_000 });
+      await page.locator('textarea[name="emails"]').fill(inviteeEmail);
+      await page.getByRole('button', { name: /enviar invitación/i }).click();
 
-    // El diálogo solo se cierra si el envío no reportó fallos: con entregas
-    // fallidas queda abierto mostrando el aviso (invite-form.tsx).
-    await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15_000 });
+      // El diálogo solo se cierra si el envío no reportó fallos: con entregas
+      // fallidas queda abierto mostrando el aviso (invite-form.tsx).
+      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15_000 });
 
-    // ── Act 2: el email llega de verdad ────────────────────────────────────
-    const invitationLink = await fetchInvitationLinkTo(request, inviteeEmail);
-    expect(invitationLink).toContain('/auth/accept-invitation?token=');
+      // ── Act 2: el email llega de verdad ────────────────────────────────────
+      const invitationLink = await fetchInvitationLinkTo(request, inviteeEmail);
+      expect(invitationLink).toContain('/auth/accept-invitation?token=');
 
-    // ── Act 3: el invitado acepta desde su propia sesión ───────────────────
-    const inviteeId = await createConfirmedUser(request, inviteeEmail, password, serviceKey);
-    execSqlAsPostgres(
-      `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${inviteeId}'`,
-    );
+      if (hasAccount) {
+        // The owner's current session must not consume an invite for a different email.
+        await page.goto(invitationLink);
+        await expect(page).toHaveURL(/\/es\/auth\/invitation/);
+        await expect(page.getByRole('main').getByRole('alert')).toContainText(
+          'vuelve con el correo invitado',
+        );
+        await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+      }
 
-    const inviteeContext = await browser.newContext();
-    const inviteePage = await inviteeContext.newPage();
+      // ── Act 3: el invitado acepta desde su propia sesión ───────────────────
+      const inviteeId =
+        hasAccount ? await createConfirmedUser(request, inviteeEmail, password, serviceKey) : null;
 
-    try {
-      await inviteePage.goto('/es/login');
-      await inviteePage.locator('input[name="email"][type="email"]').fill(inviteeEmail);
-      await inviteePage.locator('input[name="password"]').fill(password);
-      await inviteePage.getByRole('button', { name: /iniciar sesión/i }).click();
-      await inviteePage.waitForURL(/\/es\/dashboard/, { timeout: 20_000 });
+      const inviteeContext = await browser.newContext();
+      const inviteePage = await inviteeContext.newPage();
 
-      // Antes de aceptar está en su cuenta personal.
-      const inviteeSwitcher = inviteePage.getByRole('button', { name: switcherName });
-      await expect(inviteeSwitcher).toContainText('Personal');
+      try {
+        await inviteePage.goto(invitationLink);
+        await inviteePage.waitForURL(/\/es\/auth\/invitation/);
+        if (hasAccount) {
+          await inviteePage.getByRole('link', { name: 'Iniciar sesión' }).click();
+          await inviteePage.locator('input[name="email"][type="email"]').fill(inviteeEmail);
+          await inviteePage.locator('input[name="password"]').fill(password);
+          await inviteePage.getByRole('button', { name: /iniciar sesión/i }).click();
+        } else {
+          await inviteePage.getByRole('link', { name: 'Crear cuenta' }).click();
+          await inviteePage.locator('input[name="first_name"]').fill('Ada');
+          await inviteePage.locator('input[name="last_name"]').fill('Invitee');
+          await inviteePage.locator('input[name="email"]').fill(inviteeEmail);
+          await inviteePage.locator('input[name="password"]').fill(password);
+          await inviteePage.locator('form button[type="submit"]').click();
+          await inviteePage.waitForURL(/\/es\/signup\/confirmation/);
+          const { confirmUrl } = await fetchLatestMessageTo(request, inviteeEmail, 15_000, true);
+          if (!confirmUrl) throw new Error('No signup confirmation URL');
+          await inviteePage.goto(confirmUrl);
+          await inviteePage.getByRole('button', { name: /confirmar cuenta/i }).click();
+        }
+        const inviteeSwitcher = inviteePage.getByRole('button', { name: switcherName });
+        await inviteePage.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
+        expect(new URL(inviteePage.url()).origin).toBe(new URL(invitationLink).origin);
 
-      await inviteePage.goto(invitationLink);
-      await inviteePage.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
+        // ── Assert: el ciclo cierra dentro del team, sin recargar a mano ─────
+        await expect(inviteeSwitcher).toContainText(teamName);
 
-      // ── Assert: el ciclo cierra dentro del team, sin recargar a mano ─────
-      await expect(inviteeSwitcher).toContainText(teamName);
-
-      // Y sobrevive a un reload: el contexto se resuelve en el servidor desde
-      // el JWT, no es estado de cliente.
-      await inviteePage.reload();
-      await expect(inviteeSwitcher).toContainText(teamName);
-    } finally {
-      await inviteeContext.close();
-      await deleteUserById(request, inviteeId, serviceKey);
-    }
-  });
+        // Y sobrevive a un reload: el contexto se resuelve en el servidor desde
+        // el JWT, no es estado de cliente.
+        await inviteePage.reload();
+        await expect(inviteeSwitcher).toContainText(teamName);
+      } finally {
+        await inviteeContext.close();
+        execSqlAsPostgres(
+          `DELETE FROM public.accounts WHERE type = 'team' AND created_by = (SELECT id FROM auth.users WHERE email = '${inviteeEmail}')`,
+        );
+        if (inviteeId) await deleteUserById(request, inviteeId, serviceKey);
+        else await deleteUserByEmail(request, inviteeEmail, serviceKey);
+      }
+    });
+  }
 });

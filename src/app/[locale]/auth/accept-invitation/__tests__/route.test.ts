@@ -63,14 +63,17 @@ describe('GET /[locale]/auth/accept-invitation', () => {
     expect(location.searchParams.get('error')).toBe('invalid_invitation');
   });
 
-  it('should redirect to login with next= when not authenticated', async () => {
+  it('offers the invitation entry choices without attempting acceptance when signed out', async () => {
     getUser.mockResolvedValue({ data: { user: null } });
 
-    const response = await GET(makeRequest('tok_123'), { params });
+    const token = 'a'.repeat(64);
+    const response = await GET(makeRequest(token), { params });
 
     const location = new URL(response.headers.get('location') ?? '');
-    expect(location.pathname).toBe('/es/login');
-    expect(location.searchParams.get('next')).toBe('/es/auth/accept-invitation?token=tok_123');
+    expect(location.pathname).toBe('/es/auth/invitation');
+    expect(location.searchParams.get('entry')).toBe('1');
+    expect(location.searchParams.get('next')).toBe(`/es/auth/accept-invitation?token=${token}`);
+    expect(single).not.toHaveBeenCalled();
   });
 
   it('should redirect to login with invitation_invalid when the RPC errors', async () => {
@@ -83,6 +86,47 @@ describe('GET /[locale]/auth/accept-invitation', () => {
     expect(location.searchParams.get('error')).toBe('invitation_invalid');
     expect(notify).not.toHaveBeenCalled();
     expect(refreshSession).not.toHaveBeenCalled();
+  });
+
+  it('keeps a real invitation available when the current session cannot accept it', async () => {
+    const token = 'a'.repeat(64);
+    getUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'a@test.com' } } });
+    single.mockResolvedValue({
+      data: null,
+      error: { code: 'P0001', message: 'Invalid invitation' },
+    });
+
+    const response = await GET(makeRequest(token), { params });
+    const location = new URL(response.headers.get('location') ?? '');
+
+    expect(location.pathname).toBe('/es/auth/invitation');
+    expect(location.searchParams.get('next')).toBe(`/es/auth/accept-invitation?token=${token}`);
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('reports a full organization without refreshing the session or notifying its inviter', async () => {
+    getUser.mockResolvedValue({ data: { user: { id: 'user-1' } } });
+    single.mockResolvedValue({ data: null, error: { message: 'seat_limit_reached' } });
+
+    const result = await GET(makeRequest('f'.repeat(64)), { params });
+    const location = new URL(result.headers.get('location') ?? '');
+
+    expect(location.pathname).toBe('/es/auth/invitation');
+    expect(location.searchParams.get('reason')).toBe('capacity');
+    expect(result.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(refreshSession).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('notifies the inviter even if acceptance analytics rejects', async () => {
+    arrangeAcceptedInvitation();
+    captureServer.mockRejectedValueOnce(new Error('Telemetry unavailable'));
+
+    const result = await GET(makeRequest('a'.repeat(64)), { params });
+
+    expect(new URL(result.headers.get('location') ?? '').pathname).toBe('/es/dashboard');
+    expect(result.headers.get('Cache-Control')).toBe('private, no-store');
+    expect(notify).toHaveBeenCalledOnce();
   });
 
   it('should capture invitation_accepted and notify the inviter, then redirect to dashboard', async () => {
