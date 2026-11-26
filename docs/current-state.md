@@ -1,5 +1,26 @@
 # Current State
 
+## QA local de acceso y cuenta — 2026-11-26
+
+Sobre `main` base `ac1cd4b`, la recuperación MFA mantiene el restablecimiento
+estricto del ADR 0006 y actualiza Seguridad tras volver a entrar. Los correos
+de invitación abren login o registro según el destinatario. La consulta de Auth
+se limita a `service_role` y la aceptación conserva la validación del RPC.
+El correo de acceso y sus avisos pasan a Seguridad, con doble confirmación.
+
+La [bitácora](quality/manual-qa-register.md#continuación-local-del-26-11-2026)
+registra el resultado local por recorrido. La migración `20261126190000` se
+validó en el Supabase local. Cloud sigue `[NO VERIFICADO]` para este lote.
+Las propuestas de correo y sesiones siguen pendientes de decisión y Mercado
+Pago conserva su alcance en 011/011f.
+
+## Matriz transversal de capacidades — 2026-11-18
+
+La [matriz de oferta y evidencia](capabilities.md#matriz-de-oferta-y-evidencia--2026-11-18)
+consolida el diagnóstico sobre `66bc3f7`. La evidencia sostiene el núcleo
+Supabase y Next.js en su alcance técnico acotado. El veredicto global MVPv1
+sigue parcial. El triage se apoya en el registro de hallazgos y en el QA humano.
+
 ## Entrega acceso/cuenta y validación Cloud — 2026-11-18
 
 [Entrega y evidencia](audits/2026-11-18-access-account-delivery.md): PR261 y262

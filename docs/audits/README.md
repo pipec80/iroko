@@ -6,6 +6,16 @@ informes históricos ni se rompen sus enlaces para crear una carpeta nueva.
 Este índice reúne el recorrido actual; no sustituye el estado vigente ni el
 registro de remediación.
 
+La [matriz de oferta y evidencia](../capabilities.md#matriz-de-oferta-y-evidencia--2026-11-18)
+recoge la revisión transversal del 18 nov. El registro central conserva las
+causas y el QA humano conserva sus recorridos.
+
+Método acordado el 18 nov:
+[reorganización por capacidades](2026-11-18-capability-audit-reorganization.md).
+Separa diagnóstico, remediación y [QA humano](../quality/manual-qa-register.md),
+reutilizando Auth y el registro existente. Es una propuesta de método; no añade
+resultados ni modifica los estados de los hallazgos del checkpoint siguiente.
+
 Último checkpoint18Nov: [entrega de acceso/cuenta](2026-11-18-access-account-delivery.md).
 PR261/262 fusionados con CI completo; SQL y despliegue Cloud verificados.
 A-ACCESS-02 comprobado en Cloud; A-ACCESS-01 pendiente de recorrido humano Cloud

@@ -39,7 +39,7 @@ test('current password rejects a wrong value and accepts the correct value in lo
   );
   expect(requireReauthentication).toBe('true');
   console.log(`Local Auth ${image}: require_current_password=true, require_reauthentication=true`);
-  await page.goto('/es/dashboard/account?tab=profile');
+  await page.goto('/es/dashboard/account?tab=security');
   const email = (
     await page
       .locator('form')

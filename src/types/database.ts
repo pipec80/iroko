@@ -2376,6 +2376,10 @@ export type Database = {
           resource_type: string
         }[]
       }
+      invitation_recipient_exists: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       invite_members: {
         Args: {
           p_account_id: string

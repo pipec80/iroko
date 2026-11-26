@@ -28,6 +28,7 @@ vi.mock('@/app/[locale]/dashboard/account/actions', () => ({
 }));
 
 import { SecurityTab } from '../security-tab';
+import { LoginEmailCard } from '../login-email-card';
 import { ProfileTab } from '../profile-tab';
 
 const profile = {
@@ -117,7 +118,7 @@ describe('account submission feedback', () => {
 
   it('shows email success for a confirmed submission', async () => {
     actions.updateEmail.mockResolvedValue({ success: 'email_change_requested' });
-    render(<ProfileTab profile={profile} email="old@example.test" {...{ role: 'owner' }} />);
+    render(<LoginEmailCard email="old@example.test" role="owner" />);
     const input = screen.getByLabelText('profile.new_email');
     fireEvent.change(input, { target: { value: 'new@example.test' } });
     const form = input.closest('form');
@@ -139,7 +140,7 @@ describe('account submission feedback', () => {
           finish = resolve;
         }),
     );
-    render(<ProfileTab profile={profile} email="old@example.test" {...{ role: 'owner' }} />);
+    render(<LoginEmailCard email="old@example.test" role="owner" />);
     const input = screen.getByLabelText('profile.new_email') as HTMLInputElement;
     fireEvent.change(input, { target: { value: 'first@example.test' } });
     const form = input.closest('form');
@@ -157,7 +158,7 @@ describe('account submission feedback', () => {
 
   it('clears each confirmed avatar selection even when success codes repeat', async () => {
     actions.uploadAvatar.mockImplementation(async () => ({ success: 'avatar_updated' }));
-    render(<ProfileTab profile={profile} email="old@example.test" {...{ role: 'owner' }} />);
+    render(<ProfileTab profile={profile} />);
     const form = screen.getByTestId('avatar-form');
     const input = form.querySelector('input[type="file"]') as HTMLInputElement;
     const save = form.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -183,7 +184,7 @@ describe('account submission feedback', () => {
           finish = resolve;
         }),
     );
-    render(<ProfileTab profile={profile} email="old@example.test" {...{ role: 'owner' }} />);
+    render(<ProfileTab profile={profile} />);
     const form = screen.getByTestId('avatar-form');
     const input = form.querySelector('input[type="file"]') as HTMLInputElement;
     const save = form.querySelector('button[type="submit"]') as HTMLButtonElement;
@@ -209,7 +210,7 @@ describe('account submission feedback', () => {
 
   it('keeps the last confirmed avatar preview when a later selection is invalid', async () => {
     actions.uploadAvatar.mockResolvedValue({ success: 'avatar_updated' });
-    render(<ProfileTab profile={profile} email="old@example.test" role="owner" />);
+    render(<ProfileTab profile={profile} />);
     const form = screen.getByTestId('avatar-form');
     const input = form.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
@@ -238,7 +239,7 @@ describe('account submission feedback', () => {
           finish = resolve;
         }),
     );
-    render(<ProfileTab profile={profile} email="old@example.test" role="owner" />);
+    render(<ProfileTab profile={profile} />);
     const form = screen.getByTestId('avatar-form');
     const input = form.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {

@@ -1,9 +1,15 @@
 # Iroko Engineering Documentation
 
+[Plan de cierre del QA humano de acceso y cuenta](exec-plans/active/2026-11-26-cierre-qa-acceso-cuenta.md)
+consolida la pasada local del 26 de noviembre y enlaza su ejecución y evidencia.
+
+[Matriz de oferta y evidencia](capabilities.md#matriz-de-oferta-y-evidencia--2026-11-18)
+del núcleo SaaS. Incluye implementación, veredicto por entorno y casos pendientes.
+
 [Índice de auditorías y evidencia](audits/README.md): informes fechados,
 seguimiento de correcciones y pregunta final de suficiencia para MVPv1.
 
-Última ejecución18Nov: [entrega y aceptación de acceso/cuenta](audits/2026-11-18-access-account-delivery.md).
+Entrega Cloud del 18 de noviembre: [acceso y cuenta](audits/2026-11-18-access-account-delivery.md).
 PR261/262 fusionados; CI completo aprobado, SQL Cloud aplicado y Vercel verificado.
 Cookies de ambos redirects comprobadas en Cloud; MFA Cloud pendiente por
 Turnstile en el runner antes de recuperación. Login humano confirmado por el

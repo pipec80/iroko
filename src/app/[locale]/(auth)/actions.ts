@@ -301,11 +301,12 @@ export async function magicLinkAction(
     },
   });
 
-  if (error) {
+  if (error && error.code !== 'otp_disabled') {
     logger.warn({ action: 'auth.magicLink', code: error.code }, 'Magic link failed');
     return { error: error.code ?? 'magic_link_failed' };
   }
 
+  // Use the same acknowledgement when passwordless signup is disabled for the recipient.
   return { success: 'magic_link_sent' };
 }
 

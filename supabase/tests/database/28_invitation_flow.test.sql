@@ -13,7 +13,7 @@
 -- Run with: pnpm supa:test
 
 BEGIN;
-SELECT plan(7);
+SELECT plan(14);
 
 -- ── Escenario ──────────────────────────────────────────────────────────────
 -- inviter: owner de un team.  invitee: usuario que acepta la invitación.
@@ -26,6 +26,19 @@ VALUES
   ('00000000-0000-0000-0000-000000000902', 'invitee@example.com',
    '{"given_name":"Invitee","family_name":"Test"}'::jsonb, now(), now(), '', now(), '',
    'authenticated', 'authenticated');
+
+SELECT ok(has_function_privilege('service_role', 'public.invitation_recipient_exists(text)', 'EXECUTE'),
+  'service role can resolve invitation destinations');
+SELECT ok(NOT has_function_privilege('authenticated', 'public.invitation_recipient_exists(text)', 'EXECUTE'),
+  'authenticated callers cannot look up global email identities');
+SELECT ok(NOT has_function_privilege('anon', 'public.invitation_recipient_exists(text)', 'EXECUTE'),
+  'anonymous callers cannot look up global email identities');
+SET LOCAL ROLE service_role;
+SELECT ok(public.invitation_recipient_exists('INVITEE@example.com'),
+  'an existing identity matches regardless of email case');
+SELECT ok(NOT public.invitation_recipient_exists('missing-invitee@example.invalid'),
+  'a new recipient has no Auth identity');
+RESET ROLE;
 
 -- Punto de partida: el invitee solo tiene su cuenta personal (id = user id),
 -- así que el claim resuelve a ella con o sin preferencia guardada.
@@ -102,6 +115,22 @@ SELECT throws_like(
   $$SELECT public.accept_invitation('tok_que_no_existe')$$,
   '%Invalid or expired invitation%',
   'accept_invitation rechaza un token inexistente');
+
+UPDATE public.invitations
+SET status = 'pending', expires_at = clock_timestamp() - interval '1 day'
+WHERE token_hash = encode(extensions.digest('tok_invitation_flow', 'sha256'), 'hex');
+SELECT throws_like(
+  $$SELECT public.accept_invitation('tok_invitation_flow')$$,
+  '%Invalid or expired invitation%',
+  'accept_invitation rechaza una invitación vencida');
+
+UPDATE public.invitations
+SET status = 'revoked', expires_at = clock_timestamp() + interval '1 day'
+WHERE token_hash = encode(extensions.digest('tok_invitation_flow', 'sha256'), 'hex');
+SELECT throws_like(
+  $$SELECT public.accept_invitation('tok_invitation_flow')$$,
+  '%Invalid or expired invitation%',
+  'accept_invitation rechaza una invitación revocada');
 
 SELECT * FROM finish();
 ROLLBACK;

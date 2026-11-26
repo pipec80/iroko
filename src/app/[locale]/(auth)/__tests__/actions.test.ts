@@ -544,6 +544,12 @@ describe('magicLinkAction', () => {
     expect(result.error).toBe('over_email_send_rate_limit');
   });
 
+  it('returns the same acknowledgement when OTP signup is disabled', async () => {
+    mocks.signInWithOtp.mockResolvedValue({ error: { code: 'otp_disabled' } });
+    const result = await magicLinkAction(PREV, makeFormData({ email: 'ana@example.com' }));
+    expect(result).toEqual({ success: 'magic_link_sent' });
+  });
+
   it('returns magic_link_sent on success', async () => {
     mocks.signInWithOtp.mockResolvedValue({ error: null });
 

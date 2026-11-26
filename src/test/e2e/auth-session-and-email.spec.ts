@@ -65,7 +65,7 @@ test('shows pending and complete status after the two email change links', async
   await withAuthCleanup(
     async () => {
       await loginViaUi(page, oldEmail, password);
-      await page.goto('/es/dashboard/account?tab=profile');
+      await page.goto('/es/dashboard/account?tab=security');
       await page.locator('#new_email').fill(newEmail);
       await page
         .locator('form')

@@ -238,6 +238,19 @@ describe('updateSession', () => {
       expect(location.searchParams.get('next')).toBeNull();
     });
 
+    it.each(['/es/login', '/es/signup'])(
+      'continues an invitation from %s with a session',
+      async (path) => {
+        mockSession();
+        const next = `/es/auth/accept-invitation?token=${'a'.repeat(64)}`;
+        const response = await updateSession(
+          makeRequest(`${path}?next=${encodeURIComponent(next)}`),
+        );
+        const location = new URL(response.headers.get('location') ?? '');
+        expect(location.pathname + location.search).toBe(next);
+      },
+    );
+
     it('lets protected pages pass and disables CDN caching of the response', async () => {
       mockSession();
       const response = await updateSession(makeRequest('/es/dashboard'));

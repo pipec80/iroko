@@ -7,6 +7,7 @@ import {
   execSqlAsPostgres,
   fetchInvitationLinkTo,
   fetchLatestMessageTo,
+  querySqlAsPostgres,
 } from './helpers';
 
 /**
@@ -50,55 +51,54 @@ test.describe('Invitación — ciclo completo', () => {
 
       // ── Arrange: el owner crea un Team y queda parado dentro de él ──────────
       await createTeamViaUi(page, teamName);
-
-      // ── Act 1: invitar ─────────────────────────────────────────────────────
-      await page.goto('/es/dashboard/members');
-      await page.waitForURL(/\/es\/dashboard\/members/);
-      const dialog = page.getByRole('dialog');
-      await expect(async () => {
-        if (!(await dialog.isVisible())) {
-          await page.getByRole('button', { name: /invitar miembro/i }).click();
-        }
-        await expect(dialog).toBeVisible({ timeout: 1_500 });
-      }).toPass({ timeout: 15_000 });
-      await page.locator('textarea[name="emails"]').fill(inviteeEmail);
-      await page.getByRole('button', { name: /enviar invitación/i }).click();
-
-      // El diálogo solo se cierra si el envío no reportó fallos: con entregas
-      // fallidas queda abierto mostrando el aviso (invite-form.tsx).
-      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15_000 });
-
-      // ── Act 2: el email llega de verdad ────────────────────────────────────
-      const invitationLink = await fetchInvitationLinkTo(request, inviteeEmail);
-      expect(invitationLink).toContain('/auth/accept-invitation?token=');
-
-      if (hasAccount) {
-        // The owner's current session must not consume an invite for a different email.
-        await page.goto(invitationLink);
-        await expect(page).toHaveURL(/\/es\/auth\/invitation/);
-        await expect(page.getByRole('main').getByRole('alert')).toContainText(
-          'vuelve con el correo invitado',
-        );
-        await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
-      }
-
-      // ── Act 3: el invitado acepta desde su propia sesión ───────────────────
       const inviteeId =
         hasAccount ? await createConfirmedUser(request, inviteeEmail, password, serviceKey) : null;
-
       const inviteeContext = await browser.newContext();
-      const inviteePage = await inviteeContext.newPage();
 
       try {
+        // ── Act 1: invitar ─────────────────────────────────────────────────────
+        await page.goto('/es/dashboard/members');
+        await page.waitForURL(/\/es\/dashboard\/members/);
+        const dialog = page.getByRole('dialog');
+        await expect(async () => {
+          if (!(await dialog.isVisible())) {
+            await page.getByRole('button', { name: /invitar miembro/i }).click();
+          }
+          await expect(dialog).toBeVisible({ timeout: 1_500 });
+        }).toPass({ timeout: 15_000 });
+        await page.locator('textarea[name="emails"]').fill(inviteeEmail);
+        await page.getByRole('button', { name: /enviar invitación/i }).click();
+
+        // El diálogo solo se cierra si el envío no reportó fallos: con entregas
+        // fallidas queda abierto mostrando el aviso (invite-form.tsx).
+        await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 15_000 });
+
+        // ── Act 2: el email llega de verdad ────────────────────────────────────
+        const invitationLink = await fetchInvitationLinkTo(request, inviteeEmail);
+        const emailDestination = new URL(invitationLink);
+        expect(emailDestination.pathname).toBe(hasAccount ? '/es/login' : '/es/signup');
+        const acceptancePath = emailDestination.searchParams.get('next');
+        expect(acceptancePath).toMatch(/^\/es\/auth\/accept-invitation\?token=[0-9a-f]{64}$/i);
+
+        if (hasAccount && acceptancePath) {
+          // The owner's current session must not consume an invite for a different email.
+          await page.goto(invitationLink);
+          await expect(page).toHaveURL(/\/es\/auth\/invitation/);
+          await expect(page.getByRole('main').getByRole('alert')).toContainText(
+            'vuelve con el correo invitado',
+          );
+          await expect(page.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+        }
+
+        // ── Act 3: el invitado acepta desde su propia sesión ───────────────────
+        const inviteePage = await inviteeContext.newPage();
+
         await inviteePage.goto(invitationLink);
-        await inviteePage.waitForURL(/\/es\/auth\/invitation/);
         if (hasAccount) {
-          await inviteePage.getByRole('link', { name: 'Iniciar sesión' }).click();
           await inviteePage.locator('input[name="email"][type="email"]').fill(inviteeEmail);
           await inviteePage.locator('input[name="password"]').fill(password);
           await inviteePage.getByRole('button', { name: /iniciar sesión/i }).click();
         } else {
-          await inviteePage.getByRole('link', { name: 'Crear cuenta' }).click();
           await inviteePage.locator('input[name="first_name"]').fill('Ada');
           await inviteePage.locator('input[name="last_name"]').fill('Invitee');
           await inviteePage.locator('input[name="email"]').fill(inviteeEmail);
@@ -121,6 +121,15 @@ test.describe('Invitación — ciclo completo', () => {
         // el JWT, no es estado de cliente.
         await inviteePage.reload();
         await expect(inviteeSwitcher).toContainText(teamName);
+
+        await inviteePage.goto(invitationLink);
+        await expect(inviteePage).toHaveURL(/\/es\/auth\/invitation/);
+        expect(
+          querySqlAsPostgres(
+            `SELECT m.role FROM public.accounts_memberships m JOIN public.accounts a ON a.id = m.account_id
+             JOIN auth.users u ON u.id = m.user_id WHERE a.name = '${teamName}' AND u.email = '${inviteeEmail}'`,
+          ),
+        ).toBe('member');
       } finally {
         await inviteeContext.close();
         execSqlAsPostgres(

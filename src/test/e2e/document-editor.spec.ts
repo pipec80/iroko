@@ -214,7 +214,7 @@ test('cancelled reload retains an unsaved draft and confirmed reload discards me
 
 async function createDocuments(page: Page) {
   expect(process.env.LOCAL_VALIDATION).toBe('true');
-  await page.goto('/es/dashboard/account?tab=profile');
+  await page.goto('/es/dashboard/account?tab=security');
   const email = (
     await page
       .locator('form')

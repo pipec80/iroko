@@ -10,6 +10,7 @@ import { sendInvitationEmail } from '@/lib/email';
 import { logger } from '@/lib/logger';
 import { notify } from '@/lib/notifications';
 import { withServerAction } from '@/lib/server-action';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import {
   changeRoleSchema,
@@ -168,13 +169,32 @@ export const inviteMembers = withServerAction(async function inviteMembers(
   // su token perdido para siempre y el reintento choca con 'already_invited'
   // sin haber entregado nunca nada. Por eso la telemetría va después.
   const results = await Promise.allSettled(
-    (invitations ?? []).map((inv) =>
-      sendInvitationEmail(inv.email, {
+    (invitations ?? []).map(async (inv) => {
+      const next = `/${locale}/auth/accept-invitation?token=${inv.token}`;
+      let destination = new URL(next, env.SITE_URL);
+
+      try {
+        const { data, error } = await createAdminClient().rpc('invitation_recipient_exists', {
+          p_email: inv.email,
+        });
+        if (error) throw error;
+        if (data !== null) {
+          destination = new URL(`/${locale}/${data ? 'login' : 'signup'}`, env.SITE_URL);
+          destination.searchParams.set('next', next);
+        }
+      } catch {
+        logger.warn(
+          { action: 'team.invite.recipient_lookup', accountId },
+          'Invitation lookup failed',
+        );
+      }
+
+      await sendInvitationEmail(inv.email, {
         inviterEmail,
         teamRole: parsed.data.role,
-        inviteUrl: `${env.SITE_URL}/${locale}/auth/accept-invitation?token=${inv.token}`,
-      }),
-    ),
+        inviteUrl: destination.toString(),
+      });
+    }),
   );
 
   const failed = results.filter((result) => result.status === 'rejected').length;

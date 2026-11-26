@@ -32,6 +32,256 @@ MP-09/10 cannot be exercised with test accounts (the API refuses refunds for
 their credentials) and stay pending for a productive account. Do not check a
 box from this note.
 
+## Guion de QA humano en Windows — 2026-11-20
+
+**Estado de partida.** El 16 de noviembre, MP-01 abrió el checkout en el
+despliegue `118fedf` y dejó un intent pendiente. El cobro, la autorización y el
+ingreso firmado del candidato siguen **[NO VERIFICADO]**. Reutilizar la evidencia
+de septiembre únicamente para su escenario y contrato. La matriz sigue siendo
+la fuente de veredictos MP-01–15. Este guion ordena la ejecución de las tareas
+de abajo dentro de 011f y recoge el aviso del recorrido de escritorio.
+[Matriz vigente](011-mercadopago-v1-chile-acceptance.md) ·
+[QA manual](../../../quality/manual-qa-register.md) ·
+[Enmienda ADR 0005](../../../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md)
+
+### Primera compra y alcance de la prueba en casa
+
+La primera sesión de pago se concentra en una compra inicial aprobada, con
+evidencia del comprador, del vendedor y de Iroko para la misma operación.
+La renovación queda para una segunda etapa. La compra y su validación se
+pueden hacer desde el navegador de casa. El recorrido visual previo usa el
+build local y la prueba integrada usa el destino público canónico.
+
+| Qué observar | Herramienta y alcance |
+| ------------ | --------------------- |
+| Completar el checkout como comprador | La guía chilena de **Suscripciones** documenta completar el checkout con el usuario de prueba y una tarjeta nacional de prueba. La tabla para ese producto documenta `APRO` para aprobación y ofrece otros resultados simulados. Reusar la aplicación y las cuentas existentes. [Compra de prueba](https://www.mercadopago.cl/developers/es/docs/subscriptions/integration-test/payment-approval) · [Tarjetas de prueba](https://www.mercadopago.cl/developers/es/docs/subscriptions/additional-content/your-integrations/test/cards) |
+| Ver que el vendedor recibió el pago de prueba | En **Tus integraciones → aplicación → Prueba**, identificar el pago aprobado en **Pagos de prueba** si la sección está disponible. Corroborar por lectura del recurso del proveedor si el panel no expone el detalle. Registrar importe, moneda, estado y alias de la operación. [Detalles de la aplicación](https://www.mercadopago.cl/developers/es/docs/subscriptions/additional-content/your-integrations/application-details) |
+| Confirmar el aviso a Iroko | La guía de **Suscripciones** indica configurar la notificación al crear el recurso. Iroko ya envía `notification_url` en el preapproval. Observar la entrega que nace de la compra como prueba principal. La disponibilidad del simulador para esa aplicación y tópico se comprueba en el panel. [Webhooks de Suscripciones](https://www.mercadopago.cl/developers/es/docs/subscriptions/additional-content/your-integrations/notifications/webhooks) |
+| Ver dinero real acreditado y disponible | Requiere una operación productiva autorizada. Con el mismo identificador, verificar el movimiento del vendedor, el importe bruto y neto y si queda por liquidar o ya está disponible. Mercado Pago indica que su reporte de transacciones se genera sin datos para cuentas de prueba. La aprobación de sandbox cubre el circuito funcional. [Reporte de Todas las transacciones](https://www.mercadopago.cl/developers/es/docs/reports/account-money/introduction?scope=prod) |
+| Ver la siguiente cuota mensual | No se encontró en la guía oficial consultada una herramienta documentada para simular el paso del tiempo y producir una nueva cuota en este flujo. Retomar luego con la suscripción histórica y buscar su factura y pago posteriores por lectura. [Gestión de suscripciones](https://www.mercadopago.cl/developers/es/docs/subscriptions/subscription-management) |
+
+### Turno 1 — build local, pantalla y diagnóstico
+
+- [ ] Con el build ya levantado por el propietario, abrir en el navegador lateral
+  de Codex el origen que sirva `next start` y entrar en **Facturación**
+  (`/es/dashboard/billing`). Registrar SHA base, cambios locales incluidos si se
+  conocen, origen y destino Supabase. Si hace falta reconstruir el build local
+  de referencia, seguir `pnpm build:qa` y `pnpm start --hostname 127.0.0.1` con el
+  stack local `saas-boilerplate`. Mantener un mismo host para la sesión de Iroko.
+- [ ] Con owner de una cuenta de prueba, revisar **Plan y facturación**, plan
+  vigente, moneda, periodicidad y disponibilidad de **Suscribirme**. Para
+  Mercado Pago se esperan Free, Plus y Pro mensuales en CLP, con 0, 19.990 y
+  102.990 respectivamente. Usar Plus (`pro`) para el circuito de pago. Repetir
+  con un miembro común para confirmar ausencia de operaciones de gestión y de
+  datos privados de facturación. Registrar el resultado tras recargar.
+- [ ] Si aparece «El checkout no está disponible temporalmente», comprobar de
+  forma saneada el proveedor seleccionado, disponibilidad del registro y lectura
+  del catálogo CLP mensual. Las señales `billing.catalog.provider_unavailable`,
+  `billing.catalog.incomplete` y `billing.catalog.read_failed` ayudan a ubicar
+  la causa. Registrar presencia y coincidencias de configuración sin volcar
+  valores. La pantalla puede estar habilitada y la compra quedar bloqueada en
+  el mismo build. Terminar este turno antes de pulsar **Suscribirme**.
+  [Catálogo efectivo](../../../../src/lib/billing/public-catalog.ts)
+
+### Turno 2 — aplicación, vendedor y comprador de prueba
+
+- [ ] Abrir **Tus integraciones** en el navegador con la sesión del propietario
+  de Mercado Pago. Identificar la aplicación de Iroko, el producto
+  **Suscripciones**, el entorno que el panel muestra y el vendedor que posee los
+  recursos. Verificar el país Chile, la disponibilidad de cuentas y medios de
+  prueba y sus límites efectivos. Preferir cuentas ya existentes. El dueño de
+  la aplicación administra la integración, el vendedor es el `collector_id`
+  que cobra y el comprador es el pagador. La pertenencia del token se comprueba
+  con un preapproval propio mediante `application_id` y `collector_id`, más
+  la configuración visible del panel. El prefijo del token por sí solo es
+  insuficiente para identificar el entorno.
+- [ ] Usar un contexto de navegador separado para el comprador de prueba. El
+  propietario introduce login, verificación y medio de prueba en el sitio del
+  proveedor. Iroko toma `payer_email` del correo autenticado en Supabase, así
+  que preparar una cuenta Iroko de prueba compatible con el pagador asignado y
+  registrar la coincidencia sin guardar los correos. Verificar en el panel que
+  el medio de prueba está admitido por este checkout de **Suscripciones**.
+  El código hace `POST /preapproval` con `pending`, sin plan remoto asociado, y
+  abre el `init_point` devuelto. Las instrucciones de Checkout Pro y Orders
+  corresponden a productos distintos.
+- [ ] Verificar de solo lectura SHA desplegado, origen público, proyecto
+  Supabase asociado y configuración visible de Webhooks. Confirmar el HTTPS
+  canónico `https://project-a89lv.vercel.app/api/webhooks/mercadopago` y los
+  tópicos que usa este circuito (`subscription_preapproval`,
+  `subscription_authorized_payment` y, cuando corresponda, `payment`). El
+  retorno de la UI se construye con `SITE_URL`; la entrega del proveedor usa
+  `MERCADOPAGO_WEBHOOK_URL`. Un checkout creado en loopback con la base local y
+  un webhook enviado a Cloud repartiría la correlación entre dos bases. Para
+  aceptar el circuito completo usar la aplicación canónica y su misma base de
+  punta a punta. El MCP y el CLI quedan como apoyos de lectura cuando sean
+  utilizables. Si una sesión o un medio de prueba falla, registrar el punto
+  exacto y continuar las comprobaciones de sólo lectura independientes.
+  [Suscripciones](https://www.mercadopago.cl/developers/es/docs/subscriptions/overview) ·
+  [Pago pendiente](https://www.mercadopago.cl/developers/es/docs/subscriptions/integration-configuration/subscription-no-associated-plan/pending-payments) ·
+  [Referencia de preapproval](https://www.mercadopago.cl/developers/es/reference/online-payments/subscriptions/create-preapproval/post)
+
+### Turno 3 — una suscripción completa y evidencia
+
+- [ ] Acordar el candidato, la cuenta propia, una suscripción Plus mensual de
+  prueba por CLP 19.990, el medio de prueba, el máximo de operaciones y la
+  cancelación o conservación aprobada del fixture. El ejercicio anterior de un
+  solo reenvío oficial ya autorizado cubre ingreso sin pago, si sigue siendo
+  viable sobre el recurso autorizado. Un envío firmado desde el panel puede
+  comprobar transporte y validación para ese recurso. La compra de prueba es
+  el paso que permite observar su callback natural y el primer cobro.
+- [ ] Con owner en el dominio canónico, pulsar **Suscribirme** una vez. Verificar
+  un intent y un preapproval `pending`, Plus y CLP 19.990 mensuales, sin trial y
+  sin acceso pagado mientras siga incompleto. Completar el checkout alojado en
+  el contexto de comprador habilitado. Mantener una sesión Iroko para la misma
+  cuenta en el contexto que reciba el retorno. Verificar la vuelta a
+  **Plan y facturación**, el estado «Estamos confirmando tu suscripción con Mercado Pago…»
+  si hay demora y **Volver a comprobar** si se agota la espera. Usar ese botón
+  para consultar el estado sin crear otra suscripción.
+- [ ] Correlacionar por lectura la entrega oficial y el resultado de validación,
+  `billing.checkout_intents`, `billing.subscriptions`, `billing.events`,
+  `billing.invoices` y `billing.payment_attempts` de la cuenta de prueba. La
+  autorización del preapproval puede activar la suscripción antes de ver la
+  primera factura. Registrar ambas pruebas de forma independiente. Exigir para
+  MP-02 una factura pagada y un intento correlacionado con importe y moneda
+  correctos. Después de recargar, comprobar plan efectivo, factura visible y
+  aislamiento de la otra cuenta. Atribuir cada transición a webhook o worker
+  según su origen observado. Cuando corresponda, verificar que una entrega
+  repetida conserva un solo efecto de negocio.
+- [ ] Comprobar que se entregó el valor del plan. Usar una cuenta de equipo de
+  prueba en Free cuyo dueño compre Plus. En la misma cuenta, comparar antes y
+  después de la compra las cuotas efectivas que indique el catálogo. La
+  referencia observada es 2 → 10 miembros, 2 → 20 claves API y 0 → 10 endpoints
+  de webhook. Los límites de equipos corresponden a la cuenta personal y se
+  comprueban en ese contexto. Observar el estado de **Ajustes → Webhooks** y
+  hacer valer una capacidad en servidor. Si el equipo ya tiene dos claves API
+  de prueba, verificar que una tercera queda habilitada al activar Plus y
+  revocar la clave nueva según la disposición acordada. Registrar lo que
+  persiste tras recargar. Confirmar que la cuenta de control conserva Free.
+  [Cuotas observadas en Cloud](../../../quality/manual-qa-register.md#precios-y-cuotas-visibles-en-cloud)
+- [ ] Como dueño del SaaS, encontrar el pago aprobado de prueba en Mercado Pago
+  y cotejarlo con la factura pagada de Iroko para la misma cuenta e importe.
+  Registrar por separado la autorización de la suscripción, la aprobación del
+  cobro y la acreditación de fondos. Si solo se ejecuta sandbox, la acreditación
+  real queda **[NO VERIFICADO]**. La factura de este guion es el registro de
+  facturación de Iroko.
+- [ ] Registrar `MP-ID · UTC · SHA/origen/BD · alias de cuenta/preapproval/factura/pago ·
+  pantalla y estado · origen y resultado técnico · disposición del fixture · veredicto`.
+  Conservar sólo datos saneados. Si se autoriza cancelar, comprobar el estado
+  remoto/local, vigencia hasta el período pagado y ausencia de renovación
+  posterior cuando corresponda. Si se conserva para MP-03, dejar dueño, próxima
+  fecha de revisión y decisión explícita sobre la renovación.
+  [Simulador oficial de Webhooks](https://www.mercadopago.cl/developers/es/news/2024/01/11/Webhooks-Notifications-Simulator-and-Secret-Signature)
+
+### Mini auditoría sin navegador — 2026-11-20
+
+Base local `66bc3f7` con el árbol de trabajo actual. La selección focalizada
+de Vitest para proveedor, webhook, reducer, acciones y componentes de billing
+pasó con 419 pruebas y 1 omitida por el fixture opcional de discovery. La
+consulta de retorno se probó con DOM simulado: `pending` conserva el indicador
+de confirmación y `active` detiene el sondeo, pide volver a leer facturación
+y facturas, y limpia `preapproval_id`. La URL de retorno que se entrega al
+proveedor se arma sin el query previo para que pueda agregar el ID.
+
+```powershell
+pnpm test --maxWorkers=1 src/lib/billing 'dashboard/billing/__tests__' 'dashboard/org/__tests__/billing' 'api/webhooks' 'api/internal/billing/worker/__tests__/route'
+```
+
+En el Supabase local `saas-boilerplate`, una transacción pgTAP sobre los RPC
+reales pasó 19/19 y se revirtió con cero filas residuales del fixture. El
+checkout pendiente mantenía el equipo en Free y `create_api_key` rechazó la
+tercera clave. El evento de autorización dejó Plus efectivo en ese equipo,
+con 20 claves API, 10 miembros y 10 endpoints con Webhooks habilitado, y el
+mismo RPC aceptó la tercera clave. La cuenta personal de control siguió en
+Free. El evento de cobro registró una factura y un intento pagados por CLP
+19.990. Repetirlo devolvió `duplicate`.
+
+Dos observaciones para el recorrido visual:
+
+- Se comprobó que `paused` devuelve `confirmed` en la consulta de retorno,
+  aunque sus derechos efectivos caen a Free. Distinguir que se reconoció la
+  suscripción, que el plan quedó activo y que la factura está pagada.
+- Si la primera consulta de confirmación falla por un error transitorio, el
+  componente no presenta el botón de reintento que sí muestra al agotar el
+  sondeo en `pending`. Si la factura llega después de confirmar la
+  suscripción, el historial requiere una lectura posterior para reflejarla.
+  Estas dos ramas se identificaron por inspección del componente.
+
+La prueba local trabajó con eventos simulados y dejó pendiente comprobar el
+retorno exacto del proveedor, la entrega natural del webhook y el pago de la
+primera compra en el candidato desplegado.
+
+### Alta, cuenta activa y alcance del plan — 2026-11-20
+
+El alta crea un usuario de Auth, su perfil y una cuenta Personal con
+membresía `owner` para ese usuario. El enlace de confirmación pasa por
+`/auth/click` y `/auth/confirm`, que valida el token y establece la sesión.
+Con el asistente habilitado, el primer acceso lleva al onboarding. Omitir
+antes de confirmar la organización deja solo Personal. Confirmar el nombre
+crea un equipo, deja al usuario como `owner` y lo selecciona. Omitir después
+conserva el equipo. Los proyectos documentales se crean aparte bajo la
+cuenta activa. [Registro de QA y criterio QA-OBS-05](../../../quality/manual-qa-register.md#diagramas-del-registro-y-la-invitación)
+
+El checkout usa el ID de la cuenta activa de la sesión y verifica el rol
+`owner` o `admin` en el servidor. El correo de quien compra va al
+proveedor como pagador. La suscripción y las facturas se guardan para la
+cuenta elegida, y los derechos de uso siguen el plan y la membresía de esa
+cuenta. El límite `teams_max` se consulta en Personal al crear equipos.
+En una prueba local transaccional, 14/14 aserciones confirmaron las dos
+ramas, la selección del equipo, cero proyectos documentales creados por el
+asistente y Plus aplicado al equipo. Personal siguió en Free y bloqueó un
+segundo equipo propio. El fixture se revirtió con cero filas residuales.
+
+Para la primera compra de QA, terminar el onboarding y comprobar el nombre
+de la cuenta seleccionada antes de abrir Facturación. Queda un caso separado
+para comprar dentro del asistente. El retorno a `/dashboard/billing` con
+onboarding pendiente se redirige al asistente conservando `preapproval_id`.
+El asistente reentra en Invitaciones si el equipo está activo. El componente
+que lee ese ID está en Elegir plan. Esta secuencia se identificó en código y
+queda por observar en navegador. El criterio vigente de QA-OBS-05 pide que
+el asistente configure el espacio inicial y que crear otro sea explícito.
+
+### Pendientes después del circuito principal
+
+| Casos | Evidencia pendiente y retorno |
+| ----- | ---------------------------- |
+| MP-01/02/05/15 | Dueños billing y propietario. Completar autorización, primer cobro, entrega oficial y coherencia de entorno contra el candidato. Para MP-05, sumar deduplicación, orden y correlación según la matriz y registrar qué contratos históricos se reutilizan. |
+| MP-03 | Billing. Buscar primero por lectura el resultado de la cuota prevista para el 22 de octubre en la suscripción histórica. La fecha ya pasó y no se localizó un resultado documentado. Para aprobar, observar segunda factura y pago distintos en el mismo preapproval y avance del período pagado una vez. |
+| MP-04/08 | Billing. Reusar evidencia de reanudación. Acotar concurrencia, resultado remoto desconocido y abandono con `needs_review`. Consultar el estado remoto antes de resolver y conservar el rastro del intent. |
+| MP-06/07 | Billing y propietario. Septiembre acredita rechazo y alerta y cancelaciones correlacionadas. Queda acreditar recuperación posterior al rechazo y renovar en el candidato la evidencia de cancelación y acceso durante el período pagado según el escenario acordado. |
+| MP-11/12/13/14 | Operación billing. Verificar ambos modos de `/api/internal/billing/worker`, efectos durables y recuperación del candidato con fencing. MP-12 exige una factura omitida por Webhooks y encontrada por discovery. MP-14 exige avance, aislamiento, backoff y replay sobre casos acotados. HTTP 200 del cron sólo acredita invocación. |
+| MP-09/10 | Billing. Refund total/parcial, contracargo y mediación conservan cobertura local histórica y aceptación de proveedor pendiente. El rechazo histórico del sandbox limita el ensayo. Registrar el bloqueo y el escenario de retorno, y conservar los requisitos antes de operar con dinero real. |
+
+El recorrido visual queda acreditado con MP-01/02/05/15 y la comprobación de
+permisos, persistencia y disposición del fixture, dentro de las afirmaciones
+efectivamente observadas. El veredicto operativo de 011 conserva MP-03–14 según
+la matriz y las tareas siguientes, incluidos `015-OPERATIONS`, `RL-F05` y su
+alias DB-19. Revisar antes de decidir el cierre si queda alguna brecha de
+integridad o seguridad que bloquee la oferta. Un bloqueo del proveedor se
+documenta con su alcance y condición de retorno.
+
+### Contrato reutilizable y reglas del repositorio
+
+El guion reutilizable es **plan y permisos → checkout → retorno y confirmación
+→ webhook verificado → factura y acceso → cancelación y recuperación**. El
+catálogo, la coordinación, el reducer y los permisos son comunes. Cada
+adaptador aporta autenticación, catálogo del proveedor, creación, firma,
+traducción de eventos y capacidades. Cualquier pasarela futura debe confirmar
+sus capacidades de recurrencia, cancelación y reconciliación antes de aplicar
+los mismos casos. [Billing Platform v2](../../../architecture/billing-platform-v2-design.md)
+
+Se revisaron las ocho reglas de `.codex/rules`. Para TypeScript, JavaScript y
+React/Next se conservan la frontera servidor/cliente y `src/proxy.ts`. La
+referencia a `src/env.js` en `typescript-nextjs.md` se resuelve con el archivo
+vigente `src/env.ts` que establece `AGENTS.md`. Para SQL se usan lecturas
+acotadas por cuenta y entorno. Si se aprueba en otro cambio una corrección de
+esquema, aplica la excepción Windows de migración manual más espejo en
+`supabase/schemas/`. Facturación permite comprobar la confirmación con el
+polling existente de TanStack Query. Las reglas de Supabase Realtime quedan
+fuera de este recorrido. Las reglas de calidad y simplicidad se aplican al
+reusar el plan, los guards y las pruebas existentes. JSDoc y el flujo de
+commits aplican a cualquier implementación o entrega posterior que los requiera.
+Antes de modificar pruebas, consultar `TESTING-PLAN.md` y `testing-standards.md`.
+
 ## Global Constraints
 
 - Scope is own-use Chile, monthly CLP, hosted checkout and pending preapproval

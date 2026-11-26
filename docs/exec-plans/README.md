@@ -1,5 +1,9 @@
 # Execution Plan Lifecycle
 
+[Cierre del QA humano de acceso y cuenta](active/2026-11-26-cierre-qa-acceso-cuenta.md)
+organiza las correcciones propuestas para la próxima sesión y sus comprobaciones
+pendientes.
+
 ## Inventario autoritativo de cierre — 2026-11-17
 
 La [enmienda ADR0005](../adr/0005-replicable-saas-mvp-and-bounded-acceptance.md)
@@ -29,6 +33,11 @@ de una misma familia; un archivo en active/ no equivale a una tarea abierta.
 
 ### Referencias y auxiliares que no crean otra cola
 
+- [Organización inicial e invitaciones, 20Nov](active/2026-11-20-organizacion-inicial-e-invitaciones.md):
+  propuesta acotada de alta, retiro del asistente y continuidad de la
+  invitación. Su aceptación es el punto de retorno a la compra visual de 011f.
+  El [seguimiento de correcciones de QA](../quality/iroko-qa-corrections-tracker.md)
+  ordena los FIX y vincula sus pruebas con el plan y la bitácora existentes.
 - [Reparación acceso/cuenta,17Nov](active/2026-11-17-access-account-remediation.md):
   propuesta solicitada tras el piloto de auditoría, sin implementación iniciada.
   Mantiene A-ACCESS-01/02 en el registro central; no crea familia018 ni reabre017.
