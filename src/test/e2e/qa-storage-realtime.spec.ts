@@ -1,3 +1,4 @@
+import { requireUserUuid } from '../local-auth-cleanup';
 import { test, expect } from './fixtures/auth';
 import { selectValidFile } from './file-selection';
 import {
@@ -156,7 +157,9 @@ test.describe('QA — notifications realtime', () => {
 
     const invitationLink = await fetchInvitationLinkTo(request, inviteeEmail);
 
-    const inviteeId = await createConfirmedUser(request, inviteeEmail, password, serviceKey);
+    const inviteeId = requireUserUuid(
+      await createConfirmedUser(request, inviteeEmail, password, serviceKey),
+    );
     execSqlAsPostgres(
       `UPDATE public.profiles SET onboarding_completed = true WHERE id = '${inviteeId}'`,
     );
@@ -177,13 +180,22 @@ test.describe('QA — notifications realtime', () => {
       await inviteePage.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
 
       await bell.click();
-      await expect(page.getByText(`${inviteeEmail} aceptó tu invitación`)).toBeVisible({
+      const notification = page.getByRole('link', { name: `${inviteeEmail} aceptó tu invitación` });
+      await expect(notification).toBeVisible({
         timeout: 15_000,
       });
+      await page.reload();
+      await bell.click();
+      await expect(notification).toBeVisible();
     } finally {
       await inviteeContext.close();
-      execSqlAsPostgres(`DELETE FROM public.accounts WHERE id='${inviteeId}'`);
+      execSqlAsPostgres(
+        `DELETE FROM public.accounts WHERE id = '${inviteeId}' OR created_by = '${inviteeId}'`,
+      );
       await deleteUserById(request, inviteeId, serviceKey);
+      expect(querySqlAsPostgres(`SELECT count(*) FROM auth.users WHERE id = '${inviteeId}'`)).toBe(
+        '0',
+      );
     }
   });
 });

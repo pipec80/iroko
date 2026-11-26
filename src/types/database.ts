@@ -1465,6 +1465,7 @@ export type Database = {
           locale: string | null
           metadata: Json | null
           onboarding_completed: boolean | null
+          organization_entry_state: string
           pending_deletion: boolean
           phone_number: string | null
           timezone: string | null
@@ -1487,6 +1488,7 @@ export type Database = {
           locale?: string | null
           metadata?: Json | null
           onboarding_completed?: boolean | null
+          organization_entry_state?: string
           pending_deletion?: boolean
           phone_number?: string | null
           timezone?: string | null
@@ -1509,6 +1511,7 @@ export type Database = {
           locale?: string | null
           metadata?: Json | null
           onboarding_completed?: boolean | null
+          organization_entry_state?: string
           pending_deletion?: boolean
           phone_number?: string | null
           timezone?: string | null
@@ -2183,6 +2186,7 @@ export type Database = {
         }
         Returns: string
       }
+      ensure_initial_organization: { Args: never; Returns: string }
       export_my_data: { Args: never; Returns: Json }
       generate_recovery_codes: { Args: never; Returns: string[] }
       get_account_audit_logs: {
@@ -2333,6 +2337,13 @@ export type Database = {
           slug: string
           type: Database["public"]["Enums"]["account_type"]
           website: string
+        }[]
+      }
+      get_my_organization_quota: {
+        Args: never
+        Returns: {
+          organization_limit: number
+          owned_count: number
         }[]
       }
       get_plan_provider_id: {
@@ -2636,6 +2647,7 @@ export type Database = {
           locale: string | null
           metadata: Json | null
           onboarding_completed: boolean | null
+          organization_entry_state: string
           pending_deletion: boolean
           phone_number: string | null
           timezone: string | null

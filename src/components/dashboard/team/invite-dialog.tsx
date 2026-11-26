@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { InviteForm } from '@/components/dashboard/team/invite-form';
 
-export function InviteDialog() {
+export function InviteDialog({ allowAdmin = false }: { allowAdmin?: boolean }) {
   const t = useTranslations('Team');
   const [open, setOpen] = useState(false);
 
@@ -36,6 +36,7 @@ export function InviteDialog() {
         </DialogHeader>
 
         <InviteForm
+          allowAdmin={allowAdmin}
           onSuccess={() => setOpen(false)}
           secondaryButton={
             <button

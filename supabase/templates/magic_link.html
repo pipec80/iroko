@@ -100,7 +100,7 @@
                   <tr>
                     <td style="border-radius: 8px; background: #d92121">
                       <a
-                        href="{{ .SiteURL }}/auth/click?token_hash={{ .TokenHash }}&type=magiclink&next=/dashboard"
+                        href="{{ .SiteURL }}/auth/click?token_hash={{ .TokenHash }}&type=magiclink&redirect_to={{ .RedirectTo | urlquery }}"
                         style="
                           display: inline-block;
                           padding: 14px 32px;

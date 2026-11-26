@@ -97,6 +97,7 @@ export const productModules: readonly ProductModule[] = [
     label: { key: 'nav_billing' },
     Icon: CreditCard,
     availability: 'billing',
+    roles: ['owner', 'admin'],
     sidebarOrder: 5,
     home: {
       order: 2,
@@ -111,6 +112,7 @@ export const productModules: readonly ProductModule[] = [
     href: '/dashboard/org/settings',
     label: { key: 'nav_settings' },
     Icon: Settings,
+    roles: ['owner', 'admin'],
     sidebarOrder: 6,
   },
   { id: 'account', href: '/dashboard/account', label: { key: 'nav_account' }, Icon: Settings },

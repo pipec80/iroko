@@ -1,8 +1,10 @@
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { Button } from '@/components/ui/button';
-import { Link } from '@/i18n/routing';
+import { Link, routing } from '@/i18n/routing';
 import { appConfig } from '@/config/app.config';
+import { env } from '@/env';
+import { invitationReturn } from '@/lib/auth/invitation-return';
 
 const VALID_TYPES = new Set<string>([
   'signup',
@@ -35,7 +37,22 @@ export default async function AuthClickPage({
   const sp = await searchParams;
   const tokenHash = sp.token_hash;
   const type = sp.type;
-  const next = sp.next;
+  let next = sp.next;
+  let confirmationLocale = locale;
+  if ((type === 'signup' || type === 'magiclink') && typeof sp.redirect_to === 'string') {
+    try {
+      const destination = new URL(sp.redirect_to);
+      const targetLocale = routing.locales.find(
+        (value) => destination.pathname === `/${value}/auth/confirm`,
+      );
+      if (destination.origin === new URL(env.SITE_URL).origin && targetLocale) {
+        confirmationLocale = targetLocale;
+        next = invitationReturn(destination.searchParams.get('next'), targetLocale) ?? undefined;
+      }
+    } catch {
+      // Invalid optional continuation falls back to ordinary confirmation.
+    }
+  }
 
   const t = await getTranslations('Auth');
 
@@ -60,7 +77,7 @@ export default async function AuthClickPage({
 
   const confirmParams = new URLSearchParams({ token_hash: tokenHash, type });
   if (next) confirmParams.set('next', next);
-  const confirmHref = `/${locale}/auth/confirm?${confirmParams.toString()}`;
+  const confirmHref = `/${confirmationLocale}/auth/confirm?${confirmParams.toString()}`;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4">
