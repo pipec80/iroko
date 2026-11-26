@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useActionState } from 'react';
-import { useTranslations } from 'next-intl';
+import React, { useActionState, useEffect } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Lock } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,13 @@ const initialState: AuthActionState = {};
 
 export default function ResetPasswordPage() {
   const t = useTranslations('Auth');
+  const locale = useLocale();
   const [state, formAction, pending] = useActionState(updatePasswordAction, initialState);
+  const dashboardPath = `/${locale}/dashboard`;
+
+  useEffect(() => {
+    if (state.documentRedirect === dashboardPath) window.location.assign(dashboardPath);
+  }, [state.documentRedirect, dashboardPath]);
 
   const error =
     state.error ?

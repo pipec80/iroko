@@ -100,7 +100,7 @@
                   <tr>
                     <td style="border-radius: 8px; background: #d92121">
                       <a
-                        href="{{ .SiteURL }}/auth/click?token_hash={{ .TokenHash }}&type=signup&next=/dashboard"
+                        href="{{ .SiteURL }}/auth/click?token_hash={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo | urlquery }}"
                         style="
                           display: inline-block;
                           padding: 14px 32px;
@@ -115,37 +115,6 @@
                     </td>
                   </tr>
                 </table>
-
-                <!-- Token fallback -->
-                <div
-                  style="
-                    background: #f5ecda;
-                    border-radius: 8px;
-                    padding: 16px 20px;
-                    margin-bottom: 32px;
-                  ">
-                  <p
-                    style="
-                      margin: 0 0 6px;
-                      font-size: 12px;
-                      color: #8b6645;
-                      font-weight: 600;
-                      letter-spacing: 0.06em;
-                      text-transform: uppercase;
-                    ">
-                    Si el botón no funciona, ingresa este código
-                  </p>
-                  <span
-                    style="
-                      font-size: 28px;
-                      font-weight: 700;
-                      color: #0e1117;
-                      letter-spacing: 6px;
-                      font-family: 'Courier New', monospace;
-                    "
-                    >{{ .Token }}</span
-                  >
-                </div>
               </td>
             </tr>
 

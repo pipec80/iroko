@@ -1,6 +1,7 @@
 'use client';
-import React, { useActionState, useState, useTransition } from 'react';
-import { useTranslations } from 'next-intl';
+import React, { Suspense, useActionState, useState, useTransition } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 
@@ -11,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from '@/i18n/routing';
 import { track } from '@/lib/analytics/client';
+import { invitationReturn } from '@/lib/auth/invitation-return';
 
 import type { AuthActionState } from '../actions';
 import { oauthAction, signUpAction } from '../actions';
@@ -18,7 +20,17 @@ import { oauthAction, signUpAction } from '../actions';
 const initialState: AuthActionState = {};
 
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
   const t = useTranslations('Auth');
+  const locale = useLocale();
+  const next = invitationReturn(useSearchParams().get('next'), locale);
   const [state, formAction, pending] = useActionState(signUpAction, initialState);
   const [oauthPending, startOAuth] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
@@ -64,6 +76,7 @@ export default function SignupPage() {
         onSubmit={() => track('signup_started', { method: 'password' })}
         className="space-y-4"
         noValidate>
+        {next && <input type="hidden" name="next" value={next} />}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label className="text-foreground block text-sm font-semibold" htmlFor="first_name">
@@ -191,7 +204,7 @@ export default function SignupPage() {
           disabled={oauthPending}
           onClick={() =>
             startOAuth(() => {
-              void oauthAction('google');
+              void oauthAction('google', next ?? undefined);
             })
           }
           className="h-11 gap-2">
@@ -223,7 +236,7 @@ export default function SignupPage() {
         </p>
         <p className="text-muted-foreground mt-4 text-sm">
           <Link
-            href="/login"
+            href={next ? `/login?next=${encodeURIComponent(next)}` : '/login'}
             className="text-foreground hover:text-primary font-semibold transition-colors">
             {t('sign_in')}
           </Link>

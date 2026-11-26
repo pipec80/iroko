@@ -53,6 +53,8 @@
     "org_switcher_label": "Changer d'organisation",
     "create_team_title": "Nouvelle organisation",
     "create_team_description": "Créez un nouvel espace de travail pour votre équipe.",
+    "create_team_quota": "Organisations détenues : {owned} sur {limit}.",
+    "create_team_quota_unlimited": "Organisations détenues : {owned}. Quota illimité.",
     "create_team_name_label": "Nom",
     "create_team_cancel": "Annuler",
     "create_team_submit": "Créer",
@@ -132,6 +134,9 @@
     "click_btn_magiclink": "Se connecter",
     "click_btn_recovery": "Réinitialiser le mot de passe",
     "click_btn_email_change": "Confirmer le changement d'e-mail",
+    "invitation_retry": "L’invitation n’a pas pu être acceptée. Si vous utilisez une autre adresse, déconnectez-vous et revenez avec l’adresse invitée. Si le lien a expiré ou a été révoqué, demandez une nouvelle invitation.",
+    "invitation_capacity": "Cette équipe a atteint sa limite de membres. Demandez à la personne qui vous a invité de libérer une place.",
+    "invitation_dashboard": "Retour au tableau de bord",
     "click_btn_invite": "Accepter l'invitation",
     "errors": {
       "invalid_credentials": "Identifiants incorrects.",
@@ -192,6 +197,8 @@
       "success": {
         "profile_updated": "Profil mis à jour.",
         "email_change_requested": "Nous avons envoyé des e-mails de confirmation aux deux adresses.",
+        "email_change_pending": "Un lien est confirmé. Ouvrez le lien envoyé à l’autre adresse pour terminer.",
+        "email_change_complete": "Votre adresse e-mail a été mise à jour.",
         "avatar_updated": "Photo mise à jour."
       }
     },
@@ -355,6 +362,9 @@
     "error_generic": "Une erreur est survenue. Veuillez réessayer.",
     "error_already_invited": "Ces personnes ont déjà une invitation en attente. Aucune nouvelle invitation n'a été envoyée.",
     "warning_delivery_failed": "{count, plural, one {# invitation n'a pas pu être remise} other {# invitations n'ont pas pu être remises}}. L'invitation a bien été créée, mais l'e-mail n'est pas parti — vérifiez la configuration de messagerie.",
+    "error_no_new_invitation": "Aucune nouvelle invitation n’a été envoyée.",
+    "error_admin_invitation_requires_owner": "Seul le propriétaire peut inviter une personne comme administratrice.",
+    "warning_existing_members": "{count, plural, one {# adresse fait déjà partie de l’équipe} other {# adresses font déjà partie de l’équipe}}.",
     "warning_duplicates": "{count, plural, one {# adresse avait déjà une invitation en attente et a été ignorée} other {# adresses avaient déjà une invitation en attente et ont été ignorées}}.",
     "manage_member": "Gérer le membre",
     "change_role_action": "Changer le rôle",
@@ -929,7 +939,7 @@
     "invoice_status_void": "Annulée",
     "invoice_status_uncollectible": "Irrécouvrable",
     "checkout_error": "Impossible de démarrer le paiement. Veuillez réessayer.",
-    "readonly_notice": "Seul le propriétaire ou un administrateur peut gérer le forfait et la facturation."
+    "readonly_notice": "Seul le propriétaire peut modifier le forfait ou résilier l’abonnement."
   },
   "Projects": {
     "page_eyebrow": "Forêt",
@@ -1007,6 +1017,7 @@
     "api_keys_status_expired": "Expirée",
     "api_keys_never": "Jamais",
     "api_keys_revoke_btn": "Révoquer",
+    "api_keys_revoke_cancel": "Annuler",
     "api_keys_revoke_confirm": "Révoquer cette clé ? Les intégrations qui l'utilisent cesseront de fonctionner.",
     "api_keys_empty": "Aucune clé API pour le moment.",
     "api_keys_not_authorized": "Seuls les owners et admins peuvent gérer les clés API.",
@@ -1168,7 +1179,7 @@
     "trial": "{days} jours d’essai",
     "limit": "{label} : {value}",
     "seats_max": "Membres",
-    "teams_max": "Équipes",
+    "teams_max": "Organisations détenues",
     "api_keys_max": "Clés API",
     "webhook_endpoints_max": "Endpoints webhook",
     "webhooks_enabled": "Webhooks",

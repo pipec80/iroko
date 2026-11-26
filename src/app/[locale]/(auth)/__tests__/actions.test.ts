@@ -501,6 +501,19 @@ describe('verifyRecoveryAction', () => {
 // ─── magicLinkAction ─────────────────────────────────────────────────────────
 
 describe('magicLinkAction', () => {
+  it('keeps the validated invitation in the login email callback', async () => {
+    const invite = `/es/auth/accept-invitation?token=${'a'.repeat(64)}`;
+    mocks.signInWithOtp.mockResolvedValue({ error: null });
+    await magicLinkAction(PREV, makeFormData({ email: 'ana@example.com', next: invite }));
+
+    expect(mocks.signInWithOtp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: expect.objectContaining({
+          emailRedirectTo: expect.stringContaining(`?next=${encodeURIComponent(invite)}`),
+        }),
+      }),
+    );
+  });
   beforeEach(() => vi.clearAllMocks());
 
   it('returns fieldErrors for invalid email', async () => {
@@ -630,12 +643,26 @@ describe('updatePasswordAction', () => {
 
   it('redirects to /dashboard on success — session is already established', async () => {
     mocks.updateUser.mockResolvedValue({ error: null });
+    mocks.getClaims.mockResolvedValue({ data: null });
 
     const fd = makeFormData({ password: 'StrongPass1!', confirm_password: 'StrongPass1!' });
     await expect(updatePasswordAction(PREV, fd)).rejects.toThrow('NEXT_REDIRECT');
 
     expect(mocks.updateUser).toHaveBeenCalledWith({ password: 'StrongPass1!' });
     expect(mocks.redirect).toHaveBeenCalledWith({ href: '/dashboard', locale: 'es' });
+  });
+
+  it('uses document navigation for a recovery session that still needs its first organization', async () => {
+    mocks.updateUser.mockResolvedValue({ error: null });
+    mocks.getClaims.mockResolvedValue({
+      data: { claims: { app_metadata: { organization_entry_state: 'pending' } } },
+    });
+
+    const fd = makeFormData({ password: 'StrongPass1!', confirm_password: 'StrongPass1!' });
+    await expect(updatePasswordAction(PREV, fd)).resolves.toEqual({
+      documentRedirect: '/es/dashboard',
+    });
+    expect(mocks.redirect).not.toHaveBeenCalled();
   });
 });
 
@@ -669,6 +696,19 @@ describe('resendConfirmationAction', () => {
     expect(result.success).toBe('confirmation_resent');
     expect(mocks.resend).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'signup', email: 'ana@example.com' }),
+    );
+  });
+
+  it('preserves the invitation URL when resending signup confirmation', async () => {
+    mocks.resend.mockResolvedValue({ error: null });
+    const next = `/es/auth/accept-invitation?token=${'a'.repeat(64)}`;
+
+    await resendConfirmationAction(PREV, makeFormData({ email: 'ana@example.com', next }));
+
+    expect(mocks.resend).toHaveBeenCalledWith(
+      expect.objectContaining({
+        options: { emailRedirectTo: expect.stringContaining(`?next=${encodeURIComponent(next)}`) },
+      }),
     );
   });
 });

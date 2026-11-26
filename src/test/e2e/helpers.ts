@@ -130,6 +130,7 @@ export async function fetchLatestMessageTo(
   request: APIRequestContext,
   recipient: string,
   maxWaitMs = 15_000,
+  requireConfirmationLink = false,
 ): Promise<{ subject: string; confirmUrl: string | null }> {
   const deadline = Date.now() + maxWaitMs;
   while (Date.now() < deadline) {
@@ -149,7 +150,7 @@ export async function fetchLatestMessageTo(
               u.includes('/auth/confirm') ||
               u.includes('/auth/click'),
           ) ?? null;
-        return { subject: msg.Subject, confirmUrl };
+        if (!requireConfirmationLink || confirmUrl) return { subject: msg.Subject, confirmUrl };
       }
     }
     await new Promise((r) => setTimeout(r, 500));

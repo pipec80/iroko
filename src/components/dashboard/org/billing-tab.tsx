@@ -28,7 +28,7 @@ import {
 import { useRouter } from '@/i18n/routing';
 import { logClient } from '@/lib/logger-client';
 import { getPlanItems } from '@/lib/billing/presentation';
-import { canManageBilling, type MembershipRole } from '@/lib/permissions';
+import { canManageBilling, canReadBilling, type MembershipRole } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 type Interval = 'month' | 'year';
@@ -110,7 +110,7 @@ export function BillingTab({
     onSettled: () => {
       checkoutInFlight.current = false;
     },
-    // Sin esto un not_authorized (el backend ya valida owner/admin) quedaba
+    // Sin esto un not_authorized (el backend ya valida el rol Owner) quedaba
     // solo en checkout.error, que nada en este componente renderizaba — el
     // fallo desaparecía en silencio.
     onError: (err: unknown) => {
@@ -155,6 +155,7 @@ export function BillingTab({
   const plans = data.plans.filter((p) => p.interval === interval || p.slug === 'free');
   const hasAnnualPlans = data.plans.some((plan) => plan.interval === 'year');
   const overview = data.overview;
+  const currentPlanSlug = overview?.planSlug ?? (canReadBilling(currentUserRole) ? 'free' : null);
   const checkoutAvailable = data.checkoutAvailable ?? true;
   const isCheckoutConfirmationTimedOut = Boolean(
     preapprovalId && confirmation.data?.state === 'pending' && confirmationAttempts >= 20,
@@ -303,7 +304,7 @@ export function BillingTab({
             <PlanCard
               key={`${plan.slug}-${plan.interval}`}
               plan={plan}
-              isCurrent={overview?.planSlug === plan.slug}
+              isCurrent={currentPlanSlug === plan.slug}
               accessEndsOn={overview?.planSlug === plan.slug ? accessEndsOn : null}
               price={formatPrice(plan)}
               onSubscribe={() => beginCheckout({ slug: plan.slug, interval })}
@@ -330,6 +331,7 @@ export function BillingTab({
           overview={overview}
           formatDate={formatDate}
           accountId={accountId}
+          canManage={canManage}
         />
       )}
 
@@ -437,10 +439,12 @@ function SubscriptionStatusPanel({
   overview,
   formatDate,
   accountId,
+  canManage,
 }: {
   overview: NonNullable<Awaited<ReturnType<typeof getBillingData>>['data']>['overview'];
   formatDate: (value: string) => string;
   accountId: string;
+  canManage: boolean;
 }) {
   const t = useTranslations('Billing');
   const queryClient = useQueryClient();
@@ -518,18 +522,21 @@ function SubscriptionStatusPanel({
             {t('access_until_detail', { plan: overview.planName })}
           </p>
         )}
-        {!isCanceled && !overview.cancelAtPeriodEnd && overview.capabilities.cancelAtPeriodEnd && (
-          <button
-            type="button"
-            disabled={cancel.isPending}
-            onClick={() => setPendingTiming('period_end')}
-            data-testid="cancel-period-end"
-            className="mt-5 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
-            style={{ borderColor: 'rgba(245,236,218,0.25)', color: 'var(--color-bone)' }}>
-            {t('cancel_btn')}
-          </button>
-        )}
-        {!isCanceled && overview.capabilities.cancelImmediately && (
+        {canManage &&
+          !isCanceled &&
+          !overview.cancelAtPeriodEnd &&
+          overview.capabilities.cancelAtPeriodEnd && (
+            <button
+              type="button"
+              disabled={cancel.isPending}
+              onClick={() => setPendingTiming('period_end')}
+              data-testid="cancel-period-end"
+              className="mt-5 rounded-lg border px-4 py-2 text-[13px] font-semibold transition-opacity hover:opacity-80 disabled:opacity-50"
+              style={{ borderColor: 'rgba(245,236,218,0.25)', color: 'var(--color-bone)' }}>
+              {t('cancel_btn')}
+            </button>
+          )}
+        {canManage && !isCanceled && overview.capabilities.cancelImmediately && (
           <button
             type="button"
             disabled={cancel.isPending}

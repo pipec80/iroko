@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Link } from '@/i18n/routing';
 import { safeRedirectPath } from '@/lib/auth/safe-redirect';
+import { invitationReturn } from '@/lib/auth/invitation-return';
 
 import type { AuthActionState } from '../actions';
 import {
@@ -29,6 +30,7 @@ export default function LoginPage() {
   const locale = useLocale();
   const searchParams = useSearchParams();
   const next = safeRedirectPath(searchParams.get('next'), locale);
+  const invite = invitationReturn(next, locale);
   const [email, setEmail] = useState('');
   const [signInState, signInForm, signInPending] = useActionState(signInAction, initialState);
   const [mfaState, mfaForm, mfaPending] = useActionState(verifyMfaAction, initialState);
@@ -286,6 +288,7 @@ export default function LoginPage() {
 
       <form action={magicForm} className="mt-3" noValidate>
         <input type="hidden" name="email" value={email} readOnly />
+        {invite && <input type="hidden" name="next" value={invite} />}
         <CaptchaField resetKey={magicCaptchaResetKey} onReadyChange={setMagicCaptchaReady} />
         <Button
           variant="outline"
@@ -317,7 +320,7 @@ export default function LoginPage() {
           disabled={oauthPending}
           onClick={() =>
             startOAuth(() => {
-              void oauthAction('google');
+              void oauthAction('google', invite ?? undefined);
             })
           }
           className="h-11 gap-2">
@@ -349,7 +352,7 @@ export default function LoginPage() {
         </p>
         <p className="text-muted-foreground mt-4 text-sm">
           <Link
-            href="/signup"
+            href={invite ? `/signup?next=${encodeURIComponent(invite)}` : '/signup'}
             className="text-foreground hover:text-primary font-semibold transition-colors">
             {t('create_account')}
           </Link>
