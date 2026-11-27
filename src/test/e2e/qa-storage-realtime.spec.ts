@@ -35,11 +35,8 @@ test.describe('QA — avatar', () => {
     authenticatedPage: page,
     request,
   }) => {
-    await page.goto('/es/dashboard/account?tab=profile');
+    await page.goto('/es/dashboard/account?tab=security');
     await page.waitForURL(/\/es\/dashboard\/account/);
-
-    const avatarForm = page.getByTestId('avatar-form');
-    const submitButton = avatarForm.locator('button[type="submit"]');
 
     const email = await page
       .locator('strong')
@@ -50,6 +47,9 @@ test.describe('QA — avatar', () => {
     }
     const userId = querySqlAsPostgres(`SELECT id FROM auth.users WHERE email='${email}'`);
     if (!/^[0-9a-f-]{36}$/.test(userId)) throw new Error('Owned avatar user missing');
+    await page.goto('/es/dashboard/account?tab=profile');
+    const avatarForm = page.getByTestId('avatar-form');
+    const submitButton = avatarForm.locator('button[type="submit"]');
     try {
       await selectValidFile(avatarForm.locator('input[name="avatar"]'), submitButton, {
         name: 'valid-before-invalid.png',
@@ -180,12 +180,26 @@ test.describe('QA — notifications realtime', () => {
       await inviteePage.waitForURL(/\/es\/dashboard$/, { timeout: 20_000 });
 
       await bell.click();
-      const notification = page.getByRole('link', { name: `${inviteeEmail} aceptó tu invitación` });
+      const menu = page.getByRole('menu', { name: 'Notificaciones' });
+      const title = `${inviteeEmail} aceptó tu invitación`;
+      const notification = menu.getByText(title, { exact: true });
       await expect(notification).toBeVisible({
         timeout: 15_000,
       });
+      const refreshed = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/rest/v1/notifications' &&
+          response.request().method() === 'GET',
+      );
       await page.reload();
-      await bell.click();
+      const response = await refreshed;
+      expect(response.ok()).toBe(true);
+      const stored: { title: string }[] = await response.json();
+      expect(stored.some((item) => item.title === title)).toBe(true);
+      await expect(async () => {
+        if (!(await menu.isVisible())) await bell.click();
+        await expect(menu).toBeVisible({ timeout: 1_500 });
+      }).toPass({ timeout: 15_000 });
       await expect(notification).toBeVisible();
     } finally {
       await inviteeContext.close();

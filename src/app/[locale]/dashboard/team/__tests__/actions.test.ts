@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
+  adminRpc: vi.fn().mockResolvedValue({ data: null, error: null }),
   getClaims: vi.fn(),
   revalidatePath: vi.fn(),
   captureServer: vi.fn(),
@@ -52,6 +53,7 @@ vi.mock('@/lib/email', () => ({
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn().mockReturnValue({
     from: mockAdminFrom,
+    rpc: mocks.adminRpc,
   }),
 }));
 
@@ -244,6 +246,9 @@ describe('inviteMembers', () => {
     mocks.rpc.mockResolvedValue({ data: fakeInvitations, error: null });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'owner@example.com' } } });
     const fd = makeFormData({ emails: 'alice@example.com,bob@example.com', role: 'member' });
+    mocks.adminRpc
+      .mockResolvedValueOnce({ data: true, error: null })
+      .mockResolvedValueOnce({ data: false, error: null });
 
     // Act
     await inviteMembers(fd);
@@ -256,12 +261,18 @@ describe('inviteMembers', () => {
         inviterEmail: 'owner@example.com',
         teamRole: 'member',
         // URL uses the inviter's locale (mocked 'en'), not the hardcoded default.
-        inviteUrl: 'http://localhost:3000/en/auth/accept-invitation?token=tok-a',
+        inviteUrl:
+          'http://localhost:3000/en/login?next=%2Fen%2Fauth%2Faccept-invitation%3Ftoken%3Dtok-a',
       }),
     );
     expect(mockSendInvitationEmail).toHaveBeenCalledWith(
       'bob@example.com',
-      expect.objectContaining({ inviterEmail: 'owner@example.com', teamRole: 'member' }),
+      expect.objectContaining({
+        inviterEmail: 'owner@example.com',
+        teamRole: 'member',
+        inviteUrl:
+          'http://localhost:3000/en/signup?next=%2Fen%2Fauth%2Faccept-invitation%3Ftoken%3Dtok-b',
+      }),
     );
   });
 

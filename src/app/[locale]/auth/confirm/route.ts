@@ -63,7 +63,7 @@ export async function GET(
   if (type === 'email_change') {
     // The first secure-email-change confirmation succeeds without a new session.
     const profile = new URL(`/${locale}/dashboard/account`, env.SITE_URL);
-    profile.searchParams.set('tab', 'profile');
+    profile.searchParams.set('tab', 'security');
     profile.searchParams.set('emailChange', data.session ? 'complete' : 'pending');
     response.headers.set('Location', profile.toString());
     response.headers.set('Cache-Control', 'private, no-store');

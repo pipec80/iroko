@@ -71,7 +71,7 @@ authTest.describe('Settings page — authenticated', () => {
   authTest(
     'identifies the current session beyond the first row and recovers from a failed revocation',
     async ({ authenticatedPage: page, browser }) => {
-      await page.goto('/es/dashboard/account?tab=profile');
+      await page.goto('/es/dashboard/account?tab=security');
       const email = await page
         .locator('strong')
         .filter({ hasText: /^e2e\+settings\+/ })

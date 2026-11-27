@@ -288,8 +288,7 @@ export function GeneralTab() {
             {infoState.success === 'info_updated' && (
               <div
                 role="status"
-                className="flex items-center gap-2 text-[12px]"
-                style={{ color: 'var(--color-cobalt)' }}>
+                className="bg-primary/10 text-primary flex items-center gap-2 rounded-xl px-3 py-2 text-sm">
                 <CheckCircle size={16} strokeWidth={1.75} />
                 {t('general_info_success')}
               </div>

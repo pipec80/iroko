@@ -46,6 +46,7 @@ export function MfaSetup() {
   const { data: factorsData, isLoading } = useQuery({
     queryKey,
     enabled: !!scope,
+    staleTime: 0,
     queryFn: async () => {
       const { data, error } = await supabase.auth.mfa.listFactors();
       if (error) throw error;
@@ -241,12 +242,15 @@ export function MfaSetup() {
   // Tracks which codes batch the user has already dismissed (by reference equality).
   const [dismissedCodes, setDismissedCodes] = useState<string[] | null>(null);
 
+  const isMfaEnabled = factors.some((f) => f.status === 'verified');
   const { data: unusedCount = 0, refetch: refetchCount } = useQuery({
     queryKey: recoveryQueryKey,
-    enabled: !!scope,
+    enabled: !!scope && isMfaEnabled,
+    staleTime: 0,
     queryFn: async () => {
-      const { data } = await supabase.rpc('count_unused_recovery_codes');
-      return (data as number | null) ?? 0;
+      const { data, error } = await supabase.rpc('count_unused_recovery_codes');
+      if (error) throw error;
+      return data ?? 0;
     },
   });
 
@@ -262,7 +266,9 @@ export function MfaSetup() {
 
   // Dialog is open when fresh codes exist and the user has not yet dismissed them.
   const isShowingRecovery =
-    (recoveryState.codes?.length ?? 0) > 0 && recoveryState.codes !== dismissedCodes;
+    isMfaEnabled &&
+    (recoveryState.codes?.length ?? 0) > 0 &&
+    recoveryState.codes !== dismissedCodes;
 
   const recoveryCodes = recoveryState.codes ?? [];
 
@@ -280,8 +286,6 @@ export function MfaSetup() {
     element.click();
     document.body.removeChild(element);
   };
-
-  const isMfaEnabled = factors.some((f) => f.status === 'verified');
 
   if (!scope) return null;
 
@@ -431,7 +435,7 @@ export function MfaSetup() {
                       size="sm"
                       disabled={!isMfaEnabled || recoveryPending}
                       className="rounded-xl">
-                      {unusedCount > 0 ? t('regenerate') : t('generate')}
+                      {isMfaEnabled && unusedCount > 0 ? t('regenerate') : t('generate')}
                     </Button>
                   </form>
                 </DialogTrigger>
@@ -489,7 +493,7 @@ export function MfaSetup() {
                   </div>
                 </DialogContent>
               </Dialog>
-              {unusedCount > 0 && (
+              {isMfaEnabled && (
                 <p className="text-muted-foreground text-xs">
                   {t('recovery_remaining_count', { count: unusedCount })}
                 </p>

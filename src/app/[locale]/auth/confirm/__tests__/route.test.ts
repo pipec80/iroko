@@ -41,7 +41,7 @@ describe('email change confirmation', () => {
 
     expect(verifyOtp).toHaveBeenCalledWith({ token_hash: 'test', type: 'email_change' });
     expect(response.headers.get('location')).toBe(
-      'http://localhost:3000/es/dashboard/account?tab=profile&emailChange=pending',
+      'http://localhost:3000/es/dashboard/account?tab=security&emailChange=pending',
     );
     expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
@@ -61,7 +61,7 @@ describe('email change confirmation', () => {
     const response = await GET(emailChangeRequest(), params);
 
     expect(response.headers.get('location')).toBe(
-      'http://localhost:3000/es/dashboard/account?tab=profile&emailChange=complete',
+      'http://localhost:3000/es/dashboard/account?tab=security&emailChange=complete',
     );
     expect(response.cookies.get('test-session')?.value).toBe('renewed');
     expect(response.headers.get('cache-control')).toBe('private, no-store');

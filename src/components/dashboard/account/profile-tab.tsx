@@ -6,7 +6,6 @@ import { CheckCircle, FolderOpen, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import {
-  updateEmailAction,
   updateProfileAction,
   uploadAvatarAction,
   type SettingsActionState,
@@ -42,8 +41,6 @@ const initialState: SettingsActionState = {};
 
 type Props = {
   profile: ProfileSnapshot;
-  email: string;
-  role: string;
 };
 
 function translateError(
@@ -62,13 +59,12 @@ function FieldError({ message }: { message: string }) {
   );
 }
 
-export function ProfileTab({ profile, email, role }: Props) {
+export function ProfileTab({ profile }: Props) {
   const t = useTranslations('Settings');
   const [profileState, profileAction, profilePending] = useActionState(
     updateProfileAction,
     initialState,
   );
-  const [emailState, emailAction, emailPending] = useActionState(updateEmailAction, initialState);
   const [avatarState, avatarAction, avatarPending] = useActionState(
     uploadAvatarAction,
     initialState,
@@ -83,14 +79,8 @@ export function ProfileTab({ profile, email, role }: Props) {
   const submittedAvatarRevision = useRef<number | null>(null);
   const submittedAvatarPreview = useRef<string | null>(null);
   const lastAvatarResult = useRef(avatarState);
-  const [emailValue, setEmailValue] = useState('');
-  const [isEmailDirty, setIsEmailDirty] = useState(false);
-  const emailRevision = useRef(0);
-  const submittedEmailRevision = useRef<number | null>(null);
-  const lastEmailResult = useRef(emailState);
 
   const profileError = translateError(t, profileState.error);
-  const emailError = translateError(t, emailState.error);
   const avatarError = translateError(t, avatarState.error);
 
   useEffect(() => {
@@ -108,18 +98,6 @@ export function ProfileTab({ profile, email, role }: Props) {
       }
     }
   }, [avatarState, avatarPreview, hasFile]);
-
-  useEffect(() => {
-    if (lastEmailResult.current === emailState) return;
-    lastEmailResult.current = emailState;
-    if (
-      emailState.success === 'email_change_requested' &&
-      submittedEmailRevision.current === emailRevision.current
-    ) {
-      setEmailValue('');
-      setIsEmailDirty(false);
-    }
-  }, [emailState]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -471,72 +449,6 @@ export function ProfileTab({ profile, email, role }: Props) {
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
-
-      {/* Email change */}
-      <Card className="border-border rounded-3xl">
-        <CardHeader>
-          <CardTitle>{t('profile.email_heading')}</CardTitle>
-          <CardDescription>{t('profile.email_hint')}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 text-sm">
-            <span className="text-muted-foreground">{t('profile.email_heading')}: </span>
-            <strong>{email}</strong>
-            {role && <span className="text-muted-foreground ml-3 text-xs">({role})</span>}
-          </div>
-          <form
-            action={emailAction}
-            noValidate
-            onSubmit={() => {
-              submittedEmailRevision.current = emailRevision.current;
-            }}
-            className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1 space-y-1.5">
-              <Label htmlFor="new_email">{t('profile.new_email')}</Label>
-              <Input
-                id="new_email"
-                name="email"
-                type="email"
-                placeholder="name@company.com"
-                required
-                value={emailValue}
-                onChange={(event) => {
-                  emailRevision.current++;
-                  setEmailValue(event.target.value);
-                  setIsEmailDirty(true);
-                }}
-                aria-invalid={!!emailState.fieldErrors?.email}
-              />
-              {emailState.fieldErrors?.email && (
-                <FieldError
-                  message={t(
-                    `errors.${emailState.fieldErrors.email[0] ?? ''}` as 'errors.generic',
-                    {
-                      default: emailState.fieldErrors.email[0] ?? '',
-                    },
-                  )}
-                />
-              )}
-            </div>
-            <Button type="submit" disabled={emailPending || !isEmailDirty}>
-              {t('profile.change_email')}
-            </Button>
-          </form>
-          {emailError && (
-            <p role="alert" className="text-error mt-3 text-sm">
-              {emailError}
-            </p>
-          )}
-          {emailState.success === 'email_change_requested' && !isEmailDirty && (
-            <div
-              role="status"
-              className="bg-primary/10 text-primary mt-4 flex items-center gap-2 rounded-xl p-3 text-sm font-medium">
-              <CheckCircle size={18} strokeWidth={1.75} />
-              {t('profile.success.email_change_requested')}
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>

@@ -13,7 +13,7 @@ test('logo accepts its5MiB transport boundary and persists a second upload witho
   authenticatedPage: page,
   request,
 }) => {
-  await page.goto('/es/dashboard/account?tab=profile');
+  await page.goto('/es/dashboard/account?tab=security');
   const email = await page
     .locator('strong')
     .filter({ hasText: /^e2e\+settings\+/ })

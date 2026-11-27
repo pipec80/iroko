@@ -66,6 +66,8 @@ test('MFA recovery resets the lost factor, requires reauthentication and survive
       await page.locator('input[name="password"]').fill(password);
       await page.getByRole('button', { name: /iniciar sesión/i }).click();
       await expect(page).toHaveURL(/\/es\/dashboard\/account/);
+      await expect(page.locator('#current_password')).toBeVisible();
+      await expect(page.getByText(/códigos disponibles/i)).toHaveCount(0);
       await page.reload();
       await expect(page).toHaveURL(/\/es\/dashboard\/account/);
       await expect(page.locator('#current_password')).toBeVisible();

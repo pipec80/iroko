@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePathname, useRouter } from '@/i18n/routing';
 
 import { ProfileTab } from './profile-tab';
+import { LoginEmailCard } from './login-email-card';
 import { SecurityTab } from './security-tab';
 
 export type ProfileSnapshot = {
@@ -91,6 +92,12 @@ export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
         <TabsContent
           value="profile"
           className="animate-in fade-in slide-in-from-right-2 mt-0 duration-300 focus-visible:outline-none">
+          <ProfileTab profile={profile} />
+        </TabsContent>
+
+        <TabsContent
+          value="security"
+          className="animate-in fade-in slide-in-from-right-2 mt-0 duration-300 focus-visible:outline-none">
           {(emailChange === 'pending' || emailChange === 'complete') && (
             <p
               role="status"
@@ -100,13 +107,10 @@ export function AccountTabs({ email, role, profile, sessionsSlot }: Props) {
               )}
             </p>
           )}
-          <ProfileTab profile={profile} email={email} role={role} />
-        </TabsContent>
-
-        <TabsContent
-          value="security"
-          className="animate-in fade-in slide-in-from-right-2 mt-0 duration-300 focus-visible:outline-none">
-          <SecurityTab />
+          <div className="flex flex-col gap-8">
+            <LoginEmailCard email={email} role={role} />
+            <SecurityTab />
+          </div>
         </TabsContent>
 
         <TabsContent

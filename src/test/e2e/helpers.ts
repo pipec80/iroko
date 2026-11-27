@@ -109,8 +109,11 @@ export async function createTeamViaUi(
     await page.goto('/es/dashboard');
     await page.waitForURL(/\/es\/dashboard$/);
   }
-  await switcher.click();
-  await expect(page.getByRole('listbox')).toBeVisible();
+  const optionsList = page.getByRole('listbox');
+  await expect(async () => {
+    if (!(await optionsList.isVisible())) await switcher.click();
+    await expect(optionsList).toBeVisible({ timeout: 1_500 });
+  }).toPass({ timeout: localE2eBudget(15_000, 'navigation') });
   await page.getByRole('button', { name: /nueva organización/i }).click();
 
   const dialog = page.getByRole('dialog');
@@ -182,9 +185,11 @@ export async function fetchInvitationLinkTo(
         const detail = await request.get(`${MAILPIT_BASE}/api/v1/message/${msg.ID}`);
         const body: { Text?: string; HTML?: string } = await detail.json();
         const content = `${body.HTML ?? ''}\n${body.Text ?? ''}`.replace(/&amp;/g, '&');
-        const link = content
-          .match(/https?:\/\/[^\s"<>()]+/g)
-          ?.find((url) => url.includes('/auth/accept-invitation?token='));
+        const link = content.match(/https?:\/\/[^\s"<>()]+/g)?.find((url) => {
+          const candidate = new URL(url);
+          const continuation = candidate.searchParams.get('next') ?? candidate.pathname;
+          return continuation.includes('/auth/accept-invitation');
+        });
         if (link) return link;
         throw new Error(`Email delivered to ${recipient} but it carries no invitation link`);
       }

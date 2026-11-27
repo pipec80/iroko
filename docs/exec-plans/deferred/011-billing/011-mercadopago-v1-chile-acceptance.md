@@ -1,5 +1,34 @@
 # Mercado Pago — matriz de certificación interna para v1 Chile
 
+## Lectura de las cuentas de prueba y de MP-03 — 2026-11-20
+
+El MCP listó la aplicación `iroko` (`2362506445185072`). El historial de
+notificaciones rechazó la consulta por validación OAuth. La lectura de
+`/users/me` con el primer token de prueba devolvió la cuenta chilena
+`315875419` y `/v1/payment_methods` listó 12 métodos. Los dos enlaces de
+suscripción compartidos devolvieron 403 con ese token y 401 con el segundo.
+`mpcli` 1.0.5 clasificó las lecturas con ambos tokens como errores de
+autenticación (`exit 2`). La consulta exacta de esos enlaces en Supabase Iroko
+no encontró intents ni suscripciones. La identidad del segundo token queda
+sin verificar.
+
+En Supabase Iroko, los eventos históricos del vendedor de prueba `3646291099`
+identifican la aplicación `1941001846461879`. La suscripción con alias
+`da1250` es la candidata histórica a SUB-2 por fecha, la cuota prevista para el
+22 de octubre y el job de recuperación resuelto. El evento del 1 de noviembre
+la registra `paused`. Tiene una factura pagada el 22 de septiembre por
+CLP 19.990 y cero intentos registrados desde el 21 de octubre. Su `payer_id`
+guardado es `3707200539`, distinto del `707200539` anotado para el comprador 2. El otro comprador chileno, `3655512931`, sí coincide con `61a8d3`, que
+registra un pago por CLP 19.990 y cancelación el 22 de septiembre.
+
+**MP-03 sigue [NO VERIFICADO] del lado del proveedor.** Iroko conserva el
+primer pago y la pausa, sin una segunda factura pagada en la candidata
+histórica. Para corroborar qué ocurrió con la cuota, abrir la aplicación
+histórica con su vendedor y consultar las facturas del mismo preapproval.
+La primera compra supervisada sigue siendo la prioridad de 011f. Las lecturas
+de esta pasada no incluyeron cambios de configuración, altas ni cobros.
+[Guion de primera compra](011f-mercadopago-internal-acceptance.md#primera-compra-y-alcance-de-la-prueba-en-casa)
+
 ## Frente independiente de aceptación PSP — 2026-11-17
 
 Recibe el residuo de016 por decisión del propietario y enmienda ADR0005.

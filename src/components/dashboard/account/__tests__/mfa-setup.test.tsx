@@ -48,8 +48,7 @@ function deferred<T>() {
   return { promise, resolve };
 }
 
-function mount() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function mount(client = new QueryClient({ defaultOptions: { queries: { retry: false } } })) {
   return render(
     <QueryClientProvider client={client}>
       <MfaSetup />
@@ -65,6 +64,26 @@ describe('MFA enrollment attempt cleanup', () => {
     mocks.listFactors.mockResolvedValue({ data: { all: [] }, error: null });
     mocks.unenroll.mockResolvedValue({ error: null });
     mocks.rpc.mockResolvedValue({ data: 0, error: null });
+  });
+
+  it('hides leftover recovery codes when no verified factor exists', async () => {
+    mocks.rpc.mockResolvedValue({ data: 4, error: null });
+    mount();
+    expect(await screen.findByRole('button', { name: 'enable' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'generate' }).hasAttribute('disabled')).toBe(true);
+    expect(screen.queryByText('recovery_remaining_count')).toBeNull();
+  });
+
+  it('refreshes a warm factor cache when returning to Security after recovery', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { staleTime: 60_000 } } });
+    const identity = ['identity', 'local-user', 'local-account', ''];
+    client.setQueryData([...identity, 'mfa-factors'], {
+      all: [{ id: 'removed-factor', factor_type: 'totp', status: 'verified' }],
+    });
+    client.setQueryData([...identity, 'recovery-codes-count'], 4);
+    mount(client);
+    await screen.findByRole('button', { name: 'enable' });
+    expect(screen.queryByText('recovery_remaining_count')).toBeNull();
   });
 
   it('closes before enroll resolves, hides QR and compensates its unverified factor once', async () => {

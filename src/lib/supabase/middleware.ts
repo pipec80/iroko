@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { appConfig } from '@/config/app.config';
 import { env } from '@/env';
 import { routing } from '@/i18n/routing';
+import { invitationReturn } from '@/lib/auth/invitation-return';
 import type { Database } from '@/types/database';
 
 /** Subset of the Supabase JWT claims the edge guard reads. */
@@ -287,6 +288,12 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   // runs the middleware for a fresh login, so it must pick the right destination
   // itself instead of relying on a second pass that never happens.
   if (claims && !mfaPending && (isRoot(pathWithoutLocale) || isAuthOnly(pathWithoutLocale))) {
+    const invitation =
+      pathWithoutLocale === '/login' || pathWithoutLocale === '/signup' ?
+        invitationReturn(request.nextUrl.searchParams.get('next'), locale)
+      : null;
+    if (invitation) return redirectWithSession(new URL(invitation, request.url));
+
     const url = request.nextUrl.clone();
     url.pathname = onboardingPending ? `/${locale}/dashboard/onboarding` : `/${locale}/dashboard`;
     url.searchParams.delete('next');
