@@ -18,8 +18,7 @@ identifican la aplicación `1941001846461879`. La suscripción con alias
 22 de octubre y el job de recuperación resuelto. El evento del 1 de noviembre
 la registra `paused`. Tiene una factura pagada el 22 de septiembre por
 CLP 19.990 y cero intentos registrados desde el 21 de octubre. Su `payer_id`
-guardado es `3707200539`, distinto del `707200539` anotado para el comprador
-2. El otro comprador chileno, `3655512931`, sí coincide con `61a8d3`, que
+guardado es `3707200539`, distinto del `707200539` anotado para el comprador 2. El otro comprador chileno, `3655512931`, sí coincide con `61a8d3`, que
 registra un pago por CLP 19.990 y cancelación el 22 de septiembre.
 
 **MP-03 sigue [NO VERIFICADO] del lado del proveedor.** Iroko conserva el

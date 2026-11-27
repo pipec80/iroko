@@ -21,7 +21,7 @@ and be lost to future sessions.
 | [0003](0003-mercadopago-reliability-boundaries.md)         | Mercado Pago reliability boundaries                | Accepted | 2026-09-09 |
 | [0004](0004-csp-nonce-and-rendering-boundary.md)           | CSP nonce and rendering boundary                   | Accepted | 2026-10-15 |
 | [0005](0005-replicable-saas-mvp-and-bounded-acceptance.md) | Replicable SaaS MVP and bounded acceptance         | Accepted | 2026-10-28 |
-| [0006](0006-auth-recovery-and-invitation-entry.md) | Recuperación MFA y entrada por invitación | Accepted | 2026-11-26 |
+| [0006](0006-auth-recovery-and-invitation-entry.md)         | Recuperación MFA y entrada por invitación          | Accepted | 2026-11-26 |
 
 Filename convention: `NNNN-short-title.md`, numbered sequentially.
 

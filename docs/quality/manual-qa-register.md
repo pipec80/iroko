@@ -30,7 +30,7 @@
   consulta tras recargar devolvió el aviso persistido.
 - FIX-02 pasó con el build de producción local. Edge descargó el JSON de
   exportación antes del reset. Tras parar Next, ejecutar `supabase db reset
-  --local` y volver a levantarlo, Auth confirmó que el usuario de prueba
+--local` y volver a levantarlo, Auth confirmó que el usuario de prueba
   había desaparecido. La navegación HTTP y el mismo contexto de Edge con
   sus cookies originales volvieron al login con el destino preservado.
   Un contexto limpio mostró el mismo retorno. La navegación en desarrollo
@@ -155,16 +155,16 @@ está registrado.
 
 ### Mejoras para revisión de diseño
 
-| Superficie | Qué revisar | Referencia |
-| --- | --- | --- |
-| Onboarding | Explicar qué espacio se está configurando y ordenar visualmente los precios y su periodicidad en escritorio y móvil. | QA-OBS-02/05 |
-| Organización | Mostrar progreso al crear un equipo y feedback claro al guardar. El valor confirmado debe verse sin recargar cuando se corrija la actualización. | QA-OBS-04/13 |
-| Registro y Seguridad | Unificar la presentación de reglas de contraseña, el control para mostrarla y la indicación de revisar el correo. Aclarar la opción del código de confirmación. | QA-OBS-03/06/08/09 |
-| Cambio de correo | Guiar las dos confirmaciones y el retorno a Perfil. Hacer visible qué falta y cuándo se completó. | QA-OBS-07/08/10 |
-| Miembros e invitaciones | Aclarar dónde se puede invitar y qué hacer si la sesión abierta corresponde a otra persona. Dar continuidad a quien todavía debe registrarse. | QA-OBS-11/12 |
-| Campana | Revisar el toast en tema claro y móvil, el foco del cierre y los avisos consecutivos. Ya hay captura aprobada en escritorio oscuro. | QA-OBS-15 |
-| Claves API | La revocación abre una confirmación nativa. Mostrar un diálogo de Iroko con «Cancelar» y «Revocar» y avisar el resultado después. | QA-OBS-16 |
-| Sesiones | Hacer comprensible el estado cuando el dispositivo no se puede identificar. Quedó una fila con la etiqueta «node». | Mi cuenta → Sesiones |
+| Superficie              | Qué revisar                                                                                                                                                     | Referencia           |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| Onboarding              | Explicar qué espacio se está configurando y ordenar visualmente los precios y su periodicidad en escritorio y móvil.                                            | QA-OBS-02/05         |
+| Organización            | Mostrar progreso al crear un equipo y feedback claro al guardar. El valor confirmado debe verse sin recargar cuando se corrija la actualización.                | QA-OBS-04/13         |
+| Registro y Seguridad    | Unificar la presentación de reglas de contraseña, el control para mostrarla y la indicación de revisar el correo. Aclarar la opción del código de confirmación. | QA-OBS-03/06/08/09   |
+| Cambio de correo        | Guiar las dos confirmaciones y el retorno a Perfil. Hacer visible qué falta y cuándo se completó.                                                               | QA-OBS-07/08/10      |
+| Miembros e invitaciones | Aclarar dónde se puede invitar y qué hacer si la sesión abierta corresponde a otra persona. Dar continuidad a quien todavía debe registrarse.                   | QA-OBS-11/12         |
+| Campana                 | Revisar el toast en tema claro y móvil, el foco del cierre y los avisos consecutivos. Ya hay captura aprobada en escritorio oscuro.                             | QA-OBS-15            |
+| Claves API              | La revocación abre una confirmación nativa. Mostrar un diálogo de Iroko con «Cancelar» y «Revocar» y avisar el resultado después.                               | QA-OBS-16            |
+| Sesiones                | Hacer comprensible el estado cuando el dispositivo no se puede identificar. Quedó una fila con la etiqueta «node».                                              | Mi cuenta → Sesiones |
 
 **Facturación:** continuar como frente independiente con el
 [Plan 011](../exec-plans/deferred/011-billing/README.md). En la vista abierta
@@ -176,11 +176,11 @@ registros.
 
 ## Observaciones y casos iniciales
 
-| Caso       | Recorrido                                           | Estado                        | Evidencia / límite                                                                                                                                                                         | Referencia                                |
-| ---------- | --------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
-| QA-AUTH-01 | Login normal en Cloud                               | Informado por el propietario  | El18Nov confirmó que puede iniciar sesión desde su navegador habitual. No se registraron pasos completos ni revisión exacta; no demuestra recuperación MFA ni todos los métodos de acceso. | Entrega de acceso/cuenta                  |
-| QA-AUTH-02 | Recuperación con código MFA y nueva autenticación   | Pendiente de ejecución humana | Turnstile bloqueó el login automatizado en Actions antes de probar recuperación; conservar prueba de contenido tras recarga, sesión previa revocada, reuso denegado y limpieza de fixture. | A-ACCESS-01                               |
-| QA-AUTH-03 | Recuperación de contraseña desde navegador y correo | Aprobado desde Seguridad local | El propietario completó el recorrido desde el dashboard. Demora y reintentos anotados. La entrada pública desde Login del caso QA-12 queda por comprobar. | Matriz de capacidades y evidencia de Auth |
+| Caso       | Recorrido                                           | Estado                         | Evidencia / límite                                                                                                                                                                         | Referencia                                |
+| ---------- | --------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- |
+| QA-AUTH-01 | Login normal en Cloud                               | Informado por el propietario   | El18Nov confirmó que puede iniciar sesión desde su navegador habitual. No se registraron pasos completos ni revisión exacta; no demuestra recuperación MFA ni todos los métodos de acceso. | Entrega de acceso/cuenta                  |
+| QA-AUTH-02 | Recuperación con código MFA y nueva autenticación   | Pendiente de ejecución humana  | Turnstile bloqueó el login automatizado en Actions antes de probar recuperación; conservar prueba de contenido tras recarga, sesión previa revocada, reuso denegado y limpieza de fixture. | A-ACCESS-01                               |
+| QA-AUTH-03 | Recuperación de contraseña desde navegador y correo | Aprobado desde Seguridad local | El propietario completó el recorrido desde el dashboard. Demora y reintentos anotados. La entrada pública desde Login del caso QA-12 queda por comprobar.                                  | Matriz de capacidades y evidencia de Auth |
 
 Las referencias de acceso/cuenta apuntan a la
 [entrega y pruebas](../audits/2026-11-18-access-account-delivery.md) y al
@@ -217,13 +217,13 @@ no pudo acceder a `/es/signup`; eso no demuestra bloqueo del navegador humano.
 
 ### Inventario acotado y contrato
 
-| Pantalla | Acceso y acciones | Persistencia y comprobación |
-| --- | --- | --- |
-| `/es/signup`, «Crea tu cuenta» | Visitante; formulario «Nombre», «Apellido», «Correo electrónico», «Contraseña» y «Crear cuenta». Google aparece como alternativa configurable; GitHub está deshabilitado. Enlaces legales e «Iniciar sesión». | Alta Auth; nombre/apellido en metadata `given_name`/`family_name` y perfil mediante trigger; cuenta personal y membresía owner. Dashboard muestra el nombre; lectura completa del perfil se reserva al turno 2. |
-| `/es/signup/confirmation`, «Revisa tu bandeja de entrada» | Tras enviar registro; muestra correo, «Reenviar correo» y «Volver al inicio de sesión». Sin campos editables visibles. | Correo mostrado proviene de la URL: recargar esta pantalla no demuestra alta ni entrega; se necesita recibir y completar el enlace. Respuesta genérica para correo existente evita enumeración. |
-| `/es/auth/click`, «Confirmar acción» | Enlace recibido; «Confirmar cuenta» continúa a `/es/auth/confirm`. Sin formulario de datos. | El clic intermedio evita consumir el token sólo por abrir la página; la ruta confirm valida OTP y establece cookies. No registrar URL completa ni token. |
-| `/es/dashboard/onboarding`, «Confirmar organización» | Usuario nuevo si onboarding pendiente; «Nombre de la organización», «Siguiente» y «Omitir configuración». | Este turno usa «Omitir configuración»: RPC guarda `onboarding_completed`, refresca sesión y redirige al dashboard. No crea equipo. Los pasos de invitación/plan/marca quedan para su turno. |
-| `/es/dashboard` | Sesión autenticada; saludo «Hola, Alicia.» y navegación. | Recargar y volver a abrir la ruta debe conservar acceso y no devolver al onboarding/login. No prueba renovación de sesión expirada. |
+| Pantalla                                                  | Acceso y acciones                                                                                                                                                                                             | Persistencia y comprobación                                                                                                                                                                                     |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/es/signup`, «Crea tu cuenta»                            | Visitante; formulario «Nombre», «Apellido», «Correo electrónico», «Contraseña» y «Crear cuenta». Google aparece como alternativa configurable; GitHub está deshabilitado. Enlaces legales e «Iniciar sesión». | Alta Auth; nombre/apellido en metadata `given_name`/`family_name` y perfil mediante trigger; cuenta personal y membresía owner. Dashboard muestra el nombre; lectura completa del perfil se reserva al turno 2. |
+| `/es/signup/confirmation`, «Revisa tu bandeja de entrada» | Tras enviar registro; muestra correo, «Reenviar correo» y «Volver al inicio de sesión». Sin campos editables visibles.                                                                                        | Correo mostrado proviene de la URL: recargar esta pantalla no demuestra alta ni entrega; se necesita recibir y completar el enlace. Respuesta genérica para correo existente evita enumeración.                 |
+| `/es/auth/click`, «Confirmar acción»                      | Enlace recibido; «Confirmar cuenta» continúa a `/es/auth/confirm`. Sin formulario de datos.                                                                                                                   | El clic intermedio evita consumir el token sólo por abrir la página; la ruta confirm valida OTP y establece cookies. No registrar URL completa ni token.                                                        |
+| `/es/dashboard/onboarding`, «Confirmar organización»      | Usuario nuevo si onboarding pendiente; «Nombre de la organización», «Siguiente» y «Omitir configuración».                                                                                                     | Este turno usa «Omitir configuración»: RPC guarda `onboarding_completed`, refresca sesión y redirige al dashboard. No crea equipo. Los pasos de invitación/plan/marca quedan para su turno.                     |
+| `/es/dashboard`                                           | Sesión autenticada; saludo «Hola, Alicia.» y navegación.                                                                                                                                                      | Recargar y volver a abrir la ruta debe conservar acceso y no devolver al onboarding/login. No prueba renovación de sesión expirada.                                                                             |
 
 Disponibilidad anterior fundamentada en código del candidato; ejecución humana
 Cloud de este turno: [NO VERIFICADO]. Fuentes:
@@ -300,21 +300,21 @@ Checkout `main` y alias Cloud verificado en Vercel en `66bc3f7` (READY).
 La columna de acceso describe el contrato del código. La comprobación de
 pantallas autenticadas en Cloud sigue [NO VERIFICADO].
 
-| Entrada | Cómo aparece y qué revisar |
-| --- | --- |
-| Público y acceso | Portada, Producto, Soluciones, Precios, Contacto, Términos y Privacidad. Registro, confirmación, login, enlace mágico y recuperación. `auth/click` es una pantalla intermedia del correo. Callback, confirmación, aceptación de invitación y logout son manejadores del flujo. |
-| Inicio y selector de cuenta | Acceso autenticado en `/es/dashboard`. El selector permite cambiar de cuenta. Comprobar nombre y menú después de recargar y cambiar entre personal y equipo. |
-| Mi cuenta | `/es/dashboard/account`, menú de usuario. Perfil, Seguridad y Sesiones. Comprobar datos y avatar tras recargar y tratar contraseña/MFA/sesiones en sus turnos. DB-01 sigue en el registro central. |
-| Onboarding | `/es/dashboard/onboarding` para usuario pendiente. Organización, invitaciones, plan y marca. Omitir guarda el progreso sin crear equipo. Al crear equipo, comprobar que queda seleccionado tras recargar. |
-| Miembros y Team | `/es/dashboard/members` muestra miembros, invitaciones y presencia. El botón de invitar depende de permisos. `dashboard/team` contiene acciones, entre ellas la de invitar, sin página propia. |
-| Actividad | `/es/dashboard/activity` en el menú de owner/admin de la cuenta. Historial de esa cuenta. Comparar con el rol miembro y con la auditoría de plataforma. |
-| Ajustes | `/es/dashboard/org/settings`. General, Seguridad, Integraciones, claves API, webhooks y zona de peligro. Los interruptores de Seguridad de organización y el botón de borrar organización están deshabilitados con «Próximamente». Integraciones es un marcador de posición. Distinguir de Seguridad personal y comprobar permisos de cada acción habilitada. |
-| Facturación | `/es/dashboard/billing` con el flag habilitado. Revisar qué puede ver y accionar cada rol. Precios es público. Checkout simulado en `/es/billing/mock-checkout` exige fixture de loopback y carga firmada. Certificación de pagos en 011. |
-| Administración | `/es/dashboard/admin` redirige a Cuentas. No figura en el catálogo lateral de módulos. Con acceso de plataforma, las pestañas internas son Cuentas, Auditoría, Alertas y Anuncios. Detalle de cuenta e impersonación se alcanzan desde Cuentas y sus permisos. El flujo exige alta de plataforma y MFA. |
-| Proyectos y Markdown | `/es/dashboard/projects` → detalle por slug → documento. Existe creación de proyecto y documento y guardado de documento. El flag compilado `features.projects=false` retira el menú y bloquea rutas y acciones. El vínculo con la cuenta y la pertenencia determina el acceso. No apareció una invitación propia de proyecto en las rutas o acciones revisadas. |
-| Iroko Robot | `/es/dashboard/robot` y acciones de la vertical. `features.verticals.robot=false` oculta menú y bloquea ruta y acciones. El visor implementado consulta rutinas, contactos, memorias y configuraciones del equipo. IoT físico queda como consumidor futuro. |
-| Forms y Fraud | No aparecen como carpetas ni páginas en `src/app/[locale]/dashboard` del checkout. No aparecieron rutas con esos nombres en el historial Git consultado. Pendiente ubicar otra rama, checkout o referencia si reaparecen. |
-| API | `src/app/api` contiene endpoints de cuenta, validación de webhook, callbacks de proveedores, workers e impersonación. Se inventarían por su consumidor visible y su contrato de API. |
+| Entrada                     | Cómo aparece y qué revisar                                                                                                                                                                                                                                                                                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Público y acceso            | Portada, Producto, Soluciones, Precios, Contacto, Términos y Privacidad. Registro, confirmación, login, enlace mágico y recuperación. `auth/click` es una pantalla intermedia del correo. Callback, confirmación, aceptación de invitación y logout son manejadores del flujo.                                                                                   |
+| Inicio y selector de cuenta | Acceso autenticado en `/es/dashboard`. El selector permite cambiar de cuenta. Comprobar nombre y menú después de recargar y cambiar entre personal y equipo.                                                                                                                                                                                                     |
+| Mi cuenta                   | `/es/dashboard/account`, menú de usuario. Perfil, Seguridad y Sesiones. Comprobar datos y avatar tras recargar y tratar contraseña/MFA/sesiones en sus turnos. DB-01 sigue en el registro central.                                                                                                                                                               |
+| Onboarding                  | `/es/dashboard/onboarding` para usuario pendiente. Organización, invitaciones, plan y marca. Omitir guarda el progreso sin crear equipo. Al crear equipo, comprobar que queda seleccionado tras recargar.                                                                                                                                                        |
+| Miembros y Team             | `/es/dashboard/members` muestra miembros, invitaciones y presencia. El botón de invitar depende de permisos. `dashboard/team` contiene acciones, entre ellas la de invitar, sin página propia.                                                                                                                                                                   |
+| Actividad                   | `/es/dashboard/activity` en el menú de owner/admin de la cuenta. Historial de esa cuenta. Comparar con el rol miembro y con la auditoría de plataforma.                                                                                                                                                                                                          |
+| Ajustes                     | `/es/dashboard/org/settings`. General, Seguridad, Integraciones, claves API, webhooks y zona de peligro. Los interruptores de Seguridad de organización y el botón de borrar organización están deshabilitados con «Próximamente». Integraciones es un marcador de posición. Distinguir de Seguridad personal y comprobar permisos de cada acción habilitada.    |
+| Facturación                 | `/es/dashboard/billing` con el flag habilitado. Revisar qué puede ver y accionar cada rol. Precios es público. Checkout simulado en `/es/billing/mock-checkout` exige fixture de loopback y carga firmada. Certificación de pagos en 011.                                                                                                                        |
+| Administración              | `/es/dashboard/admin` redirige a Cuentas. No figura en el catálogo lateral de módulos. Con acceso de plataforma, las pestañas internas son Cuentas, Auditoría, Alertas y Anuncios. Detalle de cuenta e impersonación se alcanzan desde Cuentas y sus permisos. El flujo exige alta de plataforma y MFA.                                                          |
+| Proyectos y Markdown        | `/es/dashboard/projects` → detalle por slug → documento. Existe creación de proyecto y documento y guardado de documento. El flag compilado `features.projects=false` retira el menú y bloquea rutas y acciones. El vínculo con la cuenta y la pertenencia determina el acceso. No apareció una invitación propia de proyecto en las rutas o acciones revisadas. |
+| Iroko Robot                 | `/es/dashboard/robot` y acciones de la vertical. `features.verticals.robot=false` oculta menú y bloquea ruta y acciones. El visor implementado consulta rutinas, contactos, memorias y configuraciones del equipo. IoT físico queda como consumidor futuro.                                                                                                      |
+| Forms y Fraud               | No aparecen como carpetas ni páginas en `src/app/[locale]/dashboard` del checkout. No aparecieron rutas con esos nombres en el historial Git consultado. Pendiente ubicar otra rama, checkout o referencia si reaparecen.                                                                                                                                        |
+| API                         | `src/app/api` contiene endpoints de cuenta, validación de webhook, callbacks de proveedores, workers e impersonación. Se inventarían por su consumidor visible y su contrato de API.                                                                                                                                                                             |
 
 Fuentes de navegación: `src/config/product-modules.ts`, `src/config/app.config.ts`,
 `src/components/layout/`, `src/app/[locale]/dashboard/admin/admin-nav.tsx`.
@@ -378,14 +378,14 @@ sin recargar A, y cuánto demora cada cambio.
 
 ## Inventario desde package.json, scripts y Playwright — 2026-11-18
 
-| Entrada | Consumidor y prueba recuperada |
-| --- | --- |
-| `@react-email/components` | Producción. `src/lib/email/templates/` compone bienvenida después de confirmar alta, invitación de equipo y notificación. Contacto público reutiliza la plantilla de notificación para escribir al buzón de soporte. `src/lib/email/index.tsx` entrega por Resend o Mailpit según entorno. La confirmación y recuperación de identidad se originan en Supabase Auth con sus propias plantillas. Alertas de plataforma se envían por el worker de la cola. |
-| `react-email` y `@react-email/ui` | Desarrollo. `pnpm email:dev` inicia el visor de componentes de correo en `src/lib/email/templates`. Sirve para ver el diseño. Para acreditar recepción, observar Mailpit local o un buzón controlado en Cloud. |
-| `exceljs` | Robot. `Descargar Plantilla` genera al vuelo `Plantilla_Iroko.xlsx`. No aparece un archivo base versionado. Incluye Rutinas (Hora, Tipo, Descripcion, Mensaje), Contactos (Nombre, Relacion, Telefono, Prioridad) y Memoria (Entidad, Nombre, Dato). `src/lib/robot-config.ts` recibe XLSX de hasta 5 MiB, guarda el archivo en Storage y aplica las tres hojas mediante una RPC de reemplazo por equipo. La prueba de importación necesita Robot habilitado y un equipo propio desechable. Verificar las tres pestañas y el historial tras recargar. Queda para la revisión aislada. |
-| `clsx` | Interfaz. `src/lib/utils.ts` lo usa en `cn()` junto a `tailwind-merge` para componer clases CSS condicionales. |
-| `react-markdown` y `remark-gfm` | Pista para la revisión del editor Markdown y su vista previa bajo Proyectos. Verificar guardado, recarga y revisión concurrente en el turno aislado. |
-| `@playwright/test`, Vitest y axe | Desarrollo/CI. Playwright cubre recorridos de navegador, Vitest validaciones y contratos, axe accesibilidad en pantallas seleccionadas. Los specs están en `src/test/e2e/`. |
+| Entrada                           | Consumidor y prueba recuperada                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@react-email/components`         | Producción. `src/lib/email/templates/` compone bienvenida después de confirmar alta, invitación de equipo y notificación. Contacto público reutiliza la plantilla de notificación para escribir al buzón de soporte. `src/lib/email/index.tsx` entrega por Resend o Mailpit según entorno. La confirmación y recuperación de identidad se originan en Supabase Auth con sus propias plantillas. Alertas de plataforma se envían por el worker de la cola.                                                                                                                             |
+| `react-email` y `@react-email/ui` | Desarrollo. `pnpm email:dev` inicia el visor de componentes de correo en `src/lib/email/templates`. Sirve para ver el diseño. Para acreditar recepción, observar Mailpit local o un buzón controlado en Cloud.                                                                                                                                                                                                                                                                                                                                                                        |
+| `exceljs`                         | Robot. `Descargar Plantilla` genera al vuelo `Plantilla_Iroko.xlsx`. No aparece un archivo base versionado. Incluye Rutinas (Hora, Tipo, Descripcion, Mensaje), Contactos (Nombre, Relacion, Telefono, Prioridad) y Memoria (Entidad, Nombre, Dato). `src/lib/robot-config.ts` recibe XLSX de hasta 5 MiB, guarda el archivo en Storage y aplica las tres hojas mediante una RPC de reemplazo por equipo. La prueba de importación necesita Robot habilitado y un equipo propio desechable. Verificar las tres pestañas y el historial tras recargar. Queda para la revisión aislada. |
+| `clsx`                            | Interfaz. `src/lib/utils.ts` lo usa en `cn()` junto a `tailwind-merge` para componer clases CSS condicionales.                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `react-markdown` y `remark-gfm`   | Pista para la revisión del editor Markdown y su vista previa bajo Proyectos. Verificar guardado, recarga y revisión concurrente en el turno aislado.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `@playwright/test`, Vitest y axe  | Desarrollo/CI. Playwright cubre recorridos de navegador, Vitest validaciones y contratos, axe accesibilidad en pantallas seleccionadas. Los specs están en `src/test/e2e/`.                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 Atajos del manifiesto. `pnpm test:e2e` apunta a Chromium y
 `pnpm test:e2e:webkit` a WebKit con `@smoke`. `pnpm test:e2e:ui` abre
@@ -394,11 +394,11 @@ locales de Studio (54323) y Mailpit (54324). `pnpm docs:check` revisa la
 documentación. El manifiesto también contiene scripts de reset, migración,
 despliegue y auditoría de dependencias, fuera del recorrido visual.
 
-| Spec existente | Evidencia que ayuda a definir el turno |
-| --- | --- |
-| `auth.spec.ts` y `recovery.spec.ts` | Alta → correo OTP en Mailpit → dashboard. Recuperación → correo → nueva contraseña → dashboard. |
-| `settings.spec.ts` | Campos de Perfil, Seguridad y Sesiones, error de requerido e identificación/revocación de otra sesión. La revisión humana hace lectura campo por campo tras recargar. |
-| `qa-storage-realtime.spec.ts` | Rechazo de imágenes inválidas, dos subidas de avatar y persistencia, campana al aceptar invitación y presencia de otro miembro. |
+| Spec existente                                       | Evidencia que ayuda a definir el turno                                                                                                                                   |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `auth.spec.ts` y `recovery.spec.ts`                  | Alta → correo OTP en Mailpit → dashboard. Recuperación → correo → nueva contraseña → dashboard.                                                                          |
+| `settings.spec.ts`                                   | Campos de Perfil, Seguridad y Sesiones, error de requerido e identificación/revocación de otra sesión. La revisión humana hace lectura campo por campo tras recargar.    |
+| `qa-storage-realtime.spec.ts`                        | Rechazo de imágenes inválidas, dos subidas de avatar y persistencia, campana al aceptar invitación y presencia de otro miembro.                                          |
 | `document-editor.spec.ts` y `robot-disabled.spec.ts` | Borrador, guardado y conflicto de revisión del editor. Exclusión de Robot en la configuración MVP. El importador XLSX tiene pruebas unitarias que generan libros reales. |
 
 En `.superpowers/sdd/`, el resumen local de 014 conserva la aceptación de
@@ -429,17 +429,17 @@ de prueba. Abrir `/es/dashboard/account?tab=profile`. Usar datos ficticios.
 Verificación local de los validadores: `node node_modules/vitest/vitest.mjs
 run src/lib/validation/profile.test.ts --maxWorkers=1`, 29/29 aprobadas.
 
-| Campo de Información personal | Dato y contrato |
-| --- | --- |
-| Nombre | `Alicia` (obligatorio, 1–80). |
-| Apellido | `Prueba QA` (obligatorio, 1–80). |
-| Idioma | `Español` para la primera pasada. Opciones: es, en, pt, fr. Para confirmar un cambio, probar después otra opción y volver a Español. |
-| Zona horaria | `Santiago (Chile)`, valor `America/Santiago`. Selección obligatoria de las opciones ofrecidas. |
-| Código de país y Teléfono | Opcional. EE. UU. `+1` con `2025550147`, número ficticio; juntos se guardan en formato E.164. |
-| Fecha de nacimiento | `15/06/1990`, opcional. El navegador puede mostrar otro formato y el servidor recibe `1990-06-15`. Se guarda una fecha, sin campo Edad. El esquema revisado comprueba la fecha, sin regla de mayoría de edad. |
-| Empresa u organización | `Taller QA`, opcional, máximo 100 caracteres. |
-| Sitio web | `https://example.com/iroko-qa`, opcional, URL válida de hasta 255 caracteres. |
-| Biografía | `Perfil ficticio para comprobar guardado y recarga.`, opcional, máximo 500 caracteres. |
+| Campo de Información personal | Dato y contrato                                                                                                                                                                                               |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Nombre                        | `Alicia` (obligatorio, 1–80).                                                                                                                                                                                 |
+| Apellido                      | `Prueba QA` (obligatorio, 1–80).                                                                                                                                                                              |
+| Idioma                        | `Español` para la primera pasada. Opciones: es, en, pt, fr. Para confirmar un cambio, probar después otra opción y volver a Español.                                                                          |
+| Zona horaria                  | `Santiago (Chile)`, valor `America/Santiago`. Selección obligatoria de las opciones ofrecidas.                                                                                                                |
+| Código de país y Teléfono     | Opcional. EE. UU. `+1` con `2025550147`, número ficticio; juntos se guardan en formato E.164.                                                                                                                 |
+| Fecha de nacimiento           | `15/06/1990`, opcional. El navegador puede mostrar otro formato y el servidor recibe `1990-06-15`. Se guarda una fecha, sin campo Edad. El esquema revisado comprueba la fecha, sin regla de mayoría de edad. |
+| Empresa u organización        | `Taller QA`, opcional, máximo 100 caracteres.                                                                                                                                                                 |
+| Sitio web                     | `https://example.com/iroko-qa`, opcional, URL válida de hasta 255 caracteres.                                                                                                                                 |
+| Biografía                     | `Perfil ficticio para comprobar guardado y recarga.`, opcional, máximo 500 caracteres.                                                                                                                        |
 
 El correo actual se muestra en una sección propia. «Nuevo correo» y «Cambiar
 correo» forman otro flujo de identidad. Se prueban con dos buzones controlados.
@@ -474,33 +474,33 @@ diálogos y controles que ejecutan acciones aunque no usen una etiqueta
 `form`. La revisión de código se hizo sobre `66bc3f7`. Salvo la evidencia
 fechada de otras secciones, el recorrido humano autenticado queda pendiente.
 
-| Pantalla | Formulario o control | Acción y verificación |
-| --- | --- | --- |
-| Público → Contacto | Nombre, correo, tamaño de empresa y mensaje. | Envía correo al buzón de soporte con la plantilla React Email de notificación. En entorno controlado, comprobar mensaje de resultado y recepción. |
-| Registro | Nombre, apellido, correo, contraseña y Turnstile según configuración. | Alta Auth, perfil y cuenta personal. Ver QA-AUTH-04. |
-| Confirmación de registro | Reenviar correo. | Solicita otro mensaje a Auth. Verificar en el buzón. El enlace y «Confirmar cuenta» completan la identidad. |
-| Login | Correo y contraseña, o correo para enlace mágico. Google es alternativa. | Abre sesión. TOTP o código de recuperación si la cuenta lo requiere. GitHub visible deshabilitado. |
-| Contraseña olvidada y restablecimiento | Correo de recuperación. Nueva contraseña y repetición al abrir el enlace. | Correo de Auth y cambio de contraseña. Probar login nuevo. Ver QA-AUTH-03. |
-| Mi cuenta → Perfil | Información personal, foto y cambio de correo son formularios separados. | Actualiza perfil, sube avatar o solicita cambio de identidad mediante confirmación. Ver QA-PROFILE-01. |
-| Mi cuenta → Seguridad | Contraseña actual, nueva y repetición. Preparación MFA y código TOTP. | Cambia contraseña, solicita correo de recuperación, enrola o retira MFA y genera códigos de recuperación según el control. Verificar en sesión de prueba. |
-| Mi cuenta → Sesiones y datos personales | Cerrar otra sesión, cerrar las otras, exportar datos y confirmación de eliminación. | Las sesiones se administran en su pestaña. Exportación y eliminación pertenecen a la cuenta personal. Reservar eliminación para un fixture destinado a ese caso. |
-| Onboarding → Organización | Nombre de organización. | Crea un equipo o renombra el equipo activo al retomar. El nombre queda en la cuenta. |
-| Onboarding → Invitar equipo / Miembros | Correos y rol, con opción de invitar después en el onboarding. | Crea invitación de equipo y desencadena su correo. Reutiliza el formulario y las acciones de Team. Verificar invitación, aceptación y membresía tras recargar. |
-| Onboarding → Elegir plan | Plan y período si el catálogo lo ofrece. Siguiente permite continuar. | Reutiliza Facturación del equipo. La compra abre el flujo del proveedor. |
-| Onboarding → Marca | Archivo de logo, guardar o quitar, finalizar u omitir. | Persiste logo en la cuenta y marca completado el onboarding al finalizar u omitir. |
-| Selector de cuentas | Cambiar cuenta y diálogo de crear equipo con su nombre. | Selecciona cuenta activa o crea un equipo. Comprobar selección y nombre tras recargar. La cuota de equipos aplica al crear. |
-| Miembros | Invitación, cambios de rol, retirar miembro, revocar invitación y salir del equipo según permisos. | Distinguir miembro activo, invitación pendiente y acciones permitidas a cada rol. |
-| Ajustes → General | Nombre, slug, sitio web, país y formulario separado de logo. | Edita la organización activa. Comparar valores y logo tras recargar como owner/admin. |
-| Ajustes → API keys | Nombre (1–100) y vencimiento futuro opcional. Crear y revocar. | Owner/admin de la cuenta. Muestra la clave completa una sola vez. Verificar fila, prefijo o estado tras recargar y revocar sólo la clave de prueba. La API existente consume la clave para consultar el resumen de cuenta. |
-| Ajustes → Webhooks | URL de destino, descripción y eventos. Habilitar/deshabilitar y borrar endpoint. | Owner/admin con capacidad del plan. Tras guardar, revisar lista y entregas en destino propio de prueba. Free ofrece 0 endpoints. |
-| Ajustes → Seguridad, Integraciones y zona de peligro | Interruptores de organización, panel de Integraciones y botón de borrado. | Marcadores «Próximamente» en estas secciones. Distinguir de la seguridad y el ciclo de datos personales que sí están implementados. |
-| Facturación | Selección de plan, checkout, cancelación según proveedor y listado de facturas. | Comprobar catálogo y permisos. Checkout y cancelación son flujos del proveedor y quedan en el plan 011. Checkout simulado es fixture de loopback. |
-| Actividad / Admin → Auditoría y Cuentas | Filtros de actividad y auditoría, búsqueda/listado de cuentas y filtros de plan/estado. | Consultas, sin editar registros. Comparar alcance de cuenta con alcance de plataforma. Los filtros de plan/estado en Cuentas operan sobre las filas cargadas. |
-| Admin → Detalle de cuenta, Alertas y Anuncios | Motivo de impersonación. Asunto y mensaje de alerta. Tipo, título, cuerpo y enlace opcional de anuncio. | Requiere acceso de plataforma y MFA. Impersonación abre una sesión acotada. Alertas encola correo a propietarios. Anuncios publica en la campana. Acciones globales con datos aislados. |
-| Proyectos → Nuevo proyecto | Nombre, descripción, tipo y tono. Nombre 1–80, descripción hasta 300. | Asocia proyecto a la cuenta y aplica permisos de membresía. Se excluye mediante `features.projects=false`. |
-| Proyectos → Nuevo documento y editor | Nombre y descripción del documento. Contenido Markdown con vista previa y guardado. | Crea y guarda dentro del proyecto. Comprobar recarga y revisiones en la revisión aislada. El editor comparte el flag de Proyectos. |
-| Iroko Robot | «Descargar Plantilla» y carga XLSX en el visor de la cuenta. | Genera `Plantilla_Iroko.xlsx` y permite importar las tres hojas. `features.verticals.robot=false` impide entrar desde el menú o por ruta directa. |
-| Preferencias del navegador en Iroko | Consentimiento de cookies y selección de idioma desde la interfaz. | Verificar que la elección se conserva según el control. |
+| Pantalla                                             | Formulario o control                                                                                    | Acción y verificación                                                                                                                                                                                                      |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Público → Contacto                                   | Nombre, correo, tamaño de empresa y mensaje.                                                            | Envía correo al buzón de soporte con la plantilla React Email de notificación. En entorno controlado, comprobar mensaje de resultado y recepción.                                                                          |
+| Registro                                             | Nombre, apellido, correo, contraseña y Turnstile según configuración.                                   | Alta Auth, perfil y cuenta personal. Ver QA-AUTH-04.                                                                                                                                                                       |
+| Confirmación de registro                             | Reenviar correo.                                                                                        | Solicita otro mensaje a Auth. Verificar en el buzón. El enlace y «Confirmar cuenta» completan la identidad.                                                                                                                |
+| Login                                                | Correo y contraseña, o correo para enlace mágico. Google es alternativa.                                | Abre sesión. TOTP o código de recuperación si la cuenta lo requiere. GitHub visible deshabilitado.                                                                                                                         |
+| Contraseña olvidada y restablecimiento               | Correo de recuperación. Nueva contraseña y repetición al abrir el enlace.                               | Correo de Auth y cambio de contraseña. Probar login nuevo. Ver QA-AUTH-03.                                                                                                                                                 |
+| Mi cuenta → Perfil                                   | Información personal, foto y cambio de correo son formularios separados.                                | Actualiza perfil, sube avatar o solicita cambio de identidad mediante confirmación. Ver QA-PROFILE-01.                                                                                                                     |
+| Mi cuenta → Seguridad                                | Contraseña actual, nueva y repetición. Preparación MFA y código TOTP.                                   | Cambia contraseña, solicita correo de recuperación, enrola o retira MFA y genera códigos de recuperación según el control. Verificar en sesión de prueba.                                                                  |
+| Mi cuenta → Sesiones y datos personales              | Cerrar otra sesión, cerrar las otras, exportar datos y confirmación de eliminación.                     | Las sesiones se administran en su pestaña. Exportación y eliminación pertenecen a la cuenta personal. Reservar eliminación para un fixture destinado a ese caso.                                                           |
+| Onboarding → Organización                            | Nombre de organización.                                                                                 | Crea un equipo o renombra el equipo activo al retomar. El nombre queda en la cuenta.                                                                                                                                       |
+| Onboarding → Invitar equipo / Miembros               | Correos y rol, con opción de invitar después en el onboarding.                                          | Crea invitación de equipo y desencadena su correo. Reutiliza el formulario y las acciones de Team. Verificar invitación, aceptación y membresía tras recargar.                                                             |
+| Onboarding → Elegir plan                             | Plan y período si el catálogo lo ofrece. Siguiente permite continuar.                                   | Reutiliza Facturación del equipo. La compra abre el flujo del proveedor.                                                                                                                                                   |
+| Onboarding → Marca                                   | Archivo de logo, guardar o quitar, finalizar u omitir.                                                  | Persiste logo en la cuenta y marca completado el onboarding al finalizar u omitir.                                                                                                                                         |
+| Selector de cuentas                                  | Cambiar cuenta y diálogo de crear equipo con su nombre.                                                 | Selecciona cuenta activa o crea un equipo. Comprobar selección y nombre tras recargar. La cuota de equipos aplica al crear.                                                                                                |
+| Miembros                                             | Invitación, cambios de rol, retirar miembro, revocar invitación y salir del equipo según permisos.      | Distinguir miembro activo, invitación pendiente y acciones permitidas a cada rol.                                                                                                                                          |
+| Ajustes → General                                    | Nombre, slug, sitio web, país y formulario separado de logo.                                            | Edita la organización activa. Comparar valores y logo tras recargar como owner/admin.                                                                                                                                      |
+| Ajustes → API keys                                   | Nombre (1–100) y vencimiento futuro opcional. Crear y revocar.                                          | Owner/admin de la cuenta. Muestra la clave completa una sola vez. Verificar fila, prefijo o estado tras recargar y revocar sólo la clave de prueba. La API existente consume la clave para consultar el resumen de cuenta. |
+| Ajustes → Webhooks                                   | URL de destino, descripción y eventos. Habilitar/deshabilitar y borrar endpoint.                        | Owner/admin con capacidad del plan. Tras guardar, revisar lista y entregas en destino propio de prueba. Free ofrece 0 endpoints.                                                                                           |
+| Ajustes → Seguridad, Integraciones y zona de peligro | Interruptores de organización, panel de Integraciones y botón de borrado.                               | Marcadores «Próximamente» en estas secciones. Distinguir de la seguridad y el ciclo de datos personales que sí están implementados.                                                                                        |
+| Facturación                                          | Selección de plan, checkout, cancelación según proveedor y listado de facturas.                         | Comprobar catálogo y permisos. Checkout y cancelación son flujos del proveedor y quedan en el plan 011. Checkout simulado es fixture de loopback.                                                                          |
+| Actividad / Admin → Auditoría y Cuentas              | Filtros de actividad y auditoría, búsqueda/listado de cuentas y filtros de plan/estado.                 | Consultas, sin editar registros. Comparar alcance de cuenta con alcance de plataforma. Los filtros de plan/estado en Cuentas operan sobre las filas cargadas.                                                              |
+| Admin → Detalle de cuenta, Alertas y Anuncios        | Motivo de impersonación. Asunto y mensaje de alerta. Tipo, título, cuerpo y enlace opcional de anuncio. | Requiere acceso de plataforma y MFA. Impersonación abre una sesión acotada. Alertas encola correo a propietarios. Anuncios publica en la campana. Acciones globales con datos aislados.                                    |
+| Proyectos → Nuevo proyecto                           | Nombre, descripción, tipo y tono. Nombre 1–80, descripción hasta 300.                                   | Asocia proyecto a la cuenta y aplica permisos de membresía. Se excluye mediante `features.projects=false`.                                                                                                                 |
+| Proyectos → Nuevo documento y editor                 | Nombre y descripción del documento. Contenido Markdown con vista previa y guardado.                     | Crea y guarda dentro del proyecto. Comprobar recarga y revisiones en la revisión aislada. El editor comparte el flag de Proyectos.                                                                                         |
+| Iroko Robot                                          | «Descargar Plantilla» y carga XLSX en el visor de la cuenta.                                            | Genera `Plantilla_Iroko.xlsx` y permite importar las tres hojas. `features.verticals.robot=false` impide entrar desde el menú o por ruta directa.                                                                          |
+| Preferencias del navegador en Iroko                  | Consentimiento de cookies y selección de idioma desde la interfaz.                                      | Verificar que la elección se conserva según el control.                                                                                                                                                                    |
 
 ### Precios y cuotas visibles en Cloud
 
@@ -508,10 +508,10 @@ Observación de navegador aprobada el 2026-11-18 en `/es/pricing`, candidato
 `66bc3f7`, Vercel READY. Precios y límites mostrados por esa página:
 
 | Plan | CLP por mes | Miembros | Equipos | API keys | Endpoints webhook |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| Free | 0 | 2 | 1 | 2 | 0 |
-| Plus | 19.990 | 10 | 3 | 20 | 10 |
-| Pro | 102.990 | 50 | 10 | 100 | 50 |
+| ---- | ----------: | -------: | ------: | -------: | ----------------: |
+| Free |           0 |        2 |       1 |        2 |                 0 |
+| Plus |      19.990 |       10 |       3 |       20 |                10 |
+| Pro  |     102.990 |       50 |      10 |      100 |                50 |
 
 Anual es un período de cobro. Hay variantes anuales en el catálogo base.
 La oferta pública de Mercado Pago Chile observada presenta los tres planes
@@ -550,10 +550,10 @@ HTML que lee un destinatario. El visor local permite revisar diseño, textos
 y botones con datos ficticios. Para cambiar el diseño se edita la plantilla
 en el repositorio y se vuelve a generar el HTML de prueba.
 
-| Plantilla | Qué la dispara en Iroko | Quién recibe el correo |
-| --- | --- | --- |
-| Bienvenida | Confirmar el registro de una cuenta nueva. | La persona que se registró. |
-| Invitación | Enviar una invitación desde Miembros de un equipo. | La dirección invitada, aunque todavía no tenga una cuenta. |
+| Plantilla    | Qué la dispara en Iroko                                                                                                                 | Quién recibe el correo                                           |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Bienvenida   | Confirmar el registro de una cuenta nueva.                                                                                              | La persona que se registró.                                      |
+| Invitación   | Enviar una invitación desde Miembros de un equipo.                                                                                      | La dirección invitada, aunque todavía no tenga una cuenta.       |
 | Notificación | Una acción que solicita email además del aviso en la app, como la activación de un plan. El formulario Contacto reutiliza la plantilla. | El destinatario del aviso. En Contacto, la dirección de soporte. |
 
 1. Abrir el [visor local](http://127.0.0.1:3002/) en la vista compartida de
@@ -662,21 +662,21 @@ Evidencia informada por el propietario tras el reset y un build local.
 Base del checkout: `66bc3f7` más cambios locales. Revisión exacta del build,
 hora y navegador: [NO VERIFICADO].
 
-| Caso | Estado | Observación del propietario |
-| --- | --- | --- |
-| QA-01 · Acceso tras reset | Fallido con sesión antigua | El navegador conservaba cookies y caché. Al abrir la URL mostró la sesión anterior. Al pulsar opciones, no navegaban. Falta la comprobación de control en un contexto nuevo. Ver QA-OBS-01. |
-| QA-02/03 · Registro y confirmación | Aprobados | Completó el alta, recibió el correo, vio bien la plantilla y confirmó la cuenta. Llegó al onboarding. La utilidad del texto alternativo queda en QA-OBS-03. |
-| QA-04 · Onboarding | Por verificar | Entró y reportó que el flujo general iba bien. Persiste la observación visual QA-OBS-02. Falta verificar selección y persistencia del equipo tras recargar. |
-| QA-06 · Perfil | Por verificar | Editó nombre, apellido, idioma, zona horaria, teléfono, fecha de nacimiento, empresa, sitio web y biografía, y pulsó Guardar. Falta confirmar qué valores siguen tras recargar. |
-| QA-07 · Foto de perfil | Por verificar | Pudo subir la foto. Falta comprobar que siga visible tras recargar. |
-| QA-08 · Ajustes → General | Fallido | Al intentar editar Información de la organización indicó que los datos no se guardan, incluido el nombre. No se aisló el campo, el mensaje de guardado ni la causa. Ver QA-OBS-04. |
+| Caso                               | Estado                     | Observación del propietario                                                                                                                                                                 |
+| ---------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| QA-01 · Acceso tras reset          | Fallido con sesión antigua | El navegador conservaba cookies y caché. Al abrir la URL mostró la sesión anterior. Al pulsar opciones, no navegaban. Falta la comprobación de control en un contexto nuevo. Ver QA-OBS-01. |
+| QA-02/03 · Registro y confirmación | Aprobados                  | Completó el alta, recibió el correo, vio bien la plantilla y confirmó la cuenta. Llegó al onboarding. La utilidad del texto alternativo queda en QA-OBS-03.                                 |
+| QA-04 · Onboarding                 | Por verificar              | Entró y reportó que el flujo general iba bien. Persiste la observación visual QA-OBS-02. Falta verificar selección y persistencia del equipo tras recargar.                                 |
+| QA-06 · Perfil                     | Por verificar              | Editó nombre, apellido, idioma, zona horaria, teléfono, fecha de nacimiento, empresa, sitio web y biografía, y pulsó Guardar. Falta confirmar qué valores siguen tras recargar.             |
+| QA-07 · Foto de perfil             | Por verificar              | Pudo subir la foto. Falta comprobar que siga visible tras recargar.                                                                                                                         |
+| QA-08 · Ajustes → General          | Fallido                    | Al intentar editar Información de la organización indicó que los datos no se guardan, incluido el nombre. No se aisló el campo, el mensaje de guardado ni la causa. Ver QA-OBS-04.          |
 
-| Hallazgo para futuros cambios | Qué se vio | Qué comprobar cuando se retome |
-| --- | --- | --- |
-| QA-OBS-01 · Sesión previa al reset | La interfaz mostró una sesión antigua que ya no permitía navegar. | Con una sesión antigua en el navegador, comprobar que la aplicación converge al login si el usuario ya no existe. Registrar cookies/caché como contexto, sin atribuirles la causa todavía. |
-| QA-OBS-02 · Diseño de precios en onboarding | El bloque Plan actual / Free / Plus / Pro quedó desalineado. El monto `19.990 CLP` y el texto de periodicidad se vieron mal acomodados. | Revisar el diseño y el texto mensual en el paso Elegir plan. Anotar ancho/zoom y comparar con Facturación en un turno separado. |
-| QA-OBS-03 · Texto alternativo del correo | El correo ofrece ingresar un código si el botón no funciona. En el recorrido web no encontró dónde ingresarlo. El botón sí confirmó la cuenta. | Decidir si se explica o enlaza una alternativa existente, o si se elimina ese texto. |
-| QA-OBS-04 · Edición de organización | Los cambios de Ajustes → General no se conservaron según el propietario. | En el equipo de prueba, registrar el nombre original, cambiar sólo el nombre, observar el mensaje y recargar. Después aislar los otros campos. |
+| Hallazgo para futuros cambios               | Qué se vio                                                                                                                                     | Qué comprobar cuando se retome                                                                                                                                                             |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| QA-OBS-01 · Sesión previa al reset          | La interfaz mostró una sesión antigua que ya no permitía navegar.                                                                              | Con una sesión antigua en el navegador, comprobar que la aplicación converge al login si el usuario ya no existe. Registrar cookies/caché como contexto, sin atribuirles la causa todavía. |
+| QA-OBS-02 · Diseño de precios en onboarding | El bloque Plan actual / Free / Plus / Pro quedó desalineado. El monto `19.990 CLP` y el texto de periodicidad se vieron mal acomodados.        | Revisar el diseño y el texto mensual en el paso Elegir plan. Anotar ancho/zoom y comparar con Facturación en un turno separado.                                                            |
+| QA-OBS-03 · Texto alternativo del correo    | El correo ofrece ingresar un código si el botón no funciona. En el recorrido web no encontró dónde ingresarlo. El botón sí confirmó la cuenta. | Decidir si se explica o enlaza una alternativa existente, o si se elimina ese texto.                                                                                                       |
+| QA-OBS-04 · Edición de organización         | Los cambios de Ajustes → General no se conservaron según el propietario.                                                                       | En el equipo de prueba, registrar el nombre original, cambiar sólo el nombre, observar el mensaje y recargar. Después aislar los otros campos.                                             |
 
 **Siguiente punto al retomar:** comprobar perfil y foto después de recargar.
 Si siguen ahí, marcar QA-06/07 como aprobados. Luego volver a Ajustes →
@@ -684,13 +684,13 @@ General del equipo de prueba y reproducir sólo el guardado del nombre.
 
 ### Segunda pasada humana local — 2026-11-18
 
-| Caso | Estado | Evidencia y límite |
-| --- | --- | --- |
-| QA-04 · Onboarding | Aprobado en su recorrido funcional | El propietario completó el onboarding y confirmó que su equipo y la cuenta personal aparecen en el selector. Sigue pendiente aclarar el texto del primer paso y revisar precios (QA-OBS-02). |
-| QA-06/07 · Perfil y foto | Aprobados | El propietario confirmó que los datos siguen correctos y que la foto aparece en las pantallas que recorrió. |
-| QA-08 · Ajustes → General | Fallido en actualización inmediata. Persistencia aprobada. | Al guardar, el formulario sigue mostrando el valor anterior. Tras recargar, muestra el nuevo. QA-OBS-04 pasa de sospecha de pérdida a problema de actualización de la interfaz. El código carga los valores iniciales al montar y el guardado devuelve éxito sin devolver los valores nuevos al formulario. |
-| QA-16 · API keys | Creación aprobada. Caso por verificar. | En Ajustes → API keys creó la clave y la vio. Quedan pendientes la comprobación tras recarga y la revocación de la clave de prueba. |
-| QA-13/14 · Proyectos y Robot | Bloqueados en el build local probado | El propietario vio Inicio, Miembros, Actividad, Facturación y Ajustes. En este PC, `next start` escucha en IPv6 y `next dev` escucha específicamente en `127.0.0.1:3000`. Los flags están habilitados sólo en el segundo. Abrir `http://127.0.0.1:3000/es/dashboard` con sesión local y verificar ambos menús. |
+| Caso                         | Estado                                                     | Evidencia y límite                                                                                                                                                                                                                                                                                             |
+| ---------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| QA-04 · Onboarding           | Aprobado en su recorrido funcional                         | El propietario completó el onboarding y confirmó que su equipo y la cuenta personal aparecen en el selector. Sigue pendiente aclarar el texto del primer paso y revisar precios (QA-OBS-02).                                                                                                                   |
+| QA-06/07 · Perfil y foto     | Aprobados                                                  | El propietario confirmó que los datos siguen correctos y que la foto aparece en las pantallas que recorrió.                                                                                                                                                                                                    |
+| QA-08 · Ajustes → General    | Fallido en actualización inmediata. Persistencia aprobada. | Al guardar, el formulario sigue mostrando el valor anterior. Tras recargar, muestra el nuevo. QA-OBS-04 pasa de sospecha de pérdida a problema de actualización de la interfaz. El código carga los valores iniciales al montar y el guardado devuelve éxito sin devolver los valores nuevos al formulario.    |
+| QA-16 · API keys             | Creación aprobada. Caso por verificar.                     | En Ajustes → API keys creó la clave y la vio. Quedan pendientes la comprobación tras recarga y la revocación de la clave de prueba.                                                                                                                                                                            |
+| QA-13/14 · Proyectos y Robot | Bloqueados en el build local probado                       | El propietario vio Inicio, Miembros, Actividad, Facturación y Ajustes. En este PC, `next start` escucha en IPv6 y `next dev` escucha específicamente en `127.0.0.1:3000`. Los flags están habilitados sólo en el segundo. Abrir `http://127.0.0.1:3000/es/dashboard` con sesión local y verificar ambos menús. |
 
 **QA-OBS-05 · Elección de cuenta en onboarding.** Al registrarse se crea una
 cuenta personal con el nombre inicial del usuario. Si omite la configuración
@@ -705,15 +705,15 @@ de explicar la creación de dos cuentas dentro del onboarding.
 
 ### Confirmación del propietario — 2026-11-19
 
-| Caso | Estado | Evidencia y límite |
-| --- | --- | --- |
-| QA-04 · Onboarding | Fallido frente al criterio acordado | El asistente terminó y el propietario vio dos espacios en el selector. El primer onboarding debe completar los datos del espacio inicial del primer usuario. La creación de otro espacio debe ser explícita. Ver QA-OBS-05. |
-| QA-05 · Salir y volver a entrar | Aprobado | Cerró sesión y volvió a entrar al dashboard. |
-| QA-06 · Editar perfil | Aprobado | Completó y aprobó nombre, apellido, idioma, zona horaria, teléfono con prefijo, fecha de nacimiento, empresa u organización, sitio web y biografía. QA-07 conserva la aprobación de la foto. |
-| QA-09 · Guardar el logo | Aprobado | Confirmó que guardó el logo de la organización. |
-| QA-10 · Cambiar de cuenta | Aprobado | Confirmó que cambió de cuenta y vio ambas en el selector. |
-| QA-12 · Restablecer contraseña | Aprobado desde Seguridad | Confirmó el restablecimiento. Conserva la observación de demora y reintentos. La vía pública «¿Olvidaste tu contraseña?» desde Login queda pendiente. |
-| QA-16 · Crear una clave API | Creación aprobada. Caso por verificar. | Confirmó la creación y que vio la clave. Falta comprobar la fila tras recargar y revocar la clave de prueba. |
+| Caso                            | Estado                                 | Evidencia y límite                                                                                                                                                                                                          |
+| ------------------------------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| QA-04 · Onboarding              | Fallido frente al criterio acordado    | El asistente terminó y el propietario vio dos espacios en el selector. El primer onboarding debe completar los datos del espacio inicial del primer usuario. La creación de otro espacio debe ser explícita. Ver QA-OBS-05. |
+| QA-05 · Salir y volver a entrar | Aprobado                               | Cerró sesión y volvió a entrar al dashboard.                                                                                                                                                                                |
+| QA-06 · Editar perfil           | Aprobado                               | Completó y aprobó nombre, apellido, idioma, zona horaria, teléfono con prefijo, fecha de nacimiento, empresa u organización, sitio web y biografía. QA-07 conserva la aprobación de la foto.                                |
+| QA-09 · Guardar el logo         | Aprobado                               | Confirmó que guardó el logo de la organización.                                                                                                                                                                             |
+| QA-10 · Cambiar de cuenta       | Aprobado                               | Confirmó que cambió de cuenta y vio ambas en el selector.                                                                                                                                                                   |
+| QA-12 · Restablecer contraseña  | Aprobado desde Seguridad               | Confirmó el restablecimiento. Conserva la observación de demora y reintentos. La vía pública «¿Olvidaste tu contraseña?» desde Login queda pendiente.                                                                       |
+| QA-16 · Crear una clave API     | Creación aprobada. Caso por verificar. | Confirmó la creación y que vio la clave. Falta comprobar la fila tras recargar y revocar la clave de prueba.                                                                                                                |
 
 **Criterio para corregir QA-OBS-05.** El primer usuario completa los datos
 del espacio que ya tiene al registrarse y conserva ese mismo espacio activo
@@ -777,12 +777,12 @@ ambas confirmaciones. Sin cambios de código ni de configuración en este turno.
 
 ### Recuperación desde Seguridad y enlace mágico — 2026-11-18
 
-| Caso | Resultado | Evidencia local informada por el propietario |
-| --- | --- | --- |
-| QA-AUTH-03 · Restablecer desde Mi cuenta → Seguridad | Aprobado con observación | Solicitó el enlace unas tres veces y recargó la página. El correo finalmente llegó y completó el restablecimiento. No se midió la demora ni se identificó qué intento generó el mensaje utilizado. La entrada pública «¿Olvidaste tu contraseña?» de QA-12 no se comprobó en esta pasada. |
-| QA-AUTH-07 · Iniciar sesión con Enlace mágico | Aprobado | El propietario confirmó que el flujo de inicio de sesión por enlace mágico funcionó. |
-| QA-OBS-08 · Visibilidad de avisos de correo | Pendiente de revisión | El propietario no vio un aviso claro en el dashboard al solicitar correos y se dio cuenta del resultado después. En Seguridad existe texto de ayuda y un mensaje «Te enviamos el enlace a tu correo» debajo del botón cuando la acción devuelve éxito. Es un estado del formulario que desaparece al recargar. Comprobar si se ve en la primera solicitud y si distingue solicitud aceptada, error y confirmación pendiente. Distinguir el aviso inmediato en pantalla de la campana de notificaciones. |
-| QA-OBS-09 · Mostrar contraseña en Login | Mejora anotada | El campo en Login usa `type="password"` fijo. Registro ya tiene un botón «Mostrar contraseña» / «Ocultar contraseña». Revisar si se reutiliza ese comportamiento en Login. |
+| Caso                                                 | Resultado                | Evidencia local informada por el propietario                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| QA-AUTH-03 · Restablecer desde Mi cuenta → Seguridad | Aprobado con observación | Solicitó el enlace unas tres veces y recargó la página. El correo finalmente llegó y completó el restablecimiento. No se midió la demora ni se identificó qué intento generó el mensaje utilizado. La entrada pública «¿Olvidaste tu contraseña?» de QA-12 no se comprobó en esta pasada.                                                                                                                                                                                                               |
+| QA-AUTH-07 · Iniciar sesión con Enlace mágico        | Aprobado                 | El propietario confirmó que el flujo de inicio de sesión por enlace mágico funcionó.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| QA-OBS-08 · Visibilidad de avisos de correo          | Pendiente de revisión    | El propietario no vio un aviso claro en el dashboard al solicitar correos y se dio cuenta del resultado después. En Seguridad existe texto de ayuda y un mensaje «Te enviamos el enlace a tu correo» debajo del botón cuando la acción devuelve éxito. Es un estado del formulario que desaparece al recargar. Comprobar si se ve en la primera solicitud y si distingue solicitud aceptada, error y confirmación pendiente. Distinguir el aviso inmediato en pantalla de la campana de notificaciones. |
+| QA-OBS-09 · Mostrar contraseña en Login              | Mejora anotada           | El campo en Login usa `type="password"` fijo. Registro ya tiene un botón «Mostrar contraseña» / «Ocultar contraseña». Revisar si se reutiliza ese comportamiento en Login.                                                                                                                                                                                                                                                                                                                              |
 
 La causa de la demora del correo y el resultado de la confirmación pendiente
 del cambio de dirección (QA-AUTH-06) quedan abiertos. No se hicieron cambios
@@ -806,11 +806,11 @@ observación acredita recepción y aspecto en Mailpit local. Quedan abiertos
 el tiempo de entrega, destinatario de cada confirmación y cierre del cambio
 de correo en QA-AUTH-06.
 
-| Acción en Mi cuenta | Qué muestra el código cuando la solicitud se acepta | Resultado de esta revisión |
-| --- | --- | --- |
+| Acción en Mi cuenta                          | Qué muestra el código cuando la solicitud se acepta                                                                                                                                                                                                       | Resultado de esta revisión                                                                                                                                                                                          |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Perfil → Correo electrónico → Cambiar correo | `updateEmailAction` devuelve `email_change_requested`. `ProfileTab` muestra debajo del formulario «Te enviamos un correo de confirmación al viejo y al nuevo email.» cuando el resultado corresponde al envío y el campo ya no está marcado como editado. | **No observado por el propietario**, aun cuando los mensajes llegaron. Añadido a QA-OBS-08. El estado del aviso pertenece al formulario y no se conserva al recargar. Causa de su ausencia en esa sesión pendiente. |
-| Seguridad → Actualizar contraseña | La acción devuelve `password_updated` y el formulario muestra «Contraseña actualizada.» antes del botón cuando el resultado sigue vigente. | El cambio se aprobó. El aviso en pantalla queda por comprobar. La notificación de correo llegó y es independiente del aviso. |
-| Seguridad → Enviar enlace para restablecer | La acción devuelve `reset_link_sent` y se muestra debajo del botón «Te enviamos el enlace a tu correo.» | Se completó la recuperación y se vio la plantilla en Mailpit. Sigue pendiente comprobar que el mensaje sea visible al primer intento. |
+| Seguridad → Actualizar contraseña            | La acción devuelve `password_updated` y el formulario muestra «Contraseña actualizada.» antes del botón cuando el resultado sigue vigente.                                                                                                                | El cambio se aprobó. El aviso en pantalla queda por comprobar. La notificación de correo llegó y es independiente del aviso.                                                                                        |
+| Seguridad → Enviar enlace para restablecer   | La acción devuelve `reset_link_sent` y se muestra debajo del botón «Te enviamos el enlace a tu correo.»                                                                                                                                                   | Se completó la recuperación y se vio la plantilla en Mailpit. Sigue pendiente comprobar que el mensaje sea visible al primer intento.                                                                               |
 
 Para aislar QA-OBS-08, mirar debajo del formulario justo al terminar
 «Cambiar correo», sin recargar ni editar el campo. Anotar si apareció un
@@ -856,11 +856,11 @@ QA-AUTH-06: cambio completado en Auth en la repetición. Se cruzaron
 Mailpit, logs de GoTrue `v2.195.0` y lectura de la cuenta local. El
 login con el nuevo correo no se verificó en esta revisión.
 
-| Hora de Santiago | Evidencia |
-| --- | --- |
-| 20:37:44 | Auth aceptó la solicitud (HTTP 200, ≈15 ms). Mailpit registró dos «Confirma el cambio de email» a destinatarios distintos, a 1 ms entre sí. |
-| 20:37:54 | Primera verificación HTTP 200, ≈4 ms. La doble confirmación mantiene el correo anterior en esta etapa. |
-| 20:38:17 | Segunda verificación HTTP 200, ≈17 ms. Auth registró el cambio final y ya no quedó una solicitud pendiente. Mailpit registró «Tu email fue cambiado» en ese mismo segundo, para el correo anterior. |
+| Hora de Santiago | Evidencia                                                                                                                                                                                           |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 20:37:44         | Auth aceptó la solicitud (HTTP 200, ≈15 ms). Mailpit registró dos «Confirma el cambio de email» a destinatarios distintos, a 1 ms entre sí.                                                         |
+| 20:37:54         | Primera verificación HTTP 200, ≈4 ms. La doble confirmación mantiene el correo anterior en esta etapa.                                                                                              |
+| 20:38:17         | Segunda verificación HTTP 200, ≈17 ms. Auth registró el cambio final y ya no quedó una solicitud pendiente. Mailpit registró «Tu email fue cambiado» en ese mismo segundo, para el correo anterior. |
 
 Los dos enlaces tenían confirmaciones distintas y apuntaban a
 `http://localhost:3000/auth/click` con tipo `email_change`. El botón
@@ -884,19 +884,19 @@ Los hallazgos conservan sus IDs. Esta tabla agrupa trabajo propuesto y el
 resultado que deberá demostrar cada cambio. Las correcciones de interfaz y
 sesión de esta tabla siguen pendientes.
 
-| Bloque | Hallazgos | Resultado esperado de un cambio posterior |
-| --- | --- | --- |
-| Sesión al volver a la aplicación | QA-OBS-01 | Una sesión antigua cuyo usuario ya no existe converge al login. Con una sesión válida, las rutas del dashboard siguen accesibles. |
-| Identidad y confirmaciones | QA-OBS-03, QA-OBS-07/08/10 | Quitar o enlazar el texto alternativo del código de registro. El cambio de correo vuelve a Perfil, informa la solicitud, muestra la confirmación pendiente y muestra el correo definitivo al completar ambos enlaces. Los avisos de correo y contraseña se leen en ambos temas. |
-| Contraseñas | QA-OBS-06/09 | Registro, Seguridad y recuperación muestran las mismas reglas que aplica el servidor. Login permite mostrar u ocultar la contraseña por teclado. |
-| Onboarding | QA-OBS-02/05 | El primer usuario completa los campos del espacio inicial y conserva el mismo espacio activo. La creación posterior de otra organización es explícita. Las tarjetas y la periodicidad de los precios se leen en escritorio y móvil. |
-| Información de la organización | QA-OBS-04 | Los datos guardados se ven de inmediato y persisten tras recargar. Un fallo de guardado deja claro qué pasó. |
-| Invitaciones | QA-OBS-11 | Miembros ofrece invitar sólo en una cuenta de equipo con el rol adecuado. En una cuenta personal explica cómo pasar a un equipo. En el equipo con cupo se puede invitar, recibir el correo y aceptar. |
-| Entrada por invitación | QA-OBS-12 | El correo explica cómo continuar con cuenta existente o nueva. El acceso conserva la invitación, respeta el rol existente y abre el equipo correcto sin contratar un plan. |
-| Creación de equipo | QA-OBS-13 | La creación muestra progreso, termina en el espacio creado y permite distinguir en qué etapa se produce la demora. |
-| Aviso visual de la campana | QA-OBS-14 | Una notificación personal nueva recibida en vivo muestra un toast breve y conserva el indicador de pendientes. La carga inicial no vuelve a mostrar avisos históricos. |
-| Diseño del aviso | QA-OBS-15 | Revisar con diseño una superficie legible, un solo cierre y separación de la campana. Probar temas claro y oscuro, móvil y avisos seguidos. |
-| Confirmación al revocar una clave | QA-OBS-16 | Confirmar la revocación con el diálogo de Iroko, explicar su impacto y mostrar el resultado de la acción. |
+| Bloque                            | Hallazgos                  | Resultado esperado de un cambio posterior                                                                                                                                                                                                                                       |
+| --------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sesión al volver a la aplicación  | QA-OBS-01                  | Una sesión antigua cuyo usuario ya no existe converge al login. Con una sesión válida, las rutas del dashboard siguen accesibles.                                                                                                                                               |
+| Identidad y confirmaciones        | QA-OBS-03, QA-OBS-07/08/10 | Quitar o enlazar el texto alternativo del código de registro. El cambio de correo vuelve a Perfil, informa la solicitud, muestra la confirmación pendiente y muestra el correo definitivo al completar ambos enlaces. Los avisos de correo y contraseña se leen en ambos temas. |
+| Contraseñas                       | QA-OBS-06/09               | Registro, Seguridad y recuperación muestran las mismas reglas que aplica el servidor. Login permite mostrar u ocultar la contraseña por teclado.                                                                                                                                |
+| Onboarding                        | QA-OBS-02/05               | El primer usuario completa los campos del espacio inicial y conserva el mismo espacio activo. La creación posterior de otra organización es explícita. Las tarjetas y la periodicidad de los precios se leen en escritorio y móvil.                                             |
+| Información de la organización    | QA-OBS-04                  | Los datos guardados se ven de inmediato y persisten tras recargar. Un fallo de guardado deja claro qué pasó.                                                                                                                                                                    |
+| Invitaciones                      | QA-OBS-11                  | Miembros ofrece invitar sólo en una cuenta de equipo con el rol adecuado. En una cuenta personal explica cómo pasar a un equipo. En el equipo con cupo se puede invitar, recibir el correo y aceptar.                                                                           |
+| Entrada por invitación            | QA-OBS-12                  | El correo explica cómo continuar con cuenta existente o nueva. El acceso conserva la invitación, respeta el rol existente y abre el equipo correcto sin contratar un plan.                                                                                                      |
+| Creación de equipo                | QA-OBS-13                  | La creación muestra progreso, termina en el espacio creado y permite distinguir en qué etapa se produce la demora.                                                                                                                                                              |
+| Aviso visual de la campana        | QA-OBS-14                  | Una notificación personal nueva recibida en vivo muestra un toast breve y conserva el indicador de pendientes. La carga inicial no vuelve a mostrar avisos históricos.                                                                                                          |
+| Diseño del aviso                  | QA-OBS-15                  | Revisar con diseño una superficie legible, un solo cierre y separación de la campana. Probar temas claro y oscuro, móvil y avisos seguidos.                                                                                                                                     |
+| Confirmación al revocar una clave | QA-OBS-16                  | Confirmar la revocación con el diálogo de Iroko, explicar su impacto y mostrar el resultado de la acción.                                                                                                                                                                       |
 
 QA-AUTH-06: la segunda pasada confirmó que Auth aplicó el cambio de correo.
 El retorno a Perfil y el mensaje de confirmación intermedia aún son cambios
@@ -907,13 +907,13 @@ datos sin evidencia adicional.
 
 Evidencia informada por el propietario con `start` ligado a `127.0.0.1`.
 
-| Caso | Estado | Evidencia y límite |
-| --- | --- | --- |
-| QA-13 · Proyectos y Markdown | Aprobado | Creó el proyecto y verificó el documento Markdown en la base de datos. |
-| QA-14 · Plantilla Excel de Robot | Aprobado | Confirmó que la plantilla Excel funciona desde Robot. |
-| QA-15 · Importar plantilla Robot | Por verificar | Vio datos de la plantilla en la base. Falta confirmar que las tres pestañas de Robot los muestran después de recargar. |
-| QA-17 · Invitar y aceptar invitación | Fallido al invitar | El log de Next confirma `P0001 / not_a_team` en `invite_members`, antes del envío. Falta repetir con una cuenta de equipo activa. La aceptación y la notificación en vivo siguen [NO VERIFICADO]. |
-| QA-08 · Ajustes → General | Fallido en actualización inmediata | El formulario de Información de la organización sigue mostrando el valor anterior al guardar. El cambio aparece al recargar la página. Ver QA-OBS-04. |
+| Caso                                 | Estado                             | Evidencia y límite                                                                                                                                                                                |
+| ------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| QA-13 · Proyectos y Markdown         | Aprobado                           | Creó el proyecto y verificó el documento Markdown en la base de datos.                                                                                                                            |
+| QA-14 · Plantilla Excel de Robot     | Aprobado                           | Confirmó que la plantilla Excel funciona desde Robot.                                                                                                                                             |
+| QA-15 · Importar plantilla Robot     | Por verificar                      | Vio datos de la plantilla en la base. Falta confirmar que las tres pestañas de Robot los muestran después de recargar.                                                                            |
+| QA-17 · Invitar y aceptar invitación | Fallido al invitar                 | El log de Next confirma `P0001 / not_a_team` en `invite_members`, antes del envío. Falta repetir con una cuenta de equipo activa. La aceptación y la notificación en vivo siguen [NO VERIFICADO]. |
+| QA-08 · Ajustes → General            | Fallido en actualización inmediata | El formulario de Información de la organización sigue mostrando el valor anterior al guardar. El cambio aparece al recargar la página. Ver QA-OBS-04.                                             |
 
 **QA-OBS-04 · Campos del formulario.** En
 `/es/dashboard/org/settings` → Ajustes → General → Información de la
@@ -1005,12 +1005,12 @@ si ya se creó. Facturación corresponde a la cuenta del equipo. El registro
 del invitado crea su identidad y su espacio personal de acuerdo al modelo
 actual. Aceptar añade acceso al equipo según su rol y el cupo del equipo.
 
-| Caso | Experiencia propuesta |
-| --- | --- |
-| Ya tiene cuenta y aún no es miembro | Inicia sesión con el correo invitado o recupera el acceso. Iroko retoma la invitación y agrega el equipo al selector. Conserva sus cuentas actuales. |
-| Ya pertenece al equipo | Miembros informa que ya tiene acceso. Abrir una invitación antigua debe orientar hacia el equipo y conservar el rol que ya tiene. |
-| Todavía no tiene cuenta | Abre **Crear cuenta** con el correo invitado, verifica su dirección y retoma automáticamente la invitación. Entra como miembro al equipo que lo invitó. El paso de crear otro equipo y el checkout quedan fuera de ese recorrido. |
-| Hay otra sesión abierta | La pantalla de invitación explica cómo continuar con la dirección invitada. Conserva el contexto tras cambiar de sesión. |
+| Caso                                | Experiencia propuesta                                                                                                                                                                                                             |
+| ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ya tiene cuenta y aún no es miembro | Inicia sesión con el correo invitado o recupera el acceso. Iroko retoma la invitación y agrega el equipo al selector. Conserva sus cuentas actuales.                                                                              |
+| Ya pertenece al equipo              | Miembros informa que ya tiene acceso. Abrir una invitación antigua debe orientar hacia el equipo y conservar el rol que ya tiene.                                                                                                 |
+| Todavía no tiene cuenta             | Abre **Crear cuenta** con el correo invitado, verifica su dirección y retoma automáticamente la invitación. Entra como miembro al equipo que lo invitó. El paso de crear otro equipo y el checkout quedan fuera de ese recorrido. |
+| Hay otra sesión abierta             | La pantalla de invitación explica cómo continuar con la dirección invitada. Conserva el contexto tras cambiar de sesión.                                                                                                          |
 
 El correo debe nombrar el equipo, indicar el rol y explicar en dos líneas
 las rutas **Ya tengo cuenta** y **Crear cuenta**. El botón puede decir
@@ -1042,14 +1042,14 @@ del equipo invitado. Crear un equipo propio es una decisión aparte. Hoy
 `create_team` comprueba el cupo de la cuenta personal del usuario. El rol
 que tiene en Pepe Lab gobierna sus acciones dentro de Pepe Lab.
 
-| Variante de QA-17 | Resultado esperado |
-| --- | --- |
-| Propietario de equipo → invitar | Mailpit recibe el correo y Miembros muestra la invitación pendiente con el rol elegido. Aprobado. |
-| Abrir con otra sesión | Conserva el control de correo y explica cómo cambiar a la cuenta invitada. El rechazo del servidor se confirmó. El aviso y el retorno necesitan corrección. |
-| Invitado existente | Desde otro contexto, abrir el enlace con la sesión de la dirección invitada. Comprobar su nombre, equipo activo, rol y membresía en Miembros. |
-| Invitado nuevo | Abrir sin sesión, crear y confirmar la identidad invitada y llegar al equipo. Comprobar continuidad del enlace tras el alta y registrar si hubo que reabrirlo manualmente. |
+| Variante de QA-17                 | Resultado esperado                                                                                                                                                                                                                                                   |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Propietario de equipo → invitar   | Mailpit recibe el correo y Miembros muestra la invitación pendiente con el rol elegido. Aprobado.                                                                                                                                                                    |
+| Abrir con otra sesión             | Conserva el control de correo y explica cómo cambiar a la cuenta invitada. El rechazo del servidor se confirmó. El aviso y el retorno necesitan corrección.                                                                                                          |
+| Invitado existente                | Desde otro contexto, abrir el enlace con la sesión de la dirección invitada. Comprobar su nombre, equipo activo, rol y membresía en Miembros.                                                                                                                        |
+| Invitado nuevo                    | Abrir sin sesión, crear y confirmar la identidad invitada y llegar al equipo. Comprobar continuidad del enlace tras el alta y registrar si hubo que reabrirlo manualmente.                                                                                           |
 | Vista del invitado tras la mejora | Comparar propietario y miembro dentro del mismo equipo. Comprobar nombre propio, equipo activo, rol, contenido disponible y ausencia de acciones administrativas para el miembro. Con `viewer`, comprobar consulta de proyectos sin controles de edición. Pendiente. |
-| Campana del propietario | Con la sesión A abierta, aceptar desde la sesión B y comprobar aviso sin recargar. Luego comprobar que el aviso persiste. |
+| Campana del propietario           | Con la sesión A abierta, aceptar desde la sesión B y comprobar aviso sin recargar. Luego comprobar que el aviso persiste.                                                                                                                                            |
 
 **Modelo vigente y criterio de producto.** Hoy el registro aprovisiona una
 cuenta personal. `create_team` crea una cuenta de colaboración con su owner,
@@ -1284,8 +1284,7 @@ intento con el build actualizado en el puerto 3000 (QA-OBS-14).
 La planilla conserva los estados de Inicio, Miembros, Actividad, cada
 pestaña de Ajustes y las tres de Mi cuenta. Preferencias, Atajos y Tema
 ya fueron aprobados por el propietario, igual que español (`/es`), inglés
-(`/en`), portugués (`/pt`) y francés (`/fr`). Facturación queda para el Plan
-011. La aceptación con el segundo usuario se mantiene en el cierre local.
+(`/en`), portugués (`/pt`) y francés (`/fr`). Facturación queda para el Plan 011. La aceptación con el segundo usuario se mantiene en el cierre local.
 
 **Mi cuenta → Sesiones.** `list_my_sessions` lee `auth.sessions.user_agent`.
 La vista reconoce iPhone, Android, Windows, macOS y Linux a partir de ese

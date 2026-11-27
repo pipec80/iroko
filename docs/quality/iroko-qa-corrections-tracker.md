@@ -8,44 +8,44 @@ Este registro ordena los identificadores del QA consolidado. La [bitácora manua
 
 El ordinal define la secuencia propuesta. Los IDs conservan sus referencias originales. Las filas de un mismo lote comparten revisión cuando tocan el mismo flujo.
 
-| Orden | Lote | ID | Estado de partida | Acción y criterio de cierre |
-| --- | --- | --- | --- | --- |
-| 1 | A · Ajustes | FIX-01 | Pendiente | Reutilizar `general-tab.tsx`, `actions-info.ts` y pgTAP 26. Mostrar los valores persistidos de nombre, slug, web y país sin recarga, actualizar el selector cuando corresponda y preservar cuenta y logo. Repetir QA-08 con errores de validación y permisos. |
-| 2 | B · Entrada | FIX-04 | Implementado local en flujo principal | Reutilizar ambas migraciones del 24 de noviembre y pgTAP 59. Confirmar alta propia con una organización Free visible y rol Owner, repetición idempotente, entrada invitada y compatibilidad Personal histórica. |
-| 3 | B · Entrada | FIX-05 | Parcial | Comprobar la URL antigua, retirar consumidores del wizard tras comprobar referencias y verificar que Ajustes modifica la misma cuenta. La creación adicional se inicia explícitamente. |
-| 4 | B · Entrada | FIX-06 | SQL implementado en parte del alcance | Ratificar 1/3/10, máximo entre planes propios y compatibilidad legacy/ilimitada. Alinear UI y precio con el catálogo. Reutilizar pgTAP 25/57/59 y completar transferencia, downgrade y cupo efectivo. |
-| 5 | C · Invitaciones y Auth | FIX-07 | Verificado en local | Abrir directamente «Iniciar sesión» o «Crear cuenta» según el ADR 0006. Conservar la continuación, la compatibilidad de correos emitidos y la privacidad de la identidad. |
-| 6 | C · Invitaciones y Auth | FIX-08 | Verificado en local para los dos destinos y el aviso causal | Edge comprobó sesión equivocada, equipo activo, rol, membresía única al reabrir y campana inmediata y persistente. SQL comprobó caducidad y revocación. Revisar confirmación en otro navegador en la siguiente aceptación. |
-| 7 | C · Invitaciones y Auth | FIX-03 | Pendiente | Propuesta: retirar de `confirmation.html` el código y su instrucción. Verificar confirmación por enlace, reenvío y continuación de la invitación. |
-| 8 | C · Invitaciones y Auth | FIX-11 | Parcial | Volver a Perfil con feedback de confirmación intermedia y final. Verificar ambos enlaces según configuración, correo definitivo y nuevo login. |
-| 9 | D · Autorización | FIX-09 | Parcial | Acordar invitación Admin a Admin, lectura de Miembros y permisos de contenido. Alinear menú, rutas, acciones, RPC y RLS. Reusar matriz de cuatro roles y pruebas de aislamiento, incluido cambio de cuenta. |
-| 10 | D · Autorización | FIX-10 | Pendiente para Owner exclusivo | Cerrar alcance de cancelación, facturas delegadas y Personal histórico. Enforzar rol de la organización en mutaciones de UI y servidor, incluidas ramas simuladas. Validar Owner de A frente a B. |
-| 11 | En paralelo si hay capacidad | FIX-02 | Diagnóstico pendiente | Comparar sesión válida, sesión obsoleta controlada y navegador limpio sobre un mismo host. Registrar causa reproducida o condiciones del intento. |
-| 12 | En paralelo si hay capacidad | FIX-12 | Revocación persistente observada, UX pendiente | Sustituir la confirmación nativa por diálogo de Iroko. Verificar cancelar, revocar y persistencia. La prueba funcional de credencial corresponde a TEST-05. |
+| Orden | Lote                         | ID     | Estado de partida                                           | Acción y criterio de cierre                                                                                                                                                                                                                                   |
+| ----- | ---------------------------- | ------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | A · Ajustes                  | FIX-01 | Pendiente                                                   | Reutilizar `general-tab.tsx`, `actions-info.ts` y pgTAP 26. Mostrar los valores persistidos de nombre, slug, web y país sin recarga, actualizar el selector cuando corresponda y preservar cuenta y logo. Repetir QA-08 con errores de validación y permisos. |
+| 2     | B · Entrada                  | FIX-04 | Implementado local en flujo principal                       | Reutilizar ambas migraciones del 24 de noviembre y pgTAP 59. Confirmar alta propia con una organización Free visible y rol Owner, repetición idempotente, entrada invitada y compatibilidad Personal histórica.                                               |
+| 3     | B · Entrada                  | FIX-05 | Parcial                                                     | Comprobar la URL antigua, retirar consumidores del wizard tras comprobar referencias y verificar que Ajustes modifica la misma cuenta. La creación adicional se inicia explícitamente.                                                                        |
+| 4     | B · Entrada                  | FIX-06 | SQL implementado en parte del alcance                       | Ratificar 1/3/10, máximo entre planes propios y compatibilidad legacy/ilimitada. Alinear UI y precio con el catálogo. Reutilizar pgTAP 25/57/59 y completar transferencia, downgrade y cupo efectivo.                                                         |
+| 5     | C · Invitaciones y Auth      | FIX-07 | Verificado en local                                         | Abrir directamente «Iniciar sesión» o «Crear cuenta» según el ADR 0006. Conservar la continuación, la compatibilidad de correos emitidos y la privacidad de la identidad.                                                                                     |
+| 6     | C · Invitaciones y Auth      | FIX-08 | Verificado en local para los dos destinos y el aviso causal | Edge comprobó sesión equivocada, equipo activo, rol, membresía única al reabrir y campana inmediata y persistente. SQL comprobó caducidad y revocación. Revisar confirmación en otro navegador en la siguiente aceptación.                                    |
+| 7     | C · Invitaciones y Auth      | FIX-03 | Pendiente                                                   | Propuesta: retirar de `confirmation.html` el código y su instrucción. Verificar confirmación por enlace, reenvío y continuación de la invitación.                                                                                                             |
+| 8     | C · Invitaciones y Auth      | FIX-11 | Parcial                                                     | Volver a Perfil con feedback de confirmación intermedia y final. Verificar ambos enlaces según configuración, correo definitivo y nuevo login.                                                                                                                |
+| 9     | D · Autorización             | FIX-09 | Parcial                                                     | Acordar invitación Admin a Admin, lectura de Miembros y permisos de contenido. Alinear menú, rutas, acciones, RPC y RLS. Reusar matriz de cuatro roles y pruebas de aislamiento, incluido cambio de cuenta.                                                   |
+| 10    | D · Autorización             | FIX-10 | Pendiente para Owner exclusivo                              | Cerrar alcance de cancelación, facturas delegadas y Personal histórico. Enforzar rol de la organización en mutaciones de UI y servidor, incluidas ramas simuladas. Validar Owner de A frente a B.                                                             |
+| 11    | En paralelo si hay capacidad | FIX-02 | Diagnóstico pendiente                                       | Comparar sesión válida, sesión obsoleta controlada y navegador limpio sobre un mismo host. Registrar causa reproducida o condiciones del intento.                                                                                                             |
+| 12    | En paralelo si hay capacidad | FIX-12 | Revocación persistente observada, UX pendiente              | Sustituir la confirmación nativa por diálogo de Iroko. Verificar cancelar, revocar y persistencia. La prueba funcional de credencial corresponde a TEST-05.                                                                                                   |
 
 El plan previo registra 36/36 aserciones SQL, 144/144 pruebas focalizadas de Vitest y tres recorridos Edge. Son evidencia de aquella pasada y sirven para elegir regresiones del próximo candidato. Build servido y estado efectivo de GitHub, Cloud y Supabase en este corte: **[NO VERIFICADO]**.
 
 ## Aceptación y registro
 
-| ID | Momento | Evidencia mínima |
-| --- | --- | --- |
-| TEST-01 | Tras A, B y Auth | Identidad, confirmación, organización inicial, Ajustes y persistencia, con build local identificado y Mailpit. |
-| TEST-02 | Tras C y FIX-09 | Invitación nueva y existente, cuatro roles, dos cuentas aisladas, aviso y presencia. Usar la vista previa compartida de Codex cuando esté disponible. |
-| TEST-03 | Tras FIX-06/10 | Fixture local: Plus en A, Free en B, cupos, facturas, downgrade y mutaciones solo Owner. |
+| ID      | Momento                                                                                     | Evidencia mínima                                                                                                                                                                                                         |
+| ------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| TEST-01 | Tras A, B y Auth                                                                            | Identidad, confirmación, organización inicial, Ajustes y persistencia, con build local identificado y Mailpit.                                                                                                           |
+| TEST-02 | Tras C y FIX-09                                                                             | Invitación nueva y existente, cuatro roles, dos cuentas aisladas, aviso y presencia. Usar la vista previa compartida de Codex cuando esté disponible.                                                                    |
+| TEST-03 | Tras FIX-06/10                                                                              | Fixture local: Plus en A, Free en B, cupos, facturas, downgrade y mutaciones solo Owner.                                                                                                                                 |
 | TEST-04 | Circuito [011f](../exec-plans/deferred/011-billing/011f-mercadopago-internal-acceptance.md) | Aceptación de proveedor independiente bajo ADR 0005. Para el primer cobro integrado se requiere TEST-03, contrato Owner y autorización específica. Acreditar cobro, estado, plan y reconciliación de la cuenta correcta. |
-| TEST-05 | Por capacidad, con núcleo estable | Cruzar cobertura con bitácora y [registro del freeze](../exec-plans/active/freeze-remediation-register.csv). Mantener flags y protecciones del candidato. |
+| TEST-05 | Por capacidad, con núcleo estable                                                           | Cruzar cobertura con bitácora y [registro del freeze](../exec-plans/active/freeze-remediation-register.csv). Mantener flags y protecciones del candidato.                                                                |
 
 Actualizar la fila del FIX cuando cambie su estado. Registrar en la bitácora fecha, revisión/build, entorno y host, cuenta y rol ficticios, pasos, esperado, observado, resultado y enlace a evidencia. Enlazar desde aquí el resultado nuevo cuando cambie una conclusión. Mantener las observaciones históricas.
 
 ## Skills, agentes y reglas de ejecución
 
-| Trabajo | Responsable y skills | Entrega verificable |
-| --- | --- | --- |
-| A · Ajustes | Agente principal con Superpowers **Executing Plans** y **Systematic Debugging**. **Test-Driven Development** para fijar la regresión del formulario en la prueba focal existente. | Reproducir la desincronización, aislar estado y cuenta activa, corregir y pasar prueba focal y QA-08. |
-| B · Organización y cupo | Agente principal integra. Si se delega, un worker con propiedad exclusiva de migraciones, espejo y pruebas SQL, usando **Supabase** y **Supabase Postgres Best Practices**. | Contratos de RPC, idempotencia, concurrencia, grants, compatibilidad histórica y verificación local. |
-| C · Auth e invitación | Un único implementador de rutas, plantillas y continuación, con **Next.js Supabase Auth** y **E2E Testing Patterns**. Un explorador puede revisar en paralelo los casos existentes de Mailpit y Realtime sin editar. | Prueba de dos identidades y revisión independiente de cookies, contexto y autorización de la invitación. |
-| D · RBAC y billing | Un implementador del contrato y revisión independiente con agente de seguridad o code reviewer. **Requesting Code Review** para el cambio sensible y **Verification Before Completion** al acreditar cada lote. | Negativos por rol y por cuenta en servidor y SQL, además de UI. |
-| QA visual | Agente principal y propietario en turnos breves con **Computer Use** cuando corresponda. | Veredicto humano por caso en la bitácora y evidencia automatizada reutilizable. |
+| Trabajo                 | Responsable y skills                                                                                                                                                                                                 | Entrega verificable                                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| A · Ajustes             | Agente principal con Superpowers **Executing Plans** y **Systematic Debugging**. **Test-Driven Development** para fijar la regresión del formulario en la prueba focal existente.                                    | Reproducir la desincronización, aislar estado y cuenta activa, corregir y pasar prueba focal y QA-08.    |
+| B · Organización y cupo | Agente principal integra. Si se delega, un worker con propiedad exclusiva de migraciones, espejo y pruebas SQL, usando **Supabase** y **Supabase Postgres Best Practices**.                                          | Contratos de RPC, idempotencia, concurrencia, grants, compatibilidad histórica y verificación local.     |
+| C · Auth e invitación   | Un único implementador de rutas, plantillas y continuación, con **Next.js Supabase Auth** y **E2E Testing Patterns**. Un explorador puede revisar en paralelo los casos existentes de Mailpit y Realtime sin editar. | Prueba de dos identidades y revisión independiente de cookies, contexto y autorización de la invitación. |
+| D · RBAC y billing      | Un implementador del contrato y revisión independiente con agente de seguridad o code reviewer. **Requesting Code Review** para el cambio sensible y **Verification Before Completion** al acreditar cada lote.      | Negativos por rol y por cuenta en servidor y SQL, además de UI.                                          |
+| QA visual               | Agente principal y propietario en turnos breves con **Computer Use** cuando corresponda.                                                                                                                             | Veredicto humano por caso en la bitácora y evidencia automatizada reutilizable.                          |
 
 Ejecutar A de forma directa. Para B–D, usar **Subagent-Driven Development** solamente cuando haya piezas independientes y un responsable por superficie. Mantener la integración de Auth, SQL y billing en secuencia donde comparten contrato. FIX-02 y FIX-12 pueden avanzar en paralelo con lotes de archivos disjuntos. No ejecutar builds, suites de navegador y SQL pesados simultáneamente.
 
@@ -82,20 +82,20 @@ la lectura de Miembros para integrantes, restringir Ajustes y Facturación a
 Owner/Admin, reservar las mutaciones de facturación al Owner y permitir que
 solo el Owner invite a otro Admin. Las compras nuevas requieren un Team.
 
-| FIX | Recorrido de aceptación en el candidato |
-| --- | --- |
-| 01 | Guardar nombre, slug, web y país en Ajustes. Verificar cada resultado de inmediato y tras recargar. |
-| 02 | Usar una cuenta desechable. Revocar su sesión o eliminar solo su usuario, abrir una ruta protegida y verificar Login con destino conservado. Repetir con sesión sana. |
-| 03 | Registrarse desde una invitación y reenviar confirmación. Abrir el último correo y comprobar que ofrece el enlace y conserva la invitación. |
-| 04 | Registrar una cuenta propia y comprobar un Team visible con rol Owner. Repetir entrada y confirmar que no aparece otro Team. |
-| 05 | Abrir la URL antigua de onboarding y comprobar el regreso al dashboard. Editar la misma organización desde Ajustes. |
-| 06 | Ver el cupo en Nueva organización. Probar límite, downgrade y transferencia con un fixture y confirmar que los Teams existentes permanecen. |
-| 07 | Abrir una invitación sin sesión. Confirmar ambas opciones de acceso y los mensajes al invitar una dirección ya asociada o pendiente. |
-| 08 | Completar invitaciones nueva y existente. Probar sesión equivocada, enlaces vencidos o revocados y aviso al invitador. |
-| 09 | Con Owner, Admin, Member y Viewer, contrastar Miembros, Ajustes y Facturación. Probar entrada directa y verificar que Admin no puede invitar otro Admin. |
-| 10 | Con el proveedor simulado, activar Plus en A y comprobar que B conserva Free. Owner puede mutar, Admin puede leer facturas y los demás roles no gestionan billing. |
-| 11 | Cambiar el correo de una cuenta desechable. Abrir ambos enlaces con confirmación doble y comprobar aviso pendiente, aviso final, Perfil e inicio de sesión. |
-| 12 | En Ajustes, cancelar una revocación y confirmar que la clave sigue activa. Confirmarla y comprobar estado y contador. |
+| FIX | Recorrido de aceptación en el candidato                                                                                                                               |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 01  | Guardar nombre, slug, web y país en Ajustes. Verificar cada resultado de inmediato y tras recargar.                                                                   |
+| 02  | Usar una cuenta desechable. Revocar su sesión o eliminar solo su usuario, abrir una ruta protegida y verificar Login con destino conservado. Repetir con sesión sana. |
+| 03  | Registrarse desde una invitación y reenviar confirmación. Abrir el último correo y comprobar que ofrece el enlace y conserva la invitación.                           |
+| 04  | Registrar una cuenta propia y comprobar un Team visible con rol Owner. Repetir entrada y confirmar que no aparece otro Team.                                          |
+| 05  | Abrir la URL antigua de onboarding y comprobar el regreso al dashboard. Editar la misma organización desde Ajustes.                                                   |
+| 06  | Ver el cupo en Nueva organización. Probar límite, downgrade y transferencia con un fixture y confirmar que los Teams existentes permanecen.                           |
+| 07  | Abrir una invitación sin sesión. Confirmar ambas opciones de acceso y los mensajes al invitar una dirección ya asociada o pendiente.                                  |
+| 08  | Completar invitaciones nueva y existente. Probar sesión equivocada, enlaces vencidos o revocados y aviso al invitador.                                                |
+| 09  | Con Owner, Admin, Member y Viewer, contrastar Miembros, Ajustes y Facturación. Probar entrada directa y verificar que Admin no puede invitar otro Admin.              |
+| 10  | Con el proveedor simulado, activar Plus en A y comprobar que B conserva Free. Owner puede mutar, Admin puede leer facturas y los demás roles no gestionan billing.    |
+| 11  | Cambiar el correo de una cuenta desechable. Abrir ambos enlaces con confirmación doble y comprobar aviso pendiente, aviso final, Perfil e inicio de sesión.           |
+| 12  | En Ajustes, cancelar una revocación y confirmar que la clave sigue activa. Confirmarla y comprobar estado y contador.                                                 |
 
 Anotar revisión de GitHub y Vercel, destino local o Cloud y resultado por FIX.
 Mercado Pago se acepta por separado en 011f después de este recorrido.
